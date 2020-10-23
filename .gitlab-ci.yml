@@ -1,0 +1,13 @@
+stages:
+  - test
+pytest:
+  image: python:3.7-buster
+  stage: test
+  before_script:
+    - pip install --upgrade --no-deps --force-reinstall -r requirements.txt
+    - python setup.py develop
+  script:
+    - pytest CI/SCRIPTS
+  tags:
+    - windows
+    - conda
