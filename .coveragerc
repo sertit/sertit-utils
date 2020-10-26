@@ -1,0 +1,14 @@
+# .coveragerc to control coverage.py
+[run]
+source =
+    sertit_utils/core
+    sertit_utils/eo
+    CI/SCRIPTS
+omit =
+    */__init__.py
+    */version.py
+
+[report]
+omit =
+    */__init__.py
+    */version.py
