@@ -12,6 +12,10 @@ pytest:
     - pytest -v --cov-report term --cov=sertit_utils CI/SCRIPTS
     - coverage xml
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
+  artifacts:
+    when: always
+    paths:
+      - coverage
   tags:
     - linux
 
@@ -24,3 +28,5 @@ upload_wheel:linux:
     - TWINE_PASSWORD=${DEPLOY_PWD} TWINE_USERNAME=${DEPLOY_NAME} python -m twine upload --verbose --repository-url https://code.sertit.unistra.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   tags:
     - linux
+  only:
+    - tags
