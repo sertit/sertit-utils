@@ -9,23 +9,20 @@ setuptools.setup(
     version=__version__,  # Semantic Versioning (see https://semver.org/)
     author="Rémi BRAUN",
     author_email="remi.braun@unistra.fr",
-    description="SERTIT python library for Sentinel Downloading purposes",
+    description="SERTIT python library for generic tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://code.sertit.unistra.fr/SERTIT/satdownload",
+    url="https://code.sertit.unistra.fr/SERTIT/sertit-utils",
     packages=setuptools.find_packages(),
     install_requires=[
-        'lxml',
-        'html5lib',
-        'beautifulsoup4',
+        'tqdm',
+        'colorlog',
+        'twine',
         'geopandas',
-        'sentinelsat',
-        'tqdm'
+        'rasterio'
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent"
-    ],
-    package_data={'sertit_utils': ['*.ui']},
-    include_package_data=True
+    ]
 )
