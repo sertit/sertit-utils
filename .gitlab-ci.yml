@@ -9,13 +9,11 @@ pytest:
     - pip install coverage pytest pytest-cov
     - python setup.py develop
   script:
-    - pytest -v --cov-report term --cov=sertit_utils CI/SCRIPTS
-    - coverage xml
-  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
+    - pytest -v --cov-report xml:cov.xml --cov=sertit_utils CI/SCRIPTS
   artifacts:
     when: always
     paths:
-      - coverage
+      - cov.xml
   tags:
     - linux
 
