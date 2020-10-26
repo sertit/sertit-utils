@@ -18,6 +18,7 @@ upload_wheel:linux:
   stage: publish
   script:
     - pip install twine
+    - python setup.py sdist bdist_wheel
     - TWINE_PASSWORD=${DEPLOY_PWD} TWINE_USERNAME=${DEPLOY_NAME} python -m twine upload --verbose --repository-url https://code.sertit.unistra.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   tags:
     - linux
