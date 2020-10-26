@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>sertit_utils.eo.geo API documentation</title>
+<title>sertit_utils.eo.geo_utils API documentation</title>
 <meta name="description" content="Geo tools" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>sertit_utils.eo.geo</code></h1>
+<h1 class="title">Module <code>sertit_utils.eo.geo_utils</code></h1>
 </header>
 <section id="section-intro">
 <p>Geo tools</p>
@@ -35,7 +35,6 @@ import numpy as np
 import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
-import rasterio
 from rasterio import crs
 
 WGS84 = &#34;EPSG:4326&#34;
@@ -128,20 +127,6 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
     return gpd.GeoDataFrame(geometry=geometry, crs=geom_crs)
 
 
-def get_extent(path: str) -&gt; gpd.GeoDataFrame:
-    &#34;&#34;&#34;
-    Get the extent of a raster as a geodataframe
-
-    Args:
-        path (str): Raster path
-
-    Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
-    &#34;&#34;&#34;
-    with rasterio.open(path) as dst:
-        return get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
-
-
 def set_kml_driver():
     &#34;&#34;&#34;
     Set KML driver for Fiona data
@@ -218,7 +203,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="sertit_utils.eo.geo.corresponding_utm_projection"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.corresponding_utm_projection"><code class="name flex">
 <span>def <span class="ident">corresponding_utm_projection</span></span>(<span>lon: float, lat: float) ‑> str</span>
 </code></dt>
 <dd>
@@ -258,7 +243,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
     return &#34;EPSG:{}&#34;.format(epsg)</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.geo.from_bounds_to_polygon"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.from_bounds_to_polygon"><code class="name flex">
 <span>def <span class="ident">from_bounds_to_polygon</span></span>(<span>left: float, bottom: float, right: float, top: float) ‑> shapely.geometry.polygon.Polygon</span>
 </code></dt>
 <dd>
@@ -300,7 +285,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.geo.from_polygon_to_bounds"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.from_polygon_to_bounds"><code class="name flex">
 <span>def <span class="ident">from_polygon_to_bounds</span></span>(<span>polygon: Union[shapely.geometry.polygon.Polygon, shapely.geometry.multipolygon.MultiPolygon]) ‑> (<class 'float'>, <class 'float'>, <class 'float'>, <class 'float'>)</span>
 </code></dt>
 <dd>
@@ -337,7 +322,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
     return left, bottom, right, top</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.geo.get_aoi_wkt"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.get_aoi_wkt"><code class="name flex">
 <span>def <span class="ident">get_aoi_wkt</span></span>(<span>aoi_path, as_str=True)</span>
 </code></dt>
 <dd>
@@ -424,40 +409,7 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
     return aoi</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.geo.get_extent"><code class="name flex">
-<span>def <span class="ident">get_extent</span></span>(<span>path: str) ‑> geopandas.geodataframe.GeoDataFrame</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Get the extent of a raster as a geodataframe</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
-<dd>Raster path</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>gpd.GeoDataFrame</code></dt>
-<dd>Extent as a geodataframe</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_extent(path: str) -&gt; gpd.GeoDataFrame:
-    &#34;&#34;&#34;
-    Get the extent of a raster as a geodataframe
-
-    Args:
-        path (str): Raster path
-
-    Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
-    &#34;&#34;&#34;
-    with rasterio.open(path) as dst:
-        return get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
-</details>
-</dd>
-<dt id="sertit_utils.eo.geo.get_geodf"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.get_geodf"><code class="name flex">
 <span>def <span class="ident">get_geodf</span></span>(<span>geometry: Union[shapely.geometry.polygon.Polygon, list, geopandas.geoseries.GeoSeries], geom_crs: Union[rasterio.crs.CRS, str]) ‑> geopandas.geodataframe.GeoDataFrame</span>
 </code></dt>
 <dd>
@@ -506,7 +458,7 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
     return gpd.GeoDataFrame(geometry=geometry, crs=geom_crs)</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.geo.set_kml_driver"><code class="name flex">
+<dt id="sertit_utils.eo.geo_utils.set_kml_driver"><code class="name flex">
 <span>def <span class="ident">set_kml_driver</span></span>(<span>)</span>
 </code></dt>
 <dd>
@@ -544,13 +496,12 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="sertit_utils.eo.geo.corresponding_utm_projection" href="#sertit_utils.eo.geo.corresponding_utm_projection">corresponding_utm_projection</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.from_bounds_to_polygon" href="#sertit_utils.eo.geo.from_bounds_to_polygon">from_bounds_to_polygon</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.from_polygon_to_bounds" href="#sertit_utils.eo.geo.from_polygon_to_bounds">from_polygon_to_bounds</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.get_aoi_wkt" href="#sertit_utils.eo.geo.get_aoi_wkt">get_aoi_wkt</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.get_extent" href="#sertit_utils.eo.geo.get_extent">get_extent</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.get_geodf" href="#sertit_utils.eo.geo.get_geodf">get_geodf</a></code></li>
-<li><code><a title="sertit_utils.eo.geo.set_kml_driver" href="#sertit_utils.eo.geo.set_kml_driver">set_kml_driver</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.corresponding_utm_projection" href="#sertit_utils.eo.geo_utils.corresponding_utm_projection">corresponding_utm_projection</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.from_bounds_to_polygon" href="#sertit_utils.eo.geo_utils.from_bounds_to_polygon">from_bounds_to_polygon</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.from_polygon_to_bounds" href="#sertit_utils.eo.geo_utils.from_polygon_to_bounds">from_polygon_to_bounds</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.get_aoi_wkt" href="#sertit_utils.eo.geo_utils.get_aoi_wkt">get_aoi_wkt</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.get_geodf" href="#sertit_utils.eo.geo_utils.get_geodf">get_geodf</a></code></li>
+<li><code><a title="sertit_utils.eo.geo_utils.set_kml_driver" href="#sertit_utils.eo.geo_utils.set_kml_driver">set_kml_driver</a></code></li>
 </ul>
 </li>
 </ul>

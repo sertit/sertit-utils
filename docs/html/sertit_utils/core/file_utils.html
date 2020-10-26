@@ -40,8 +40,10 @@ import json
 import shutil
 import pickle
 import hashlib
+from json import JSONDecoder
 from tqdm import tqdm
 import numpy as np
+from dateutil import parser
 from datetime import date, datetime
 from json.encoder import JSONEncoder
 from typing import Union, Any
@@ -49,6 +51,15 @@ from typing import Union, Any
 from sertit_utils.core import sys_utils
 
 LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
+
+
+def get_root_path():
+    &#34;&#34;&#34;
+    Get the root path of the current disk:
+    - On Linux this returns `/`
+    - On Windows this returns `C:\\` or whatever the current drive is
+    &#34;&#34;&#34;
+    return os.path.abspath(os.sep)
 
 
 def listdir_abspath(directory):
@@ -203,7 +214,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -&gt; li
     LOGGER.debug(&#34;Unzipping products in %s&#34;, output)
     progress_bar = tqdm(archives)
     extracts = []
-    for archive in archives:
+    for archive in progress_bar:
         progress_bar.set_description(&#39;Unzipping products {}&#39;.format(os.path.basename(archive)))
         extracts.append(extract_file(archive, output, overwrite))
 
@@ -357,6 +368,42 @@ def find_files(names: Union[list, str],
     return paths
 
 
+# subclass JSONDecoder
+class CustomDecoder(JSONDecoder):
+    &#34;&#34;&#34; Decoder for JSON with methods for datetimes &#34;&#34;&#34;
+
+    # pylint: disable=W0221
+    # Override the default method
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        obj_type = obj.get(&#39;_type&#39;)
+        if obj_type is None:
+            return obj
+        else:
+            if obj_type == &#39;datetime&#39;:
+                return parser.parse(obj[&#39;value&#39;])
+            else:
+                raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))
+
+
+# subclass JSONEncoder
+class CustomEncoder(JSONEncoder):
+    &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
+
+    # pylint: disable=W0221
+    # Override the default method
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return {&#34;_type&#34;: &#34;datetime&#34;,
+                    &#34;value&#34;: obj.isoformat()}
+        if isinstance(obj, np.int64):
+            return int(obj)
+
+        return obj
+
+
 def read_json(json_file, print_file=True):
     &#34;&#34;&#34;
     Read a JSON file
@@ -367,12 +414,14 @@ def read_json(json_file, print_file=True):
 
     Returns:
         dict: JSON data
-
     &#34;&#34;&#34;
+
     with open(json_file) as file:
-        data = json.load(file)
+        data = json.load(file, cls=CustomDecoder)
         if print_file:
-            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;, json_file, json.dumps(data, indent=3))
+            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;,
+                         json_file,
+                         json.dumps(data, indent=3, cls=CustomEncoder))
     return data
 
 
@@ -384,21 +433,6 @@ def save_json(output_json: str, json_dict: dict) -&gt; None:
         output_json (str): Output file
         json_dict (dict): Json dictionary
     &#34;&#34;&#34;
-
-    # subclass JSONEncoder
-    class CustomEncoder(JSONEncoder):
-        &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
-
-        # Parameters differ from overridden &#39;get_default_band_path&#39; method (arguments-differ)
-        # pylint: disable=W0221
-        # Override the default method
-        def default(self, obj):
-            if isinstance(obj, (date, datetime)):
-                return obj.isoformat()
-            if isinstance(obj, np.int64):
-                return int(obj)
-
-            return obj
 
     with open(output_json, &#39;w&#39;) as output_config_file:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)
@@ -690,7 +724,7 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     LOGGER.debug(&#34;Unzipping products in %s&#34;, output)
     progress_bar = tqdm(archives)
     extracts = []
-    for archive in archives:
+    for archive in progress_bar:
         progress_bar.set_description(&#39;Unzipping products {}&#39;.format(os.path.basename(archive)))
         extracts.append(extract_file(archive, output, overwrite))
 
@@ -904,6 +938,26 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     return basename.split(&#34;.&#34;)[0]</code></pre>
 </details>
 </dd>
+<dt id="sertit_utils.core.file_utils.get_root_path"><code class="name flex">
+<span>def <span class="ident">get_root_path</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the root path of the current disk:
+- On Linux this returns <code>/</code>
+- On Windows this returns <code>C:\</code> or whatever the current drive is</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_root_path():
+    &#34;&#34;&#34;
+    Get the root path of the current disk:
+    - On Linux this returns `/`
+    - On Windows this returns `C:\\` or whatever the current drive is
+    &#34;&#34;&#34;
+    return os.path.abspath(os.sep)</code></pre>
+</details>
+</dd>
 <dt id="sertit_utils.core.file_utils.hash_file_content"><code class="name flex">
 <span>def <span class="ident">hash_file_content</span></span>(<span>file_content: str, len_param: int = 5) ‑> str</span>
 </code></dt>
@@ -1036,12 +1090,14 @@ It is the same function than <code>os.listdir</code> but returning absolute path
 
     Returns:
         dict: JSON data
-
     &#34;&#34;&#34;
+
     with open(json_file) as file:
-        data = json.load(file)
+        data = json.load(file, cls=CustomDecoder)
         if print_file:
-            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;, json_file, json.dumps(data, indent=3))
+            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;,
+                         json_file,
+                         json.dumps(data, indent=3, cls=CustomEncoder))
     return data</code></pre>
 </details>
 </dd>
@@ -1180,21 +1236,6 @@ It is the same function than <code>os.listdir</code> but returning absolute path
         json_dict (dict): Json dictionary
     &#34;&#34;&#34;
 
-    # subclass JSONEncoder
-    class CustomEncoder(JSONEncoder):
-        &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
-
-        # Parameters differ from overridden &#39;get_default_band_path&#39; method (arguments-differ)
-        # pylint: disable=W0221
-        # Override the default method
-        def default(self, obj):
-            if isinstance(obj, (date, datetime)):
-                return obj.isoformat()
-            if isinstance(obj, np.int64):
-                return int(obj)
-
-            return obj
-
     with open(output_json, &#39;w&#39;) as output_config_file:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)</code></pre>
 </details>
@@ -1308,6 +1349,195 @@ required=True)
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="sertit_utils.core.file_utils.CustomDecoder"><code class="flex name class">
+<span>class <span class="ident">CustomDecoder</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Decoder for JSON with methods for datetimes </p>
+<p><code>object_hook</code>, if specified, will be called with the result
+of every JSON object decoded and its return value will be used in
+place of the given <code>dict</code>.
+This can be used to provide custom
+deserializations (e.g. to support JSON-RPC class hinting).</p>
+<p><code>object_pairs_hook</code>, if specified will be called with the result of
+every JSON object decoded with an ordered list of pairs.
+The return
+value of <code>object_pairs_hook</code> will be used instead of the <code>dict</code>.
+This feature can be used to implement custom decoders.
+If <code>object_hook</code> is also defined, the <code>object_pairs_hook</code> takes
+priority.</p>
+<p><code>parse_float</code>, if specified, will be called with the string
+of every JSON float to be decoded. By default this is equivalent to
+float(num_str). This can be used to use another datatype or parser
+for JSON floats (e.g. decimal.Decimal).</p>
+<p><code>parse_int</code>, if specified, will be called with the string
+of every JSON int to be decoded. By default this is equivalent to
+int(num_str). This can be used to use another datatype or parser
+for JSON integers (e.g. float).</p>
+<p><code>parse_constant</code>, if specified, will be called with one of the
+following strings: -Infinity, Infinity, NaN.
+This can be used to raise an exception if invalid JSON numbers
+are encountered.</p>
+<p>If <code>strict</code> is false (true is the default), then control
+characters will be allowed inside strings.
+Control characters in
+this context are those with character codes in the 0-31 range,
+including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <code>'\0'</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CustomDecoder(JSONDecoder):
+    &#34;&#34;&#34; Decoder for JSON with methods for datetimes &#34;&#34;&#34;
+
+    # pylint: disable=W0221
+    # Override the default method
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        obj_type = obj.get(&#39;_type&#39;)
+        if obj_type is None:
+            return obj
+        else:
+            if obj_type == &#39;datetime&#39;:
+                return parser.parse(obj[&#39;value&#39;])
+            else:
+                raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>json.decoder.JSONDecoder</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="sertit_utils.core.file_utils.CustomDecoder.object_hook"><code class="name flex">
+<span>def <span class="ident">object_hook</span></span>(<span>self, obj)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def object_hook(self, obj):
+    obj_type = obj.get(&#39;_type&#39;)
+    if obj_type is None:
+        return obj
+    else:
+        if obj_type == &#39;datetime&#39;:
+            return parser.parse(obj[&#39;value&#39;])
+        else:
+            raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="sertit_utils.core.file_utils.CustomEncoder"><code class="flex name class">
+<span>class <span class="ident">CustomEncoder</span></span>
+<span>(</span><span>*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Encoder for JSON with methods for datetimes and np.int64 </p>
+<p>Constructor for JSONEncoder, with sensible defaults.</p>
+<p>If skipkeys is false, then it is a TypeError to attempt
+encoding of keys that are not str, int, float or None.
+If
+skipkeys is True, such items are simply skipped.</p>
+<p>If ensure_ascii is true, the output is guaranteed to be str
+objects with all incoming non-ASCII characters escaped.
+If
+ensure_ascii is false, the output can contain non-ASCII characters.</p>
+<p>If check_circular is true, then lists, dicts, and custom encoded
+objects will be checked for circular references during encoding to
+prevent an infinite recursion (which would cause an OverflowError).
+Otherwise, no such check takes place.</p>
+<p>If allow_nan is true, then NaN, Infinity, and -Infinity will be
+encoded as such.
+This behavior is not JSON specification compliant,
+but is consistent with most JavaScript based encoders and decoders.
+Otherwise, it will be a ValueError to encode such floats.</p>
+<p>If sort_keys is true, then the output of dictionaries will be
+sorted by key; this is useful for regression tests to ensure
+that JSON serializations can be compared on a day-to-day basis.</p>
+<p>If indent is a non-negative integer, then JSON array
+elements and object members will be pretty-printed with that
+indent level.
+An indent level of 0 will only insert newlines.
+None is the most compact representation.</p>
+<p>If specified, separators should be an (item_separator, key_separator)
+tuple.
+The default is (', ', ': ') if <em>indent</em> is <code>None</code> and
+(',', ': ') otherwise.
+To get the most compact JSON representation,
+you should specify (',', ':') to eliminate whitespace.</p>
+<p>If specified, default is a function that gets called for objects
+that can't otherwise be serialized.
+It should return a JSON encodable
+version of the object or raise a <code>TypeError</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CustomEncoder(JSONEncoder):
+    &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
+
+    # pylint: disable=W0221
+    # Override the default method
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return {&#34;_type&#34;: &#34;datetime&#34;,
+                    &#34;value&#34;: obj.isoformat()}
+        if isinstance(obj, np.int64):
+            return int(obj)
+
+        return obj</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>json.encoder.JSONEncoder</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="sertit_utils.core.file_utils.CustomEncoder.default"><code class="name flex">
+<span>def <span class="ident">default</span></span>(<span>self, obj)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implement this method in a subclass such that it returns
+a serializable object for <code>o</code>, or calls the base implementation
+(to raise a <code>TypeError</code>).</p>
+<p>For example, to support arbitrary iterators, you could
+implement default like this::</p>
+<pre><code>def default(self, o):
+    try:
+        iterable = iter(o)
+    except TypeError:
+        pass
+    else:
+        return list(iterable)
+    # Let the base class default method raise the TypeError
+    return JSONEncoder.default(self, o)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default(self, obj):
+    if isinstance(obj, (date, datetime)):
+        return {&#34;_type&#34;: &#34;datetime&#34;,
+                &#34;value&#34;: obj.isoformat()}
+    if isinstance(obj, np.int64):
+        return int(obj)
+
+    return obj</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -1329,6 +1559,7 @@ required=True)
 <li><code><a title="sertit_utils.core.file_utils.find_files" href="#sertit_utils.core.file_utils.find_files">find_files</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.get_file_in_dir" href="#sertit_utils.core.file_utils.get_file_in_dir">get_file_in_dir</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.get_file_name" href="#sertit_utils.core.file_utils.get_file_name">get_file_name</a></code></li>
+<li><code><a title="sertit_utils.core.file_utils.get_root_path" href="#sertit_utils.core.file_utils.get_root_path">get_root_path</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.hash_file_content" href="#sertit_utils.core.file_utils.hash_file_content">hash_file_content</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.listdir_abspath" href="#sertit_utils.core.file_utils.listdir_abspath">listdir_abspath</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.load_obj" href="#sertit_utils.core.file_utils.load_obj">load_obj</a></code></li>
@@ -1339,6 +1570,22 @@ required=True)
 <li><code><a title="sertit_utils.core.file_utils.save_json" href="#sertit_utils.core.file_utils.save_json">save_json</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.save_obj" href="#sertit_utils.core.file_utils.save_obj">save_obj</a></code></li>
 <li><code><a title="sertit_utils.core.file_utils.to_abspath" href="#sertit_utils.core.file_utils.to_abspath">to_abspath</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="sertit_utils.core.file_utils.CustomDecoder" href="#sertit_utils.core.file_utils.CustomDecoder">CustomDecoder</a></code></h4>
+<ul class="">
+<li><code><a title="sertit_utils.core.file_utils.CustomDecoder.object_hook" href="#sertit_utils.core.file_utils.CustomDecoder.object_hook">object_hook</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="sertit_utils.core.file_utils.CustomEncoder" href="#sertit_utils.core.file_utils.CustomEncoder">CustomEncoder</a></code></h4>
+<ul class="">
+<li><code><a title="sertit_utils.core.file_utils.CustomEncoder.default" href="#sertit_utils.core.file_utils.CustomEncoder.default">default</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

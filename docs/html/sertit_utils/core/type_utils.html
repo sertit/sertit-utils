@@ -71,20 +71,6 @@ class ListEnum(Enum):
             raise ValueError(&#34;Non existing {} in {}&#34;.format(val, cls.list_values())) from ex
 
 
-def list_to_dict(dict_list):
-    &#34;&#34;&#34;
-    Return a dictionary from a list
-
-    Args:
-        dict_list (list[str]): Dictionary as a list
-
-    Returns:
-        dict: Dictionary
-    &#34;&#34;&#34;
-    dictionary = {dict_list[i]: dict_list[i + 1] for i in range(0, len(dict_list), 2)}
-    return dictionary
-
-
 def str_to_bool(bool_str):
     &#34;&#34;&#34;
     Convert a string to a bool.
@@ -210,7 +196,7 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime.da
     Returns:
         datetime.date: A date as a python datetime object
     &#34;&#34;&#34;
-    if isinstance(date_str, datetime.date):
+    if isinstance(date_str, (datetime.datetime, datetime.date)):
         date = date_str
     else:
         try:
@@ -251,6 +237,20 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
     return list_of_dates
 
 
+def list_to_dict(dict_list):
+    &#34;&#34;&#34;
+    Return a dictionary from a list
+
+    Args:
+        dict_list (list[str]): Dictionary as a list
+
+    Returns:
+        dict: Dictionary
+    &#34;&#34;&#34;
+    dictionary = {dict_list[i]: dict_list[i + 1] for i in range(0, len(dict_list), 2)}
+    return dictionary
+
+
 def nested_set(dic, keys, value):
     &#34;&#34;&#34;
     Set value in nested directory
@@ -279,7 +279,7 @@ def check_mandatory_keys(data_dict, mandatory_keys):
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise Exception(&#34;Missing mandatory key &#39;{}&#39; among {}&#34;.format(mandatory_key, pprint.pformat(data_dict)))
+            raise ValueError(&#34;Missing mandatory key &#39;{}&#39; among {}&#34;.format(mandatory_key, pprint.pformat(data_dict)))
 
 
 def remove_empty_values(list_with_empty_values):
@@ -433,7 +433,7 @@ Raise an exception if a mandatory argument is missing.</p>
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise Exception(&#34;Missing mandatory key &#39;{}&#39; among {}&#34;.format(mandatory_key, pprint.pformat(data_dict)))</code></pre>
+            raise ValueError(&#34;Missing mandatory key &#39;{}&#39; among {}&#34;.format(mandatory_key, pprint.pformat(data_dict)))</code></pre>
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.find_by_key"><code class="name flex">
@@ -696,7 +696,7 @@ Raise an exception if a mandatory argument is missing.</p>
     Returns:
         datetime.date: A date as a python datetime object
     &#34;&#34;&#34;
-    if isinstance(date_str, datetime.date):
+    if isinstance(date_str, (datetime.datetime, datetime.date)):
         date = date_str
     else:
         try:

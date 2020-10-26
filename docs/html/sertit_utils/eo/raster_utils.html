@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>sertit_utils.eo.raster API documentation</title>
+<title>sertit_utils.eo.raster_utils API documentation</title>
 <meta name="description" content="Raster tools" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>sertit_utils.eo.raster</code></h1>
+<h1 class="title">Module <code>sertit_utils.eo.raster_utils</code></h1>
 </header>
 <section id="section-intro">
 <p>Raster tools</p>
@@ -39,6 +39,7 @@ import rasterio
 from rasterio import features, warp, mask
 
 from sertit_utils.core import file_utils
+from sertit_utils.eo import geo_utils
 
 MAX_CORES = os.cpu_count() - 2
 
@@ -171,7 +172,7 @@ def collocate(master_meta: dict,
 
 
 def read(dataset: rasterio.DatasetReader,
-         resolution: Union[list, float],
+         resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset
@@ -184,7 +185,10 @@ def read(dataset: rasterio.DatasetReader,
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     &#34;&#34;&#34;
-    if isinstance(resolution, float):
+    if resolution is None:
+        resolution = dataset.res
+
+    if isinstance(resolution, (int, float)):
         resolution = [resolution, resolution]
 
     if len(resolution) != 2:
@@ -287,7 +291,21 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
 
     assert dim_path.endswith(&#34;.data&#34;) and os.path.isdir(dim_path)
 
-    return file_utils.get_file_in_dir(dim_path, img_name, extension=&#39;img&#39;)</code></pre>
+    return file_utils.get_file_in_dir(dim_path, img_name, extension=&#39;img&#39;)
+
+
+def get_extent(path: str) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the extent of a raster as a geodataframe
+
+    Args:
+        path (str): Raster path
+
+    Returns:
+        gpd.GeoDataFrame: Extent as a geodataframe
+    &#34;&#34;&#34;
+    with rasterio.open(path) as dst:
+        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
 </details>
 </section>
 <section>
@@ -297,7 +315,7 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="sertit_utils.eo.raster.collocate"><code class="name flex">
+<dt id="sertit_utils.eo.raster_utils.collocate"><code class="name flex">
 <span>def <span class="ident">collocate</span></span>(<span>master_meta: dict, slave_arr: numpy.ma.core.MaskedArray, slave_meta: dict, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
 <dd>
@@ -360,7 +378,7 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     return collocated_arr, meta</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.raster.get_dim_img_path"><code class="name flex">
+<dt id="sertit_utils.eo.raster_utils.get_dim_img_path"><code class="name flex">
 <span>def <span class="ident">get_dim_img_path</span></span>(<span>dim_path: str, img_name: str = '*') ‑> list</span>
 </code></dt>
 <dd>
@@ -403,7 +421,40 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     return file_utils.get_file_in_dir(dim_path, img_name, extension=&#39;img&#39;)</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.raster.ma_mask"><code class="name flex">
+<dt id="sertit_utils.eo.raster_utils.get_extent"><code class="name flex">
+<span>def <span class="ident">get_extent</span></span>(<span>path: str) ‑> geopandas.geodataframe.GeoDataFrame</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the extent of a raster as a geodataframe</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Raster path</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Extent as a geodataframe</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_extent(path: str) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the extent of a raster as a geodataframe
+
+    Args:
+        path (str): Raster path
+
+    Returns:
+        gpd.GeoDataFrame: Extent as a geodataframe
+    &#34;&#34;&#34;
+    with rasterio.open(path) as dst:
+        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
+</details>
+</dd>
+<dt id="sertit_utils.eo.raster_utils.ma_mask"><code class="name flex">
 <span>def <span class="ident">ma_mask</span></span>(<span>ds_to_mask: rasterio.io.DatasetReader, extent: Union[shapely.geometry.polygon.Polygon, list], nodata: Union[int, NoneType] = None, crop=False) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'affine.Affine'>)</span>
 </code></dt>
 <dd>
@@ -461,8 +512,8 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     return crop_mask, trf</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.raster.read"><code class="name flex">
-<span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float], resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
+<dt id="sertit_utils.eo.raster_utils.read"><code class="name flex">
+<span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float] = None, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read a raster dataset</p>
@@ -485,7 +536,7 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def read(dataset: rasterio.DatasetReader,
-         resolution: Union[list, float],
+         resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset
@@ -498,7 +549,10 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     &#34;&#34;&#34;
-    if isinstance(resolution, float):
+    if resolution is None:
+        resolution = dataset.res
+
+    if isinstance(resolution, (int, float)):
         resolution = [resolution, resolution]
 
     if len(resolution) != 2:
@@ -526,7 +580,7 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     return array, dst_meta</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.raster.vectorize"><code class="name flex">
+<dt id="sertit_utils.eo.raster_utils.vectorize"><code class="name flex">
 <span>def <span class="ident">vectorize</span></span>(<span>path: str, on_mask: bool = False, default_nodata: int = 0) ‑> geopandas.geodataframe.GeoDataFrame</span>
 </code></dt>
 <dd>
@@ -602,7 +656,7 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     return gpd_results</code></pre>
 </details>
 </dd>
-<dt id="sertit_utils.eo.raster.write"><code class="name flex">
+<dt id="sertit_utils.eo.raster_utils.write"><code class="name flex">
 <span>def <span class="ident">write</span></span>(<span>raster: Union[numpy.ma.core.MaskedArray, numpy.ndarray], path: str, meta: dict, **kwargs) ‑> NoneType</span>
 </code></dt>
 <dd>
@@ -700,12 +754,13 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
-<li><code><a title="sertit_utils.eo.raster.collocate" href="#sertit_utils.eo.raster.collocate">collocate</a></code></li>
-<li><code><a title="sertit_utils.eo.raster.get_dim_img_path" href="#sertit_utils.eo.raster.get_dim_img_path">get_dim_img_path</a></code></li>
-<li><code><a title="sertit_utils.eo.raster.ma_mask" href="#sertit_utils.eo.raster.ma_mask">ma_mask</a></code></li>
-<li><code><a title="sertit_utils.eo.raster.read" href="#sertit_utils.eo.raster.read">read</a></code></li>
-<li><code><a title="sertit_utils.eo.raster.vectorize" href="#sertit_utils.eo.raster.vectorize">vectorize</a></code></li>
-<li><code><a title="sertit_utils.eo.raster.write" href="#sertit_utils.eo.raster.write">write</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.collocate" href="#sertit_utils.eo.raster_utils.collocate">collocate</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.get_dim_img_path" href="#sertit_utils.eo.raster_utils.get_dim_img_path">get_dim_img_path</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.get_extent" href="#sertit_utils.eo.raster_utils.get_extent">get_extent</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.ma_mask" href="#sertit_utils.eo.raster_utils.ma_mask">ma_mask</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.read" href="#sertit_utils.eo.raster_utils.read">read</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.vectorize" href="#sertit_utils.eo.raster_utils.vectorize">vectorize</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.write" href="#sertit_utils.eo.raster_utils.write">write</a></code></li>
 </ul>
 </li>
 </ul>

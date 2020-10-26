@@ -34,7 +34,6 @@ from datetime import datetime
 from colorlog import ColoredFormatter
 
 LOGGING_FORMAT = &#39;%(asctime)s - [%(levelname)s] - %(message)s&#39;
-LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
 
 
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
@@ -62,15 +61,17 @@ def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
         curr_logger.addHandler(stream_handler)
 
 
-def create_logger(file_log_level: int,
+def create_logger(logger: logging.Logger,
+                  file_log_level: int,
                   stream_log_level: int,
                   output_folder: str,
                   name: str,
-                  other_logger_names: list) -&gt; None:
+                  other_logger_names: list = None) -&gt; None:
     &#34;&#34;&#34;
     Create file and stream logger with colored logs.
 
     Args:
+        logger (logging.Logger): Logger to create
         file_log_level (int): File log level
         stream_log_level (int): Stream log level
         output_folder (str): Output folder
@@ -82,9 +83,9 @@ def create_logger(file_log_level: int,
     log_file_name = &#34;{}_{}_log.txt&#34;.format(date, name)
 
     # Remove already created console handler
-    if LOGGER.handlers:
-        for handler in LOGGER.handlers:
-            LOGGER.removeHandler(handler)
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
 
     # Add stream handler
     color_fmt = ColoredFormatter(
@@ -113,7 +114,7 @@ def create_logger(file_log_level: int,
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(stream_log_level)
     stream_handler.setFormatter(color_fmt)
-    LOGGER.addHandler(stream_handler)
+    logger.addHandler(stream_handler)
 
     # Get logger file output path
     log_path = os.path.join(output_folder, log_file_name)
@@ -122,19 +123,33 @@ def create_logger(file_log_level: int,
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(file_log_level)
     file_handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    LOGGER.addHandler(file_handler)
+    logger.addHandler(file_handler)
 
     # Manage other loggers
-    for log_name in other_logger_names:
-        other_logger = logging.getLogger(log_name)
+    if other_logger_names:
+        for log_name in other_logger_names:
+            other_logger = logging.getLogger(log_name)
 
-        # Remove all handlers (brand new logger)
-        other_logger.handlers = []
+            # Remove all handlers (brand new logger)
+            other_logger.handlers = []
 
-        # Set the right format anf log level
-        other_logger.setLevel(logging.INFO)
-        other_logger.addHandler(stream_handler)
-        other_logger.addHandler(file_handler)</code></pre>
+            # Set the right format anf log level
+            other_logger.setLevel(logging.INFO)
+            other_logger.addHandler(stream_handler)
+            other_logger.addHandler(file_handler)
+
+
+def shutdown_logger(logger: logging.Logger):
+    &#34;&#34;&#34;
+    Shutdown logger (if you need to delete the log file for example)
+
+    Args:
+        logger (logging.Logger): Logger to shutdown
+    &#34;&#34;&#34;
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        handler.flush()
+        handler.close()</code></pre>
 </details>
 </section>
 <section>
@@ -145,12 +160,14 @@ def create_logger(file_log_level: int,
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sertit_utils.core.log_utils.create_logger"><code class="name flex">
-<span>def <span class="ident">create_logger</span></span>(<span>file_log_level: int, stream_log_level: int, output_folder: str, name: str, other_logger_names: list) ‑> NoneType</span>
+<span>def <span class="ident">create_logger</span></span>(<span>logger: logging.Logger, file_log_level: int, stream_log_level: int, output_folder: str, name: str, other_logger_names: list = None) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create file and stream logger with colored logs.</p>
 <h2 id="args">Args</h2>
 <dl>
+<dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
+<dd>Logger to create</dd>
 <dt><strong><code>file_log_level</code></strong> :&ensp;<code>int</code></dt>
 <dd>File log level</dd>
 <dt><strong><code>stream_log_level</code></strong> :&ensp;<code>int</code></dt>
@@ -166,15 +183,17 @@ def create_logger(file_log_level: int,
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def create_logger(file_log_level: int,
+<pre><code class="python">def create_logger(logger: logging.Logger,
+                  file_log_level: int,
                   stream_log_level: int,
                   output_folder: str,
                   name: str,
-                  other_logger_names: list) -&gt; None:
+                  other_logger_names: list = None) -&gt; None:
     &#34;&#34;&#34;
     Create file and stream logger with colored logs.
 
     Args:
+        logger (logging.Logger): Logger to create
         file_log_level (int): File log level
         stream_log_level (int): Stream log level
         output_folder (str): Output folder
@@ -186,9 +205,9 @@ def create_logger(file_log_level: int,
     log_file_name = &#34;{}_{}_log.txt&#34;.format(date, name)
 
     # Remove already created console handler
-    if LOGGER.handlers:
-        for handler in LOGGER.handlers:
-            LOGGER.removeHandler(handler)
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
 
     # Add stream handler
     color_fmt = ColoredFormatter(
@@ -217,7 +236,7 @@ def create_logger(file_log_level: int,
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(stream_log_level)
     stream_handler.setFormatter(color_fmt)
-    LOGGER.addHandler(stream_handler)
+    logger.addHandler(stream_handler)
 
     # Get logger file output path
     log_path = os.path.join(output_folder, log_file_name)
@@ -226,19 +245,20 @@ def create_logger(file_log_level: int,
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(file_log_level)
     file_handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    LOGGER.addHandler(file_handler)
+    logger.addHandler(file_handler)
 
     # Manage other loggers
-    for log_name in other_logger_names:
-        other_logger = logging.getLogger(log_name)
+    if other_logger_names:
+        for log_name in other_logger_names:
+            other_logger = logging.getLogger(log_name)
 
-        # Remove all handlers (brand new logger)
-        other_logger.handlers = []
+            # Remove all handlers (brand new logger)
+            other_logger.handlers = []
 
-        # Set the right format anf log level
-        other_logger.setLevel(logging.INFO)
-        other_logger.addHandler(stream_handler)
-        other_logger.addHandler(file_handler)</code></pre>
+            # Set the right format anf log level
+            other_logger.setLevel(logging.INFO)
+            other_logger.addHandler(stream_handler)
+            other_logger.addHandler(file_handler)</code></pre>
 </details>
 </dd>
 <dt id="sertit_utils.core.log_utils.init_logger"><code class="name flex">
@@ -285,6 +305,33 @@ def create_logger(file_log_level: int,
         curr_logger.addHandler(stream_handler)</code></pre>
 </details>
 </dd>
+<dt id="sertit_utils.core.log_utils.shutdown_logger"><code class="name flex">
+<span>def <span class="ident">shutdown_logger</span></span>(<span>logger: logging.Logger)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Shutdown logger (if you need to delete the log file for example)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>logger</code></strong> :&ensp;<code>logging.Logger</code></dt>
+<dd>Logger to shutdown</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def shutdown_logger(logger: logging.Logger):
+    &#34;&#34;&#34;
+    Shutdown logger (if you need to delete the log file for example)
+
+    Args:
+        logger (logging.Logger): Logger to shutdown
+    &#34;&#34;&#34;
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        handler.flush()
+        handler.close()</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -305,6 +352,7 @@ def create_logger(file_log_level: int,
 <ul class="">
 <li><code><a title="sertit_utils.core.log_utils.create_logger" href="#sertit_utils.core.log_utils.create_logger">create_logger</a></code></li>
 <li><code><a title="sertit_utils.core.log_utils.init_logger" href="#sertit_utils.core.log_utils.init_logger">init_logger</a></code></li>
+<li><code><a title="sertit_utils.core.log_utils.shutdown_logger" href="#sertit_utils.core.log_utils.shutdown_logger">shutdown_logger</a></code></li>
 </ul>
 </li>
 </ul>
