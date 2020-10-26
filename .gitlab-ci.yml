@@ -11,10 +11,6 @@ pytest:
   script:
     - pytest -v --cov-report term --cov-report xml:cov.xml --cov=sertit_utils CI/SCRIPTS
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
-  artifacts:
-    when: always
-    paths:
-      - cov.xml
   tags:
     - linux
 
