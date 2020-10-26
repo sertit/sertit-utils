@@ -10,6 +10,7 @@ import rasterio
 from rasterio import features, warp, mask
 
 from sertit_utils.core import file_utils
+from sertit_utils.eo import geo_utils
 
 MAX_CORES = os.cpu_count() - 2
 
@@ -142,7 +143,7 @@ def collocate(master_meta: dict,
 
 
 def read(dataset: rasterio.DatasetReader,
-         resolution: Union[list, float],
+         resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset
@@ -155,7 +156,10 @@ def read(dataset: rasterio.DatasetReader,
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     """
-    if isinstance(resolution, float):
+    if resolution is None:
+        resolution = dataset.res
+
+    if isinstance(resolution, (int, float)):
         resolution = [resolution, resolution]
 
     if len(resolution) != 2:
@@ -259,3 +263,17 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
     assert dim_path.endswith(".data") and os.path.isdir(dim_path)
 
     return file_utils.get_file_in_dir(dim_path, img_name, extension='img')
+
+
+def get_extent(path: str) -> gpd.GeoDataFrame:
+    """
+    Get the extent of a raster as a geodataframe
+
+    Args:
+        path (str): Raster path
+
+    Returns:
+        gpd.GeoDataFrame: Extent as a geodataframe
+    """
+    with rasterio.open(path) as dst:
+        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)

@@ -5,7 +5,6 @@ from datetime import datetime
 from colorlog import ColoredFormatter
 
 LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
-LOGGER = logging.getLogger('sertit_utils')
 
 
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
@@ -33,15 +32,17 @@ def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
         curr_logger.addHandler(stream_handler)
 
 
-def create_logger(file_log_level: int,
+def create_logger(logger: logging.Logger,
+                  file_log_level: int,
                   stream_log_level: int,
                   output_folder: str,
                   name: str,
-                  other_logger_names: list) -> None:
+                  other_logger_names: list = None) -> None:
     """
     Create file and stream logger with colored logs.
 
     Args:
+        logger (logging.Logger): Logger to create
         file_log_level (int): File log level
         stream_log_level (int): Stream log level
         output_folder (str): Output folder
@@ -53,9 +54,9 @@ def create_logger(file_log_level: int,
     log_file_name = "{}_{}_log.txt".format(date, name)
 
     # Remove already created console handler
-    if LOGGER.handlers:
-        for handler in LOGGER.handlers:
-            LOGGER.removeHandler(handler)
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
 
     # Add stream handler
     color_fmt = ColoredFormatter(
@@ -84,7 +85,7 @@ def create_logger(file_log_level: int,
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(stream_log_level)
     stream_handler.setFormatter(color_fmt)
-    LOGGER.addHandler(stream_handler)
+    logger.addHandler(stream_handler)
 
     # Get logger file output path
     log_path = os.path.join(output_folder, log_file_name)
@@ -93,16 +94,29 @@ def create_logger(file_log_level: int,
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(file_log_level)
     file_handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    LOGGER.addHandler(file_handler)
+    logger.addHandler(file_handler)
 
     # Manage other loggers
-    for log_name in other_logger_names:
-        other_logger = logging.getLogger(log_name)
+    if other_logger_names:
+        for log_name in other_logger_names:
+            other_logger = logging.getLogger(log_name)
 
-        # Remove all handlers (brand new logger)
-        other_logger.handlers = []
+            # Remove all handlers (brand new logger)
+            other_logger.handlers = []
 
-        # Set the right format anf log level
-        other_logger.setLevel(logging.INFO)
-        other_logger.addHandler(stream_handler)
-        other_logger.addHandler(file_handler)
+            # Set the right format anf log level
+            other_logger.setLevel(logging.INFO)
+            other_logger.addHandler(stream_handler)
+            other_logger.addHandler(file_handler)
+
+def shutdown_logger(logger: logging.Logger):
+    """
+    Shutdown logger (if you need to delete the log file for example)
+
+    Args:
+        logger (logging.Logger): Logger to shutdown
+    """
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        handler.flush()
+        handler.close()

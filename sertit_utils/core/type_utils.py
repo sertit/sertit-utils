@@ -42,20 +42,6 @@ class ListEnum(Enum):
             raise ValueError("Non existing {} in {}".format(val, cls.list_values())) from ex
 
 
-def list_to_dict(dict_list):
-    """
-    Return a dictionary from a list
-
-    Args:
-        dict_list (list[str]): Dictionary as a list
-
-    Returns:
-        dict: Dictionary
-    """
-    dictionary = {dict_list[i]: dict_list[i + 1] for i in range(0, len(dict_list), 2)}
-    return dictionary
-
-
 def str_to_bool(bool_str):
     """
     Convert a string to a bool.
@@ -181,7 +167,7 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
     Returns:
         datetime.date: A date as a python datetime object
     """
-    if isinstance(date_str, datetime.date):
+    if isinstance(date_str, (datetime.datetime, datetime.date)):
         date = date_str
     else:
         try:
@@ -222,6 +208,20 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
     return list_of_dates
 
 
+def list_to_dict(dict_list):
+    """
+    Return a dictionary from a list
+
+    Args:
+        dict_list (list[str]): Dictionary as a list
+
+    Returns:
+        dict: Dictionary
+    """
+    dictionary = {dict_list[i]: dict_list[i + 1] for i in range(0, len(dict_list), 2)}
+    return dictionary
+
+
 def nested_set(dic, keys, value):
     """
     Set value in nested directory
@@ -250,7 +250,7 @@ def check_mandatory_keys(data_dict, mandatory_keys):
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise Exception("Missing mandatory key '{}' among {}".format(mandatory_key, pprint.pformat(data_dict)))
+            raise ValueError("Missing mandatory key '{}' among {}".format(mandatory_key, pprint.pformat(data_dict)))
 
 
 def remove_empty_values(list_with_empty_values):

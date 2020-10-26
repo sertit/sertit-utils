@@ -99,20 +99,6 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
     return gpd.GeoDataFrame(geometry=geometry, crs=geom_crs)
 
 
-def get_extent(path: str) -> gpd.GeoDataFrame:
-    """
-    Get the extent of a raster as a geodataframe
-
-    Args:
-        path (str): Raster path
-
-    Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
-    """
-    with rasterio.open(path) as dst:
-        return get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
-
-
 def set_kml_driver():
     """
     Set KML driver for Fiona data

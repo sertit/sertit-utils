@@ -1,13 +1,18 @@
 stages:
   - test
+  - publish
+
 pytest:
-  image: python:3.7-buster
+  image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
   stage: test
-  before_script:
-    - pip install --upgrade --no-deps --force-reinstall -r requirements.txt
-    - python setup.py develop
   script:
-    - pytest CI/SCRIPTS
+    - pytest CI/SCRIPTS -v
   tags:
-    - windows
-    - conda
+    - linux
+
+upload_wheel:linux:
+  image: python:3.7-buster
+  stage: publish
+  script:
+    - pip install twine
+    - TWINE_PASSWORD=${DEPLOY_PWD} TWINE_USERNAME=${DEPLOY_NAME} python -m twine upload --verbose --repository-url https://code.sertit.unistra.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*

@@ -11,8 +11,10 @@ import json
 import shutil
 import pickle
 import hashlib
+from json import JSONDecoder
 from tqdm import tqdm
 import numpy as np
+from dateutil import parser
 from datetime import date, datetime
 from json.encoder import JSONEncoder
 from typing import Union, Any
@@ -20,6 +22,15 @@ from typing import Union, Any
 from sertit_utils.core import sys_utils
 
 LOGGER = logging.getLogger('sertit_utils')
+
+
+def get_root_path():
+    """
+    Get the root path of the current disk:
+    - On Linux this returns `/`
+    - On Windows this returns `C:\\` or whatever the current drive is
+    """
+    return os.path.abspath(os.sep)
 
 
 def listdir_abspath(directory):
@@ -174,7 +185,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     LOGGER.debug("Unzipping products in %s", output)
     progress_bar = tqdm(archives)
     extracts = []
-    for archive in archives:
+    for archive in progress_bar:
         progress_bar.set_description('Unzipping products {}'.format(os.path.basename(archive)))
         extracts.append(extract_file(archive, output, overwrite))
 
@@ -328,6 +339,42 @@ def find_files(names: Union[list, str],
     return paths
 
 
+# subclass JSONDecoder
+class CustomDecoder(JSONDecoder):
+    """ Decoder for JSON with methods for datetimes """
+
+    # pylint: disable=W0221
+    # Override the default method
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        type = obj.get('_type')
+        if type is None:
+            return obj
+        else:
+            if type == 'datetime':
+                return parser.parse(obj['value'])
+            else:
+                raise TypeError("Non existing type: {}".format(type))
+
+
+# subclass JSONEncoder
+class CustomEncoder(JSONEncoder):
+    """ Encoder for JSON with methods for datetimes and np.int64 """
+
+    # pylint: disable=W0221
+    # Override the default method
+    def default(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return {"_type": "datetime",
+                    "value": obj.isoformat()}
+        if isinstance(obj, np.int64):
+            return int(obj)
+
+        return obj
+
+
 def read_json(json_file, print_file=True):
     """
     Read a JSON file
@@ -338,12 +385,14 @@ def read_json(json_file, print_file=True):
 
     Returns:
         dict: JSON data
-
     """
+
     with open(json_file) as file:
-        data = json.load(file)
+        data = json.load(file, cls=CustomDecoder)
         if print_file:
-            LOGGER.debug("Configuration file %s contains:\n%s", json_file, json.dumps(data, indent=3))
+            LOGGER.debug("Configuration file %s contains:\n%s",
+                         json_file,
+                         json.dumps(data, indent=3, cls=CustomEncoder))
     return data
 
 
@@ -355,21 +404,6 @@ def save_json(output_json: str, json_dict: dict) -> None:
         output_json (str): Output file
         json_dict (dict): Json dictionary
     """
-
-    # subclass JSONEncoder
-    class CustomEncoder(JSONEncoder):
-        """ Encoder for JSON with methods for datetimes and np.int64 """
-
-        # Parameters differ from overridden 'get_default_band_path' method (arguments-differ)
-        # pylint: disable=W0221
-        # Override the default method
-        def default(self, obj):
-            if isinstance(obj, (date, datetime)):
-                return obj.isoformat()
-            if isinstance(obj, np.int64):
-                return int(obj)
-
-            return obj
 
     with open(output_json, 'w') as output_config_file:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)
