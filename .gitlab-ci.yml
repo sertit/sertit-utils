@@ -6,10 +6,12 @@ pytest:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
   stage: test
   before_script:
-    - pip install pytest
+    - pip install coverage pytest pytest-cov
     - python setup.py develop
   script:
-    - pytest CI/SCRIPTS -v
+    - pytest -v --cov-report term --cov=sertit_utils CI/SCRIPTS
+    - coverage xml
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - linux
 
