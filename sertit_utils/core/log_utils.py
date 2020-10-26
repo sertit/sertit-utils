@@ -109,6 +109,7 @@ def create_logger(logger: logging.Logger,
             other_logger.addHandler(stream_handler)
             other_logger.addHandler(file_handler)
 
+
 def shutdown_logger(logger: logging.Logger):
     """
     Shutdown logger (if you need to delete the log file for example)

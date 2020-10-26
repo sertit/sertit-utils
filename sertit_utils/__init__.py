@@ -1,4 +1,3 @@
 """ ExtractEO base files and packages """
-__all__ = ['core_utils',
-           'sys_utils.py',
-           'geo_utils']
+__all__ = ['core',
+           'eo']

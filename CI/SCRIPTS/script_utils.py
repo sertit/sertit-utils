@@ -2,6 +2,7 @@ import os
 import rasterio
 import numpy as np
 
+
 def get_proj_path():
     """ Get project path """
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))

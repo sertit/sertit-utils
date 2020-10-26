@@ -349,14 +349,14 @@ class CustomDecoder(JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
-        type = obj.get('_type')
-        if type is None:
+        obj_type = obj.get('_type')
+        if obj_type is None:
             return obj
         else:
-            if type == 'datetime':
+            if obj_type == 'datetime':
                 return parser.parse(obj['value'])
             else:
-                raise TypeError("Non existing type: {}".format(type))
+                raise TypeError("Non existing type: {}".format(obj_type))
 
 
 # subclass JSONEncoder

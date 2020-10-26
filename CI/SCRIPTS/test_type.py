@@ -2,6 +2,7 @@
 import logging
 import pytest
 from datetime import datetime
+
 from sertit_utils.core import type_utils
 
 
@@ -10,8 +11,8 @@ def test_conversion():
     true_str = ("yes", "true", "t", "y", "1")
     false_str = ("no", "false", "f", "n", "0")
     for true, false in zip(true_str, false_str):
-        assert type_utils.str_to_bool(true) == True
-        assert type_utils.str_to_bool(false) == False
+        assert type_utils.str_to_bool(true)
+        assert not type_utils.str_to_bool(false)
 
     # Str to logging verbosity
     debug_str = ('debug', 'd', 10)
@@ -43,12 +44,11 @@ def test_list_dict():
     # Nested set
     res_dict = {"A": "T",
                 "R": 3,
-                "B":
-                    {"C":
-                         {"D": "value"
-                          }
-                     }
-                }
+                "B": {
+                    "C": {
+                        "D": "value"
+                    }
+                }}
     type_utils.nested_set(test_dict, ["B", "C", "D"], "value")
     assert test_dict == res_dict
 
@@ -63,6 +63,6 @@ def test_list_dict():
 
 def test_str():
     """ Test string function """
-    test_str = "ThisIsATest"
-    assert type_utils.snake_to_camel_case(type_utils.camel_to_snake_case(test_str)) == test_str
-    assert type_utils.to_cmd_string(test_str) == "\"{}\"".format(test_str)
+    tstr = "ThisIsATest"
+    assert type_utils.snake_to_camel_case(type_utils.camel_to_snake_case(tstr)) == tstr
+    assert type_utils.to_cmd_string(tstr) == "\"{}\"".format(tstr)

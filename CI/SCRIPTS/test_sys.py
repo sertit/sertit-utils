@@ -1,6 +1,5 @@
 """ Script testing the sys_utils """
 import os
-import sys
 from sertit_utils.core import sys_utils
 
 

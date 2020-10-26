@@ -6,7 +6,6 @@ import numpy as np
 import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
-import rasterio
 from rasterio import crs
 
 WGS84 = "EPSG:4326"

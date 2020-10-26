@@ -11,7 +11,7 @@ def test_geo():
     aoi_path = os.path.join(script_utils.get_ci_data_path(), "aoi.kml")
 
     # KML
-    geo_utils.set_kml_driver()  # An error will occur afterwards if this fct fails (we are attempting to open a KML file)
+    geo_utils.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)
 
     # AOI WKT
     aoi = geo_utils.get_aoi_wkt(aoi_path, as_str=False)
