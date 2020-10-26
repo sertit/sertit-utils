@@ -19,3 +19,5 @@ upload_wheel:linux:
   script:
     - pip install twine
     - TWINE_PASSWORD=${DEPLOY_PWD} TWINE_USERNAME=${DEPLOY_NAME} python -m twine upload --verbose --repository-url https://code.sertit.unistra.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  tags:
+    - linux
