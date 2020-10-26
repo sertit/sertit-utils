@@ -7,6 +7,7 @@ pytest:
   stage: test
   before_script:
     - pip install pytest
+    - python setup.py develop
   script:
     - pytest CI/SCRIPTS -v
   tags:
