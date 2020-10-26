@@ -15,7 +15,12 @@ LOGGER = logging.getLogger('sertit_utils')
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
-    Find the EPSG code of the UTM projection from a lon/lat in WGS84
+    Find the EPSG code of the UTM projection from a lon/lat in WGS84.
+
+    ```python
+    corresponding_utm_projection(lon=48.6, lat=7.8)  # Strasbourg
+    # >> "EPSG:32632"
+    ```
 
     Args:
         lon (float): Longitude (WGS84)
@@ -34,7 +39,7 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
 
 def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, float, float, float):
     """
-    Convert a polygon to its bounds, sorted as `left, bottom, right, top`.
+    Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
     Args:
         polygon (MultiPolygon): polygon to convert
@@ -55,7 +60,7 @@ def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, flo
 
 def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float) -> Polygon:
     """
-    Convert the bounds to a polygon
+    Convert the bounds to a `shapely.polygon`.
 
     Args:
         left (float): Left coordinates
@@ -100,7 +105,7 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
 
 def set_kml_driver():
     """
-    Set KML driver for Fiona data
+    Set KML driver for Fiona data (use it at your own risks !)
     """
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
     if 'LIBKML' not in drivers:
@@ -112,14 +117,14 @@ def set_kml_driver():
 def get_aoi_wkt(aoi_path, as_str=True):
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
-    or directly from a WKT file. The use of KML has been forced.
+    or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
 
     See: https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open
 
     It is assessed that:
 
-    - only one polygon composes the AOI (as only the first one is read)
-    - it should be specified in lat/lon if a WKT file is provided
+    - only **one** polygon composes the AOI (as only the first one is read)
+    - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
     Args:
         aoi_path (str): Absolute or relative path to an AOI.

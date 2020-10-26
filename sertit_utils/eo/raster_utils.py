@@ -17,7 +17,14 @@ MAX_CORES = os.cpu_count() - 2
 
 def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Vectorize a raster
+    Vectorize a raster.
+
+    **WARNING**:
+
+    - Please only use this function on a classified raster.
+    - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+        Please be careful.
+
 
     Args:
         path (str): Path to the raster
@@ -73,7 +80,11 @@ def ma_mask(ds_to_mask: rasterio.DatasetReader,
             nodata: Optional[int] = None,
             crop=False) -> (np.ma.masked_array, affine.Affine):
     """
-    Overload of rasterio mask function to create a masked_array
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
         ds_to_mask (rasterio.DatasetReader): Dataset to mask
@@ -109,7 +120,7 @@ def collocate(master_meta: dict,
               slave_meta: dict,
               resampling: Resampling = Resampling.nearest) -> (np.ma.masked_array, dict):
     """
-    Collocate two georeferenced arrays
+    Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
     Args:
         master_meta (dict): Master metadata
@@ -146,7 +157,8 @@ def read(dataset: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -> (np.ma.masked_array, dict):
     """
-    Read a raster dataset
+    Read a raster dataset from a `rasterio.Dataset`.
+
     Args:
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -246,9 +258,9 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
 
 def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
     """
-    Get the image path from a DIMAP data.
+    Get the image path from a *BEAM-DIMAP* data.
 
-    A BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.
+    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
 
     Args:
         dim_path (str): DIM path (.dim or .data)
@@ -267,13 +279,13 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
 
 def get_extent(path: str) -> gpd.GeoDataFrame:
     """
-    Get the extent of a raster as a geodataframe
+    Get the extent of a raster as a `geopandas.Geodataframe`.
 
     Args:
         path (str): Raster path
 
     Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
+        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     """
     with rasterio.open(path) as dst:
         return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)

@@ -46,7 +46,14 @@ MAX_CORES = os.cpu_count() - 2
 
 def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Vectorize a raster
+    Vectorize a raster.
+
+    **WARNING**:
+
+    - Please only use this function on a classified raster.
+    - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+        Please be careful.
+
 
     Args:
         path (str): Path to the raster
@@ -102,7 +109,11 @@ def ma_mask(ds_to_mask: rasterio.DatasetReader,
             nodata: Optional[int] = None,
             crop=False) -&gt; (np.ma.masked_array, affine.Affine):
     &#34;&#34;&#34;
-    Overload of rasterio mask function to create a masked_array
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
 
     Args:
         ds_to_mask (rasterio.DatasetReader): Dataset to mask
@@ -138,7 +149,7 @@ def collocate(master_meta: dict,
               slave_meta: dict,
               resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
-    Collocate two georeferenced arrays
+    Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
     Args:
         master_meta (dict): Master metadata
@@ -175,7 +186,8 @@ def read(dataset: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
-    Read a raster dataset
+    Read a raster dataset from a `rasterio.Dataset`.
+
     Args:
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -275,9 +287,9 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
 
 def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     &#34;&#34;&#34;
-    Get the image path from a DIMAP data.
+    Get the image path from a *BEAM-DIMAP* data.
 
-    A BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.
+    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
 
     Args:
         dim_path (str): DIM path (.dim or .data)
@@ -296,13 +308,13 @@ def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
 
 def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Get the extent of a raster as a geodataframe
+    Get the extent of a raster as a `geopandas.Geodataframe`.
 
     Args:
         path (str): Raster path
 
     Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
+        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     &#34;&#34;&#34;
     with rasterio.open(path) as dst:
         return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
@@ -319,7 +331,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">collocate</span></span>(<span>master_meta: dict, slave_arr: numpy.ma.core.MaskedArray, slave_meta: dict, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Collocate two georeferenced arrays</p>
+<div class="desc"><p>Collocate two georeferenced arrays: force the <em>slave</em> raster to be exactly georeferenced onto the <em>master</em> raster.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>master_meta</code></strong> :&ensp;<code>dict</code></dt>
@@ -345,7 +357,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
               slave_meta: dict,
               resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
-    Collocate two georeferenced arrays
+    Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
     Args:
         master_meta (dict): Master metadata
@@ -382,8 +394,8 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">get_dim_img_path</span></span>(<span>dim_path: str, img_name: str = '*') ‑> list</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the image path from a DIMAP data.</p>
-<p>A BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.</p>
+<div class="desc"><p>Get the image path from a <em>BEAM-DIMAP</em> data.</p>
+<p>A <em>BEAM-DIMAP</em> file cannot be opened by rasterio, although its .img file can.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>dim_path</code></strong> :&ensp;<code>str</code></dt>
@@ -402,9 +414,9 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 </summary>
 <pre><code class="python">def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     &#34;&#34;&#34;
-    Get the image path from a DIMAP data.
+    Get the image path from a *BEAM-DIMAP* data.
 
-    A BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.
+    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
 
     Args:
         dim_path (str): DIM path (.dim or .data)
@@ -425,7 +437,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">get_extent</span></span>(<span>path: str) ‑> geopandas.geodataframe.GeoDataFrame</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the extent of a raster as a geodataframe</p>
+<div class="desc"><p>Get the extent of a raster as a <code>geopandas.Geodataframe</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
@@ -434,7 +446,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>gpd.GeoDataFrame</code></dt>
-<dd>Extent as a geodataframe</dd>
+<dd>Extent as a <code>geopandas.Geodataframe</code></dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -442,13 +454,13 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 </summary>
 <pre><code class="python">def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Get the extent of a raster as a geodataframe
+    Get the extent of a raster as a `geopandas.Geodataframe`.
 
     Args:
         path (str): Raster path
 
     Returns:
-        gpd.GeoDataFrame: Extent as a geodataframe
+        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     &#34;&#34;&#34;
     with rasterio.open(path) as dst:
         return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
@@ -458,7 +470,9 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">ma_mask</span></span>(<span>ds_to_mask: rasterio.io.DatasetReader, extent: Union[shapely.geometry.polygon.Polygon, list], nodata: Union[int, NoneType] = None, crop=False) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'affine.Affine'>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Overload of rasterio mask function to create a masked_array</p>
+<div class="desc"><p>Overload of rasterio mask function in order to create a masked_array.</p>
+<p>The <code>mask</code> function doc can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.</p>
+<p>It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>ds_to_mask</code></strong> :&ensp;<code>rasterio.DatasetReader</code></dt>
@@ -481,7 +495,11 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
             nodata: Optional[int] = None,
             crop=False) -&gt; (np.ma.masked_array, affine.Affine):
     &#34;&#34;&#34;
-    Overload of rasterio mask function to create a masked_array
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
 
     Args:
         ds_to_mask (rasterio.DatasetReader): Dataset to mask
@@ -516,7 +534,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float] = None, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Read a raster dataset</p>
+<div class="desc"><p>Read a raster dataset from a <code>rasterio.Dataset</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>dataset</code></strong> :&ensp;<code>rasterio.DatasetReader</code></dt>
@@ -539,7 +557,8 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
          resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
-    Read a raster dataset
+    Read a raster dataset from a `rasterio.Dataset`.
+
     Args:
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -584,7 +603,13 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>def <span class="ident">vectorize</span></span>(<span>path: str, on_mask: bool = False, default_nodata: int = 0) ‑> geopandas.geodataframe.GeoDataFrame</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Vectorize a raster</p>
+<div class="desc"><p>Vectorize a raster.</p>
+<p><strong>WARNING</strong>:</p>
+<ul>
+<li>Please only use this function on a classified raster.</li>
+<li>This could take a while as the computing time directly depends on the number of polygons to vectorize.
+Please be careful.</li>
+</ul>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
@@ -605,7 +630,14 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 </summary>
 <pre><code class="python">def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Vectorize a raster
+    Vectorize a raster.
+
+    **WARNING**:
+
+    - Please only use this function on a classified raster.
+    - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+        Please be careful.
+
 
     Args:
         path (str): Path to the raster

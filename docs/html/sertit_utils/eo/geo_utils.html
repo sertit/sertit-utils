@@ -44,7 +44,12 @@ LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
 
 def corresponding_utm_projection(lon: float, lat: float) -&gt; str:
     &#34;&#34;&#34;
-    Find the EPSG code of the UTM projection from a lon/lat in WGS84
+    Find the EPSG code of the UTM projection from a lon/lat in WGS84.
+
+    ```python
+    corresponding_utm_projection(lon=48.6, lat=7.8)  # Strasbourg
+    # &gt;&gt; &#34;EPSG:32632&#34;
+    ```
 
     Args:
         lon (float): Longitude (WGS84)
@@ -63,7 +68,7 @@ def corresponding_utm_projection(lon: float, lat: float) -&gt; str:
 
 def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -&gt; (float, float, float, float):
     &#34;&#34;&#34;
-    Convert a polygon to its bounds, sorted as `left, bottom, right, top`.
+    Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
     Args:
         polygon (MultiPolygon): polygon to convert
@@ -84,7 +89,7 @@ def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -&gt; (float, 
 
 def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float) -&gt; Polygon:
     &#34;&#34;&#34;
-    Convert the bounds to a polygon
+    Convert the bounds to a `shapely.polygon`.
 
     Args:
         left (float): Left coordinates
@@ -129,7 +134,7 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
 
 def set_kml_driver():
     &#34;&#34;&#34;
-    Set KML driver for Fiona data
+    Set KML driver for Fiona data (use it at your own risks !)
     &#34;&#34;&#34;
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
     if &#39;LIBKML&#39; not in drivers:
@@ -141,14 +146,14 @@ def set_kml_driver():
 def get_aoi_wkt(aoi_path, as_str=True):
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
-    or directly from a WKT file. The use of KML has been forced.
+    or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
 
     See: https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open
 
     It is assessed that:
 
-    - only one polygon composes the AOI (as only the first one is read)
-    - it should be specified in lat/lon if a WKT file is provided
+    - only **one** polygon composes the AOI (as only the first one is read)
+    - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
     Args:
         aoi_path (str): Absolute or relative path to an AOI.
@@ -207,7 +212,10 @@ def get_aoi_wkt(aoi_path, as_str=True):
 <span>def <span class="ident">corresponding_utm_projection</span></span>(<span>lon: float, lat: float) ‑> str</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the EPSG code of the UTM projection from a lon/lat in WGS84</p>
+<div class="desc"><p>Find the EPSG code of the UTM projection from a lon/lat in WGS84.</p>
+<pre><code class="language-python">corresponding_utm_projection(lon=48.6, lat=7.8)  # Strasbourg
+# &gt;&gt; &quot;EPSG:32632&quot;
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>lon</code></strong> :&ensp;<code>float</code></dt>
@@ -226,7 +234,12 @@ def get_aoi_wkt(aoi_path, as_str=True):
 </summary>
 <pre><code class="python">def corresponding_utm_projection(lon: float, lat: float) -&gt; str:
     &#34;&#34;&#34;
-    Find the EPSG code of the UTM projection from a lon/lat in WGS84
+    Find the EPSG code of the UTM projection from a lon/lat in WGS84.
+
+    ```python
+    corresponding_utm_projection(lon=48.6, lat=7.8)  # Strasbourg
+    # &gt;&gt; &#34;EPSG:32632&#34;
+    ```
 
     Args:
         lon (float): Longitude (WGS84)
@@ -247,7 +260,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 <span>def <span class="ident">from_bounds_to_polygon</span></span>(<span>left: float, bottom: float, right: float, top: float) ‑> shapely.geometry.polygon.Polygon</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convert the bounds to a polygon</p>
+<div class="desc"><p>Convert the bounds to a <code>shapely.polygon</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>left</code></strong> :&ensp;<code>float</code></dt>
@@ -270,7 +283,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 </summary>
 <pre><code class="python">def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float) -&gt; Polygon:
     &#34;&#34;&#34;
-    Convert the bounds to a polygon
+    Convert the bounds to a `shapely.polygon`.
 
     Args:
         left (float): Left coordinates
@@ -289,7 +302,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 <span>def <span class="ident">from_polygon_to_bounds</span></span>(<span>polygon: Union[shapely.geometry.polygon.Polygon, shapely.geometry.multipolygon.MultiPolygon]) ‑> (<class 'float'>, <class 'float'>, <class 'float'>, <class 'float'>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convert a polygon to its bounds, sorted as <code>left, bottom, right, top</code>.</p>
+<div class="desc"><p>Convert a <code>shapely.polygon</code> to its bounds, sorted as <code>left, bottom, right, top</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>polygon</code></strong> :&ensp;<code>MultiPolygon</code></dt>
@@ -303,7 +316,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 </summary>
 <pre><code class="python">def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -&gt; (float, float, float, float):
     &#34;&#34;&#34;
-    Convert a polygon to its bounds, sorted as `left, bottom, right, top`.
+    Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
     Args:
         polygon (MultiPolygon): polygon to convert
@@ -327,12 +340,12 @@ def get_aoi_wkt(aoi_path, as_str=True):
 </code></dt>
 <dd>
 <div class="desc"><p>Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, &hellip;)
-or directly from a WKT file. The use of KML has been forced.</p>
+or directly from a WKT file. The use of KML has been forced (use it at your own risks !).</p>
 <p>See: <a href="https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open">https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open</a></p>
 <p>It is assessed that:</p>
 <ul>
-<li>only one polygon composes the AOI (as only the first one is read)</li>
-<li>it should be specified in lat/lon if a WKT file is provided</li>
+<li>only <strong>one</strong> polygon composes the AOI (as only the first one is read)</li>
+<li>it should be specified in lat/lon (WGS84) if a WKT file is provided</li>
 </ul>
 <h2 id="args">Args</h2>
 <dl>
@@ -354,14 +367,14 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <pre><code class="python">def get_aoi_wkt(aoi_path, as_str=True):
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
-    or directly from a WKT file. The use of KML has been forced.
+    or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
 
     See: https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open
 
     It is assessed that:
 
-    - only one polygon composes the AOI (as only the first one is read)
-    - it should be specified in lat/lon if a WKT file is provided
+    - only **one** polygon composes the AOI (as only the first one is read)
+    - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
     Args:
         aoi_path (str): Absolute or relative path to an AOI.
@@ -462,14 +475,14 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <span>def <span class="ident">set_kml_driver</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set KML driver for Fiona data</p></div>
+<div class="desc"><p>Set KML driver for Fiona data (use it at your own risks !)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def set_kml_driver():
     &#34;&#34;&#34;
-    Set KML driver for Fiona data
+    Set KML driver for Fiona data (use it at your own risks !)
     &#34;&#34;&#34;
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
     if &#39;LIBKML&#39; not in drivers:

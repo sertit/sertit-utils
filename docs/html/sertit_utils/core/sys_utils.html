@@ -67,7 +67,21 @@ def run_command(cmd: Union[str, list],
                 in_background: bool = True,
                 cwd=&#39;/&#39;) -&gt; (int, str):
     &#34;&#34;&#34;
-    Run command.
+    Run a command line.
+
+    ```python
+    cmd_hillshade = [&#34;gdaldem&#34;, &#34;--config&#34;,
+                     &#34;NUM_THREADS&#34;, &#34;1&#34;,
+                     &#34;hillshade&#34;, type_utils.to_cmd_string(dem_path),
+                     &#34;-compute_edges&#34;,
+                     &#34;-z&#34;, self.nof_threads,
+                     &#34;-az&#34;, azimuth,
+                     &#34;-alt&#34;, zenith,
+                     &#34;-of&#34;, &#34;GTiff&#34;,
+                     type_utils.to_cmd_string(hillshade_dem)]
+    # Run command
+    sys_utils.run_command(cmd_hillshade)
+    ```
 
     Args:
         cmd (str or list[str]): Command as a list
@@ -131,7 +145,7 @@ def run_command(cmd: Union[str, list],
 
 def get_function_name() -&gt; str:
     &#34;&#34;&#34;
-    Get function name.
+    Get the name of the function where this one is launched.
 
     Returns:
         str: Function&#39;s name
@@ -161,7 +175,16 @@ def in_docker():
 @contextmanager
 def chdir(newdir: str) -&gt; None:
     &#34;&#34;&#34;
-    Change current directory as a context manager
+    Change current directory as a context manage, ie:
+
+    ```python
+    from sertit_utils.core import sys_utils
+    folder = &#34;.&#34;
+    with chdir(folder):
+        # Current directory
+        pwd = os.getcwd()
+    ```
+
     Args:
         newdir (str): New directory
     &#34;&#34;&#34;
@@ -185,7 +208,13 @@ def chdir(newdir: str) -&gt; None:
 <span>def <span class="ident">chdir</span></span>(<span>newdir: str) ‑> NoneType</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Change current directory as a context manager</p>
+<div class="desc"><p>Change current directory as a context manage, ie:</p>
+<pre><code class="language-python">from sertit_utils.core import sys_utils
+folder = &quot;.&quot;
+with chdir(folder):
+    # Current directory
+    pwd = os.getcwd()
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>newdir</code></strong> :&ensp;<code>str</code></dt>
@@ -198,7 +227,16 @@ def chdir(newdir: str) -&gt; None:
 <pre><code class="python">@contextmanager
 def chdir(newdir: str) -&gt; None:
     &#34;&#34;&#34;
-    Change current directory as a context manager
+    Change current directory as a context manage, ie:
+
+    ```python
+    from sertit_utils.core import sys_utils
+    folder = &#34;.&#34;
+    with chdir(folder):
+        # Current directory
+        pwd = os.getcwd()
+    ```
+
     Args:
         newdir (str): New directory
     &#34;&#34;&#34;
@@ -215,7 +253,7 @@ def chdir(newdir: str) -&gt; None:
 <span>def <span class="ident">get_function_name</span></span>(<span>) ‑> str</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get function name.</p>
+<div class="desc"><p>Get the name of the function where this one is launched.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>str</code></dt>
@@ -227,7 +265,7 @@ def chdir(newdir: str) -&gt; None:
 </summary>
 <pre><code class="python">def get_function_name() -&gt; str:
     &#34;&#34;&#34;
-    Get function name.
+    Get the name of the function where this one is launched.
 
     Returns:
         str: Function&#39;s name
@@ -272,7 +310,19 @@ def chdir(newdir: str) -&gt; None:
 <span>def <span class="ident">run_command</span></span>(<span>cmd: Union[str, list], timeout: float = None, check_return_value: bool = True, in_background: bool = True, cwd='/') ‑> (<class 'int'>, <class 'str'>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run command.</p>
+<div class="desc"><p>Run a command line.</p>
+<pre><code class="language-python">cmd_hillshade = [&quot;gdaldem&quot;, &quot;--config&quot;,
+                 &quot;NUM_THREADS&quot;, &quot;1&quot;,
+                 &quot;hillshade&quot;, type_utils.to_cmd_string(dem_path),
+                 &quot;-compute_edges&quot;,
+                 &quot;-z&quot;, self.nof_threads,
+                 &quot;-az&quot;, azimuth,
+                 &quot;-alt&quot;, zenith,
+                 &quot;-of&quot;, &quot;GTiff&quot;,
+                 type_utils.to_cmd_string(hillshade_dem)]
+# Run command
+sys_utils.run_command(cmd_hillshade)
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>cmd</code></strong> :&ensp;<code>str</code> or <code>list[str]</code></dt>
@@ -301,7 +351,21 @@ def chdir(newdir: str) -&gt; None:
                 in_background: bool = True,
                 cwd=&#39;/&#39;) -&gt; (int, str):
     &#34;&#34;&#34;
-    Run command.
+    Run a command line.
+
+    ```python
+    cmd_hillshade = [&#34;gdaldem&#34;, &#34;--config&#34;,
+                     &#34;NUM_THREADS&#34;, &#34;1&#34;,
+                     &#34;hillshade&#34;, type_utils.to_cmd_string(dem_path),
+                     &#34;-compute_edges&#34;,
+                     &#34;-z&#34;, self.nof_threads,
+                     &#34;-az&#34;, azimuth,
+                     &#34;-alt&#34;, zenith,
+                     &#34;-of&#34;, &#34;GTiff&#34;,
+                     type_utils.to_cmd_string(hillshade_dem)]
+    # Run command
+    sys_utils.run_command(cmd_hillshade)
+    ```
 
     Args:
         cmd (str or list[str]): Command as a list

@@ -17,18 +17,59 @@ class ListEnum(Enum):
 
     @classmethod
     def list_values(cls) -> list:
-        """ Get the value list of this enum """
+        """
+        Get the value list of this enum
+
+        ```python
+        @unique
+        class TsxPolarization(ListEnum):
+            SINGLE = "S"  # Single
+            DUAL = "D"  # Dual
+            QUAD = "Q"  # Quad
+            TWIN = "T"  # Twin
+
+        TsxPolarization.list_values()
+        # >> ["S", "D", "Q", "T"]
+        ```
+
+        """
         return list(map(lambda c: c.value, cls))
 
     @classmethod
     def list_names(cls) -> list:
-        """ Get the name list of this enum """
+        """
+        Get the name list of this enum:
+
+        ```python
+        @unique
+        class TsxPolarization(ListEnum):
+            SINGLE = "S"  # Single
+            DUAL = "D"  # Dual
+            QUAD = "Q"  # Quad
+            TWIN = "T"  # Twin
+
+        TsxPolarization.list_values()
+        # >> ["SINGLE", "DUAL", "QUAD", "TWIN"]
+        ```
+        """
         return list(map(lambda c: c.name, cls))
 
     @classmethod
     def from_value(cls, val: str) -> 'ListEnum':
         """
-        Get the enum class from its value
+        Get the enum class from its value:
+
+        ```python
+        @unique
+        class TsxPolarization(ListEnum):
+            SINGLE = "S"  # Single
+            DUAL = "D"  # Dual
+            QUAD = "Q"  # Quad
+            TWIN = "T"  # Twin
+
+        TsxPolarization.from_value("Q")
+        # >> <TsxPolarization.QUAD: 'Q'>
+        ```
 
         Args:
             val (str): Value of the Enum
@@ -46,10 +87,10 @@ def str_to_bool(bool_str):
     """
     Convert a string to a bool.
 
-    Accepted values (in any letter case):
+    Accepted values (compared in lower case):
 
-    - True <=> yes, true, t, 1
-    - True <=> no, false, f, 0
+    - `True` <=> `yes`, `true`, `t`, `1`
+    - `False` <=> `no`, `false`, `f`, `0`
 
     Args:
         bool_str: Bool as a string
@@ -76,12 +117,12 @@ def str_to_bool(bool_str):
 
 def str_to_verbosity(verbosity_str):
     """
-    Return a logging level from a string.
+    Return a logging level from a string (compared in lower case).
 
-    - DEBUG   <=> {debug, d, 10}
-    - INFO    <=> {info, i, 20}
-    - WARNING <=> {warning, w, warn}
-    - ERROR   <=> {error, e, err}
+    - `DEBUG`   <=> {`debug`, `d`, `10`}
+    - `INFO`    <=> {`info`, `i`, `20`}
+    - `WARNING` <=> {`warning`, `w`, `warn`}
+    - `ERROR`   <=> {`error`, `e`, `err`}
 
     Args:
         verbosity_str (str): String to be converted
@@ -114,11 +155,11 @@ def str_to_verbosity(verbosity_str):
 
 def str_to_list(list_str, additional_separator='', letter_case=None, keyword_list=None):
     """
-    Convert str to list with ',', ';', ' ' separators.
+    Convert str to list with `,`, `;`, ` ` separators.
 
     Args:
         list_str (str): List as a string
-        additional_separator (str): Additional separators. Base ones are ',', ';', ' '.
+        additional_separator (str): Additional separators. Base ones are `,`, `;`, ` `.
         letter_case (str): {none, 'lower', 'upper'}
         keyword_list (list): List of keywords that can appear
     Returns:
@@ -158,7 +199,14 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
 
 def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
     """
-    Convert str to date
+    Convert string to a `datetime.datetime`:
+
+    ```python
+    # Default date fmt = "%Y-%m-%dT%H:%M:%S"
+    date_str = "2020-05-05T08:05:15"
+    str_to_date(date_str)
+    # >> datetime(2020, 5, 5, 8, 5, 15)
+    ```
 
     Args:
         date_str (str): Date as a string
@@ -189,7 +237,15 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
 
 def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = ''):
     """
-    Convert str to date
+    Convert a string containing a list of dates to a list of `datetime.datetime`.
+
+
+    ```python
+    # Default date fmt = "%Y-%m-%dT%H:%M:%S"
+    date_str = "2020-05-05T08:05:15, 2020-05-05T08:05:15; 2020-05-05T08:05:15"
+    str_to_date(date_str)
+    # >> [datetime(2020, 5, 5, 8, 5, 15), datetime(2020, 5, 5, 8, 5, 15), datetime(2020, 5, 5, 8, 5, 15)]
+    ```
 
     Args:
         date_str (str): Date as a string
@@ -210,7 +266,13 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
 
 def list_to_dict(dict_list):
     """
-    Return a dictionary from a list
+    Return a dictionary from a list `[key, value, key_2, value_2...]`
+
+    ```python
+    list = ["A","T", "R", 3]
+    list_to_dict(list)
+    # >> {"A": "T", "R": 3}
+    ```
 
     Args:
         dict_list (list[str]): Dictionary as a list
@@ -224,7 +286,24 @@ def list_to_dict(dict_list):
 
 def nested_set(dic, keys, value):
     """
-    Set value in nested directory
+    Set value in nested directory:
+
+    ```python
+    dict = {"A": "T", "R": 3}
+    nested_set(test_dict, keys=["B", "C", "D"], value="value")
+    # >>
+    # {
+    # "A": "T",
+    # "R": 3,
+    # "B": {
+    #      "C": {
+    #           "D": "value"
+    #           }
+    #      }
+    # }
+    ```
+
+
 
     Args:
         dic (dict): Dictionary
@@ -236,12 +315,18 @@ def nested_set(dic, keys, value):
     dic[keys[-1]] = value
 
 
-def check_mandatory_keys(data_dict, mandatory_keys):
+def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
     """
     Check all mandatory argument in a dictionary.
     Raise an exception if a mandatory argument is missing.
 
-    Note: nested keys do not work here !
+    **Note**: nested keys do not work here !
+
+    ```python
+    dict = {"A": "T", "R": 3}
+    check_mandatory_keys(dict, ["A", "R"])  # Returns nothing, is OK
+    check_mandatory_keys(dict, ["C"])  # Raises Value Error, is NOK
+    ```
 
     Args:
         data_dict (dict): Data dictionary to be checked
@@ -255,7 +340,14 @@ def check_mandatory_keys(data_dict, mandatory_keys):
 
 def remove_empty_values(list_with_empty_values):
     """
-    Remove empty values from list
+    Remove empty values from list:
+
+    ```python
+    list = ["A", "T", "R", "", 3, None]
+    list_to_dict(list)
+    # >> ["A", "T", "R", 3]
+    ```
+
     Args:
         list_with_empty_values (list): List with empty values
     Returns:
@@ -268,6 +360,20 @@ def remove_empty_values(list_with_empty_values):
 def find_by_key(data: dict, target: str) -> Any:
     """
     Find a value by key in a dictionary.
+
+    ```python
+    dict = {
+            "A": "T",
+            "R": 3,
+            "B": {
+                "C": {
+                    "D": "value"
+                     }
+                 }
+           }
+    find_by_key(dict, "D")
+    # >> "value"
+    ```
 
     Args:
         data (dict): Dict to walk through
@@ -291,7 +397,14 @@ def find_by_key(data: dict, target: str) -> Any:
 def to_cmd_string(unquoted_str: str) -> str:
     """
     Add quotes around the string in order to make the command understand it's a string
-    (useful with tricky symbols like & or white spaces).
+    (useful with tricky symbols like & or white spaces):
+
+    ```python
+    # This str wont work in the terminal without quotes (because of the &)
+    pb_str = r"D:\Minab_4-DA&VHR\Minab_4-DA&VHR.shp"
+    to_cmd_string(pb_str)
+    # >> "\"D:\Minab_4-DA&VHR\Minab_4-DA&VHR.shp\""
+    ```
 
     Args:
         unquoted_str (str): String to update
@@ -309,7 +422,7 @@ def to_cmd_string(unquoted_str: str) -> str:
 
 def snake_to_camel_case(snake_str: str) -> str:
     """
-    Convert a snake_case string to CamelCase.
+    Convert a `snake_case` string to `CamelCase`.
 
     Args:
         snake_str (str): String formatted in snake_case
@@ -322,7 +435,7 @@ def snake_to_camel_case(snake_str: str) -> str:
 
 def camel_to_snake_case(snake_str: str) -> str:
     """
-    Convert a CamelCase string to snake_case.
+    Convert a `CamelCase` string to `snake_case`.
 
     Args:
         snake_str (str): String formatted in CamelCase

@@ -56,8 +56,9 @@ LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
 def get_root_path():
     &#34;&#34;&#34;
     Get the root path of the current disk:
+
     - On Linux this returns `/`
-    - On Windows this returns `C:\\` or whatever the current drive is
+    - On Windows this returns `C:\\\\` or whatever the current drive is
     &#34;&#34;&#34;
     return os.path.abspath(os.sep)
 
@@ -65,6 +66,7 @@ def get_root_path():
 def listdir_abspath(directory):
     &#34;&#34;&#34;
     Get absolute path of all files in the given directory.
+
     It is the same function than `os.listdir` but returning absolute paths.
 
     Args:
@@ -86,7 +88,8 @@ def to_abspath(path_str):
     - If it is a folder, it creates it
 
     To be used with argparse like:
-    ```python:
+
+    ```python
     import argparse
     parser = argparse.ArgumentParser()
 
@@ -243,7 +246,7 @@ def get_file_name(file_path: str) -&gt; str:
 
 def remove(path: str) -&gt; None:
     &#34;&#34;&#34;
-    Delete a file or a directory (recursively) using `rmtree` or `remove`.
+    Delete a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
 
     Args:
         path (str): Path to be removed
@@ -942,9 +945,11 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
 <span>def <span class="ident">get_root_path</span></span>(<span>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the root path of the current disk:
-- On Linux this returns <code>/</code>
-- On Windows this returns <code>C:\</code> or whatever the current drive is</p></div>
+<div class="desc"><p>Get the root path of the current disk:</p>
+<ul>
+<li>On Linux this returns <code>/</code></li>
+<li>On Windows this returns <code>C:\\</code> or whatever the current drive is</li>
+</ul></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -952,8 +957,9 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
 <pre><code class="python">def get_root_path():
     &#34;&#34;&#34;
     Get the root path of the current disk:
+
     - On Linux this returns `/`
-    - On Windows this returns `C:\\` or whatever the current drive is
+    - On Windows this returns `C:\\\\` or whatever the current drive is
     &#34;&#34;&#34;
     return os.path.abspath(os.sep)</code></pre>
 </details>
@@ -999,8 +1005,8 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
 <span>def <span class="ident">listdir_abspath</span></span>(<span>directory)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get absolute path of all files in the given directory.
-It is the same function than <code>os.listdir</code> but returning absolute paths.</p>
+<div class="desc"><p>Get absolute path of all files in the given directory.</p>
+<p>It is the same function than <code>os.listdir</code> but returning absolute paths.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>directory</code></strong> :&ensp;<code>str</code></dt>
@@ -1018,6 +1024,7 @@ It is the same function than <code>os.listdir</code> but returning absolute path
 <pre><code class="python">def listdir_abspath(directory):
     &#34;&#34;&#34;
     Get absolute path of all files in the given directory.
+
     It is the same function than `os.listdir` but returning absolute paths.
 
     Args:
@@ -1139,7 +1146,7 @@ It is the same function than <code>os.listdir</code> but returning absolute path
 <span>def <span class="ident">remove</span></span>(<span>path: str) ‑> NoneType</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Delete a file or a directory (recursively) using <code>rmtree</code> or <code><a title="sertit_utils.core.file_utils.remove" href="#sertit_utils.core.file_utils.remove">remove()</a></code>.</p>
+<div class="desc"><p>Delete a file or a directory (recursively) using <code>shutil.rmtree</code> or <code>os.remove</code>.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
@@ -1151,7 +1158,7 @@ It is the same function than <code>os.listdir</code> but returning absolute path
 </summary>
 <pre><code class="python">def remove(path: str) -&gt; None:
     &#34;&#34;&#34;
-    Delete a file or a directory (recursively) using `rmtree` or `remove`.
+    Delete a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
 
     Args:
         path (str): Path to be removed
@@ -1282,16 +1289,16 @@ It is the same function than <code>os.listdir</code> but returning absolute path
 <li>If it is a file (aka has an extension), it raises an exception</li>
 <li>If it is a folder, it creates it</li>
 </ul>
-<p>To be used with argparse like:
-```python:
-import argparse
-parser = argparse.ArgumentParser()</p>
-<h1 id="add-config-file-path-key">Add config file path key</h1>
-<p>parser.add_argument("&ndash;config",
-help="Config file path (absolute or relative)",
-type=to_abspath,
-required=True)
-```</p>
+<p>To be used with argparse like:</p>
+<pre><code class="language-python">import argparse
+parser = argparse.ArgumentParser()
+
+# Add config file path key
+parser.add_argument(&quot;--config&quot;,
+                    help=&quot;Config file path (absolute or relative)&quot;,
+                    type=to_abspath,
+                    required=True)
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>path_str</code></strong> :&ensp;<code>str</code></dt>
@@ -1316,7 +1323,8 @@ required=True)
     - If it is a folder, it creates it
 
     To be used with argparse like:
-    ```python:
+
+    ```python
     import argparse
     parser = argparse.ArgumentParser()
 

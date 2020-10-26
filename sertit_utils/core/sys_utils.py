@@ -38,7 +38,21 @@ def run_command(cmd: Union[str, list],
                 in_background: bool = True,
                 cwd='/') -> (int, str):
     """
-    Run command.
+    Run a command line.
+
+    ```python
+    cmd_hillshade = ["gdaldem", "--config",
+                     "NUM_THREADS", "1",
+                     "hillshade", type_utils.to_cmd_string(dem_path),
+                     "-compute_edges",
+                     "-z", self.nof_threads,
+                     "-az", azimuth,
+                     "-alt", zenith,
+                     "-of", "GTiff",
+                     type_utils.to_cmd_string(hillshade_dem)]
+    # Run command
+    sys_utils.run_command(cmd_hillshade)
+    ```
 
     Args:
         cmd (str or list[str]): Command as a list
@@ -102,7 +116,7 @@ def run_command(cmd: Union[str, list],
 
 def get_function_name() -> str:
     """
-    Get function name.
+    Get the name of the function where this one is launched.
 
     Returns:
         str: Function's name
@@ -132,7 +146,16 @@ def in_docker():
 @contextmanager
 def chdir(newdir: str) -> None:
     """
-    Change current directory as a context manager
+    Change current directory as a context manage, ie:
+
+    ```python
+    from sertit_utils.core import sys_utils
+    folder = "."
+    with chdir(folder):
+        # Current directory
+        pwd = os.getcwd()
+    ```
+
     Args:
         newdir (str): New directory
     """

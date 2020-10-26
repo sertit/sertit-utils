@@ -27,8 +27,9 @@ LOGGER = logging.getLogger('sertit_utils')
 def get_root_path():
     """
     Get the root path of the current disk:
+
     - On Linux this returns `/`
-    - On Windows this returns `C:\\` or whatever the current drive is
+    - On Windows this returns `C:\\\\` or whatever the current drive is
     """
     return os.path.abspath(os.sep)
 
@@ -36,6 +37,7 @@ def get_root_path():
 def listdir_abspath(directory):
     """
     Get absolute path of all files in the given directory.
+
     It is the same function than `os.listdir` but returning absolute paths.
 
     Args:
@@ -57,7 +59,8 @@ def to_abspath(path_str):
     - If it is a folder, it creates it
 
     To be used with argparse like:
-    ```python:
+
+    ```python
     import argparse
     parser = argparse.ArgumentParser()
 
@@ -214,7 +217,7 @@ def get_file_name(file_path: str) -> str:
 
 def remove(path: str) -> None:
     """
-    Delete a file or a directory (recursively) using `rmtree` or `remove`.
+    Delete a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
 
     Args:
         path (str): Path to be removed
