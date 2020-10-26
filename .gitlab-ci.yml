@@ -5,6 +5,8 @@ stages:
 pytest:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
   stage: test
+  before_script:
+    - pip install pytest
   script:
     - pytest CI/SCRIPTS -v
   tags:
