@@ -45,7 +45,8 @@ def test_raster():
         # Vectorize
         vect = raster_utils.vectorize(raster_path)
         vect_truth = gpd.read_file(vect_truth_path)
-        assert vect.envelope.equals(vect_truth.envelope).all()
+        equality = vect.envelope.equals(vect_truth.envelope)
+        assert equality if isinstance(equality, bool) else equality.all()
 
     # Tests
     script_utils.assert_raster_equals(raster_path, raster_out)

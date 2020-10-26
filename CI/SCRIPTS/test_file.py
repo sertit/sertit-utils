@@ -4,28 +4,29 @@ import tempfile
 import filecmp
 import numpy as np
 from datetime import datetime
-from sertit_utils.core import file_utils
+from sertit_utils.core import file_utils, sys_utils
 from CI.SCRIPTS import script_utils
 
 
 def test_paths():
     """ Test path functions """
-    # Relative path
     curr_file = os.path.realpath(__file__)
     curr_dir = os.path.dirname(curr_file)
-    curr_rel_path = file_utils.real_rel_path(curr_file, curr_dir)
-    assert curr_rel_path == os.path.join(".", os.path.basename(__file__))
+    with sys_utils.chdir(curr_dir):
+        # Relative path
+        curr_rel_path = file_utils.real_rel_path(curr_file, curr_dir)
+        assert curr_rel_path == os.path.join(".", os.path.basename(__file__))
 
-    # Abspath
-    abs_file = file_utils.to_abspath(curr_rel_path)
-    assert abs_file == curr_file
+        # Abspath
+        abs_file = file_utils.to_abspath(curr_rel_path)
+        assert abs_file == curr_file
 
-    # Listdir abspath
-    list_abs = file_utils.listdir_abspath(curr_dir)
-    assert curr_file in list_abs
+        # Listdir abspath
+        list_abs = file_utils.listdir_abspath(curr_dir)
+        assert curr_file in list_abs
 
-    # Root path
-    assert abs_file.startswith(file_utils.get_root_path())
+        # Root path
+        assert abs_file.startswith(file_utils.get_root_path())
 
 
 def test_extract():
