@@ -297,7 +297,7 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
     if expand:
         result_array = np.expand_dims(result_array, axis=0)
 
-    return result_array
+    return result_array, meta
 
 
 def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:

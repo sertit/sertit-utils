@@ -11,6 +11,7 @@ def test_raster():
     """ Test raster functions """
     raster_path = os.path.join(script_utils.get_ci_data_path(), "raster.tif")
     raster_masked_path = os.path.join(script_utils.get_ci_data_path(), "raster_masked.tif")
+    raster_sieved_path = os.path.join(script_utils.get_ci_data_path(), "raster_sieved.tif")
     vect_truth_path = os.path.join(script_utils.get_ci_data_path(), "vector.geojson")
     tmp_dir = tempfile.TemporaryDirectory()
 
@@ -38,9 +39,14 @@ def test_raster():
         mask_arr, mask_tr = raster_utils.ma_mask(dst, mask.envelope, crop=False)
         raster_utils.write(mask_arr, raster_masked_out, meta, transform=mask_tr)
 
+        # Sieve
+        sieve_out = os.path.join(script_utils.get_ci_data_path(), "raster_sieved.tif")
+        sieve_arr, sieve_meta = raster_utils.sieve(raster, meta, sieve_thresh=20, connectivity=4)
+        raster_utils.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
+
         # Collocate
-        coll_arr, coll_meta = raster_utils.collocate(dst.meta, mask_arr, dst.meta)  # Just hope that it doesnt crash
-        assert coll_meta == dst.meta
+        coll_arr, coll_meta = raster_utils.collocate(meta, raster, meta)  # Just hope that it doesnt crash
+        assert coll_meta == meta
 
         # Vectorize
         vect = raster_utils.vectorize(raster_path)
@@ -51,6 +57,7 @@ def test_raster():
     # Tests
     script_utils.assert_raster_equals(raster_path, raster_out)
     script_utils.assert_raster_equals(raster_masked_out, raster_masked_path)
+    script_utils.assert_raster_equals(sieve_out, raster_sieved_path)
 
     # Cleanup
     tmp_dir.cleanup()
