@@ -145,9 +145,9 @@ def ma_mask(ds_to_mask: rasterio.DatasetReader,
 
 
 def collocate(master_meta: dict,
-              slave_arr: np.ma.masked_array,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
               slave_meta: dict,
-              resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
+              resampling: Resampling = Resampling.nearest) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
     &#34;&#34;&#34;
     Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
@@ -285,6 +285,50 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
         dst.write(raster)
 
 
+def sieve(array: Union[np.ma.masked_array, np.ndarray],
+          out_meta: dict,
+          sieve_thresh: int,
+          connectivity: int = 4) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+
+    Forces the output to `np.uint8` (as only classified rasters should be sieved)
+
+    Args:
+        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        out_meta (dict): Metadata to update
+        sieve_thresh (int): Sieving threshold in pixels
+        connectivity (int): Connectivity, either 4 or 8
+
+    Returns:
+        Union[np.ma.masked_array, np.ndarray], dict: Sieved array and updated meta
+    &#34;&#34;&#34;
+    assert connectivity in [4, 8]
+
+    # Read extraction array
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Convert to np.uint8 if needed
+    dtype = np.uint8
+    meta = out_meta.copy()
+    if meta[&#39;dtype&#39;] != dtype:
+        array = array.astype(dtype)
+        meta[&#39;dtype&#39;] = dtype
+
+    # Sieve
+    result_array = np.empty(array.shape, dtype=array.dtype)
+    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+
+    # Use this trick to get the array back to &#39;normal&#39;
+    if expand:
+        result_array = np.expand_dims(result_array, axis=0)
+
+    return result_array
+
+
 def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
     &#34;&#34;&#34;
     Get the image path from a *BEAM-DIMAP* data.
@@ -328,7 +372,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sertit_utils.eo.raster_utils.collocate"><code class="name flex">
-<span>def <span class="ident">collocate</span></span>(<span>master_meta: dict, slave_arr: numpy.ma.core.MaskedArray, slave_meta: dict, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
+<span>def <span class="ident">collocate</span></span>(<span>master_meta: dict, slave_arr: Union[numpy.ma.core.MaskedArray, numpy.ndarray], slave_meta: dict, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (typing.Union[numpy.ma.core.MaskedArray, numpy.ndarray], <class 'dict'>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Collocate two georeferenced arrays: force the <em>slave</em> raster to be exactly georeferenced onto the <em>master</em> raster.</p>
@@ -353,9 +397,9 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def collocate(master_meta: dict,
-              slave_arr: np.ma.masked_array,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
               slave_meta: dict,
-              resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
+              resampling: Resampling = Resampling.nearest) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
     &#34;&#34;&#34;
     Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
@@ -599,6 +643,76 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     return array, dst_meta</code></pre>
 </details>
 </dd>
+<dt id="sertit_utils.eo.raster_utils.sieve"><code class="name flex">
+<span>def <span class="ident">sieve</span></span>(<span>array: Union[numpy.ma.core.MaskedArray, numpy.ndarray], out_meta: dict, sieve_thresh: int, connectivity: int = 4) ‑> (typing.Union[numpy.ma.core.MaskedArray, numpy.ndarray], <class 'dict'>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sieving, overloads rasterio function with raster shaped like (1, h, w).</p>
+<p>Forces the output to <code>np.uint8</code> (as only classified rasters should be sieved)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>array</code></strong> :&ensp;<code>Union[np.ma.masked_array, np.ndarray]</code></dt>
+<dd>Array to sieve</dd>
+<dt><strong><code>out_meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Metadata to update</dd>
+<dt><strong><code>sieve_thresh</code></strong> :&ensp;<code>int</code></dt>
+<dd>Sieving threshold in pixels</dd>
+<dt><strong><code>connectivity</code></strong> :&ensp;<code>int</code></dt>
+<dd>Connectivity, either 4 or 8</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[np.ma.masked_array, np.ndarray], dict</code></dt>
+<dd>Sieved array and updated meta</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sieve(array: Union[np.ma.masked_array, np.ndarray],
+          out_meta: dict,
+          sieve_thresh: int,
+          connectivity: int = 4) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+
+    Forces the output to `np.uint8` (as only classified rasters should be sieved)
+
+    Args:
+        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        out_meta (dict): Metadata to update
+        sieve_thresh (int): Sieving threshold in pixels
+        connectivity (int): Connectivity, either 4 or 8
+
+    Returns:
+        Union[np.ma.masked_array, np.ndarray], dict: Sieved array and updated meta
+    &#34;&#34;&#34;
+    assert connectivity in [4, 8]
+
+    # Read extraction array
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Convert to np.uint8 if needed
+    dtype = np.uint8
+    meta = out_meta.copy()
+    if meta[&#39;dtype&#39;] != dtype:
+        array = array.astype(dtype)
+        meta[&#39;dtype&#39;] = dtype
+
+    # Sieve
+    result_array = np.empty(array.shape, dtype=array.dtype)
+    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+
+    # Use this trick to get the array back to &#39;normal&#39;
+    if expand:
+        result_array = np.expand_dims(result_array, axis=0)
+
+    return result_array</code></pre>
+</details>
+</dd>
 <dt id="sertit_utils.eo.raster_utils.vectorize"><code class="name flex">
 <span>def <span class="ident">vectorize</span></span>(<span>path: str, on_mask: bool = False, default_nodata: int = 0) ‑> geopandas.geodataframe.GeoDataFrame</span>
 </code></dt>
@@ -791,6 +905,7 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <li><code><a title="sertit_utils.eo.raster_utils.get_extent" href="#sertit_utils.eo.raster_utils.get_extent">get_extent</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.ma_mask" href="#sertit_utils.eo.raster_utils.ma_mask">ma_mask</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.read" href="#sertit_utils.eo.raster_utils.read">read</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.sieve" href="#sertit_utils.eo.raster_utils.sieve">sieve</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.vectorize" href="#sertit_utils.eo.raster_utils.vectorize">vectorize</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.write" href="#sertit_utils.eo.raster_utils.write">write</a></code></li>
 </ul>

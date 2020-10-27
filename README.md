@@ -52,6 +52,7 @@ Basically, these functions are overloads of rasterio's functions:
 - Read/write overload of rasterio functions
 - Masking with masked array
 - Collocation (superimpose)
+- Sieving
 - Vectorization
 - Get the path of the BEAM-DIMAP image that can be read by rasterio
 
