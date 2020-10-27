@@ -116,9 +116,9 @@ def ma_mask(ds_to_mask: rasterio.DatasetReader,
 
 
 def collocate(master_meta: dict,
-              slave_arr: np.ma.masked_array,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
               slave_meta: dict,
-              resampling: Resampling = Resampling.nearest) -> (np.ma.masked_array, dict):
+              resampling: Resampling = Resampling.nearest) -> (Union[np.ma.masked_array, np.ndarray], dict):
     """
     Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
 
