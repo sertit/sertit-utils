@@ -33,6 +33,10 @@ File gathering file-related functions:
 - Test if in docker
 
 ### Type
+- Conversion from string to bool, logging level, list, list of dates...
+- Function on lists: convert a list to a dict, remove empty values...
+- Function on dicts: nested set, check mandatory keys, find by key
+- Case conversion (`snake_case` to/from `CamelCase`) 
 
 ## EO
 
