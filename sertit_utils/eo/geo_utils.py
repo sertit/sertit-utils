@@ -145,6 +145,9 @@ def get_aoi_wkt(aoi_path, as_str=True):
             raise Exception('AOI WKT cannot be read: {}'.format(ex))
     else:
         try:
+            if aoi_path.endswith(".kml"):
+                set_kml_driver()
+
             # Open file
             aoi_file = gpd.read_file(aoi_path)
 
