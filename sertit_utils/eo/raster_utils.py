@@ -256,6 +256,50 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
         dst.write(raster)
 
 
+def sieve(array: Union[np.ma.masked_array, np.ndarray],
+          out_meta: dict,
+          sieve_thresh: int,
+          connectivity: int = 4) -> (Union[np.ma.masked_array, np.ndarray], dict):
+    """
+    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+
+    Forces the output to `np.uint8` (as only classified rasters should be sieved)
+
+    Args:
+        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        out_meta (dict): Metadata to update
+        sieve_thresh (int): Sieving threshold in pixels
+        connectivity (int): Connectivity, either 4 or 8
+
+    Returns:
+        Union[np.ma.masked_array, np.ndarray], dict: Sieved array and updated meta
+    """
+    assert connectivity in [4, 8]
+
+    # Read extraction array
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Convert to np.uint8 if needed
+    dtype = np.uint8
+    meta = out_meta.copy()
+    if meta['dtype'] != dtype:
+        array = array.astype(dtype)
+        meta['dtype'] = dtype
+
+    # Sieve
+    result_array = np.empty(array.shape, dtype=array.dtype)
+    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+
+    # Use this trick to get the array back to 'normal'
+    if expand:
+        result_array = np.expand_dims(result_array, axis=0)
+
+    return result_array
+
+
 def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
     """
     Get the image path from a *BEAM-DIMAP* data.
