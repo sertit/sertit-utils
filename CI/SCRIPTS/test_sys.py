@@ -5,7 +5,8 @@ from sertit_utils.core import sys_utils
 
 def test_setup_environ():
     """ Test setup_environ """
-    os.environ.pop("PROJ_LIB")
+    if "PROJ_LIB" in os.environ:
+        os.environ.pop("PROJ_LIB")
     sys_utils.setup_environ()  # Just ensure no exception is thrown
 
 
