@@ -143,7 +143,7 @@ def set_kml_driver():
         drivers[&#39;KML&#39;] = &#39;rw&#39;
 
 
-def get_aoi_wkt(aoi_path, as_str=True):
+def get_aoi_wkt(aoi_path, as_str=True) -&gt; Union[str, Polygon]:
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -161,25 +161,28 @@ def get_aoi_wkt(aoi_path, as_str=True):
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
-        str: AOI formatted as a WKT stored in lat/lon
+        Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
     &#34;&#34;&#34;
     if not os.path.isfile(aoi_path):
-        raise Exception(&#34;AOI file {} does not exist.&#34;.format(aoi_path))
+        raise FileNotFoundError(&#34;AOI file {} does not exist.&#34;.format(aoi_path))
 
     if aoi_path.endswith(&#39;.wkt&#39;):
         try:
             with open(aoi_path, &#39;r&#39;) as aoi_f:
                 aoi = wkt.load(aoi_f)
         except Exception as ex:
-            raise Exception(&#39;AOI WKT cannot be read: {}&#39;.format(ex))
+            raise Exception(&#39;AOI WKT cannot be read&#39;) from ex
     else:
         try:
+            if aoi_path.endswith(&#34;.kml&#34;):
+                set_kml_driver()
+
             # Open file
             aoi_file = gpd.read_file(aoi_path)
 
             # Check if a conversion to lon/lat is needed
-            if aoi_file.crs.srs != &#34;epsg:4326&#34;:
-                aoi_file = aoi_file.to_crs(&#39;epsg:4326&#39;)
+            if aoi_file.crs.srs != WGS84:
+                aoi_file = aoi_file.to_crs(WGS84)
 
             # Get envelope polygon
             geom = aoi_file[&#39;geometry&#39;]
@@ -191,7 +194,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
             aoi = wkt.loads(str(polygon))
 
         except Exception as ex:
-            raise Exception(&#39;AOI cannot be read by Fiona: {}&#39;.format(ex))
+            raise Exception(&#39;AOI cannot be read by Fiona&#39;) from ex
 
     # Convert to string if needed
     if as_str:
@@ -336,7 +339,7 @@ def get_aoi_wkt(aoi_path, as_str=True):
 </details>
 </dd>
 <dt id="sertit_utils.eo.geo_utils.get_aoi_wkt"><code class="name flex">
-<span>def <span class="ident">get_aoi_wkt</span></span>(<span>aoi_path, as_str=True)</span>
+<span>def <span class="ident">get_aoi_wkt</span></span>(<span>aoi_path, as_str=True) ‑> Union[str, shapely.geometry.polygon.Polygon]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, &hellip;)
@@ -357,14 +360,14 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>str</code></dt>
+<dt><code>Union[str, Polygon]</code></dt>
 <dd>AOI formatted as a WKT stored in lat/lon</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_aoi_wkt(aoi_path, as_str=True):
+<pre><code class="python">def get_aoi_wkt(aoi_path, as_str=True) -&gt; Union[str, Polygon]:
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -382,25 +385,28 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
-        str: AOI formatted as a WKT stored in lat/lon
+        Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
     &#34;&#34;&#34;
     if not os.path.isfile(aoi_path):
-        raise Exception(&#34;AOI file {} does not exist.&#34;.format(aoi_path))
+        raise FileNotFoundError(&#34;AOI file {} does not exist.&#34;.format(aoi_path))
 
     if aoi_path.endswith(&#39;.wkt&#39;):
         try:
             with open(aoi_path, &#39;r&#39;) as aoi_f:
                 aoi = wkt.load(aoi_f)
         except Exception as ex:
-            raise Exception(&#39;AOI WKT cannot be read: {}&#39;.format(ex))
+            raise Exception(&#39;AOI WKT cannot be read&#39;) from ex
     else:
         try:
+            if aoi_path.endswith(&#34;.kml&#34;):
+                set_kml_driver()
+
             # Open file
             aoi_file = gpd.read_file(aoi_path)
 
             # Check if a conversion to lon/lat is needed
-            if aoi_file.crs.srs != &#34;epsg:4326&#34;:
-                aoi_file = aoi_file.to_crs(&#39;epsg:4326&#39;)
+            if aoi_file.crs.srs != WGS84:
+                aoi_file = aoi_file.to_crs(WGS84)
 
             # Get envelope polygon
             geom = aoi_file[&#39;geometry&#39;]
@@ -412,7 +418,7 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
             aoi = wkt.loads(str(polygon))
 
         except Exception as ex:
-            raise Exception(&#39;AOI cannot be read by Fiona: {}&#39;.format(ex))
+            raise Exception(&#39;AOI cannot be read by Fiona&#39;) from ex
 
     # Convert to string if needed
     if as_str:

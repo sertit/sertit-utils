@@ -326,7 +326,7 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
     if expand:
         result_array = np.expand_dims(result_array, axis=0)
 
-    return result_array
+    return result_array, meta
 
 
 def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; list:
@@ -710,7 +710,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     if expand:
         result_array = np.expand_dims(result_array, axis=0)
 
-    return result_array</code></pre>
+    return result_array, meta</code></pre>
 </details>
 </dd>
 <dt id="sertit_utils.eo.raster_utils.vectorize"><code class="name flex">

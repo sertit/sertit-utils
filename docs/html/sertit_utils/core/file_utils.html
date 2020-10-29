@@ -40,13 +40,13 @@ import json
 import shutil
 import pickle
 import hashlib
-from json import JSONDecoder
+from json import JSONDecoder, JSONEncoder
+from datetime import date, datetime
+from typing import Union, Any
+from dateutil import parser
+from dateutil.parser import ParserError
 from tqdm import tqdm
 import numpy as np
-from dateutil import parser
-from datetime import date, datetime
-from json.encoder import JSONEncoder
-from typing import Union, Any
 
 from sertit_utils.core import sys_utils
 
@@ -257,16 +257,14 @@ def remove(path: str) -&gt; None:
     elif os.path.isdir(path):
         try:
             shutil.rmtree(path)
-        except OSError as ex:
-            LOGGER.debug(&#34;Impossible to remove the directory %s&#34;, path)
-            LOGGER.debug(ex)
+        except OSError:
+            LOGGER.debug(&#34;Impossible to remove the directory %s&#34;, path, exc_info=True)
 
     elif os.path.isfile(path):
         try:
             os.remove(path)
-        except OSError as ex:
-            LOGGER.debug(&#34;Impossible to remove the file %s&#34;, path)
-            LOGGER.debug(ex)
+        except OSError:
+            LOGGER.debug(&#34;Impossible to remove the file %s&#34;, path, exc_info=True)
 
 
 def remove_by_pattern(directory: str, name_with_wildcard: str = &#34;*&#34;, extension: str = None) -&gt; None:
@@ -305,8 +303,8 @@ def copy(src: str, dst: str) -&gt; str:
             out = shutil.copytree(src, dst)
         elif os.path.isfile(src):
             out = shutil.copy2(src, dst)
-    except shutil.Error as ex:
-        LOGGER.debug(ex)
+    except shutil.Error:
+        LOGGER.debug(exc_info=True)
         out = src
         # eg. source or destination doesn&#39;t exist
     except IOError as ex:
@@ -380,15 +378,27 @@ class CustomDecoder(JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
-        obj_type = obj.get(&#39;_type&#39;)
-        if obj_type is None:
-            return obj
-        else:
-            if obj_type == &#39;datetime&#39;:
-                return parser.parse(obj[&#39;value&#39;])
-            else:
-                raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))
+    # pylint: disable=E0202, R0201
+    # - An attribute defined in json.decoder line 319 hides this method (method-hidden)
+    # - Method could be a function (no-self-use)
+    def object_hook(self, obj: Any):
+        &#34;&#34;&#34;
+        Overload of object_hook function that deals with `datetime.datetime`
+
+        Args:
+            obj (dict): Dict containing objects to decode from JSON
+
+        Returns:
+            dict: Dicti with decoded object
+
+        &#34;&#34;&#34;
+        for key, val in obj.items():
+            try:
+                # Datetime
+                obj[key] = parser.parse(val)
+            except (TypeError, ParserError):
+                obj[key] = val
+        return obj
 
 
 # subclass JSONEncoder
@@ -399,8 +409,7 @@ class CustomEncoder(JSONEncoder):
     # Override the default method
     def default(self, obj):
         if isinstance(obj, (date, datetime)):
-            return {&#34;_type&#34;: &#34;datetime&#34;,
-                    &#34;value&#34;: obj.isoformat()}
+            return obj.isoformat()
         if isinstance(obj, np.int64):
             return int(obj)
 
@@ -588,8 +597,8 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
             out = shutil.copytree(src, dst)
         elif os.path.isfile(src):
             out = shutil.copy2(src, dst)
-    except shutil.Error as ex:
-        LOGGER.debug(ex)
+    except shutil.Error:
+        LOGGER.debug(exc_info=True)
         out = src
         # eg. source or destination doesn&#39;t exist
     except IOError as ex:
@@ -1169,16 +1178,14 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     elif os.path.isdir(path):
         try:
             shutil.rmtree(path)
-        except OSError as ex:
-            LOGGER.debug(&#34;Impossible to remove the directory %s&#34;, path)
-            LOGGER.debug(ex)
+        except OSError:
+            LOGGER.debug(&#34;Impossible to remove the directory %s&#34;, path, exc_info=True)
 
     elif os.path.isfile(path):
         try:
             os.remove(path)
-        except OSError as ex:
-            LOGGER.debug(&#34;Impossible to remove the file %s&#34;, path)
-            LOGGER.debug(ex)</code></pre>
+        except OSError:
+            LOGGER.debug(&#34;Impossible to remove the file %s&#34;, path, exc_info=True)</code></pre>
 </details>
 </dd>
 <dt id="sertit_utils.core.file_utils.remove_by_pattern"><code class="name flex">
@@ -1406,15 +1413,27 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
-        obj_type = obj.get(&#39;_type&#39;)
-        if obj_type is None:
-            return obj
-        else:
-            if obj_type == &#39;datetime&#39;:
-                return parser.parse(obj[&#39;value&#39;])
-            else:
-                raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))</code></pre>
+    # pylint: disable=E0202, R0201
+    # - An attribute defined in json.decoder line 319 hides this method (method-hidden)
+    # - Method could be a function (no-self-use)
+    def object_hook(self, obj: Any):
+        &#34;&#34;&#34;
+        Overload of object_hook function that deals with `datetime.datetime`
+
+        Args:
+            obj (dict): Dict containing objects to decode from JSON
+
+        Returns:
+            dict: Dicti with decoded object
+
+        &#34;&#34;&#34;
+        for key, val in obj.items():
+            try:
+                # Datetime
+                obj[key] = parser.parse(val)
+            except (TypeError, ParserError):
+                obj[key] = val
+        return obj</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1423,23 +1442,42 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
 <h3>Methods</h3>
 <dl>
 <dt id="sertit_utils.core.file_utils.CustomDecoder.object_hook"><code class="name flex">
-<span>def <span class="ident">object_hook</span></span>(<span>self, obj)</span>
+<span>def <span class="ident">object_hook</span></span>(<span>self, obj: Any)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Overload of object_hook function that deals with <code>datetime.datetime</code></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>obj</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dict containing objects to decode from JSON</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dicti with decoded object</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def object_hook(self, obj):
-    obj_type = obj.get(&#39;_type&#39;)
-    if obj_type is None:
-        return obj
-    else:
-        if obj_type == &#39;datetime&#39;:
-            return parser.parse(obj[&#39;value&#39;])
-        else:
-            raise TypeError(&#34;Non existing type: {}&#34;.format(obj_type))</code></pre>
+<pre><code class="python">def object_hook(self, obj: Any):
+    &#34;&#34;&#34;
+    Overload of object_hook function that deals with `datetime.datetime`
+
+    Args:
+        obj (dict): Dict containing objects to decode from JSON
+
+    Returns:
+        dict: Dicti with decoded object
+
+    &#34;&#34;&#34;
+    for key, val in obj.items():
+        try:
+            # Datetime
+            obj[key] = parser.parse(val)
+        except (TypeError, ParserError):
+            obj[key] = val
+    return obj</code></pre>
 </details>
 </dd>
 </dl>
@@ -1497,8 +1535,7 @@ version of the object or raise a <code>TypeError</code>.</p></div>
     # Override the default method
     def default(self, obj):
         if isinstance(obj, (date, datetime)):
-            return {&#34;_type&#34;: &#34;datetime&#34;,
-                    &#34;value&#34;: obj.isoformat()}
+            return obj.isoformat()
         if isinstance(obj, np.int64):
             return int(obj)
 
@@ -1535,8 +1572,7 @@ implement default like this::</p>
 </summary>
 <pre><code class="python">def default(self, obj):
     if isinstance(obj, (date, datetime)):
-        return {&#34;_type&#34;: &#34;datetime&#34;,
-                &#34;value&#34;: obj.isoformat()}
+        return obj.isoformat()
     if isinstance(obj, np.int64):
         return int(obj)
 

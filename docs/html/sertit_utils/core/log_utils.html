@@ -60,7 +60,8 @@ def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
         stream_handler.setFormatter(formatter)
         curr_logger.addHandler(stream_handler)
 
-
+# pylint: disable=R0913
+# Too many arguments (6/5) (too-many-arguments)
 def create_logger(logger: logging.Logger,
                   file_log_level: int,
                   stream_log_level: int,

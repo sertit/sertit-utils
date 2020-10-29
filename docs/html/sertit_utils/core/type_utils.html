@@ -257,10 +257,10 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime.da
             json_date_format = &#39;%Y-%m-%d&#39;
             try:
                 date = datetime.datetime.strptime(date_str, json_date_format)
-            except ValueError:
+            except ValueError as ex:
                 raise Exception(&#34;Invalid date format: {}; should be {} or {}&#34;.format(date_str,
                                                                                      date_format,
-                                                                                     json_date_format))
+                                                                                     json_date_format)) from ex
     return date
 
 
@@ -921,10 +921,10 @@ str_to_date(date_str)
             json_date_format = &#39;%Y-%m-%d&#39;
             try:
                 date = datetime.datetime.strptime(date_str, json_date_format)
-            except ValueError:
+            except ValueError as ex:
                 raise Exception(&#34;Invalid date format: {}; should be {} or {}&#34;.format(date_str,
                                                                                      date_format,
-                                                                                     json_date_format))
+                                                                                     json_date_format)) from ex
     return date</code></pre>
 </details>
 </dd>
