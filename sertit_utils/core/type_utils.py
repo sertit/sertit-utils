@@ -228,10 +228,10 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
             json_date_format = '%Y-%m-%d'
             try:
                 date = datetime.datetime.strptime(date_str, json_date_format)
-            except ValueError:
+            except ValueError as ex:
                 raise Exception("Invalid date format: {}; should be {} or {}".format(date_str,
                                                                                      date_format,
-                                                                                     json_date_format))
+                                                                                     json_date_format)) from ex
     return date
 
 

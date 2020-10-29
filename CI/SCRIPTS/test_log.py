@@ -26,7 +26,8 @@ def test_log():
                             file_log_level=file_log_lvl,
                             stream_log_level=stream_log_lvl,
                             output_folder=tmp_dir.name,
-                            name="test_log.txt")
+                            name="test_log.txt",
+                            other_logger_names=["test"])
 
     # Test create
     assert len(LOGGER.handlers) == 2  # File and stream

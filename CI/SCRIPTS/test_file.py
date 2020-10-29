@@ -60,6 +60,10 @@ def test_get_file_name():
     """ Test get_file_name """
     file_name = file_utils.get_file_name(__file__)
     assert file_name == "test_file"
+    file_name = file_utils.get_file_name(__file__ + "\\")
+    assert file_name == "test_file"
+    file_name = file_utils.get_file_name(__file__ + "/")
+    assert file_name == "test_file"
 
 
 def test_cp_rm():
@@ -83,6 +87,7 @@ def test_cp_rm():
 
     # Remove file
     file_utils.remove(file_1)
+    file_utils.remove("non_existing_file.txt")
     file_utils.remove_by_pattern(tmp_dir.name, name_with_wildcard="*pattern*", extension="py")
 
     # Remove dir
@@ -159,16 +164,14 @@ def test_get_file_in_dir():
     """ Test get_file_in_dir """
     # Get parent dir
     folder = os.path.dirname(os.path.realpath(__file__))
-    pattern = "file"
-    extension = ".py"
-    filename_only = False
-    get_list = False
-    exact_name = False
 
     # Test
-    file = file_utils.get_file_in_dir(folder, pattern, extension, filename_only, get_list, exact_name)
+    file = file_utils.get_file_in_dir(folder, "file", ".py", filename_only=False, get_list=True, exact_name=False)
+    filename = file_utils.get_file_in_dir(folder, file_utils.get_file_name(__file__), "py",
+                                          filename_only=True, get_list=False, exact_name=True)
 
-    assert file == __file__
+    assert file[0] == __file__
+    assert filename == os.path.basename(__file__)
 
 
 def test_hash_file_content():

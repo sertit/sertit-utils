@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32638" } },
+"features": [
+{ "type": "Feature", "properties": { "Name": "CC679_new_AOI2_3", "description": null, "timestamp": null, "begin": null, "end": null, "altitudeMode": null, "tessellate": 1, "extrude": 0, "visibility": -1, "drawOrder": null, "icon": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 503317.777084299945273, 3595599.127657481003553, 0.0 ], [ 612242.973111481289379, 3596194.75577801419422, 0.0 ], [ 610266.276616420480423, 3775494.641980962827802, 0.0 ], [ 503280.862066746107303, 3774796.428471059538424, 0.0 ], [ 503317.777084299945273, 3595599.127657481003553, 0.0 ] ] ] } }
+]
+}

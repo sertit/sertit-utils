@@ -5,6 +5,7 @@ from sertit_utils.core import sys_utils
 
 def test_setup_environ():
     """ Test setup_environ """
+    os.environ.pop("PROJ_LIB")
     sys_utils.setup_environ()  # Just ensure no exception is thrown
 
 
@@ -12,6 +13,8 @@ def test_run_command():
     """ Test run_command """
     cmd = ["cd", ".."]
     sys_utils.run_command(cmd, in_background=True, cwd='/')  # Just ensure no exception is thrown
+    cmd = ["cd", ".."]
+    sys_utils.run_command(cmd, in_background=False, cwd='/')  # Just ensure no exception is thrown
 
 
 def test_get_function_name():
