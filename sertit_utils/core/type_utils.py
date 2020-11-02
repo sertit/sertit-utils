@@ -55,7 +55,7 @@ class ListEnum(Enum):
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def from_value(cls, val: str) -> 'ListEnum':
+    def from_value(cls, val: Any) -> 'ListEnum':
         """
         Get the enum class from its value:
 
@@ -72,11 +72,13 @@ class ListEnum(Enum):
         ```
 
         Args:
-            val (str): Value of the Enum
+            val (Any): Value of the Enum
 
         Returns:
             ListEnum: Enum with value
         """
+        if isinstance(val, cls):
+            val = val.value
         try:
             return next(enum for enum in cls if enum.value == val)
         except StopIteration as ex:

@@ -84,7 +84,7 @@ class ListEnum(Enum):
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def from_value(cls, val: str) -&gt; &#39;ListEnum&#39;:
+    def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
         &#34;&#34;&#34;
         Get the enum class from its value:
 
@@ -101,11 +101,13 @@ class ListEnum(Enum):
         ```
 
         Args:
-            val (str): Value of the Enum
+            val (Any): Value of the Enum
 
         Returns:
             ListEnum: Enum with value
         &#34;&#34;&#34;
+        if isinstance(val, cls):
+            val = val.value
         try:
             return next(enum for enum in cls if enum.value == val)
         except StopIteration as ex:
@@ -1229,7 +1231,7 @@ to_cmd_string(pb_str)
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def from_value(cls, val: str) -&gt; &#39;ListEnum&#39;:
+    def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
         &#34;&#34;&#34;
         Get the enum class from its value:
 
@@ -1246,11 +1248,13 @@ to_cmd_string(pb_str)
         ```
 
         Args:
-            val (str): Value of the Enum
+            val (Any): Value of the Enum
 
         Returns:
             ListEnum: Enum with value
         &#34;&#34;&#34;
+        if isinstance(val, cls):
+            val = val.value
         try:
             return next(enum for enum in cls if enum.value == val)
         except StopIteration as ex:
@@ -1263,7 +1267,7 @@ to_cmd_string(pb_str)
 <h3>Static methods</h3>
 <dl>
 <dt id="sertit_utils.core.type_utils.ListEnum.from_value"><code class="name flex">
-<span>def <span class="ident">from_value</span></span>(<span>val: str) ‑> <a title="sertit_utils.core.type_utils.ListEnum" href="#sertit_utils.core.type_utils.ListEnum">ListEnum</a></span>
+<span>def <span class="ident">from_value</span></span>(<span>val: Any) ‑> <a title="sertit_utils.core.type_utils.ListEnum" href="#sertit_utils.core.type_utils.ListEnum">ListEnum</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the enum class from its value:</p>
@@ -1279,7 +1283,7 @@ TsxPolarization.from_value(&quot;Q&quot;)
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>val</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>val</code></strong> :&ensp;<code>Any</code></dt>
 <dd>Value of the Enum</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -1292,7 +1296,7 @@ TsxPolarization.from_value(&quot;Q&quot;)
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def from_value(cls, val: str) -&gt; &#39;ListEnum&#39;:
+def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
     &#34;&#34;&#34;
     Get the enum class from its value:
 
@@ -1309,11 +1313,13 @@ def from_value(cls, val: str) -&gt; &#39;ListEnum&#39;:
     ```
 
     Args:
-        val (str): Value of the Enum
+        val (Any): Value of the Enum
 
     Returns:
         ListEnum: Enum with value
     &#34;&#34;&#34;
+    if isinstance(val, cls):
+        val = val.value
     try:
         return next(enum for enum in cls if enum.value == val)
     except StopIteration as ex:

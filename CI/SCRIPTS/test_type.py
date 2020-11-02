@@ -84,3 +84,4 @@ def test_enum():
     assert Polarization.list_values() == ["HH", "VV", "VH", "HV"]
     assert Polarization.list_names() == ["hh", "vv", "vh", "hv"]
     assert Polarization.from_value("HH") == Polarization.hh
+    assert Polarization.from_value(Polarization.hh) == Polarization.hh
