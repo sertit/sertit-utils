@@ -11,6 +11,7 @@ import json
 import shutil
 import pickle
 import hashlib
+from enum import Enum
 from json import JSONDecoder, JSONEncoder
 from datetime import date, datetime
 from typing import Union, Any
@@ -386,6 +387,8 @@ class CustomEncoder(JSONEncoder):
             out = obj.isoformat()
         elif isinstance(obj, np.int64):
             out = int(obj)
+        elif isinstance(obj, Enum):
+            out = obj.value
         else:
             out = json.JSONEncoder.default(self, obj)
 
