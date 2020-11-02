@@ -3,7 +3,7 @@ import os
 import tempfile
 import filecmp
 import numpy as np
-from datetime import datetime
+from datetime import datetime, date
 from sertit_utils.core import file_utils, sys_utils
 from CI.SCRIPTS import script_utils
 
@@ -118,6 +118,7 @@ def test_json():
     test_dict = {"A": 3,
                  "C": "m2",  # Can be parsed as a date, we do not want that !
                  "D": datetime.today(),
+                 "Dbis": date.today(),
                  "E": np.int64(15)}
 
     tmp_dir = tempfile.TemporaryDirectory()

@@ -14,8 +14,6 @@ import hashlib
 from json import JSONDecoder, JSONEncoder
 from datetime import date, datetime
 from typing import Union, Any
-from dateutil import parser
-from dateutil.parser import ParserError
 from tqdm import tqdm
 import numpy as np
 
@@ -363,10 +361,17 @@ class CustomDecoder(JSONDecoder):
             dict: Dict with decoded object
         """
         for key, val in obj.items():
-            try:
-                # Datetime -> Encoder saves datetimes as isoformat
-                obj[key] = parser.isoparse(val)
-            except (TypeError, ParserError, ValueError):
+            if isinstance(val, str):
+                try:
+                    # Date -> Encoder saves dates as isoformat
+                    obj[key] = date.fromisoformat(val)
+                except ValueError:
+                    try:
+                        # Datetime -> Encoder saves datetimes as isoformat
+                        obj[key] = datetime.fromisoformat(val)
+                    except ValueError:
+                        obj[key] = val
+            else:
                 obj[key] = val
         return obj
 
