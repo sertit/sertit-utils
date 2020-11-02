@@ -49,8 +49,7 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.
                                  transform=dst.transform)
 
         # Convert results to geopandas and save it
-        # TODO: FutureWarning: Assigning CRS to a GeoDataFrame without a geometry column is now deprecated
-        gpd_results = gpd.GeoDataFrame(shapes, columns=["geometry", "raster_val"], crs=dst.crs)
+        gpd_results = gpd.GeoDataFrame(shapes, columns=["geom", "raster_val"])
         if not gpd_results.empty:
             # Convert to proper polygons
             def to_polygons(val):
@@ -67,7 +66,9 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.
                 #   poly = poly.buffer(1.0E-9)
                 return poly
 
-            gpd_results.geometry = gpd_results.geometry.apply(to_polygons)
+            # Set georeferenced data
+            gpd_results.geometry = gpd_results.geom.apply(to_polygons)
+            gpd_results.crs = dst.crs
 
     if on_mask:
         gpd_results = gpd_results[gpd_results.raster_val != 0]
