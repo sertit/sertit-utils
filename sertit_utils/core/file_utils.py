@@ -365,9 +365,9 @@ class CustomDecoder(JSONDecoder):
         """
         for key, val in obj.items():
             try:
-                # Datetime
-                obj[key] = parser.parse(val)
-            except (TypeError, ParserError):
+                # Datetime -> Encoder saves datetimes as isoformat
+                obj[key] = parser.isoparse(val)
+            except (TypeError, ParserError, ValueError):
                 obj[key] = val
         return obj
 

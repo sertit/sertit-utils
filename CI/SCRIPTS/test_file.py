@@ -116,7 +116,7 @@ def test_find_files():
 def test_json():
     """ Test json functions """
     test_dict = {"A": 3,
-                 "C": "str",
+                 "C": "m2",  # Can be parsed as a date, we do not want that !
                  "D": datetime.today(),
                  "E": np.int64(15)}
 
