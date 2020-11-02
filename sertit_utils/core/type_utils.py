@@ -1,7 +1,7 @@
 """ Tools concerning type conversion, helpers for enums, dict and strings """
 import argparse
 import logging
-import datetime
+from datetime import datetime, date
 from enum import Enum, unique
 import pprint
 import re
@@ -199,7 +199,7 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
     return out_list
 
 
-def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
+def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
     """
     Convert string to a `datetime.datetime`:
 
@@ -215,29 +215,31 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime.date:
         date_format (str): Format of the date (as ingested by strptime)
 
     Returns:
-        datetime.date: A date as a python datetime object
+        datetime.datetime: A date as a python datetime object
     """
-    if isinstance(date_str, (datetime.datetime, datetime.date)):
-        date = date_str
+    if isinstance(date_str, datetime):
+        dt = date_str
+    elif isinstance(date_str, date):
+        dt = datetime.fromisoformat(date_str.isoformat())
     else:
         try:
             if date_str.lower() == "now":
-                date = datetime.datetime.today()
+                dt = datetime.today()
             else:
-                date = datetime.datetime.strptime(date_str, date_format)
+                dt = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
             json_date_format = '%Y-%m-%d'
             try:
-                date = datetime.datetime.strptime(date_str, json_date_format)
+                dt = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
                 raise Exception("Invalid date format: {}; should be {} or {}".format(date_str,
                                                                                      date_format,
                                                                                      json_date_format)) from ex
-    return date
+    return dt
 
 
-def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = ''):
+def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = '') -> list:
     """
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -255,18 +257,18 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
         additional_separator (str): Additional separator
 
     Returns:
-        datetime: A date as a python datetime object
+        list: A list containing datetimes objects
     """
     # Split string to get a list of strings
     list_of_dates_str = str_to_list(date_str, additional_separator)
 
     # Convert strings to date
-    list_of_dates = [str_to_date(date, date_format) for date in list_of_dates_str]
+    list_of_dates = [str_to_date(dt, date_format) for dt in list_of_dates_str]
 
     return list_of_dates
 
 
-def list_to_dict(dict_list):
+def list_to_dict(dict_list: list) -> dict:
     """
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
@@ -286,7 +288,7 @@ def list_to_dict(dict_list):
     return dictionary
 
 
-def nested_set(dic, keys, value):
+def nested_set(dic: dict, keys: list, value: Any):
     """
     Set value in nested directory:
 
@@ -304,8 +306,6 @@ def nested_set(dic, keys, value):
     #      }
     # }
     ```
-
-
 
     Args:
         dic (dict): Dictionary
@@ -340,7 +340,7 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
             raise ValueError("Missing mandatory key '{}' among {}".format(mandatory_key, pprint.pformat(data_dict)))
 
 
-def remove_empty_values(list_with_empty_values):
+def remove_empty_values(list_with_empty_values: list) -> list:
     """
     Remove empty values from list:
 
