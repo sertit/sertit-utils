@@ -360,8 +360,7 @@ class CustomDecoder(JSONDecoder):
             obj (dict): Dict containing objects to decode from JSON
 
         Returns:
-            dict: Dicti with decoded object
-
+            dict: Dict with decoded object
         """
         for key, val in obj.items():
             try:
@@ -375,16 +374,17 @@ class CustomDecoder(JSONDecoder):
 # subclass JSONEncoder
 class CustomEncoder(JSONEncoder):
     """ Encoder for JSON with methods for datetimes and np.int64 """
-
     # pylint: disable=W0221
-    # Override the default method
     def default(self, obj):
+        """ Overload of the default method """
         if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
-        if isinstance(obj, np.int64):
-            return int(obj)
+            out = obj.isoformat()
+        elif isinstance(obj, np.int64):
+            out = int(obj)
+        else:
+            out = json.JSONEncoder.default(self, obj)
 
-        return obj
+        return out
 
 
 def read_json(json_file, print_file=True):
