@@ -7,10 +7,11 @@ import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
 from rasterio import crs
+from sertit_utils.core.log_utils import LOGGER_NAME
+
+LOGGER = logging.getLogger(LOGGER_NAME)
 
 WGS84 = "EPSG:4326"
-
-LOGGER = logging.getLogger('sertit_utils')
 
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:

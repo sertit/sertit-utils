@@ -19,8 +19,9 @@ from tqdm import tqdm
 import numpy as np
 
 from sertit_utils.core import sys_utils
+from sertit_utils.core.log_utils import LOGGER_NAME
 
-LOGGER = logging.getLogger('sertit_utils')
+LOGGER = logging.getLogger(LOGGER_NAME)
 
 
 def get_root_path():

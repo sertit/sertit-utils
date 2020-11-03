@@ -5,7 +5,7 @@ from datetime import datetime
 from colorlog import ColoredFormatter
 
 LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
-
+LOGGER_NAME = 'sertit_utils'
 
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
     """
@@ -105,8 +105,8 @@ def create_logger(logger: logging.Logger,
             # Remove all handlers (brand new logger)
             other_logger.handlers = []
 
-            # Set the right format anf log level
-            other_logger.setLevel(logging.INFO)
+            # Set the right format and log level
+            other_logger.setLevel(logging.DEBUG)
             other_logger.addHandler(stream_handler)
             other_logger.addHandler(file_handler)
 
