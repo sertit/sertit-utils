@@ -6,9 +6,9 @@ import logging
 import subprocess
 from contextlib import contextmanager
 from typing import Union
-from sertit_utils.core.log_utils import LOGGER_NAME
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER = logging.getLogger(SU_NAME)
 
 
 def __set_env_var_proj_lib__():

@@ -6,9 +6,9 @@ from enum import Enum, unique
 import pprint
 import re
 from typing import Any
-from sertit_utils.core.log_utils import LOGGER_NAME
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER = logging.getLogger(SU_NAME)
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 

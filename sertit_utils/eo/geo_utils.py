@@ -7,9 +7,9 @@ import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
 from rasterio import crs
-from sertit_utils.core.log_utils import LOGGER_NAME
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER = logging.getLogger(SU_NAME)
 
 WGS84 = "EPSG:4326"
 

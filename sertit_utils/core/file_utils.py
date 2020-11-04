@@ -19,9 +19,9 @@ from tqdm import tqdm
 import numpy as np
 
 from sertit_utils.core import sys_utils
-from sertit_utils.core.log_utils import LOGGER_NAME
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER = logging.getLogger(SU_NAME)
 
 
 def get_root_path():
@@ -138,7 +138,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
         else:
             LOGGER.debug("Already existing extracted %s. It won't be overwritten.", extracted_name)
     else:
-        LOGGER.debug("Extracting %s", extracted_name)
+        LOGGER.info("Extracting %s", extracted_name)
         # Inside docker, extracting files is really slow -> copy the archive in a tmp directory
         tmp = None
         if sys_utils.in_docker():
@@ -185,7 +185,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     Returns:
         list: Extracted files (even pre-existing ones)
     """
-    LOGGER.debug("Unzipping products in %s", output)
+    LOGGER.info("Unzipping products in %s", output)
     progress_bar = tqdm(archives)
     extracts = []
     for archive in progress_bar:
