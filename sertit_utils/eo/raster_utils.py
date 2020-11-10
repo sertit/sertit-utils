@@ -156,7 +156,8 @@ def collocate(master_meta: dict,
 
 def read(dataset: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
-         resampling: Resampling = Resampling.nearest) -> (np.ma.masked_array, dict):
+         resampling: Resampling = Resampling.nearest,
+         masked=True) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset from a `rasterio.Dataset`.
 
@@ -164,6 +165,7 @@ def read(dataset: rasterio.DatasetReader,
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
         resampling (Resampling): Resampling method
+        masked (bool); Get a masked array
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -185,7 +187,7 @@ def read(dataset: rasterio.DatasetReader,
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
                          resampling=resampling,
-                         masked=True)
+                         masked=masked)
 
     # Update meta
     dst_transform = dataset.transform * dataset.transform.scale((dataset.width / new_width),

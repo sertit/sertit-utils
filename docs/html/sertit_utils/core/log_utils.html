@@ -34,7 +34,7 @@ from datetime import datetime
 from colorlog import ColoredFormatter
 
 LOGGING_FORMAT = &#39;%(asctime)s - [%(levelname)s] - %(message)s&#39;
-
+SU_NAME = &#39;sertit_utils&#39;
 
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
     &#34;&#34;&#34;
@@ -134,7 +134,8 @@ def create_logger(logger: logging.Logger,
             # Remove all handlers (brand new logger)
             other_logger.handlers = []
 
-            # Set the right format anf log level
+            # Set the right format and log level
+            # Set log to info as these other loggers are not really important
             other_logger.setLevel(logging.INFO)
             other_logger.addHandler(stream_handler)
             other_logger.addHandler(file_handler)
@@ -256,7 +257,8 @@ def shutdown_logger(logger: logging.Logger):
             # Remove all handlers (brand new logger)
             other_logger.handlers = []
 
-            # Set the right format anf log level
+            # Set the right format and log level
+            # Set log to info as these other loggers are not really important
             other_logger.setLevel(logging.INFO)
             other_logger.addHandler(stream_handler)
             other_logger.addHandler(file_handler)</code></pre>

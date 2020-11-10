@@ -40,17 +40,17 @@ import json
 import shutil
 import pickle
 import hashlib
+from enum import Enum
 from json import JSONDecoder, JSONEncoder
 from datetime import date, datetime
 from typing import Union, Any
-from dateutil import parser
-from dateutil.parser import ParserError
 from tqdm import tqdm
 import numpy as np
 
 from sertit_utils.core import sys_utils
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
+LOGGER = logging.getLogger(SU_NAME)
 
 
 def get_root_path():
@@ -167,7 +167,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -&gt; str
         else:
             LOGGER.debug(&#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;, extracted_name)
     else:
-        LOGGER.debug(&#34;Extracting %s&#34;, extracted_name)
+        LOGGER.info(&#34;Extracting %s&#34;, extracted_name)
         # Inside docker, extracting files is really slow -&gt; copy the archive in a tmp directory
         tmp = None
         if sys_utils.in_docker():
@@ -214,7 +214,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -&gt; li
     Returns:
         list: Extracted files (even pre-existing ones)
     &#34;&#34;&#34;
-    LOGGER.debug(&#34;Unzipping products in %s&#34;, output)
+    LOGGER.info(&#34;Unzipping products in %s&#34;, output)
     progress_bar = tqdm(archives)
     extracts = []
     for archive in progress_bar:
@@ -389,14 +389,20 @@ class CustomDecoder(JSONDecoder):
             obj (dict): Dict containing objects to decode from JSON
 
         Returns:
-            dict: Dicti with decoded object
-
+            dict: Dict with decoded object
         &#34;&#34;&#34;
         for key, val in obj.items():
-            try:
-                # Datetime
-                obj[key] = parser.parse(val)
-            except (TypeError, ParserError):
+            if isinstance(val, str):
+                try:
+                    # Date -&gt; Encoder saves dates as isoformat
+                    obj[key] = date.fromisoformat(val)
+                except ValueError:
+                    try:
+                        # Datetime -&gt; Encoder saves datetimes as isoformat
+                        obj[key] = datetime.fromisoformat(val)
+                    except ValueError:
+                        obj[key] = val
+            else:
                 obj[key] = val
         return obj
 
@@ -404,16 +410,19 @@ class CustomDecoder(JSONDecoder):
 # subclass JSONEncoder
 class CustomEncoder(JSONEncoder):
     &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
-
     # pylint: disable=W0221
-    # Override the default method
     def default(self, obj):
+        &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
-        if isinstance(obj, np.int64):
-            return int(obj)
+            out = obj.isoformat()
+        elif isinstance(obj, np.int64):
+            out = int(obj)
+        elif isinstance(obj, Enum):
+            out = obj.value
+        else:
+            out = json.JSONEncoder.default(self, obj)
 
-        return obj
+        return out
 
 
 def read_json(json_file, print_file=True):
@@ -663,7 +672,7 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
         else:
             LOGGER.debug(&#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;, extracted_name)
     else:
-        LOGGER.debug(&#34;Extracting %s&#34;, extracted_name)
+        LOGGER.info(&#34;Extracting %s&#34;, extracted_name)
         # Inside docker, extracting files is really slow -&gt; copy the archive in a tmp directory
         tmp = None
         if sys_utils.in_docker():
@@ -733,7 +742,7 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     Returns:
         list: Extracted files (even pre-existing ones)
     &#34;&#34;&#34;
-    LOGGER.debug(&#34;Unzipping products in %s&#34;, output)
+    LOGGER.info(&#34;Unzipping products in %s&#34;, output)
     progress_bar = tqdm(archives)
     extracts = []
     for archive in progress_bar:
@@ -1424,14 +1433,20 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
             obj (dict): Dict containing objects to decode from JSON
 
         Returns:
-            dict: Dicti with decoded object
-
+            dict: Dict with decoded object
         &#34;&#34;&#34;
         for key, val in obj.items():
-            try:
-                # Datetime
-                obj[key] = parser.parse(val)
-            except (TypeError, ParserError):
+            if isinstance(val, str):
+                try:
+                    # Date -&gt; Encoder saves dates as isoformat
+                    obj[key] = date.fromisoformat(val)
+                except ValueError:
+                    try:
+                        # Datetime -&gt; Encoder saves datetimes as isoformat
+                        obj[key] = datetime.fromisoformat(val)
+                    except ValueError:
+                        obj[key] = val
+            else:
                 obj[key] = val
         return obj</code></pre>
 </details>
@@ -1454,7 +1469,7 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>dict</code></dt>
-<dd>Dicti with decoded object</dd>
+<dd>Dict with decoded object</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1468,14 +1483,20 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
         obj (dict): Dict containing objects to decode from JSON
 
     Returns:
-        dict: Dicti with decoded object
-
+        dict: Dict with decoded object
     &#34;&#34;&#34;
     for key, val in obj.items():
-        try:
-            # Datetime
-            obj[key] = parser.parse(val)
-        except (TypeError, ParserError):
+        if isinstance(val, str):
+            try:
+                # Date -&gt; Encoder saves dates as isoformat
+                obj[key] = date.fromisoformat(val)
+            except ValueError:
+                try:
+                    # Datetime -&gt; Encoder saves datetimes as isoformat
+                    obj[key] = datetime.fromisoformat(val)
+                except ValueError:
+                    obj[key] = val
+        else:
             obj[key] = val
     return obj</code></pre>
 </details>
@@ -1530,16 +1551,19 @@ version of the object or raise a <code>TypeError</code>.</p></div>
 </summary>
 <pre><code class="python">class CustomEncoder(JSONEncoder):
     &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
-
     # pylint: disable=W0221
-    # Override the default method
     def default(self, obj):
+        &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
-        if isinstance(obj, np.int64):
-            return int(obj)
+            out = obj.isoformat()
+        elif isinstance(obj, np.int64):
+            out = int(obj)
+        elif isinstance(obj, Enum):
+            out = obj.value
+        else:
+            out = json.JSONEncoder.default(self, obj)
 
-        return obj</code></pre>
+        return out</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1551,32 +1575,23 @@ version of the object or raise a <code>TypeError</code>.</p></div>
 <span>def <span class="ident">default</span></span>(<span>self, obj)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Implement this method in a subclass such that it returns
-a serializable object for <code>o</code>, or calls the base implementation
-(to raise a <code>TypeError</code>).</p>
-<p>For example, to support arbitrary iterators, you could
-implement default like this::</p>
-<pre><code>def default(self, o):
-    try:
-        iterable = iter(o)
-    except TypeError:
-        pass
-    else:
-        return list(iterable)
-    # Let the base class default method raise the TypeError
-    return JSONEncoder.default(self, o)
-</code></pre></div>
+<div class="desc"><p>Overload of the default method</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def default(self, obj):
+    &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
     if isinstance(obj, (date, datetime)):
-        return obj.isoformat()
-    if isinstance(obj, np.int64):
-        return int(obj)
+        out = obj.isoformat()
+    elif isinstance(obj, np.int64):
+        out = int(obj)
+    elif isinstance(obj, Enum):
+        out = obj.value
+    else:
+        out = json.JSONEncoder.default(self, obj)
 
-    return obj</code></pre>
+    return out</code></pre>
 </details>
 </dd>
 </dl>

@@ -78,8 +78,7 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -&gt; g
                                  transform=dst.transform)
 
         # Convert results to geopandas and save it
-        # TODO: FutureWarning: Assigning CRS to a GeoDataFrame without a geometry column is now deprecated
-        gpd_results = gpd.GeoDataFrame(shapes, columns=[&#34;geometry&#34;, &#34;raster_val&#34;], crs=dst.crs)
+        gpd_results = gpd.GeoDataFrame(shapes, columns=[&#34;geom&#34;, &#34;raster_val&#34;])
         if not gpd_results.empty:
             # Convert to proper polygons
             def to_polygons(val):
@@ -96,7 +95,9 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -&gt; g
                 #   poly = poly.buffer(1.0E-9)
                 return poly
 
-            gpd_results.geometry = gpd_results.geometry.apply(to_polygons)
+            # Set georeferenced data
+            gpd_results.geometry = gpd_results.geom.apply(to_polygons)
+            gpd_results.crs = dst.crs
 
     if on_mask:
         gpd_results = gpd_results[gpd_results.raster_val != 0]
@@ -184,7 +185,8 @@ def collocate(master_meta: dict,
 
 def read(dataset: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
-         resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
+         resampling: Resampling = Resampling.nearest,
+         masked=True) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset from a `rasterio.Dataset`.
 
@@ -192,6 +194,7 @@ def read(dataset: rasterio.DatasetReader,
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
         resampling (Resampling): Resampling method
+        masked (bool); Get a masked array
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -213,7 +216,7 @@ def read(dataset: rasterio.DatasetReader,
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
                          resampling=resampling,
-                         masked=True)
+                         masked=masked)
 
     # Update meta
     dst_transform = dataset.transform * dataset.transform.scale((dataset.width / new_width),
@@ -575,7 +578,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 </details>
 </dd>
 <dt id="sertit_utils.eo.raster_utils.read"><code class="name flex">
-<span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float] = None, resampling: rasterio.enums.Resampling = Resampling.nearest) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
+<span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float] = None, resampling: rasterio.enums.Resampling = Resampling.nearest, masked=True) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read a raster dataset from a <code>rasterio.Dataset</code>.</p>
@@ -588,6 +591,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 <dt><strong><code>resampling</code></strong> :&ensp;<code>Resampling</code></dt>
 <dd>Resampling method</dd>
 </dl>
+<p>masked (bool); Get a masked array</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>np.ma.masked_array, dict</code></dt>
@@ -599,7 +603,8 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
 </summary>
 <pre><code class="python">def read(dataset: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
-         resampling: Resampling = Resampling.nearest) -&gt; (np.ma.masked_array, dict):
+         resampling: Resampling = Resampling.nearest,
+         masked=True) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset from a `rasterio.Dataset`.
 
@@ -607,6 +612,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
         dataset (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
         resampling (Resampling): Resampling method
+        masked (bool); Get a masked array
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -628,7 +634,7 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
                          resampling=resampling,
-                         masked=True)
+                         masked=masked)
 
     # Update meta
     dst_transform = dataset.transform * dataset.transform.scale((dataset.width / new_width),
@@ -776,8 +782,7 @@ Please be careful.</li>
                                  transform=dst.transform)
 
         # Convert results to geopandas and save it
-        # TODO: FutureWarning: Assigning CRS to a GeoDataFrame without a geometry column is now deprecated
-        gpd_results = gpd.GeoDataFrame(shapes, columns=[&#34;geometry&#34;, &#34;raster_val&#34;], crs=dst.crs)
+        gpd_results = gpd.GeoDataFrame(shapes, columns=[&#34;geom&#34;, &#34;raster_val&#34;])
         if not gpd_results.empty:
             # Convert to proper polygons
             def to_polygons(val):
@@ -794,7 +799,9 @@ Please be careful.</li>
                 #   poly = poly.buffer(1.0E-9)
                 return poly
 
-            gpd_results.geometry = gpd_results.geometry.apply(to_polygons)
+            # Set georeferenced data
+            gpd_results.geometry = gpd_results.geom.apply(to_polygons)
+            gpd_results.crs = dst.crs
 
     if on_mask:
         gpd_results = gpd_results[gpd_results.raster_val != 0]

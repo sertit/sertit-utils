@@ -30,13 +30,14 @@
 <pre><code class="python">&#34;&#34;&#34; Tools concerning type conversion, helpers for enums, dict and strings &#34;&#34;&#34;
 import argparse
 import logging
-import datetime
+from datetime import datetime, date
 from enum import Enum, unique
 import pprint
 import re
 from typing import Any
+from sertit_utils.core.log_utils import SU_NAME
 
-LOGGER = logging.getLogger(&#39;sertit_utils&#39;)
+LOGGER = logging.getLogger(SU_NAME)
 DATE_FORMAT = &#34;%Y-%m-%dT%H:%M:%S&#34;
 
 
@@ -228,7 +229,7 @@ def str_to_list(list_str, additional_separator=&#39;&#39;, letter_case=None, key
     return out_list
 
 
-def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime.date:
+def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime:
     &#34;&#34;&#34;
     Convert string to a `datetime.datetime`:
 
@@ -244,29 +245,31 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime.da
         date_format (str): Format of the date (as ingested by strptime)
 
     Returns:
-        datetime.date: A date as a python datetime object
+        datetime.datetime: A date as a python datetime object
     &#34;&#34;&#34;
-    if isinstance(date_str, (datetime.datetime, datetime.date)):
-        date = date_str
+    if isinstance(date_str, datetime):
+        dt = date_str
+    elif isinstance(date_str, date):
+        dt = datetime.fromisoformat(date_str.isoformat())
     else:
         try:
             if date_str.lower() == &#34;now&#34;:
-                date = datetime.datetime.today()
+                dt = datetime.today()
             else:
-                date = datetime.datetime.strptime(date_str, date_format)
+                dt = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
             json_date_format = &#39;%Y-%m-%d&#39;
             try:
-                date = datetime.datetime.strptime(date_str, json_date_format)
+                dt = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
                 raise Exception(&#34;Invalid date format: {}; should be {} or {}&#34;.format(date_str,
                                                                                      date_format,
                                                                                      json_date_format)) from ex
-    return date
+    return dt
 
 
-def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = &#39;&#39;):
+def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = &#39;&#39;) -&gt; list:
     &#34;&#34;&#34;
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -284,18 +287,18 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
         additional_separator (str): Additional separator
 
     Returns:
-        datetime: A date as a python datetime object
+        list: A list containing datetimes objects
     &#34;&#34;&#34;
     # Split string to get a list of strings
     list_of_dates_str = str_to_list(date_str, additional_separator)
 
     # Convert strings to date
-    list_of_dates = [str_to_date(date, date_format) for date in list_of_dates_str]
+    list_of_dates = [str_to_date(dt, date_format) for dt in list_of_dates_str]
 
     return list_of_dates
 
 
-def list_to_dict(dict_list):
+def list_to_dict(dict_list: list) -&gt; dict:
     &#34;&#34;&#34;
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
@@ -315,7 +318,7 @@ def list_to_dict(dict_list):
     return dictionary
 
 
-def nested_set(dic, keys, value):
+def nested_set(dic: dict, keys: list, value: Any):
     &#34;&#34;&#34;
     Set value in nested directory:
 
@@ -333,8 +336,6 @@ def nested_set(dic, keys, value):
     #      }
     # }
     ```
-
-
 
     Args:
         dic (dict): Dictionary
@@ -369,7 +370,7 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -&gt; None:
             raise ValueError(&#34;Missing mandatory key &#39;{}&#39; among {}&#34;.format(mandatory_key, pprint.pformat(data_dict)))
 
 
-def remove_empty_values(list_with_empty_values):
+def remove_empty_values(list_with_empty_values: list) -&gt; list:
     &#34;&#34;&#34;
     Remove empty values from list:
 
@@ -632,7 +633,7 @@ find_by_key(dict, &quot;D&quot;)
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.list_to_dict"><code class="name flex">
-<span>def <span class="ident">list_to_dict</span></span>(<span>dict_list)</span>
+<span>def <span class="ident">list_to_dict</span></span>(<span>dict_list: list) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return a dictionary from a list <code>[key, value, key_2, value_2&hellip;]</code></p>
@@ -654,7 +655,7 @@ list_to_dict(list)
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def list_to_dict(dict_list):
+<pre><code class="python">def list_to_dict(dict_list: list) -&gt; dict:
     &#34;&#34;&#34;
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
@@ -675,7 +676,7 @@ list_to_dict(list)
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.nested_set"><code class="name flex">
-<span>def <span class="ident">nested_set</span></span>(<span>dic, keys, value)</span>
+<span>def <span class="ident">nested_set</span></span>(<span>dic: dict, keys: list, value: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Set value in nested directory:</p>
@@ -705,7 +706,7 @@ nested_set(test_dict, keys=[&quot;B&quot;, &quot;C&quot;, &quot;D&quot;], value=
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def nested_set(dic, keys, value):
+<pre><code class="python">def nested_set(dic: dict, keys: list, value: Any):
     &#34;&#34;&#34;
     Set value in nested directory:
 
@@ -724,8 +725,6 @@ nested_set(test_dict, keys=[&quot;B&quot;, &quot;C&quot;, &quot;D&quot;], value=
     # }
     ```
 
-
-
     Args:
         dic (dict): Dictionary
         keys (list[str]): Keys as a list
@@ -737,7 +736,7 @@ nested_set(test_dict, keys=[&quot;B&quot;, &quot;C&quot;, &quot;D&quot;], value=
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.remove_empty_values"><code class="name flex">
-<span>def <span class="ident">remove_empty_values</span></span>(<span>list_with_empty_values)</span>
+<span>def <span class="ident">remove_empty_values</span></span>(<span>list_with_empty_values: list) ‑> list</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Remove empty values from list:</p>
@@ -759,7 +758,7 @@ list_to_dict(list)
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_empty_values(list_with_empty_values):
+<pre><code class="python">def remove_empty_values(list_with_empty_values: list) -&gt; list:
     &#34;&#34;&#34;
     Remove empty values from list:
 
@@ -867,7 +866,7 @@ list_to_dict(list)
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.str_to_date"><code class="name flex">
-<span>def <span class="ident">str_to_date</span></span>(<span>date_str: str, date_format: str = '%Y-%m-%dT%H:%M:%S') ‑> datetime.date</span>
+<span>def <span class="ident">str_to_date</span></span>(<span>date_str: str, date_format: str = '%Y-%m-%dT%H:%M:%S') ‑> datetime.datetime</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert string to a <code>datetime.datetime</code>:</p>
@@ -885,14 +884,14 @@ str_to_date(date_str)
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>datetime.date</code></dt>
+<dt><code>datetime.datetime</code></dt>
 <dd>A date as a python datetime object</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime.date:
+<pre><code class="python">def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -&gt; datetime:
     &#34;&#34;&#34;
     Convert string to a `datetime.datetime`:
 
@@ -908,26 +907,28 @@ str_to_date(date_str)
         date_format (str): Format of the date (as ingested by strptime)
 
     Returns:
-        datetime.date: A date as a python datetime object
+        datetime.datetime: A date as a python datetime object
     &#34;&#34;&#34;
-    if isinstance(date_str, (datetime.datetime, datetime.date)):
-        date = date_str
+    if isinstance(date_str, datetime):
+        dt = date_str
+    elif isinstance(date_str, date):
+        dt = datetime.fromisoformat(date_str.isoformat())
     else:
         try:
             if date_str.lower() == &#34;now&#34;:
-                date = datetime.datetime.today()
+                dt = datetime.today()
             else:
-                date = datetime.datetime.strptime(date_str, date_format)
+                dt = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
             json_date_format = &#39;%Y-%m-%d&#39;
             try:
-                date = datetime.datetime.strptime(date_str, json_date_format)
+                dt = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
                 raise Exception(&#34;Invalid date format: {}; should be {} or {}&#34;.format(date_str,
                                                                                      date_format,
                                                                                      json_date_format)) from ex
-    return date</code></pre>
+    return dt</code></pre>
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.str_to_list"><code class="name flex">
@@ -1000,7 +1001,7 @@ str_to_date(date_str)
 </details>
 </dd>
 <dt id="sertit_utils.core.type_utils.str_to_list_of_dates"><code class="name flex">
-<span>def <span class="ident">str_to_list_of_dates</span></span>(<span>date_str: str, date_format: str = '%Y-%m-%dT%H:%M:%S', additional_separator: str = '')</span>
+<span>def <span class="ident">str_to_list_of_dates</span></span>(<span>date_str: str, date_format: str = '%Y-%m-%dT%H:%M:%S', additional_separator: str = '') ‑> list</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert a string containing a list of dates to a list of <code>datetime.datetime</code>.</p>
@@ -1020,14 +1021,14 @@ str_to_date(date_str)
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>datetime</code></dt>
-<dd>A date as a python datetime object</dd>
+<dt><code>list</code></dt>
+<dd>A list containing datetimes objects</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = &#39;&#39;):
+<pre><code class="python">def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = &#39;&#39;) -&gt; list:
     &#34;&#34;&#34;
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -1045,13 +1046,13 @@ str_to_date(date_str)
         additional_separator (str): Additional separator
 
     Returns:
-        datetime: A date as a python datetime object
+        list: A list containing datetimes objects
     &#34;&#34;&#34;
     # Split string to get a list of strings
     list_of_dates_str = str_to_list(date_str, additional_separator)
 
     # Convert strings to date
-    list_of_dates = [str_to_date(date, date_format) for date in list_of_dates_str]
+    list_of_dates = [str_to_date(dt, date_format) for dt in list_of_dates_str]
 
     return list_of_dates</code></pre>
 </details>
