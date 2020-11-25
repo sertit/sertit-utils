@@ -226,8 +226,13 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
     # Update metadata
     out_meta = meta.copy()
 
+    # Update raster to be sure to write down correct nodata pixels
+    if isinstance(raster, np.ma.masked_array):
+        raster[raster.mask] = raster.fill_value
+
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta["driver"] = "GTiff"
+
     # Compress only if uint8 data
     if raster.dtype == np.uint8:
         out_meta['compress'] = "lzw"
