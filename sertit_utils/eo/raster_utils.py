@@ -188,6 +188,8 @@ def read(dataset: rasterio.DatasetReader,
 
         if resolution[1] is not None:
             new_height = int(dataset.height * dataset.res[1] / resolution[1])
+    elif resolution is None:
+        pass
     else:
         raise ValueError("Resolution should be None, 2 floats or a list: {}".format(resolution))
 
