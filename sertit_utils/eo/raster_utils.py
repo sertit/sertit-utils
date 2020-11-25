@@ -171,18 +171,25 @@ def read(dataset: rasterio.DatasetReader,
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     """
-    if resolution is None:
-        resolution = dataset.res
-
-    if isinstance(resolution, (int, float)):
-        resolution = [resolution, resolution]
-
-    if len(resolution) != 2:
-        raise ValueError("We should have a resolution for X and Y dimensions")
+    # By default keep original shape
+    new_height = dataset.height
+    new_width = dataset.width
 
     # Compute new shape
-    new_height = int(dataset.height * dataset.res[1] / resolution[1])
-    new_width = int(dataset.width * dataset.res[0] / resolution[0])
+    if isinstance(resolution, (int, float)):
+        new_height = int(dataset.height * dataset.res[1] / resolution)
+        new_width = int(dataset.width * dataset.res[0] / resolution)
+    elif isinstance(resolution, list):
+        if len(resolution) != 2:
+            raise ValueError("We should have a resolution for X and Y dimensions")
+
+        if resolution[0] is not None:
+            new_width = int(dataset.width * dataset.res[0] / resolution[0])
+
+        if resolution[1] is not None:
+            new_height = int(dataset.height * dataset.res[1] / resolution[1])
+    else:
+        raise ValueError("Resolution should be None, 2 floats or a list: {}".format(resolution))
 
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
