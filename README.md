@@ -7,7 +7,7 @@ Library gathering utils functions for all SERTIT's projects.
 An HTML documentation is provided to document the code.
 It can be found in `docs`. 
 To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
-To generate the HTML documentation, just type `pdoc sentineldownload -o docs\html -f --html`
+To generate the HTML documentation, just type `pdoc sertit_utils -o docs\html -f --html`
 
 ## CORE
 ### File
@@ -48,12 +48,13 @@ File gathering file-related functions:
 
 ### Raster
 Basically, these functions are overloads of rasterio's functions:
-- Get extent of a raster
+- Get extent and footprint of a raster
 - Read/write overload of rasterio functions
 - Masking with masked array
 - Collocation (superimpose)
 - Sieving
 - Vectorization
+- Merge rasters (as GTiff and VRT)
 - Get the path of the BEAM-DIMAP image that can be read by rasterio
 
 ## Generation

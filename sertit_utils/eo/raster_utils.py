@@ -371,10 +371,13 @@ def get_footprint(path: str) -> gpd.GeoDataFrame:
 
 def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
-    Merge rasters as a VRT. Uses gdalbuildvrt. See here: https://gdal.org/programs/gdalbuildvrt.html
+    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+
+    See here: https://gdal.org/programs/gdalbuildvrt.html
+
     Creates VRT with relative paths !
 
-    :warning: they should have the same CRS
+    **WARNING:** They should have the same CRS !
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
@@ -396,7 +399,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
     """
     Merge rasters as a GeoTiff.
 
-    :warning: they should have the same CRS
+    **WARNING:** They should have the same CRS !
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)

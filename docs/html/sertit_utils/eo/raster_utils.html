@@ -36,9 +36,9 @@ import geopandas as gpd
 from rasterio.enums import Resampling
 from shapely.geometry import Polygon
 import rasterio
-from rasterio import features, warp, mask
+from rasterio import features, warp, mask, merge
 
-from sertit_utils.core import file_utils
+from sertit_utils.core import file_utils, sys_utils, type_utils
 from sertit_utils.eo import geo_utils
 
 MAX_CORES = os.cpu_count() - 2
@@ -200,18 +200,27 @@ def read(dataset: rasterio.DatasetReader,
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     &#34;&#34;&#34;
-    if resolution is None:
-        resolution = dataset.res
-
-    if isinstance(resolution, (int, float)):
-        resolution = [resolution, resolution]
-
-    if len(resolution) != 2:
-        raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+    # By default keep original shape
+    new_height = dataset.height
+    new_width = dataset.width
 
     # Compute new shape
-    new_height = int(dataset.height * dataset.res[1] / resolution[1])
-    new_width = int(dataset.width * dataset.res[0] / resolution[0])
+    if isinstance(resolution, (int, float)):
+        new_height = int(dataset.height * dataset.res[1] / resolution)
+        new_width = int(dataset.width * dataset.res[0] / resolution)
+    elif isinstance(resolution, list):
+        if len(resolution) != 2:
+            raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+
+        if resolution[0] is not None:
+            new_width = int(dataset.width * dataset.res[0] / resolution[0])
+
+        if resolution[1] is not None:
+            new_height = int(dataset.height * dataset.res[1] / resolution[1])
+    elif resolution is None:
+        pass
+    else:
+        raise ValueError(&#34;Resolution should be None, 2 floats or a list: {}&#34;.format(resolution))
 
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
@@ -255,8 +264,13 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
     # Update metadata
     out_meta = meta.copy()
 
+    # Update raster to be sure to write down correct nodata pixels
+    if isinstance(raster, np.ma.masked_array):
+        raster[raster.mask] = raster.fill_value
+
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta[&#34;driver&#34;] = &#34;GTiff&#34;
+
     # Compress only if uint8 data
     if raster.dtype == np.uint8:
         out_meta[&#39;compress&#39;] = &#34;lzw&#34;
@@ -364,7 +378,82 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
         gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     &#34;&#34;&#34;
     with rasterio.open(path) as dst:
-        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
+        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
+
+
+def get_footprint(path: str) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get real footprint of the product (without nodata, in french == emprise utile)
+
+    Returns:
+        gpd.GeoDataFrame: Footprint as a GeoDataFrame
+    &#34;&#34;&#34;
+    footprint = vectorize(path, on_mask=True)
+
+    # Get the footprint max (discard small holes)
+    footprint = footprint[footprint.area == np.max(footprint.area)]
+
+    # Reset index as we only got one polygon left
+    footprint.reset_index(inplace=True)
+    return footprint
+
+
+def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+
+    See here: https://gdal.org/programs/gdalbuildvrt.html
+
+    Creates VRT with relative paths !
+
+    **WARNING:** They should have the same CRS !
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs (dict): Other gdlabuildvrt arguments
+    &#34;&#34;&#34;
+    # Create relative paths
+    vrt_root = os.path.dirname(crs_merged_path)
+    rel_paths = [type_utils.to_cmd_string(file_utils.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = type_utils.to_cmd_string(file_utils.real_rel_path(crs_merged_path, vrt_root))
+
+    # Run cmd
+    arg_list = [val for item in kwargs.items() for val in item]
+    vrt_cmd = [&#34;gdalbuildvrt&#34;, rel_vrt, *rel_paths, *arg_list]
+    sys_utils.run_command(vrt_cmd, cwd=vrt_root)
+
+
+def merge_gtiff(crs_paths: list, crs_merged_path: str) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a GeoTiff.
+
+    **WARNING:** They should have the same CRS !
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+    &#34;&#34;&#34;
+    # Open datasets for merging
+    crs_datasets = []
+    try:
+        for path in crs_paths:
+            crs_datasets.append(rasterio.open(path))
+
+        # Merge all datasets
+        merged_array, merged_transform = merge.merge(crs_datasets, method=&#39;max&#39;)
+        merged_meta = crs_datasets[0].meta.copy()
+        merged_meta.update({&#34;driver&#34;: &#34;GTiff&#34;,
+                            &#34;height&#34;: merged_array.shape[1],
+                            &#34;width&#34;: merged_array.shape[2],
+                            &#34;transform&#34;: merged_transform})
+    finally:
+        # Close all datasets
+        for dataset in crs_datasets:
+            dataset.close()
+
+    # Save merge datasets
+    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)</code></pre>
 </details>
 </section>
 <section>
@@ -513,6 +602,37 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
         return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)</code></pre>
 </details>
 </dd>
+<dt id="sertit_utils.eo.raster_utils.get_footprint"><code class="name flex">
+<span>def <span class="ident">get_footprint</span></span>(<span>path: str) ‑> geopandas.geodataframe.GeoDataFrame</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get real footprint of the product (without nodata, in french == emprise utile)</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Footprint as a GeoDataFrame</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_footprint(path: str) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get real footprint of the product (without nodata, in french == emprise utile)
+
+    Returns:
+        gpd.GeoDataFrame: Footprint as a GeoDataFrame
+    &#34;&#34;&#34;
+    footprint = vectorize(path, on_mask=True)
+
+    # Get the footprint max (discard small holes)
+    footprint = footprint[footprint.area == np.max(footprint.area)]
+
+    # Reset index as we only got one polygon left
+    footprint.reset_index(inplace=True)
+    return footprint</code></pre>
+</details>
+</dd>
 <dt id="sertit_utils.eo.raster_utils.ma_mask"><code class="name flex">
 <span>def <span class="ident">ma_mask</span></span>(<span>ds_to_mask: rasterio.io.DatasetReader, extent: Union[shapely.geometry.polygon.Polygon, list], nodata: Union[int, NoneType] = None, crop=False) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'affine.Affine'>)</span>
 </code></dt>
@@ -577,6 +697,102 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
     return crop_mask, trf</code></pre>
 </details>
 </dd>
+<dt id="sertit_utils.eo.raster_utils.merge_gtiff"><code class="name flex">
+<span>def <span class="ident">merge_gtiff</span></span>(<span>crs_paths: list, crs_merged_path: str) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Merge rasters as a GeoTiff.</p>
+<p><strong>WARNING:</strong> They should have the same CRS !</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
+<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the merged raster</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_gtiff(crs_paths: list, crs_merged_path: str) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a GeoTiff.
+
+    **WARNING:** They should have the same CRS !
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+    &#34;&#34;&#34;
+    # Open datasets for merging
+    crs_datasets = []
+    try:
+        for path in crs_paths:
+            crs_datasets.append(rasterio.open(path))
+
+        # Merge all datasets
+        merged_array, merged_transform = merge.merge(crs_datasets, method=&#39;max&#39;)
+        merged_meta = crs_datasets[0].meta.copy()
+        merged_meta.update({&#34;driver&#34;: &#34;GTiff&#34;,
+                            &#34;height&#34;: merged_array.shape[1],
+                            &#34;width&#34;: merged_array.shape[2],
+                            &#34;transform&#34;: merged_transform})
+    finally:
+        # Close all datasets
+        for dataset in crs_datasets:
+            dataset.close()
+
+    # Save merge datasets
+    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)</code></pre>
+</details>
+</dd>
+<dt id="sertit_utils.eo.raster_utils.merge_vrt"><code class="name flex">
+<span>def <span class="ident">merge_vrt</span></span>(<span>crs_paths: list, crs_merged_path: str, **kwargs) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Merge rasters as a VRT. Uses <code>gdalbuildvrt</code>.</p>
+<p>See here: <a href="https://gdal.org/programs/gdalbuildvrt.html">https://gdal.org/programs/gdalbuildvrt.html</a></p>
+<p>Creates VRT with relative paths !</p>
+<p><strong>WARNING:</strong> They should have the same CRS !</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
+<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the merged raster</dd>
+<dt><strong><code>kwargs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Other gdlabuildvrt arguments</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+
+    See here: https://gdal.org/programs/gdalbuildvrt.html
+
+    Creates VRT with relative paths !
+
+    **WARNING:** They should have the same CRS !
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs (dict): Other gdlabuildvrt arguments
+    &#34;&#34;&#34;
+    # Create relative paths
+    vrt_root = os.path.dirname(crs_merged_path)
+    rel_paths = [type_utils.to_cmd_string(file_utils.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = type_utils.to_cmd_string(file_utils.real_rel_path(crs_merged_path, vrt_root))
+
+    # Run cmd
+    arg_list = [val for item in kwargs.items() for val in item]
+    vrt_cmd = [&#34;gdalbuildvrt&#34;, rel_vrt, *rel_paths, *arg_list]
+    sys_utils.run_command(vrt_cmd, cwd=vrt_root)</code></pre>
+</details>
+</dd>
 <dt id="sertit_utils.eo.raster_utils.read"><code class="name flex">
 <span>def <span class="ident">read</span></span>(<span>dataset: rasterio.io.DatasetReader, resolution: Union[list, float] = None, resampling: rasterio.enums.Resampling = Resampling.nearest, masked=True) ‑> (<class 'numpy.ma.core.MaskedArray'>, <class 'dict'>)</span>
 </code></dt>
@@ -618,18 +834,27 @@ def get_extent(path: str) -&gt; gpd.GeoDataFrame:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     &#34;&#34;&#34;
-    if resolution is None:
-        resolution = dataset.res
-
-    if isinstance(resolution, (int, float)):
-        resolution = [resolution, resolution]
-
-    if len(resolution) != 2:
-        raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+    # By default keep original shape
+    new_height = dataset.height
+    new_width = dataset.width
 
     # Compute new shape
-    new_height = int(dataset.height * dataset.res[1] / resolution[1])
-    new_width = int(dataset.width * dataset.res[0] / resolution[0])
+    if isinstance(resolution, (int, float)):
+        new_height = int(dataset.height * dataset.res[1] / resolution)
+        new_width = int(dataset.width * dataset.res[0] / resolution)
+    elif isinstance(resolution, list):
+        if len(resolution) != 2:
+            raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+
+        if resolution[0] is not None:
+            new_width = int(dataset.width * dataset.res[0] / resolution[0])
+
+        if resolution[1] is not None:
+            new_height = int(dataset.height * dataset.res[1] / resolution[1])
+    elif resolution is None:
+        pass
+    else:
+        raise ValueError(&#34;Resolution should be None, 2 floats or a list: {}&#34;.format(resolution))
 
     # Read data
     array = dataset.read(out_shape=(dataset.count, new_height, new_width),
@@ -856,8 +1081,13 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
     # Update metadata
     out_meta = meta.copy()
 
+    # Update raster to be sure to write down correct nodata pixels
+    if isinstance(raster, np.ma.masked_array):
+        raster[raster.mask] = raster.fill_value
+
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta[&#34;driver&#34;] = &#34;GTiff&#34;
+
     # Compress only if uint8 data
     if raster.dtype == np.uint8:
         out_meta[&#39;compress&#39;] = &#34;lzw&#34;
@@ -910,7 +1140,10 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <li><code><a title="sertit_utils.eo.raster_utils.collocate" href="#sertit_utils.eo.raster_utils.collocate">collocate</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.get_dim_img_path" href="#sertit_utils.eo.raster_utils.get_dim_img_path">get_dim_img_path</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.get_extent" href="#sertit_utils.eo.raster_utils.get_extent">get_extent</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.get_footprint" href="#sertit_utils.eo.raster_utils.get_footprint">get_footprint</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.ma_mask" href="#sertit_utils.eo.raster_utils.ma_mask">ma_mask</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.merge_gtiff" href="#sertit_utils.eo.raster_utils.merge_gtiff">merge_gtiff</a></code></li>
+<li><code><a title="sertit_utils.eo.raster_utils.merge_vrt" href="#sertit_utils.eo.raster_utils.merge_vrt">merge_vrt</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.read" href="#sertit_utils.eo.raster_utils.read">read</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.sieve" href="#sertit_utils.eo.raster_utils.sieve">sieve</a></code></li>
 <li><code><a title="sertit_utils.eo.raster_utils.vectorize" href="#sertit_utils.eo.raster_utils.vectorize">vectorize</a></code></li>
