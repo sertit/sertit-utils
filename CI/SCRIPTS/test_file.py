@@ -7,6 +7,8 @@ from datetime import datetime, date
 from sertit_utils.core import file_utils, sys_utils
 from CI.SCRIPTS import script_utils
 
+FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "file_utils")
+
 
 def test_paths():
     """ Test path functions """
@@ -34,13 +36,13 @@ def test_extract():
     tmp_dir = tempfile.TemporaryDirectory()
 
     # Archives
-    zip_file = os.path.join(script_utils.get_ci_data_path(), "test_zip.zip")
-    tar_file = os.path.join(script_utils.get_ci_data_path(), "test_tar.tar")
-    tar_gz_file = os.path.join(script_utils.get_ci_data_path(), "test_targz.tar.gz")
+    zip_file = os.path.join(FILE_DATA, "test_zip.zip")
+    tar_file = os.path.join(FILE_DATA, "test_tar.tar")
+    tar_gz_file = os.path.join(FILE_DATA, "test_targz.tar.gz")
     archives = [zip_file, tar_file, tar_gz_file]
 
     # Core dir
-    core_dir = os.path.join(script_utils.get_ci_data_path(), "core")
+    core_dir = os.path.join(FILE_DATA, "core")
 
     # Extract
     extracted_dirs = file_utils.extract_files(archives, tmp_dir.name)

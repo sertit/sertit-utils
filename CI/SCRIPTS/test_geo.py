@@ -5,12 +5,14 @@ from shapely import wkt
 from CI.SCRIPTS import script_utils
 from sertit_utils.eo import geo_utils
 
+GEO_DATA = os.path.join(script_utils.get_ci_data_path(), "geo_utils")
+
 
 def test_geo():
     """ Test geo functions """
-    kml_path = os.path.join(script_utils.get_ci_data_path(), "aoi.kml")
-    wkt_path = os.path.join(script_utils.get_ci_data_path(), "aoi.wkt")
-    utm_path = os.path.join(script_utils.get_ci_data_path(), "aoi.geojson")
+    kml_path = os.path.join(GEO_DATA, "aoi.kml")
+    wkt_path = os.path.join(GEO_DATA, "aoi.wkt")
+    utm_path = os.path.join(GEO_DATA, "aoi.geojson")
 
     # KML
     geo_utils.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)

@@ -7,9 +7,9 @@ import geopandas as gpd
 from rasterio.enums import Resampling
 from shapely.geometry import Polygon
 import rasterio
-from rasterio import features, warp, mask
+from rasterio import features, warp, mask, merge
 
-from sertit_utils.core import file_utils
+from sertit_utils.core import file_utils, sys_utils, type_utils
 from sertit_utils.eo import geo_utils
 
 MAX_CORES = os.cpu_count() - 2
@@ -350,3 +350,75 @@ def get_extent(path: str) -> gpd.GeoDataFrame:
     """
     with rasterio.open(path) as dst:
         return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
+
+
+def get_footprint(path: str) -> gpd.GeoDataFrame:
+    """
+    Get real footprint of the product (without nodata, in french == emprise utile)
+
+    Returns:
+        gpd.GeoDataFrame: Footprint as a GeoDataFrame
+    """
+    footprint = vectorize(path, on_mask=True)
+
+    # Get the footprint max (discard small holes)
+    footprint = footprint[footprint.area == np.max(footprint.area)]
+
+    # Reset index as we only got one polygon left
+    footprint.reset_index(inplace=True)
+    return footprint
+
+
+def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
+    """
+    Merge rasters as a VRT. Uses gdalbuildvrt. See here: https://gdal.org/programs/gdalbuildvrt.html
+    Creates VRT with relative paths !
+
+    :warning: they should have the same CRS
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs (dict): Other gdlabuildvrt arguments
+    """
+    # Create relative paths
+    vrt_root = os.path.dirname(crs_merged_path)
+    rel_paths = [type_utils.to_cmd_string(file_utils.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = type_utils.to_cmd_string(file_utils.real_rel_path(crs_merged_path, vrt_root))
+
+    # Run cmd
+    arg_list = [val for item in kwargs.items() for val in item]
+    vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
+    sys_utils.run_command(vrt_cmd, cwd=vrt_root)
+
+
+def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
+    """
+    Merge rasters as a GeoTiff.
+
+    :warning: they should have the same CRS
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+    """
+    # Open datasets for merging
+    crs_datasets = []
+    try:
+        for path in crs_paths:
+            crs_datasets.append(rasterio.open(path))
+
+        # Merge all datasets
+        merged_array, merged_transform = merge.merge(crs_datasets, method='max')
+        merged_meta = crs_datasets[0].meta.copy()
+        merged_meta.update({"driver": "GTiff",
+                            "height": merged_array.shape[1],
+                            "width": merged_array.shape[2],
+                            "transform": merged_transform})
+    finally:
+        # Close all datasets
+        for dataset in crs_datasets:
+            dataset.close()
+
+    # Save merge datasets
+    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)
