@@ -32,10 +32,10 @@ pages:
   stage: doc
   script:
     - pip install -r requirements.txt
-    - pdoc sertit_utils -o docs/html -f --html
+    - pdoc sertit_utils -o public -f --html
   artifacts:
     paths:
-      - docs/html/sertit_utils
+      - public
   tags:
     - linux
   only:
