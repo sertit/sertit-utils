@@ -32,7 +32,8 @@ pages:
   stage: doc
   script:
     - pip install -r requirements.txt
-    - pdoc sertit_utils -o public -f --html
+    - pdoc sertit_utils -o doc -f --html
+    - mv doc/sertit_utils public/
   artifacts:
     paths:
       - public
