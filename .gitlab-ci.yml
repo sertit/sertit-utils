@@ -28,7 +28,7 @@ upload_wheel:linux:
     - tags
 
 pages:
-  image: python:3.7-buster
+  image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
   stage: doc
   script:
     - pip install pdoc3
