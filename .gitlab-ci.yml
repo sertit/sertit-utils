@@ -28,9 +28,10 @@ upload_wheel:linux:
     - tags
 
 pages:
-  image: alpine:latest
+  image: python:3.7-buster
   stage: doc
   script:
+    - pip install pdoc3
     - pdoc sertit_utils -o docs/html -f --html
   artifacts:
     paths:
