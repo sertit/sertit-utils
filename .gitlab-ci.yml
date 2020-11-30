@@ -35,7 +35,7 @@ pages:
     - pdoc sertit_utils -o docs/html -f --html
   artifacts:
     paths:
-      - docs/html
+      - docs/html/sertit_utils
   tags:
     - linux
   only:
