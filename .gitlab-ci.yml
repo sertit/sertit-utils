@@ -28,11 +28,14 @@ upload_wheel:linux:
     - tags
 
 pages:
+  image: alpine:latest
   stage: doc
   script:
     - pdoc sertit_utils -o docs/html -f --html
   artifacts:
     paths:
       - docs/html
+  tags:
+    - linux
   only:
     - master
