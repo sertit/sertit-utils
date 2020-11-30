@@ -1,6 +1,7 @@
 stages:
   - test
   - publish
+  - doc
 
 pytest:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
@@ -25,3 +26,13 @@ upload_wheel:linux:
     - linux
   only:
     - tags
+
+pages:
+  stage: doc
+  script:
+    - pdoc sertit_utils -o docs/html -f --html
+  artifacts:
+    paths:
+      - docs/html
+  only:
+    - master
