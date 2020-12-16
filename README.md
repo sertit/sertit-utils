@@ -5,9 +5,11 @@ Library gathering utils functions for all SERTIT's projects.
 ## Documentation
 
 An HTML documentation is provided to document the code.
-It can be found in `docs`. 
-To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
-To generate the HTML documentation, just type `pdoc sertit_utils -o docs\html -f --html`
+It can be found:
+- online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/),
+- on git, in `docs`.  
+  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  
+  To generate the HTML documentation, just type `pdoc sertit_utils -o docs\html -f --html`
 
 ## CORE
 ### File
