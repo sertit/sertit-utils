@@ -7,6 +7,7 @@ from colorlog import ColoredFormatter
 LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
 SU_NAME = 'sertit_utils'
 
+
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
     """
     Initialize a very basic logger to trace the first lines in the stream.
@@ -30,6 +31,7 @@ def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
         stream_handler.setLevel(log_lvl)
         stream_handler.setFormatter(formatter)
         curr_logger.addHandler(stream_handler)
+
 
 # pylint: disable=R0913
 # Too many arguments (6/5) (too-many-arguments)
@@ -123,3 +125,30 @@ def shutdown_logger(logger: logging.Logger):
         logger.removeHandler(handler)
         handler.flush()
         handler.close()
+
+
+def reset_logging():
+    """
+    Reset root logger
+    :warning: MAY BE OVERKILL
+    """
+    manager = logging.root.manager
+    manager.disabled = logging.NOTSET
+    for logger in manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(logging.NOTSET)
+            logger.propagate = True
+            logger.disabled = False
+            logger.filters.clear()
+            handlers = logger.handlers.copy()
+            for handler in handlers:
+                # Copied from `logging.shutdown`.
+                try:
+                    handler.acquire()
+                    handler.flush()
+                    handler.close()
+                except (OSError, ValueError):
+                    pass
+                finally:
+                    handler.release()
+                logger.removeHandler(handler)

@@ -13,6 +13,13 @@ def test_log():
     # -- INIT LOGGER --
     log_lvl = logging.WARNING
     log_utils.init_logger(LOGGER, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
+    log_utils.reset_logging()
+    assert LOGGER.handlers == []
+    assert LOGGER.filters == []
+    assert LOGGER.level == 0
+
+    # Re init logger
+    log_utils.init_logger(LOGGER, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
 
     # Test init
     assert LOGGER.level == log_lvl
