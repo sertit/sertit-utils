@@ -2,6 +2,7 @@
 *.py[cod]
 .idea
 *.txt
+!test.txt
 !*requirements.txt
 *.aux.xml
 __pycache__/
