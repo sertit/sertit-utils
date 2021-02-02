@@ -3,6 +3,7 @@ import os
 from typing import Union, Optional
 import affine
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 from rasterio.enums import Resampling
 from shapely.geometry import Polygon
@@ -48,9 +49,9 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.
                                  mask=None if on_mask else nodata_mask,
                                  transform=dst.transform)
 
-        # Convert results to geopandas and save it
-        gpd_results = gpd.GeoDataFrame(shapes, columns=["geometry", "raster_val"], crs=dst.crs)
-        if not gpd_results.empty:
+        # Convert results to pandas (because of invalid geometries) and save it
+        pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
+        if not pd_results.empty:
             # Convert to proper polygons
             def to_polygons(val):
                 """ Convert to polygon """
@@ -66,8 +67,11 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.
                 #   poly = poly.buffer(1.0E-9)
                 return poly
 
-            # Set georeferenced data
-            gpd_results.geometry = gpd_results.geometry.apply(to_polygons)
+            # Correct geometries
+            pd_results.geometry = pd_results.geometry.apply(to_polygons)
+
+    # Convert to geodataframe with correct geometry
+    gpd_results = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=dst.crs)
 
     if on_mask:
         gpd_results = gpd_results[gpd_results.raster_val != 0]
