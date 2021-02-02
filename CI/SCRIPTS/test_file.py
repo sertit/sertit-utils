@@ -8,9 +8,6 @@ from datetime import datetime, date
 from sertit_utils.core import file_utils, sys_utils
 from CI.SCRIPTS import script_utils
 
-from sertit_utils.core.log_utils import SU_NAME
-
-LOGGER = logging.getLogger(SU_NAME)
 FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "file_utils")
 
 
@@ -83,11 +80,6 @@ def test_archive():
 
     # Test
     unzip_dirs = file_utils.listdir_abspath(unzip_out)
-
-    # LOG
-    LOGGER.info(file_utils.listdir_abspath(tmp_dir.name))
-    LOGGER.info(file_utils.listdir_abspath(unzip_out))
-    LOGGER.info(file_utils.listdir_abspath(unzip_dirs[0]))
 
     assert len(unzip_dirs) == 2
     script_utils.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])

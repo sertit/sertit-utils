@@ -155,7 +155,6 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
         # Get extractor
         if file_path.endswith(".zip"):
             arch = zipfile.ZipFile(file_path, "r")
-            LOGGER.info("NAMELIST: %s", arch.namelist())
         else:
             arch = tarfile.open(file_path, "r")
             tmp_extract_output = tmp_extracted_dir  # Tar files do not contain a file tree
@@ -172,7 +171,6 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
             copy(tmp_extracted_dir, extracted_dir)
             tmp.cleanup()
 
-    LOGGER.info("LISTDIR: %s", os.listdir(extracted_dir))
     return extracted_dir
 
 
@@ -242,6 +240,12 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
     with zipfile.ZipFile(zip_path, "a") as zip_file:
         for dir_to_add in dirs_to_add:
             for root, dirs, files in os.walk(dir_to_add):
+                base_path = os.path.join(dir_to_add, '..')
+
+                # Write dir (in namelist at least)
+                zip_file.write(root, os.path.relpath(root, base_path))
+
+                # Write files
                 for file in files:
                     zip_file.write(os.path.join(root, file),
                                    os.path.relpath(os.path.join(root, file),
