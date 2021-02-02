@@ -169,7 +169,8 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
 
         # Copy back if we are running inside docker
         if tmp is not None:
-            copy(tmp_extract_output, output)
+            for out in listdir_abspath(tmp_extract_output):
+                copy(out, os.path.join(output, os.path.basename(out)))
             tmp.cleanup()
 
     LOGGER.info("LISTDIR output: %s", os.listdir(output))
