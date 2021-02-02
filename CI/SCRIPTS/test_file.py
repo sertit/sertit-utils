@@ -1,14 +1,16 @@
 """ Script testing the file_utils """
+import logging
 import os
 import tempfile
-import filecmp
-from argparse import Namespace
 
 import numpy as np
 from datetime import datetime, date
 from sertit_utils.core import file_utils, sys_utils
 from CI.SCRIPTS import script_utils
 
+from sertit_utils.core.log_utils import SU_NAME
+
+LOGGER = logging.getLogger(SU_NAME)
 FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "file_utils")
 
 
@@ -67,6 +69,7 @@ def test_archive():
             out_dir = file_utils.listdir_abspath(out)[0]
             script_utils.assert_dir_equal(core_dir, out_dir)
 
+        # Remove out directory in order to avoid any interferences
         file_utils.remove(out)
 
     # Add to zip
@@ -80,6 +83,8 @@ def test_archive():
 
     # Test
     unzip_dirs = file_utils.listdir_abspath(unzip_out)
+    LOGGER.info(unzip_dirs)
+    assert len(unzip_dirs) == 2
     script_utils.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
 
     # Cleanup
