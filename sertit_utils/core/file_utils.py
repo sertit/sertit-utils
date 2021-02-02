@@ -242,6 +242,8 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
             for root, dirs, files in os.walk(dir_to_add):
                 for file in files:
                     LOGGER.info("Writing %s", os.path.join(root, file))
+                    LOGGER.info("In %s", os.path.relpath(os.path.join(root, file),
+                                                         os.path.join(dir_to_add, '..')))
                     zip_file.write(os.path.join(root, file),
                                    os.path.relpath(os.path.join(root, file),
                                                    os.path.join(dir_to_add, '..')))
