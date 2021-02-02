@@ -55,7 +55,7 @@ def test_raster():
         raster_utils.write(mask_arr, raster_masked_out, meta, transform=mask_tr)
 
         # Sieve
-        sieve_out = os.path.join(script_utils.get_ci_data_path(), "test_sieved.tif")
+        sieve_out = os.path.join(tmp_dir.name, "test_sieved.tif")
         sieve_arr, sieve_meta = raster_utils.sieve(raster, meta, sieve_thresh=20, connectivity=4)
         raster_utils.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
 
