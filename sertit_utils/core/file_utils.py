@@ -154,15 +154,16 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
 
         # Get extractor
         if file_path.endswith(".zip"):
-            archive = zipfile.ZipFile(file_path, "r")
+            arch = zipfile.ZipFile(file_path, "r")
+            LOGGER.info(arch.namelist())
         else:
-            archive = tarfile.open(file_path, "r")
+            arch = tarfile.open(file_path, "r")
             tmp_extract_output = tmp_extracted_dir  # Tar files do not contain a file tree
 
         # Extract product
         try:
             os.makedirs(tmp_extracted_dir, exist_ok=True)
-            archive.extractall(path=tmp_extract_output)
+            arch.extractall(path=tmp_extract_output)
         except tarfile.ReadError as ex:
             raise TypeError("Impossible to extract {}".format(file_path)) from ex
 
@@ -189,9 +190,9 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     LOGGER.info("Unzipping products in %s", output)
     progress_bar = tqdm(archives)
     extracts = []
-    for archive in progress_bar:
-        progress_bar.set_description('Unzipping products {}'.format(os.path.basename(archive)))
-        extracts.append(extract_file(archive, output, overwrite))
+    for arch in progress_bar:
+        progress_bar.set_description('Unzipping products {}'.format(os.path.basename(arch)))
+        extracts.append(extract_file(arch, output, overwrite))
 
     return extracts
 
@@ -241,15 +242,9 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
         for dir_to_add in dirs_to_add:
             for root, dirs, files in os.walk(dir_to_add):
                 for file in files:
-                    LOGGER.info("Writing %s", os.path.join(root, file))
-                    LOGGER.info("In %s", os.path.relpath(os.path.join(root, file),
-                                                         os.path.join(dir_to_add, '..')))
                     zip_file.write(os.path.join(root, file),
                                    os.path.relpath(os.path.join(root, file),
                                                    os.path.join(dir_to_add, '..')))
-
-
-        LOGGER.info(zip_file.namelist())
 
 
 def get_file_name(file_path: str) -> str:
