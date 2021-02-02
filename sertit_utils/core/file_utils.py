@@ -172,7 +172,8 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
             copy(tmp_extracted_dir, extracted_dir)
             tmp.cleanup()
 
-    LOGGER.info("LISTDIR: %s", os.listdir(extracted_dir))
+    LOGGER.info("LISTDIR output: %s", os.listdir(output))
+    LOGGER.info("LISTDIR outdir: %s", os.listdir(extracted_dir))
     return extracted_dir
 
 
