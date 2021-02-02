@@ -83,8 +83,12 @@ def test_archive():
 
     # Test
     unzip_dirs = file_utils.listdir_abspath(unzip_out)
-    LOGGER.info(unzip_dirs)
+
+    # LOG
+    LOGGER.info(file_utils.listdir_abspath(tmp_dir.name))
+    LOGGER.info(file_utils.listdir_abspath(unzip_out))
     LOGGER.info(file_utils.listdir_abspath(unzip_dirs[0]))
+
     assert len(unzip_dirs) == 2
     script_utils.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
 
