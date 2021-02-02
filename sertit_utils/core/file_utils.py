@@ -155,6 +155,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
         # Get extractor
         if file_path.endswith(".zip"):
             arch = zipfile.ZipFile(file_path, "r")
+            LOGGER.info("NAMELIST: %s", arch.namelist())
         else:
             arch = tarfile.open(file_path, "r")
             tmp_extract_output = tmp_extracted_dir  # Tar files do not contain a file tree
@@ -171,6 +172,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
             copy(tmp_extracted_dir, extracted_dir)
             tmp.cleanup()
 
+    LOGGER.info("LISTDIR: %s", os.listdir(extracted_dir))
     return extracted_dir
 
 
