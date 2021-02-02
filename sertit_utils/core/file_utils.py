@@ -249,6 +249,9 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
                                                    os.path.join(dir_to_add, '..')))
 
 
+        LOGGER.info(zip_file.namelist())
+
+
 def get_file_name(file_path: str) -> str:
     """
     Get file name (without extension) from file path, ie:
