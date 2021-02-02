@@ -79,11 +79,11 @@ def test_raster():
         assert equality if isinstance(equality, bool) else equality.all()
 
     # Tests
-    script_utils.assert_raster_equals(raster_path, raster_out)
-    script_utils.assert_raster_equals(raster_masked_out, raster_masked_path)
-    script_utils.assert_raster_equals(sieve_out, raster_sieved_path)
-    script_utils.assert_raster_equals(raster_merged_gtiff_out, raster_merged_gtiff_path)
-    script_utils.assert_raster_equals(raster_merged_vrt_out, raster_merged_vrt_path)
+    script_utils.assert_raster_equal(raster_path, raster_out)
+    script_utils.assert_raster_equal(raster_masked_out, raster_masked_path)
+    script_utils.assert_raster_equal(sieve_out, raster_sieved_path)
+    script_utils.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
+    script_utils.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
     # Cleanup
     tmp_dir.cleanup()

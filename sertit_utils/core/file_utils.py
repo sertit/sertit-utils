@@ -108,6 +108,7 @@ def real_rel_path(path: str, start: str) -> str:
 def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
     """
     Extract an archived file (zip or others). Overwrites if specified.
+    For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
 
     Args:
         file_path (str): Archive file path
@@ -193,6 +194,56 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
         extracts.append(extract_file(archive, output, overwrite))
 
     return extracts
+
+
+def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
+    """
+    Archive a folder recursively.
+
+    Args:
+        folder_path (str): Folder to archive
+        archive_path (str): Archive path, with or without extension
+        fmt (str): Format of the archive, used by `shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
+    Returns:
+        str: Archive filename
+    """
+    # Shutil make_archive needs a path without extension
+    archive_base = os.path.splitext(archive_path)[0]
+
+    # Archive the folder
+    archive_fn = shutil.make_archive(archive_base,
+                                     format=fmt,
+                                     root_dir=os.path.dirname(folder_path),
+                                     base_dir=os.path.basename(folder_path))
+
+    return archive_fn
+
+
+def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
+    """
+    Add folders to an already existing zip file (recursively).
+
+    Args:
+        zip_path (str): Already existing zip file
+        dirs_to_add (Union[list, str]): Directories to add
+    """
+    # Check if existing zipfile
+    if not os.path.isfile(zip_path):
+        raise FileNotFoundError(f"Non existing {zip_path}")
+
+    # Convert to list if needed
+    if isinstance(dirs_to_add, str):
+        dirs_to_add = [dirs_to_add]
+
+    # Add all folders to the existing zip
+    # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
+    with zipfile.ZipFile(zip_path, "a") as zip_file:
+        for dir_to_add in dirs_to_add:
+            for root, dirs, files in os.walk(dir_to_add):
+                for file in files:
+                    zip_file.write(os.path.join(root, file),
+                                   os.path.relpath(os.path.join(root, file),
+                                                   os.path.join(dir_to_add, '..')))
 
 
 def get_file_name(file_path: str) -> str:
@@ -381,6 +432,7 @@ class CustomDecoder(JSONDecoder):
 # subclass JSONEncoder
 class CustomEncoder(JSONEncoder):
     """ Encoder for JSON with methods for datetimes and np.int64 """
+
     # pylint: disable=W0221
     def default(self, obj):
         """ Overload of the default method """

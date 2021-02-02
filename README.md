@@ -15,6 +15,8 @@ It can be found:
 ### File
 File gathering file-related functions:
 - paths
+- Create archive
+- Add folder to zip file
 - file extraction
 - file name
 - copy/remove
@@ -58,6 +60,10 @@ Basically, these functions are overloads of rasterio's functions:
 - Vectorization
 - Merge rasters (as GTiff and VRT)
 - Get the path of the BEAM-DIMAP image that can be read by rasterio
+
+## Network
+### Control
+- Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm 
 
 ## Generation
 In order to generate a distribution, just upgrade the version in `setup.py` and run the command `python setup.py sdist bdist_wheel`.

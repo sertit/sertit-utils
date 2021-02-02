@@ -2,6 +2,8 @@
 import os
 import tempfile
 import filecmp
+from argparse import Namespace
+
 import numpy as np
 from datetime import datetime, date
 from sertit_utils.core import file_utils, sys_utils
@@ -31,7 +33,7 @@ def test_paths():
         assert abs_file.startswith(file_utils.get_root_path())
 
 
-def test_extract():
+def test_archive():
     """ Test extracting functions """
     tmp_dir = tempfile.TemporaryDirectory()
 
@@ -49,10 +51,36 @@ def test_extract():
 
     # Test
     for ex_dir in extracted_dirs:
-        dcmp = filecmp.dircmp(core_dir, ex_dir)
-        assert os.path.isdir(ex_dir)
-        assert dcmp.left_only == []
-        assert dcmp.right_only == []
+        script_utils.assert_dir_equal(core_dir, ex_dir)
+
+    # Archive
+    archive_base = os.path.join(tmp_dir.name, "archive")
+    for fmt in ["zip", "tar", "gztar"]:
+        archive_fn = file_utils.archive(folder_path=core_dir,
+                                        archive_path=archive_base,
+                                        fmt=fmt)
+        out = file_utils.extract_file(archive_fn, tmp_dir.name)
+        if fmt == "zip":
+            script_utils.assert_dir_equal(core_dir, out)
+        else:
+            # For tar and tar.gz, an additional folder is created because these formats dont have any given file tree
+            out_dir = file_utils.listdir_abspath(out)[0]
+            script_utils.assert_dir_equal(core_dir, out_dir)
+
+        file_utils.remove(out)
+
+    # Add to zip
+    zip_out = archive_base + ".zip"
+    core_copy = file_utils.copy(core_dir, os.path.join(tmp_dir.name, "core2"))
+    file_utils.add_to_zip(zip_out, core_copy)
+
+    # Extract
+    unzip_out = os.path.join(tmp_dir.name, "out")
+    file_utils.extract_file(zip_out, unzip_out)
+
+    # Test
+    unzip_dirs = file_utils.listdir_abspath(unzip_out)
+    script_utils.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
 
     # Cleanup
     tmp_dir.cleanup()
