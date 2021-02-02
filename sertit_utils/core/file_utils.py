@@ -105,7 +105,7 @@ def real_rel_path(path: str, start: str) -> str:
     return os.path.join(os.path.relpath(os.path.dirname(path), start), os.path.basename(path))
 
 
-def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
+def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[list, str]:
     """
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
@@ -116,66 +116,79 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> str:
         overwrite (bool): Overwrite found extracted files
 
     Returns:
-        str: Extracted file path
+        Union[list, str]: Extracted file paths (as str if only one)
     """
-    # Get extracted name
+    # Get extracted names
     if file_path.endswith(".zip"):
-        with zipfile.ZipFile(file_path, "r") as zip_ref:
-            extracted_name = os.path.dirname(zip_ref.namelist()[0])
+        # Manage the case with several directories inside one zipfile
+        arch = zipfile.ZipFile(file_path, "r")
+        extr_names = list({path.split("/")[0] for path in arch.namelist()})
     elif file_path.endswith(".tar.gz") or file_path.endswith(".tar"):
         # Tar files have no subdirectories, so create one
-        extracted_name = get_file_name(file_path)
+        extr_names = [get_file_name(file_path)]
+        arch = tarfile.open(file_path, "r")
     else:
         raise TypeError("ExtractEO can only extract {}".format(file_path))
 
     # Get extracted directory
-    extracted_dir = os.path.join(output, extracted_name)
+    extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
 
-    # Do not process if already existing directory
-    if os.path.isdir(extracted_dir):
-        if overwrite:
-            LOGGER.debug("Already existing extracted %s. It will be overwritten as asked.", extracted_name)
-            remove(extracted_dir)
+    # Loop over basedirs from inside the archive
+    for extr_dir in extr_dirs:
+        extr_name = os.path.basename(extr_dir)
+        # Manage overwriting
+        if os.path.isdir(extr_dir):
+            if overwrite:
+                LOGGER.debug("Already existing extracted %s. It will be overwritten as asked.", extr_names)
+                remove(extr_dir)
+            else:
+                LOGGER.debug("Already existing extracted %s. It won't be overwritten.", extr_names)
+
         else:
-            LOGGER.debug("Already existing extracted %s. It won't be overwritten.", extracted_name)
-    else:
-        LOGGER.info("Extracting %s", extracted_name)
-        # Inside docker, extracting files is really slow -> copy the archive in a tmp directory
-        tmp = None
-        if sys_utils.in_docker():
-            tmp = tempfile.TemporaryDirectory()
-            copy(file_path, tmp.name)
-            file_path = os.path.join(tmp.name, os.path.basename(file_path))
-            tmp_extract_output = tmp.name
-            tmp_extracted_dir = os.path.join(tmp_extract_output, extracted_name)  # Recreate dir with tmp output
-        else:
-            tmp_extract_output = output
-            tmp_extracted_dir = extracted_dir
+            LOGGER.info("Extracting %s", extr_names)
+            # Inside docker, extracting files is really slow -> copy the archive in a tmp directory
+            tmp = None
+            if sys_utils.in_docker():
+                # Create a tmp directory
+                tmp = tempfile.TemporaryDirectory()
+                copy(file_path, tmp.name)
+                file_path = os.path.join(tmp.name, os.path.basename(file_path))
+                tmp_extr_output = tmp.name
 
-        # Get extractor
-        if file_path.endswith(".zip"):
-            arch = zipfile.ZipFile(file_path, "r")
-            LOGGER.info("NAMELIST: %s", arch.namelist())
-        else:
-            arch = tarfile.open(file_path, "r")
-            tmp_extract_output = tmp_extracted_dir  # Tar files do not contain a file tree
+                # Recreate dir with tmp output
+                tmp_extr_dir = os.path.join(tmp_extr_output, extr_name)
+            else:
+                tmp_extr_output = output
+                tmp_extr_dir = extr_dir
 
-        # Extract product
-        try:
-            os.makedirs(tmp_extracted_dir, exist_ok=True)
-            arch.extractall(path=tmp_extract_output)
-        except tarfile.ReadError as ex:
-            raise TypeError("Impossible to extract {}".format(file_path)) from ex
+            if file_path.endswith(".zip"):
+                members = [name for name in arch.namelist() if extr_name in name]
+            else:
+                members = arch.getmembers()  # Always extract all files for TAR data
 
-        # Copy back if we are running inside docker
-        if tmp is not None:
-            for out in listdir_abspath(tmp_extract_output):
-                copy(out, os.path.join(output, os.path.basename(out)))
-            tmp.cleanup()
+                # Tar files do not contain a file tree
+                tmp_extr_output = tmp_extr_dir
 
-    LOGGER.info("LISTDIR output: %s", os.listdir(output))
-    LOGGER.info("LISTDIR outdir: %s", os.listdir(extracted_dir))
-    return extracted_dir
+            # Extract product
+            try:
+                os.makedirs(tmp_extr_dir, exist_ok=True)
+                arch.extractall(path=tmp_extr_output, members=members)
+            except tarfile.ReadError as ex:
+                raise TypeError("Impossible to extract {}".format(file_path)) from ex
+
+            # Copy back if we are running inside docker and clean tmp dir
+            if tmp is not None:
+                copy(tmp_extr_dir, extr_dir)
+                tmp.cleanup()
+
+    # Close archive
+    arch.close()
+
+    # Return str for compatibility reasons
+    if len(extr_dirs) == 1:
+        extr_dirs = extr_dirs[0]
+
+    return extr_dirs
 
 
 def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
