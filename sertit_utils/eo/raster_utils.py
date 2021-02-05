@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from rasterio.enums import Resampling
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, JOIN_STYLE
 import rasterio
 from rasterio import features, warp, mask, merge
 
@@ -364,11 +364,19 @@ def get_footprint(path: str) -> gpd.GeoDataFrame:
     """
     footprint = vectorize(path, on_mask=True)
 
-    # Get the footprint max (discard small holes)
+    # Get the footprint max (discard small holes stored in other polygons)
     footprint = footprint[footprint.area == np.max(footprint.area)]
 
-    # Reset index as we only got one polygon left
+    # Fill small holes stored in the main polygon
+    eps = 100
+    footprint = footprint.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(-eps, 1, join_style=JOIN_STYLE.mitre)
+
+    # Buffer creates a Geoseries -> create back a GeoDataFrame
+    footprint = gpd.GeoDataFrame(footprint, geometry=footprint.geometry, crs=footprint.crs)
+
+    # Resets index as we only got one polygon left which should have index 0
     footprint.reset_index(inplace=True)
+
     return footprint
 
 
