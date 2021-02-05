@@ -255,7 +255,10 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
     # Add all folders to the existing zip
     # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
     with zipfile.ZipFile(zip_path, "a") as zip_file:
-        for dir_to_add in dirs_to_add:
+        progress_bar = tqdm(dirs_to_add)
+        for dir_to_add in progress_bar:
+            progress_bar.set_description('Adding {} to {}'.format(os.path.basename(dir_to_add),
+                                                                  os.path.basename(zip_path)))
             for root, dirs, files in os.walk(dir_to_add):
                 base_path = os.path.join(dir_to_add, '..')
 
