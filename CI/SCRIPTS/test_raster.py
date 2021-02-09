@@ -29,12 +29,12 @@ def test_raster():
     # Get Extent
     extent = raster_utils.get_extent(raster_path)
     truth_extent = gpd.read_file(extent_path)
-    assert extent.geometry.equals(truth_extent.geometry)
+    script_utils.assert_geom_equal(extent, truth_extent)
 
     # Get Footprint
     footprint = raster_utils.get_footprint(raster_path)
     truth_footprint = gpd.read_file(footprint_path)
-    assert footprint.geometry.equals(truth_footprint.geometry)
+    script_utils.assert_geom_equal(footprint, truth_footprint)
 
     with rasterio.open(raster_path) as dst:
         # Read
@@ -75,8 +75,8 @@ def test_raster():
         vect = raster_utils.vectorize(raster_path)
         vect.to_file(os.path.join(tmp_dir.name, "test_vector.geojson"), driver="GeoJSON")
         vect_truth = gpd.read_file(vect_truth_path)
-        equality = vect.geometry.equals(vect_truth.geometry)
-        assert equality if isinstance(equality, bool) else equality.all()
+        equality = script_utils.assert_geom_equal(vect, vect_truth)
+        # assert equality if isinstance(equality, bool) else equality.all()
 
     # Tests
     script_utils.assert_raster_equal(raster_path, raster_out)

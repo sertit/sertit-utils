@@ -3,6 +3,7 @@ import hashlib
 import os
 import rasterio
 import numpy as np
+import geopandas as gpd
 
 
 def get_proj_path():
@@ -54,3 +55,24 @@ def assert_archive_equal(path_1: str, path_2: str) -> None:
     file_1 = hashlib.sha256(open(path_1, 'rb').read()).digest()
     file_2 = hashlib.sha256(open(path_2, 'rb').read()).digest()
     assert file_1 == file_2
+
+def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> None:
+    """
+    Assert that two geometries are equal.
+    (do not check equality between geodataframe as they may differ on other fields)
+
+    WARNING: only checks:
+     - valid geometries
+     - len of GeodDataFrame
+     - CRS
+
+    Args:
+        geom_1 (gpd.GeoDataFrame): Geometry 1
+        geom_2 (gpd.GeoDataFrame): Geometry 2
+    """
+    assert len(geom_1) == len(geom_2)
+    assert geom_1.crs == geom_2.crs
+    for idx in range(len(geom_1)):
+        if geom_1.geometry.iat[idx].is_valid and geom_2.geometry.iat[idx].is_valid:
+            # If valid geometries, assert that the both are equal
+            assert geom_1.geometry.iat[idx].equals(geom_2.geometry.iat[idx])
