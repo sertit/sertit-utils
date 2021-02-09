@@ -1,15 +1,23 @@
+""" Network control utils """
+
 import os
 import time
 import logging
-import traceback
 from random import Random
 
 
 logger = logging.getLogger(__name__)
 
 
-def exponential_backoff(network_request, wait_time_slot: float, increase_factor: float, max_wait: float, max_retries: int,
-                        desc: str, random_state=None):
+# pylint: disable=R0913
+# Too many arguments (7/5) (too-many-arguments)
+def exponential_backoff(network_request,
+                        wait_time_slot: float,
+                        increase_factor: float,
+                        max_wait: float,
+                        max_retries: int,
+                        desc: str,
+                        random_state=None) -> None:
     """
     Implementation of the standard Exponential Backoff algorithm (https://en.wikipedia.org/wiki/Exponential_backoff)
 
@@ -41,17 +49,16 @@ def exponential_backoff(network_request, wait_time_slot: float, increase_factor:
             value will be set to `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
         desc (str): Description of the network request being attempted
         random_state (int): Seed to the random number generator (optional)
-
-    Returns:
     """
 
     abs_max_tries = int(os.environ.get('EXP_BACK_OFF_ABS_MAX_RETRIES', '100'))
     if abs_max_tries <= 2:
-        raise Exception(f"Environment variable 'EXP_BACK_OFF_ABS_MAX_RETRIES' must be positive finite integer greater "
-                        f"than 2")
+        raise Exception("Environment variable 'EXP_BACK_OFF_ABS_MAX_RETRIES' must be positive finite integer greater "
+                        "than 2")
 
     if not float(wait_time_slot) == wait_time_slot or wait_time_slot <= 0.0:
-        raise TypeError(f"Variable 'wait_time_slot' (current value {wait_time_slot}) must be float strictly greater than 0.0")
+        raise TypeError(f"Variable 'wait_time_slot' "
+                        f"(current value {wait_time_slot}) must be float strictly greater than 0.0")
 
     if not float(increase_factor) == increase_factor or increase_factor <= 0.0:
         raise TypeError(f"Variable 'increase_factor' (current value {increase_factor}) must be float strictly greater "
@@ -79,29 +86,32 @@ def exponential_backoff(network_request, wait_time_slot: float, increase_factor:
     cumulated_wait_time = 0.0
 
     # First try with no wait
+    # pylint: disable=W0703
+    # W0703: Catching too general exception Exception (broad-except)
     try:
         return network_request()
-    except Exception as e:
-        logger.error(f"Action '{desc}' failed with exception: {e}", exc_info=True)
+    except Exception as ex:
+        logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     for i in range(real_max_tries - 2):  # Avoids infinite loop
         random_scale = rng.randint(0, 2**i - 1)
         curr_wait_time = wait_time_slot * increase_factor ** random_scale
 
-        logger.info(f'Retrying action {desc} in {curr_wait_time} seconds...')
+        logger.info('Retrying action %s in %s seconds...', desc, curr_wait_time)
 
         cumulated_wait_time += curr_wait_time
         if cumulated_wait_time > max_wait:
-            logger.error(f"Waited {cumulated_wait_time} seconds : Maximum wait time ({max_wait}) reached "
-                         f"!!! Aborting !!!")
+            logger.error("Waited %s seconds : Maximum wait time (%s) reached\n !!! Aborting !!!",
+                         cumulated_wait_time, max_wait)
             raise TimeoutError(f"About to exceed maximum wait time {max_wait} for action {desc}")
 
         time.sleep(curr_wait_time)
-
+        # pylint: disable=W0703
+        # W0703: Catching too general exception Exception (broad-except)
         try:
             return network_request()
-        except Exception as e:
-            logger.error(f"Action '{desc}' failed with exception: {e}", exc_info=True)
+        except Exception as ex:
+            logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     # Final blind try and hope for the best
     network_request()

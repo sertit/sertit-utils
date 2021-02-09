@@ -259,7 +259,7 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
         for dir_to_add in progress_bar:
             progress_bar.set_description('Adding {} to {}'.format(os.path.basename(dir_to_add),
                                                                   os.path.basename(zip_path)))
-            for root, dirs, files in os.walk(dir_to_add):
+            for root, _, files in os.walk(dir_to_add):
                 base_path = os.path.join(dir_to_add, '..')
 
                 # Write dir (in namelist at least)

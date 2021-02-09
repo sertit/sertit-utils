@@ -41,6 +41,8 @@ def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -> Union[np.n
 
     # Only keep the bit number bit_id and reshape the vector
     if isinstance(bit_id, list):
-        return [mask[..., id] for id in bit_id]
+        bit_arr = [mask[..., id] for id in bit_id]
     else:
-        return mask[..., bit_id]
+        bit_arr = mask[..., bit_id]
+
+    return bit_arr

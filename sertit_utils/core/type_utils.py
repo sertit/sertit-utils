@@ -219,25 +219,25 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
         datetime.datetime: A date as a python datetime object
     """
     if isinstance(date_str, datetime):
-        dt = date_str
+        dtm = date_str
     elif isinstance(date_str, date):
-        dt = datetime.fromisoformat(date_str.isoformat())
+        dtm = datetime.fromisoformat(date_str.isoformat())
     else:
         try:
             if date_str.lower() == "now":
-                dt = datetime.today()
+                dtm = datetime.today()
             else:
-                dt = datetime.strptime(date_str, date_format)
+                dtm = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
             json_date_format = '%Y-%m-%d'
             try:
-                dt = datetime.strptime(date_str, json_date_format)
+                dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
                 raise Exception("Invalid date format: {}; should be {} or {}".format(date_str,
                                                                                      date_format,
                                                                                      json_date_format)) from ex
-    return dt
+    return dtm
 
 
 def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = '') -> list:
