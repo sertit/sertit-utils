@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from rasterio.enums import Resampling
-from shapely.geometry import Polygon, JOIN_STYLE
+from shapely.geometry import Polygon
 import rasterio
 from rasterio import features, warp, mask, merge
 
@@ -157,7 +157,7 @@ def collocate(master_meta: dict,
     return collocated_arr, meta
 
 
-def read(dataset: rasterio.DatasetReader,
+def read(dst: rasterio.DatasetReader,
          resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest,
          masked=True) -> (np.ma.masked_array, dict):
@@ -165,7 +165,7 @@ def read(dataset: rasterio.DatasetReader,
     Read a raster dataset from a `rasterio.Dataset`.
 
     Args:
-        dataset (rasterio.DatasetReader): Raster dataset to read
+        dst (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
         resampling (Resampling): Resampling method
         masked (bool); Get a masked array
@@ -174,42 +174,56 @@ def read(dataset: rasterio.DatasetReader,
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     """
+
+    def get_new_dim(dim: int, res_old: float, res_new: float) -> int:
+        """
+        Get the new dimension in pixels
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            int: New dimension
+        """
+        return int(np.round(dim * res_old / res_new))
+
     # By default keep original shape
-    new_height = dataset.height
-    new_width = dataset.width
+    new_height = dst.height
+    new_width = dst.width
 
     # Compute new shape
     if isinstance(resolution, (int, float)):
-        new_height = int(dataset.height * dataset.res[1] / resolution)
-        new_width = int(dataset.width * dataset.res[0] / resolution)
+        new_height = get_new_dim(dst.height, dst.res[1], resolution)
+        new_width = get_new_dim(dst.width, dst.res[0], resolution)
     elif isinstance(resolution, list):
         if len(resolution) != 2:
             raise ValueError("We should have a resolution for X and Y dimensions")
 
         if resolution[0] is not None:
-            new_width = int(dataset.width * dataset.res[0] / resolution[0])
+            new_width = get_new_dim(dst.width, dst.res[0], resolution[0])
 
         if resolution[1] is not None:
-            new_height = int(dataset.height * dataset.res[1] / resolution[1])
+            new_height = get_new_dim(dst.height, dst.res[1], resolution[1])
     elif resolution is None:
         pass
     else:
         raise ValueError("Resolution should be None, 2 floats or a list: {}".format(resolution))
 
     # Read data
-    array = dataset.read(out_shape=(dataset.count, new_height, new_width),
-                         resampling=resampling,
-                         masked=masked)
+    array = dst.read(out_shape=(dst.count, new_height, new_width),
+                     resampling=resampling,
+                     masked=masked)
 
     # Update meta
-    dst_transform = dataset.transform * dataset.transform.scale((dataset.width / new_width),
-                                                                (dataset.height / new_height))
-    dst_meta = dataset.meta.copy()
-    dst_meta.update({"height": int(new_height),
-                     "width": int(new_width),
+    dst_transform = dst.transform * dst.transform.scale((dst.width / new_width),
+                                                        (dst.height / new_height))
+    dst_meta = dst.meta.copy()
+    dst_meta.update({"height": new_height,
+                     "width": new_width,
                      "transform": dst_transform,
                      "dtype": array.dtype,
-                     "nodata": dataset.nodata})
+                     "nodata": dst.nodata})
 
     return array, dst_meta
 
