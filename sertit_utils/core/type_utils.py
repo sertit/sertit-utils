@@ -225,7 +225,8 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
     else:
         try:
             if date_str.lower() == "now":
-                dtm = datetime.today()
+                # Now with correct format (no microseconds if not specified and so on)
+                dtm = datetime.strptime(datetime.today().strftime(date_format), date_format)
             else:
                 dtm = datetime.strptime(date_str, date_format)
         except ValueError:
