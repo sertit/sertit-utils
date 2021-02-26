@@ -40,10 +40,11 @@ def test_archive():
     zip_file = os.path.join(FILE_DATA, "test_zip.zip")
     tar_file = os.path.join(FILE_DATA, "test_tar.tar")
     tar_gz_file = os.path.join(FILE_DATA, "test_targz.tar.gz")
-    archives = [zip_file, tar_file, tar_gz_file]
 
     # Core dir
     core_dir = os.path.join(FILE_DATA, "core")
+    folder = os.path.join(core_dir)
+    archives = [zip_file, tar_file, tar_gz_file, folder]
 
     # Extract
     extracted_dirs = file_utils.extract_files(archives, tmp_dir.name)

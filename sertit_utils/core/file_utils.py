@@ -118,7 +118,11 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
     Returns:
         Union[list, str]: Extracted file paths (as str if only one)
     """
-    # Get extracted names
+    # In case a folder is given, returns it (this means that the file is already extracted)
+    if os.path.isdir(file_path):
+        return file_path
+
+    # Manage archive type
     if file_path.endswith(".zip"):
         # Manage the case with several directories inside one zipfile
         arch = zipfile.ZipFile(file_path, "r")
@@ -128,9 +132,9 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
         extr_names = [get_file_name(file_path)]
         arch = tarfile.open(file_path, "r")
     else:
-        raise TypeError("ExtractEO can only extract {}".format(file_path))
+        raise TypeError("Only .zip, .tar and .tar.gz files can be extracted, not {}".format(file_path))
 
-    # Get extracted directory
+    # Get extracted list
     extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
 
     # Loop over basedirs from inside the archive
@@ -203,11 +207,11 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     Returns:
         list: Extracted files (even pre-existing ones)
     """
-    LOGGER.info("Unzipping products in %s", output)
+    LOGGER.info("Extracting products in %s", output)
     progress_bar = tqdm(archives)
     extracts = []
     for arch in progress_bar:
-        progress_bar.set_description('Unzipping products {}'.format(os.path.basename(arch)))
+        progress_bar.set_description('Extracting product {}'.format(os.path.basename(arch)))
         extracts.append(extract_file(arch, output, overwrite))
 
     return extracts
