@@ -20,17 +20,21 @@ class NetworkRequestMocker:
 
 def test_log():
     mocker = NetworkRequestMocker(5)
+
     with pytest.raises(Exception):
         mocker.network_request()  # Must raise
+
     with pytest.raises(TimeoutError):
         exponential_backoff(
             network_request=lambda: mocker.network_request(),
             wait_time_slot=0.05, increase_factor=2, max_wait=0.1, max_retries=6,
             desc="Requesting mock resource", random_state=0
         )
+
     resource = exponential_backoff(
         network_request=lambda: mocker.network_request(),
         wait_time_slot=0.05, increase_factor=2, max_wait=10, max_retries=6,
         desc="Requesting mock resource", random_state=0
     )
+
     assert resource == "The One Ring"

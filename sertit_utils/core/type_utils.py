@@ -113,8 +113,8 @@ def str_to_bool(bool_str):
     elif bool_str.lower() in false_str:
         bool_val = False
     else:
-        raise Exception(f"Invalid true or false value, "
-                        f"should be {true_str} if True or {false_str} if False, not {bool_str}")
+        raise ValueError(f"Invalid true or false value, "
+                         f"should be {true_str} if True or {false_str} if False, not {bool_str}")
     return bool_val
 
 
@@ -179,7 +179,7 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
     elif isinstance(list_str, list):
         listed_str = list_str
     else:
-        raise Exception(f"List should be given as a string or a list of string: {list_str}")
+        raise ValueError(f"List should be given as a string or a list of string: {list_str}")
 
     out_list = []
     for item in listed_str:
@@ -193,7 +193,7 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
                 item_case = item
 
             if keyword_list is not None and item_case not in keyword_list:
-                raise Exception(f'Wrong keyword ({item_case}), should be chosen among {keyword_list}')
+                raise ValueError(f'Wrong keyword ({item_case}), should be chosen among {keyword_list}')
 
             out_list.append(item_case)
 
@@ -235,8 +235,8 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
             try:
                 dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
-                raise Exception(f"Invalid date format: {date_str}; should be {date_format} "
-                                f"or {json_date_format}") from ex
+                raise ValueError(f"Invalid date format: {date_str}; should be {date_format} "
+                                 f"or {json_date_format}") from ex
     return dtm
 
 

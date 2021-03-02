@@ -143,7 +143,7 @@ def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
             with open(aoi_path, 'r') as aoi_f:
                 aoi = wkt.load(aoi_f)
         except Exception as ex:
-            raise Exception('AOI WKT cannot be read') from ex
+            raise ValueError('AOI WKT cannot be read') from ex
     else:
         try:
             if aoi_path.endswith(".kml"):
@@ -166,7 +166,7 @@ def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
             aoi = wkt.loads(str(polygon))
 
         except Exception as ex:
-            raise Exception('AOI cannot be read by Fiona') from ex
+            raise ValueError('AOI cannot be read by Fiona') from ex
 
     # Convert to string if needed
     if as_str:

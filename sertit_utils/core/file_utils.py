@@ -82,7 +82,7 @@ def to_abspath(path_str):
     if not os.path.exists(abs_path):
         if os.path.splitext(abs_path)[1]:
             # If the path specifies a file (with extension), it raises an exception
-            raise Exception(f"Non existing file: {abs_path}")
+            raise FileNotFoundError(f"Non existing file: {abs_path}")
 
         # If the path specifies a folder, it creates it
         os.makedirs(abs_path)
