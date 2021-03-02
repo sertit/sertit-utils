@@ -83,7 +83,7 @@ class ListEnum(Enum):
         try:
             return next(enum for enum in cls if enum.value == val)
         except StopIteration as ex:
-            raise ValueError("Non existing {} in {}".format(val, cls.list_values())) from ex
+            raise ValueError(f"Non existing {val} in {cls.list_values()}") from ex
 
 
 def str_to_bool(bool_str):
@@ -113,8 +113,8 @@ def str_to_bool(bool_str):
     elif bool_str.lower() in false_str:
         bool_val = False
     else:
-        raise Exception("Invalid true or false value, should be {} if True or {} if False, not {}".format(
-            true_str, false_str, bool_str))
+        raise Exception(f"Invalid true or false value, "
+                        f"should be {true_str} if True or {false_str} if False, not {bool_str}")
     return bool_val
 
 
@@ -150,8 +150,8 @@ def str_to_verbosity(verbosity_str):
     elif verbosity_str in err_str:
         verbosity = logging.ERROR
     else:
-        raise argparse.ArgumentTypeError('Incorrect logging level value: {}, should be {}, {}, {} or {}'.format(
-            verbosity_str, info_str, debug_str, warn_str, err_str))
+        raise argparse.ArgumentTypeError(f'Incorrect logging level value: {verbosity_str}, '
+                                         f'should be {info_str}, {debug_str}, {warn_str} or {err_str}')
 
     return verbosity
 
@@ -179,7 +179,7 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
     elif isinstance(list_str, list):
         listed_str = list_str
     else:
-        raise Exception("List should be given as a string or a list of string: {}".format(list_str))
+        raise Exception(f"List should be given as a string or a list of string: {list_str}")
 
     out_list = []
     for item in listed_str:
@@ -193,7 +193,7 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
                 item_case = item
 
             if keyword_list is not None and item_case not in keyword_list:
-                raise Exception('Wrong keyword ({}), should be chosen among {}'.format(item_case, keyword_list))
+                raise Exception(f'Wrong keyword ({item_case}), should be chosen among {keyword_list}')
 
             out_list.append(item_case)
 
@@ -235,9 +235,8 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
             try:
                 dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
-                raise Exception("Invalid date format: {}; should be {} or {}".format(date_str,
-                                                                                     date_format,
-                                                                                     json_date_format)) from ex
+                raise Exception(f"Invalid date format: {date_str}; should be {date_format} "
+                                f"or {json_date_format}") from ex
     return dtm
 
 
@@ -339,7 +338,7 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise ValueError("Missing mandatory key '{}' among {}".format(mandatory_key, pprint.pformat(data_dict)))
+            raise ValueError(f"Missing mandatory key '{mandatory_key}' among {pprint.pformat(data_dict)}")
 
 
 def remove_empty_values(list_with_empty_values: list) -> list:

@@ -46,8 +46,8 @@ def test_log():
         elif isinstance(handler, logging.StreamHandler):
             assert handler.level == stream_log_lvl
         else:
-            raise TypeError("Invalid handler type: {}, "
-                            "the logger should only have Stream and File handlers".format(handler.__class__))
+            raise TypeError(f"Invalid handler type: {handler.__class__}, "
+                            f"the logger should only have Stream and File handlers")
 
     # Cleanup
     log_utils.shutdown_logger(LOGGER)  # If this fails, we will not be able to cleanup the tmp dir

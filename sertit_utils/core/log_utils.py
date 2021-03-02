@@ -54,7 +54,7 @@ def create_logger(logger: logging.Logger,
     """
     # Logger data
     date = datetime.today().replace(microsecond=0).strftime("%y%m%d_%H%M%S")
-    log_file_name = "{}_{}_log.txt".format(date, name)
+    log_file_name = f"{date}_{name}_log.txt"
 
     # Remove already created console handler
     if logger.handlers:

@@ -208,7 +208,7 @@ def read(dst: rasterio.DatasetReader,
     elif resolution is None:
         pass
     else:
-        raise ValueError("Resolution should be None, 2 floats or a list: {}".format(resolution))
+        raise ValueError(f"Resolution should be None, 2 floats or a list: {resolution}")
 
     # Read data
     array = dst.read(out_shape=(dst.count, new_height, new_width),

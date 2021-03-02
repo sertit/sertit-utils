@@ -69,7 +69,7 @@ def test_str():
     """ Test string function """
     tstr = "ThisIsATest"
     assert type_utils.snake_to_camel_case(type_utils.camel_to_snake_case(tstr)) == tstr
-    assert type_utils.to_cmd_string(tstr) == "\"{}\"".format(tstr)
+    assert type_utils.to_cmd_string(tstr) == f'"{tstr}"'
 
 def test_enum():
     """ Test ListEnum """

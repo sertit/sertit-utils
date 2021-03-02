@@ -35,7 +35,7 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     # Then 6 if north, 7 if south -> (np.sign(lat) + 1) / 2 * 100 == 1 if lat > 0 (north), 0 if lat < 0 (south)
     # Then EPSG code with usual formula np.floor((180 + lon) / 6) + 1)
     epsg = int(32700 - (np.sign(lat) + 1) / 2 * 100 + np.floor((180 + lon) / 6) + 1)
-    return "EPSG:{}".format(epsg)
+    return f"EPSG:{epsg}"
 
 
 def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, float, float, float):
@@ -136,7 +136,7 @@ def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
         Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
     """
     if not os.path.isfile(aoi_path):
-        raise FileNotFoundError("AOI file {} does not exist.".format(aoi_path))
+        raise FileNotFoundError(f"AOI file {aoi_path} does not exist.")
 
     if aoi_path.endswith('.wkt'):
         try:

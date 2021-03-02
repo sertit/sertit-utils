@@ -61,6 +61,8 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
     Assert that two geometries are equal.
     (do not check equality between geodataframe as they may differ on other fields)
 
+    # TODO: use geopandas.testing.assert_geoseries_equal() and assert_geodataframe_equal()
+
     WARNING: only checks:
      - valid geometries
      - len of GeodDataFrame

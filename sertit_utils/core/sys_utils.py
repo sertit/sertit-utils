@@ -110,7 +110,7 @@ def run_command(cmd: Union[str, list],
 
     # Check return value
     if check_return_value and retval != 0:
-        raise Exception("Exe {} has failed.".format(cmd[0]))
+        raise Exception(f"Exe {cmd[0]} has failed.")
 
     return retval, output
 

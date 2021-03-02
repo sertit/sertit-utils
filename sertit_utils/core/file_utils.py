@@ -82,7 +82,7 @@ def to_abspath(path_str):
     if not os.path.exists(abs_path):
         if os.path.splitext(abs_path)[1]:
             # If the path specifies a file (with extension), it raises an exception
-            raise Exception("Non existing file: {}".format(abs_path))
+            raise Exception(f"Non existing file: {abs_path}")
 
         # If the path specifies a folder, it creates it
         os.makedirs(abs_path)
@@ -132,7 +132,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
         extr_names = [get_file_name(file_path)]
         arch = tarfile.open(file_path, "r")
     else:
-        raise TypeError("Only .zip, .tar and .tar.gz files can be extracted, not {}".format(file_path))
+        raise TypeError(f"Only .zip, .tar and .tar.gz files can be extracted, not {file_path}")
 
     # Get extracted list
     extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
@@ -178,7 +178,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
                 os.makedirs(tmp_extr_dir, exist_ok=True)
                 arch.extractall(path=tmp_extr_output, members=members)
             except tarfile.ReadError as ex:
-                raise TypeError("Impossible to extract {}".format(file_path)) from ex
+                raise TypeError(f"Impossible to extract {file_path}") from ex
 
             # Copy back if we are running inside docker and clean tmp dir
             if tmp is not None:
@@ -211,7 +211,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     progress_bar = tqdm(archives)
     extracts = []
     for arch in progress_bar:
-        progress_bar.set_description('Extracting product {}'.format(os.path.basename(arch)))
+        progress_bar.set_description(f'Extracting product {os.path.basename(arch)}')
         extracts.append(extract_file(arch, output, overwrite))
 
     return extracts
@@ -261,8 +261,7 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
     with zipfile.ZipFile(zip_path, "a") as zip_file:
         progress_bar = tqdm(dirs_to_add)
         for dir_to_add in progress_bar:
-            progress_bar.set_description('Adding {} to {}'.format(os.path.basename(dir_to_add),
-                                                                  os.path.basename(zip_path)))
+            progress_bar.set_description(f'Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}')
             for root, _, files in os.walk(dir_to_add):
                 base_path = os.path.join(dir_to_add, '..')
 
@@ -360,7 +359,7 @@ def copy(src: str, dst: str) -> str:
         out = src
         # eg. source or destination doesn't exist
     except IOError as ex:
-        raise IOError('Copy error: {}'.format(ex.strerror)) from ex
+        raise IOError(f'Copy error: {ex.strerror}') from ex
 
     return out
 
@@ -410,7 +409,7 @@ def find_files(names: Union[list, str],
 
     # Check if found
     if not paths:
-        raise FileNotFoundError("Files {} not found in {}".format(names, root_paths))
+        raise FileNotFoundError(f"Files {names} not found in {root_paths}")
 
     LOGGER.debug("Paths found in %s for filenames %s:\n%s", root_paths, names, pprint.pformat(paths))
 
@@ -581,7 +580,7 @@ def get_file_in_dir(directory: str,
     file_list = glob.glob(os.path.join(directory, glob_pattern))
 
     if len(file_list) == 0:
-        raise FileNotFoundError("File with pattern {} not found in {}".format(glob_pattern, directory))
+        raise FileNotFoundError(f"File with pattern {glob_pattern} not found in {directory}")
 
     # Return list, file path or file name
     if get_list:

@@ -8,6 +8,8 @@ from sertit_utils.eo import geo_utils
 GEO_DATA = os.path.join(script_utils.get_ci_data_path(), "geo_utils")
 
 
+# TODO: use geopandas.testing.assert_geoseries_equal() and assert_geodataframe_equal()
+
 def test_geo():
     """ Test geo functions """
     kml_path = os.path.join(GEO_DATA, "aoi.kml")
