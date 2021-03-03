@@ -55,4 +55,5 @@ def test_vectors():
 
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2, 3, 4, 5], aoi.crs)
+    with pytest.raises(TypeError):
         vectors.get_geodf([1, 2], aoi.crs)
