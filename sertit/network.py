@@ -114,4 +114,4 @@ def exponential_backoff(network_request,
             logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     # Final blind try and hope for the best
-    network_request()
+    return network_request()
