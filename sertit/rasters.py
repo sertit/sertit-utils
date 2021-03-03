@@ -10,8 +10,7 @@ from shapely.geometry import Polygon
 import rasterio
 from rasterio import features, warp, mask, merge
 
-from sertit_utils.core import file_utils, sys_utils, type_utils
-from sertit_utils.eo import geo_utils
+from sertit import misc, files, vectors, strings
 
 MAX_CORES = os.cpu_count() - 2
 
@@ -25,7 +24,6 @@ def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.
     - Please only use this function on a classified raster.
     - This could take a while as the computing time directly depends on the number of polygons to vectorize.
         Please be careful.
-
 
     Args:
         path (str): Path to the raster
@@ -352,7 +350,7 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
 
     assert dim_path.endswith(".data") and os.path.isdir(dim_path)
 
-    return file_utils.get_file_in_dir(dim_path, img_name, extension='img')
+    return files.get_file_in_dir(dim_path, img_name, extension='img')
 
 
 def get_extent(path: str) -> gpd.GeoDataFrame:
@@ -366,7 +364,7 @@ def get_extent(path: str) -> gpd.GeoDataFrame:
         gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     """
     with rasterio.open(path) as dst:
-        return geo_utils.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
+        return vectors.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
 
 
 def get_footprint(path: str) -> gpd.GeoDataFrame:
@@ -409,13 +407,13 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
-    rel_paths = [type_utils.to_cmd_string(file_utils.real_rel_path(path, vrt_root)) for path in crs_paths]
-    rel_vrt = type_utils.to_cmd_string(file_utils.real_rel_path(crs_merged_path, vrt_root))
+    rel_paths = [strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = strings.to_cmd_string(files.real_rel_path(crs_merged_path, vrt_root))
 
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
     vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
-    sys_utils.run_command(vrt_cmd, cwd=vrt_root)
+    misc.run_command(vrt_cmd, cwd=vrt_root)
 
 
 def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
@@ -448,3 +446,47 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
 
     # Save merge datasets
     write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)
+
+
+def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
+    """
+    Function found here:
+    https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
+    Args:
+        array (np.ndarray): Array to unpack
+        nof_bits (int): Number of bits to unpack
+
+    Returns:
+        np.ndarray: Unpacked array
+    """
+    xshape = list(array.shape)
+    array = array.reshape([-1, 1])
+    msk = 2 ** np.arange(nof_bits).reshape([1, nof_bits])
+    return (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+
+
+def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+    """
+    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
+
+    Args:
+        bit_mask (np.ndarray): Bit array to read
+        bit_id (int): Bit ID of the slice to be read
+          Example: read the bit 0 of the mask as a cloud mask (Theia)
+
+    Returns:
+        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+    """
+    # Get the number of bits
+    nof_bits = 8 * bit_mask.dtype.itemsize
+
+    # Read cloud mask as bits
+    msk = unpackbits(bit_mask, nof_bits)
+
+    # Only keep the bit number bit_id and reshape the vector
+    if isinstance(bit_id, list):
+        bit_arr = [msk[..., bid] for bid in bit_id]
+    else:
+        bit_arr = msk[..., bit_id]
+
+    return bit_arr

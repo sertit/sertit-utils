@@ -1,4 +1,4 @@
-name: sertit_utils
+name: sertit
 channels:
   - conda-forge
 dependencies:         # everything under this, installed by conda

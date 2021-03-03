@@ -7,7 +7,7 @@ import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
 from rasterio import crs
-from sertit_utils.core.log_utils import SU_NAME
+from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 

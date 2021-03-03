@@ -1,6 +1,6 @@
 """ Script testing the network.control """
 import pytest
-from sertit_utils.network.control import exponential_backoff
+from sertit.network import exponential_backoff
 
 
 class NetworkRequestMocker:

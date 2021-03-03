@@ -18,8 +18,8 @@ from typing import Union, Any
 from tqdm import tqdm
 import numpy as np
 
-from sertit_utils.core import sys_utils
-from sertit_utils.core.log_utils import SU_NAME
+from sertit import misc
+from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -151,39 +151,37 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
         else:
             LOGGER.info("Extracting %s", extr_names)
             # Inside docker, extracting files is really slow -> copy the archive in a tmp directory
-            tmp = None
-            if sys_utils.in_docker():
-                # Create a tmp directory
-                tmp = tempfile.TemporaryDirectory()
-                copy(file_path, tmp.name)
-                file_path = os.path.join(tmp.name, os.path.basename(file_path))
-                tmp_extr_output = tmp.name
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                if misc.in_docker():
+                    # Create a tmp directory
+                    copy(file_path, tmp_dir)
+                    file_path = os.path.join(tmp_dir, os.path.basename(file_path))
+                    tmp_extr_output = tmp_dir
 
-                # Recreate dir with tmp output
-                tmp_extr_dir = os.path.join(tmp_extr_output, extr_name)
-            else:
-                tmp_extr_output = output
-                tmp_extr_dir = extr_dir
+                    # Recreate dir with tmp output
+                    tmp_extr_dir = os.path.join(tmp_extr_output, extr_name)
+                else:
+                    tmp_extr_output = output
+                    tmp_extr_dir = extr_dir
 
-            if file_path.endswith(".zip"):
-                members = [name for name in arch.namelist() if extr_name in name]
-            else:
-                members = arch.getmembers()  # Always extract all files for TAR data
+                if file_path.endswith(".zip"):
+                    members = [name for name in arch.namelist() if extr_name in name]
+                else:
+                    members = arch.getmembers()  # Always extract all files for TAR data
 
-                # Tar files do not contain a file tree
-                tmp_extr_output = tmp_extr_dir
+                    # Tar files do not contain a file tree
+                    tmp_extr_output = tmp_extr_dir
 
-            # Extract product
-            try:
-                os.makedirs(tmp_extr_dir, exist_ok=True)
-                arch.extractall(path=tmp_extr_output, members=members)
-            except tarfile.ReadError as ex:
-                raise TypeError(f"Impossible to extract {file_path}") from ex
+                # Extract product
+                try:
+                    os.makedirs(tmp_extr_dir, exist_ok=True)
+                    arch.extractall(path=tmp_extr_output, members=members)
+                except tarfile.ReadError as ex:
+                    raise TypeError(f"Impossible to extract {file_path}") from ex
 
-            # Copy back if we are running inside docker and clean tmp dir
-            if tmp is not None:
-                copy(tmp_extr_dir, extr_dir)
-                tmp.cleanup()
+                # Copy back if we are running inside docker and clean tmp dir
+                if misc.in_docker():
+                    copy(tmp_extr_dir, extr_dir)
 
     # Close archive
     arch.close()
@@ -279,7 +277,7 @@ def get_file_name(file_path: str) -> str:
     """
     Get file name (without extension) from file path, ie:
 
-    `docs\\html\\sertit_utils\\core\\file_utils.html` -> `file_utils`
+    `docs\\html\\sertit\\core\\file_utils.html` -> `file_utils`
 
     Args:
         file_path (str): Absolute or relative file path (the file doesn't need to exist)

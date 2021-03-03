@@ -10,7 +10,7 @@ pytest:
     - pip install coverage pytest pytest-cov
     - python setup.py develop
   script:
-    - pytest -v --cov-report term --cov-report xml:cov.xml --cov=sertit_utils CI/SCRIPTS
+    - pytest -v --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - linux
@@ -32,8 +32,8 @@ pages:
   stage: doc
   script:
     - pip install -r requirements.txt
-    - pdoc sertit_utils -o doc -f --html
-    - mv doc/sertit_utils public/
+    - pdoc sertit -o doc -f --html
+    - mv doc/sertit public/
   artifacts:
     paths:
       - public

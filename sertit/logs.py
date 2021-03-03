@@ -1,11 +1,11 @@
-""" Log sertit_utils """
+""" Log sertit """
 import os
 import logging
 from datetime import datetime
 from colorlog import ColoredFormatter
 
 LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
-SU_NAME = 'sertit_utils'
+SU_NAME = 'sertit'
 
 
 def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
