@@ -1,7 +1,6 @@
 """ Miscellaneous Tools """
 
 import os
-import platform
 import sys
 import subprocess
 import logging
@@ -216,11 +215,11 @@ def find_by_key(data: dict, target: str) -> Any:
     return val
 
 
-def run_command(cmd: Union[str, list],
-                timeout: float = None,
-                check_return_value: bool = True,
-                in_background: bool = True,
-                cwd='/') -> (int, str):
+def run_cli(cmd: Union[str, list],
+            timeout: float = None,
+            check_return_value: bool = True,
+            in_background: bool = True,
+            cwd='/') -> (int, str):
     """
     Run a command line.
 

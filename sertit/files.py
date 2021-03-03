@@ -34,7 +34,7 @@ def get_root_path():
     return os.path.abspath(os.sep)
 
 
-def listdir_abspath(directory):
+def listdir_abspath(directory: str) -> list:
     """
     Get absolute path of all files in the given directory.
 
@@ -49,7 +49,7 @@ def listdir_abspath(directory):
     return [os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)]
 
 
-def to_abspath(path_str):
+def to_abspath(path_str: str, create: bool=True) -> str:
     """
     Return the absolute path of the specified path and check if it exists
 
@@ -73,6 +73,7 @@ def to_abspath(path_str):
 
     Args:
         path_str (str): Path as a string (relative or absolute)
+        create (bool): Create directory if not existing
 
     Returns:
         str: Absolute path
@@ -85,7 +86,8 @@ def to_abspath(path_str):
             raise FileNotFoundError(f"Non existing file: {abs_path}")
 
         # If the path specifies a folder, it creates it
-        os.makedirs(abs_path)
+        if create:
+            os.makedirs(abs_path)
 
     return abs_path
 

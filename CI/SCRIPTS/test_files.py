@@ -4,6 +4,10 @@ import tempfile
 
 import numpy as np
 from datetime import datetime, date
+
+import pytest
+
+from CI.SCRIPTS.script_utils import Polarization
 from sertit import files, misc
 from CI.SCRIPTS import script_utils
 
@@ -23,6 +27,13 @@ def test_paths():
         abs_file = files.to_abspath(curr_rel_path)
         assert abs_file == curr_file
 
+        with pytest.raises(FileNotFoundError):
+            files.to_abspath("haha.txt")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = files.to_abspath(os.path.join(tmp_dir, "haha"))
+            assert os.path.isdir(tmp)
+
         # Listdir abspath
         list_abs = files.listdir_abspath(curr_dir)
         assert curr_file in list_abs
@@ -36,16 +47,18 @@ def test_archive():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Archives
         zip_file = os.path.join(FILE_DATA, "test_zip.zip")
+        zip2_file = os.path.join(FILE_DATA, "test_zip.zip")  # For overwrite
         tar_file = os.path.join(FILE_DATA, "test_tar.tar")
         tar_gz_file = os.path.join(FILE_DATA, "test_targz.tar.gz")
 
         # Core dir
         core_dir = os.path.join(FILE_DATA, "core")
         folder = os.path.join(core_dir)
-        archives = [zip_file, tar_file, tar_gz_file, folder]
+        archives = [zip_file, tar_file, tar_gz_file, folder, zip2_file]
 
         # Extract
-        extracted_dirs = files.extract_files(archives, tmp_dir)
+        extracted_dirs = files.extract_files(archives, tmp_dir, overwrite=True)
+        files.extract_files([zip2_file], tmp_dir, overwrite=False)  # Already existing
 
         # Test
         for ex_dir in extracted_dirs:
@@ -140,11 +153,14 @@ def test_find_files():
 
 def test_json():
     """ Test json functions """
+
     test_dict = {"A": 3,
                  "C": "m2",  # Can be parsed as a date, we do not want that !
                  "D": datetime.today(),
                  "Dbis": date.today(),
-                 "E": np.int64(15)}
+                 "E": np.int64(15),
+                 "F": Polarization.vv,
+                 "G": True}
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         json_file = os.path.join(tmp_dir, "test.json")
@@ -155,6 +171,7 @@ def test_json():
         # Load pickle
         obj = files.read_json(json_file)
 
+        assert obj.pop("F") == test_dict.pop("F").value  # Enum are stored following their value
         assert obj == test_dict
 
 

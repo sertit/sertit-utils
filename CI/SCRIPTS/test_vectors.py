@@ -1,6 +1,7 @@
 """ Script testing the geo_utils """
 import os
 import geopandas as gpd
+import pytest
 from shapely import wkt
 from CI.SCRIPTS import script_utils
 from sertit import vectors
@@ -45,4 +46,13 @@ def test_vectors():
     assert vectors.corresponding_utm_projection(aoi.centroid.x, aoi.centroid.y) == "EPSG:32638"
     env = aoi.envelope[0]
     assert env.bounds == vectors.from_bounds_to_polygon(*vectors.from_polygon_to_bounds(env)).bounds
-    assert vectors.get_geodf(env, aoi.crs).bounds.equals(aoi.envelope.bounds)
+
+    # GeoDataFrame
+    geodf = vectors.get_geodf(env, aoi.crs)  # GeoDataFrame from Polygon
+    script_utils.assert_geom_equal(geodf.geometry, aoi.envelope)
+    script_utils.assert_geom_equal(vectors.get_geodf(geodf.geometry, aoi.crs), geodf)  # GeoDataFrame from Geoseries
+    script_utils.assert_geom_equal(vectors.get_geodf([env], aoi.crs), geodf)  # GeoDataFrame from list of poly
+
+    with pytest.raises(TypeError):
+        vectors.get_geodf([1, 2, 3, 4, 5], aoi.crs)
+        vectors.get_geodf([1, 2], aoi.crs)

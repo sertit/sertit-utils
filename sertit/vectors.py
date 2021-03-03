@@ -97,7 +97,7 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
     elif isinstance(geometry, Polygon):
         geometry = [geometry]
     elif isinstance(geometry, gpd.GeoSeries):
-        geometry = [from_bounds_to_polygon(*geometry.values)]
+        geometry = geometry.geometry
     else:
         raise TypeError("geometry should be a list or a Polygon.")
 

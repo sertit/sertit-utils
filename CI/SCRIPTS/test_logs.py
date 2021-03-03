@@ -12,6 +12,7 @@ def test_log():
     """ Testing log functions """
     # -- INIT LOGGER --
     log_lvl = logging.WARNING
+    LOGGER.handlers.append(logging.StreamHandler())  # Handler to remove
     logs.init_logger(LOGGER, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
     logs.reset_logging()
     assert LOGGER.handlers == []

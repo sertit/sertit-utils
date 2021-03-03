@@ -1,9 +1,21 @@
 import filecmp
-import hashlib
 import os
+from enum import unique
+
 import rasterio
 import numpy as np
 import geopandas as gpd
+
+from sertit.misc import ListEnum
+
+
+@unique
+class Polarization(ListEnum):
+    """ SAR Polarizations """
+    hh = "HH"
+    vv = "VV"
+    vh = "VH"
+    hv = "HV"
 
 
 def get_proj_path():
@@ -28,6 +40,7 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
             assert dst_1.meta == dst_2.meta
             np.testing.assert_array_equal(dst_1.read(), dst_2.read())
 
+
 def assert_dir_equal(path_1: str, path_2: str) -> None:
     """
     Assert that two directories are equal
@@ -42,19 +55,21 @@ def assert_dir_equal(path_1: str, path_2: str) -> None:
     assert dcmp.left_only == []
     assert dcmp.right_only == []
 
-def assert_archive_equal(path_1: str, path_2: str) -> None:
-    """
-    Assert that two archives are equal, by creating hashes that should be equal
 
-    Args:
-        path_1 (str): Archive 1
-        path_2 (str): Archive 2
-    """
-    filecmp.cmp(path_1, path_2)
+# def assert_archive_equal(path_1: str, path_2: str) -> None:
+#     """
+#     Assert that two archives are equal, by creating hashes that should be equal
+#
+#     Args:
+#         path_1 (str): Archive 1
+#         path_2 (str): Archive 2
+#     """
+#     filecmp.cmp(path_1, path_2)
+#
+#     file_1 = hashlib.sha256(open(path_1, 'rb').read()).digest()
+#     file_2 = hashlib.sha256(open(path_2, 'rb').read()).digest()
+#     assert file_1 == file_2
 
-    file_1 = hashlib.sha256(open(path_1, 'rb').read()).digest()
-    file_2 = hashlib.sha256(open(path_2, 'rb').read()).digest()
-    assert file_1 == file_2
 
 def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> None:
     """

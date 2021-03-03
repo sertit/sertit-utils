@@ -413,7 +413,7 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
     vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
-    misc.run_command(vrt_cmd, cwd=vrt_root)
+    misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
 def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:

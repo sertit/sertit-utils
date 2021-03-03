@@ -4,16 +4,17 @@ from enum import unique
 
 import pytest
 
+from CI.SCRIPTS.script_utils import Polarization
 from sertit import misc
 from sertit.misc import ListEnum
 
 
 def test_run_command():
     """ Test run_command """
+    cmd = "ls .."
+    misc.run_cli(cmd, in_background=False, cwd='/')  # Just ensure no exception is thrown
     cmd = ["cd", ".."]
-    misc.run_command(cmd, in_background=True, cwd='/')  # Just ensure no exception is thrown
-    cmd = ["cd", ".."]
-    misc.run_command(cmd, in_background=False, cwd='/')  # Just ensure no exception is thrown
+    misc.run_cli(cmd, in_background=True, cwd='/')  # Just ensure no exception is thrown
 
 
 def test_get_function_name():
@@ -70,16 +71,10 @@ def test_list_dict():
 
 def test_enum():
     """ Test ListEnum """
-
-    @unique
-    class Polarization(ListEnum):
-        """ SAR Polarizations """
-        hh = "HH"
-        vv = "VV"
-        vh = "VH"
-        hv = "HV"
-
     assert Polarization.list_values() == ["HH", "VV", "VH", "HV"]
     assert Polarization.list_names() == ["hh", "vv", "vh", "hv"]
     assert Polarization.from_value("HH") == Polarization.hh
     assert Polarization.from_value(Polarization.hh) == Polarization.hh
+
+    with pytest.raises(ValueError):
+        Polarization.from_value("ZZ")

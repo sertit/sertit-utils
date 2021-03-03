@@ -4,13 +4,15 @@ import argparse
 import logging
 import re
 from datetime import datetime, date
+from typing import Union
+
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 
-def str_to_bool(bool_str):
+def str_to_bool(bool_str: str) -> bool:
     """
     Convert a string to a bool.
 
@@ -42,7 +44,7 @@ def str_to_bool(bool_str):
     return bool_val
 
 
-def str_to_verbosity(verbosity_str):
+def str_to_verbosity(verbosity_str: str) -> int:
     """
     Return a logging level from a string (compared in lower case).
 
@@ -80,15 +82,16 @@ def str_to_verbosity(verbosity_str):
     return verbosity
 
 
-def str_to_list(list_str, additional_separator='', letter_case=None, keyword_list=None):
+def str_to_list(list_str: Union[str, list],
+                additional_separator: str = '',
+                case: str = None) -> list:
     """
     Convert str to list with `,`, `;`, ` ` separators.
 
     Args:
-        list_str (str): List as a string
+        list_str (Union[str, list]): List as a string
         additional_separator (str): Additional separators. Base ones are `,`, `;`, ` `.
-        letter_case (str): {none, 'lower', 'upper'}
-        keyword_list (list): List of keywords that can appear
+        case (str): {none, 'lower', 'upper'}
     Returns:
         list: A list from split string
     """
@@ -109,15 +112,12 @@ def str_to_list(list_str, additional_separator='', letter_case=None, keyword_lis
     for item in listed_str:
         # Check if there are null items
         if item:
-            if letter_case == 'lower':
+            if case == 'lower':
                 item_case = item.lower()
-            elif letter_case == 'upper':
+            elif case == 'upper':
                 item_case = item.upper()
             else:
                 item_case = item
-
-            if keyword_list is not None and item_case not in keyword_list:
-                raise ValueError(f'Wrong keyword ({item_case}), should be chosen among {keyword_list}')
 
             out_list.append(item_case)
 
@@ -164,7 +164,9 @@ def str_to_date(date_str: str, date_format: str = DATE_FORMAT) -> datetime:
     return dtm
 
 
-def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, additional_separator: str = '') -> list:
+def str_to_list_of_dates(date_str: Union[list, str],
+                         date_format: str = DATE_FORMAT,
+                         additional_separator: str = '') -> list:
     """
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -177,7 +179,7 @@ def str_to_list_of_dates(date_str: str, date_format: str = DATE_FORMAT, addition
     ```
 
     Args:
-        date_str (str): Date as a string
+        date_str (Union[list, str]): Date as a string
         date_format (str): Format of the date (as ingested by strptime)
         additional_separator (str): Additional separator
 

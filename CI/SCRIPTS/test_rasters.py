@@ -1,6 +1,8 @@
 """ Script testing the geo_utils """
 import os
 import tempfile
+
+import pytest
 import rasterio
 import numpy as np
 import geopandas as gpd
@@ -39,9 +41,15 @@ def test_raster():
         with rasterio.open(raster_path) as dst:
             # Read
             raster, meta = rasters.read(dst)
+            raster_1, _ = rasters.read(dst, resolution=20)
+            raster_2, _ = rasters.read(dst, resolution=[20, 20])
+            with pytest.raises(ValueError):
+                rasters.read(dst, resolution=[20, 20, 20])
+
             assert raster.shape == (dst.count, dst.height, dst.width)
             assert meta["crs"] == dst.crs
             assert meta["transform"] == dst.transform
+            np.testing.assert_array_equal(raster_1, raster_2)
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
@@ -75,8 +83,7 @@ def test_raster():
             vect = rasters.vectorize(raster_path)
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
-            equality = script_utils.assert_geom_equal(vect, vect_truth)
-            # assert equality if isinstance(equality, bool) else equality.all()
+            script_utils.assert_geom_equal(vect, vect_truth)
 
         # Tests
         script_utils.assert_raster_equal(raster_path, raster_out)
