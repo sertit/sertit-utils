@@ -279,7 +279,7 @@ def get_file_name(file_path: str) -> str:
     """
     Get file name (without extension) from file path, ie:
 
-    `docs\\html\\sertit\\core\\file_utils.html` -> `file_utils`
+    `docs\\html\\sertit\\core\\files.html` -> `files`
 
     Args:
         file_path (str): Absolute or relative file path (the file doesn't need to exist)

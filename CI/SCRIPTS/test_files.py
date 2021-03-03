@@ -1,4 +1,4 @@
-""" Script testing the file_utils """
+""" Script testing the files """
 import os
 import tempfile
 
@@ -11,7 +11,7 @@ from CI.SCRIPTS.script_utils import Polarization
 from sertit import files, misc
 from CI.SCRIPTS import script_utils
 
-FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "file_utils")
+FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "files")
 
 
 def test_paths():

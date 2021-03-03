@@ -1,6 +1,6 @@
 """ Raster tools """
 import os
-from typing import Union, Optional
+from typing import Union, Optional, Any, Callable
 import affine
 import numpy as np
 import pandas as pd
@@ -8,79 +8,181 @@ import geopandas as gpd
 from rasterio.enums import Resampling
 from shapely.geometry import Polygon
 import rasterio
-from rasterio import features, warp, mask, merge
+from rasterio import features, warp, mask as rmask, merge
 
 from sertit import misc, files, vectors, strings
 
 MAX_CORES = os.cpu_count() - 2
 
 
-def vectorize(path: str, on_mask: bool = False, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def _to_polygons(val: Any) -> Polygon:
     """
-    Vectorize a raster.
+    Convert to polygon (to be used in pandas) -> convert the geometry column
+
+    Args:
+        val (Any): Pandas value that has a "coordinates" field
+
+    Returns:
+        Polygon: Pandas value as a Polygon
+    """
+    # Donut cases
+    if len(val["coordinates"]) > 1:
+        poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
+    else:
+        poly = Polygon(val["coordinates"][0])
+
+    # Note: it doesn't check if polygons are valid or not !
+    # If needed, do:
+    # if not poly.is_valid:
+    #   poly = poly.buffer(1.0E-9)
+    return poly
+
+
+def path_or_dst(function: Callable) -> Callable:
+    """
+    Path or dataset decorator: allows a function to ingest a path or a rasterio dataset
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    """
+
+    def path_or_dst_wrapper(path_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -> Any:
+        """
+        Path or dataset wrapper
+        Args:
+            path_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        """
+        if isinstance(path_or_ds, str):
+            with rasterio.open(path_or_ds) as dst:
+                out = function(dst, *args, **kwargs)
+        else:
+            out = function(path_or_ds, *args, **kwargs)
+        return out
+
+    return path_or_dst_wrapper
+
+
+def get_nodata_mask(array: np.ma.masked_array,
+                    has_nodata: bool,
+                    default_nodata: int = 0) -> np.ma.masked_array:
+    """
+    Get nodata mask from a masked array.
+
+    The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
+
+    Args:
+        array (np.ma.masked_array): Array to evaluate
+        has_nodata (bool): If the array as its nodata specified. If not, using default_nodata.
+        default_nodata (int): Default nodata used if the array's nodata is not set
+
+    Returns:
+        np.ma.masked_array: Pixelwise nodata array
+
+    """
+    # Nodata mask
+    if has_nodata:  # Unspecified nodata is set to None by rasterio
+        nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
+    else:
+        nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
+
+    return nodata_mask
+
+
+@path_or_dst
+def _vectorize(dst: Union[str, rasterio.DatasetReader],
+               get_nodata: bool = False,
+               default_nodata: int = 0) -> gpd.GeoDataFrame:
+    """
+    Vectorize a raster, both to get classes or nodata.
 
     **WARNING**:
+    If `get_nodata` is set to False:
+        - Please only use this function on a classified raster.
+        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+            Please be careful.
+    Else:
+        - You will get a classified polygon with data (value=0)/nodata pixels. To
 
+    Args:
+        dst (str): Path to the raster or its dataset
+        get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Vector
+    """
+    # Get the shapes
+    array = dst.read(masked=True)
+
+    # Nodata mask
+    nodata_mask = get_nodata_mask(array, dst.nodata is not None, default_nodata)
+
+    # Get shapes (on array or on mask to get nodata vector)
+    shapes = features.shapes(nodata_mask if get_nodata else array.data,
+                             mask=None if get_nodata else nodata_mask,
+                             transform=dst.transform)
+
+    # Convert results to pandas (because of invalid geometries) and save it
+    pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
+    if not pd_results.empty:
+        # Convert to proper polygons(correct geometries)
+        pd_results.geometry = pd_results.geometry.apply(_to_polygons)
+
+    # Convert to geodataframe with correct geometry
+    gpd_results = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=dst.crs)
+
+    return gpd_results
+
+
+@path_or_dst
+def vectorize(dst: Union[str, rasterio.DatasetReader],
+              default_nodata: int = 0) -> gpd.GeoDataFrame:
+    """
+    Vectorize a raster to get the class vectors
+
+    **WARNING**:
     - Please only use this function on a classified raster.
     - This could take a while as the computing time directly depends on the number of polygons to vectorize.
         Please be careful.
 
     Args:
-        path (str): Path to the raster
-        on_mask (bool): Work only on mask (to get no data for instance)
+        dst (str): Path to the raster or its dataset
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
-        gpd.GeoDataFrame: Vector
+        gpd.GeoDataFrame: Classes Vector
     """
-    with rasterio.open(path) as dst:
-        # Get the shapes
-        array = dst.read(masked=True)
-
-        # Nodata mask
-        if dst.nodata is not None:  # Unspecified nodata is set to None by rasterio
-            nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
-        else:
-            nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
-
-        # Get shapes (on array or on mask to get nodata vector)
-        shapes = features.shapes(nodata_mask if on_mask else array.data,
-                                 mask=None if on_mask else nodata_mask,
-                                 transform=dst.transform)
-
-        # Convert results to pandas (because of invalid geometries) and save it
-        pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
-        if not pd_results.empty:
-            # Convert to proper polygons
-            def to_polygons(val):
-                """ Convert to polygon """
-                # Donut cases
-                if len(val["coordinates"]) > 1:
-                    poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
-                else:
-                    poly = Polygon(val["coordinates"][0])
-
-                # Note: it doesn't check if polygons are valid or not !
-                # If needed, do:
-                # if not poly.is_valid:
-                #   poly = poly.buffer(1.0E-9)
-                return poly
-
-            # Correct geometries
-            pd_results.geometry = pd_results.geometry.apply(to_polygons)
-
-    # Convert to geodataframe with correct geometry
-    gpd_results = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=dst.crs)
-
-    if on_mask:
-        gpd_results = gpd_results[gpd_results.raster_val != 0]
-
-    return gpd_results
+    return _vectorize(dst, get_nodata=False, default_nodata=default_nodata)
 
 
-def ma_mask(ds_to_mask: rasterio.DatasetReader,
-            extent: Union[Polygon, list],
-            nodata: Optional[int] = None,
-            crop=False) -> (np.ma.masked_array, affine.Affine):
+@path_or_dst
+def get_nodata_vec(dst: Union[str, rasterio.DatasetReader],
+                   default_nodata: int = 0) -> gpd.GeoDataFrame:
+    """
+    Get nodata vector
+
+    Args:
+        dst (str): Path to the raster or its dataset
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    """
+    nodata = _vectorize(dst, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val != 0]
+
+
+@path_or_dst
+def _mask(dst: Union[str, rasterio.DatasetReader],
+          shapes: Union[Polygon, list],
+          nodata: Optional[int] = None,
+          msk=False,
+          **kwargs) -> (np.ma.masked_array, affine.Affine):
     """
     Overload of rasterio mask function in order to create a masked_array.
 
@@ -89,79 +191,94 @@ def ma_mask(ds_to_mask: rasterio.DatasetReader,
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
-        ds_to_mask (rasterio.DatasetReader): Dataset to mask
-        extent (Polygon): Extent
+        dst (rasterio.DatasetReader): Dataset to mask
+        shapes (Union[Polygon, list]): Shapes
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
-        crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
+        msk (bool): Whether to crop the raster to the extent of the shapes. Default is False.
+        **kwargs: Other rasterio.mask options
 
     Returns:
          (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
     """
-    if isinstance(extent, Polygon):
-        extent = [Polygon]
+    if isinstance(shapes, Polygon):
+        shapes = [Polygon]
 
     # Set nodata
     if not nodata:
-        if ds_to_mask.nodata:
-            nodata = ds_to_mask.nodata
+        if dst.nodata:
+            nodata = dst.nodata
         else:
             nodata = 0
 
     # Crop dataset
-    crop, trf = mask.mask(ds_to_mask, extent, nodata=nodata, crop=crop)
+    msk, trf = rmask.mask(dst, shapes, nodata=nodata, crop=msk, **kwargs)
 
     # Create masked array
-    mask_arr = np.where(crop == nodata, 1, 0).astype(np.uint8)
-    crop_mask = np.ma.masked_array(crop, mask_arr, fill_value=nodata)
+    nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
+    mask_array = np.ma.masked_array(msk, nodata_mask, fill_value=nodata)
 
-    return crop_mask, trf
+    return mask_array, trf
 
 
-def collocate(master_meta: dict,
-              slave_arr: Union[np.ma.masked_array, np.ndarray],
-              slave_meta: dict,
-              resampling: Resampling = Resampling.nearest) -> (Union[np.ma.masked_array, np.ndarray], dict):
+@path_or_dst
+def mask(dst: Union[str, rasterio.DatasetReader],
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -> (np.ma.masked_array, affine.Affine):
     """
-    Collocate two georeferenced arrays: force the *slave* raster to be exactly georeferenced onto the *master* raster.
+    Masking a dataset:
+    setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
+
+    HOW:
+    Overload of rasterio mask function in order to create a masked_array.
+    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
-        master_meta (dict): Master metadata
-        slave_arr (np.ma.masked_array): Slave array to be collocated
-        slave_meta (dict): Slave metadata
-        resampling (Resampling): Resampling method
+        dst (rasterio.DatasetReader): Dataset to mask
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
 
     Returns:
-        np.ma.masked_array, dict: Collocated array and its metadata
-
+         (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
     """
-    collocated_arr = np.zeros((master_meta["count"], master_meta["height"], master_meta["width"]),
-                              dtype=master_meta["dtype"])
-    warp.reproject(source=slave_arr,
-                   destination=collocated_arr,
-                   src_transform=slave_meta["transform"],
-                   src_crs=slave_meta["crs"],
-                   dst_transform=master_meta["transform"],
-                   dst_crs=master_meta["crs"],
-                   src_nodata=slave_meta["nodata"],
-                   dst_nodata=slave_meta["nodata"],
-                   resampling=resampling,
-                   num_threads=MAX_CORES)
-
-    meta = master_meta.copy()
-    meta.update({"dtype": slave_meta["dtype"],
-                 "driver": slave_meta["driver"],
-                 "nodata": slave_meta["nodata"]})
-
-    return collocated_arr, meta
+    return _mask(dst, shapes=shapes, nodata=nodata, msk=False, **kwargs)
 
 
-def read(dst: rasterio.DatasetReader,
+@path_or_dst
+def crop(dst: Union[str, rasterio.DatasetReader],
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -> (np.ma.masked_array, affine.Affine):
+    """
+    Cropping a dataset:
+    setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
+
+    HOW:
+    Overload of rasterio mask function in order to create a masked_array.
+    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
+
+    Args:
+        dst (rasterio.DatasetReader): Dataset to mask
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
+    """
+    return _mask(dst, shapes=shapes, nodata=nodata, msk=True, **kwargs)
+
+
+@path_or_dst
+def read(dst: Union[str, rasterio.DatasetReader],
          resolution: Union[list, float] = None,
          resampling: Resampling = Resampling.nearest,
          masked=True) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset from a `rasterio.Dataset`.
-
     Args:
         dst (rasterio.DatasetReader): Raster dataset to read
         resolution (list, int): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -288,6 +405,45 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
         dst.write(raster)
 
 
+def collocate(master_meta: dict,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
+              slave_meta: dict,
+              resampling: Resampling = Resampling.nearest) -> (Union[np.ma.masked_array, np.ndarray], dict):
+    """
+    Collocate two georeferenced arrays:
+    forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
+
+    Args:
+        master_meta (dict): Master metadata
+        slave_arr (np.ma.masked_array): Slave array to be collocated
+        slave_meta (dict): Slave metadata
+        resampling (Resampling): Resampling method
+
+    Returns:
+        np.ma.masked_array, dict: Collocated array and its metadata
+
+    """
+    collocated_arr = np.zeros((master_meta["count"], master_meta["height"], master_meta["width"]),
+                              dtype=master_meta["dtype"])
+    warp.reproject(source=slave_arr,
+                   destination=collocated_arr,
+                   src_transform=slave_meta["transform"],
+                   src_crs=slave_meta["crs"],
+                   dst_transform=master_meta["transform"],
+                   dst_crs=master_meta["crs"],
+                   src_nodata=slave_meta["nodata"],
+                   dst_nodata=slave_meta["nodata"],
+                   resampling=resampling,
+                   num_threads=MAX_CORES)
+
+    meta = master_meta.copy()
+    meta.update({"dtype": slave_meta["dtype"],
+                 "driver": slave_meta["driver"],
+                 "nodata": slave_meta["nodata"]})
+
+    return collocated_arr, meta
+
+
 def sieve(array: Union[np.ma.masked_array, np.ndarray],
           out_meta: dict,
           sieve_thresh: int,
@@ -353,28 +509,31 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
     return files.get_file_in_dir(dim_path, img_name, extension='img')
 
 
-def get_extent(path: str) -> gpd.GeoDataFrame:
+@path_or_dst
+def get_extent(path_or_ds: Union[str, rasterio.DatasetReader]) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a `geopandas.Geodataframe`.
 
     Args:
-        path (str): Raster path
+        path_or_ds (Union[str, rasterio.DatasetReader]): Raster path
 
     Returns:
         gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
     """
-    with rasterio.open(path) as dst:
-        return vectors.get_geodf(geometry=[*dst.bounds], geom_crs=dst.crs)
+    return vectors.get_geodf(geometry=[*path_or_ds.bounds], geom_crs=path_or_ds.crs)
 
 
-def get_footprint(path: str) -> gpd.GeoDataFrame:
+@path_or_dst
+def get_footprint(path_or_ds: Union[str, rasterio.DatasetReader]) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, in french == emprise utile)
 
+    Args:
+        path_or_ds (Union[str, rasterio.DatasetReader]): Raster path
     Returns:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
     """
-    footprint = vectorize(path, on_mask=True)
+    footprint = get_nodata_vec(path_or_ds)
 
     # Get the footprint max (discard small holes stored in other polygons)
     footprint = footprint[footprint.area == np.max(footprint.area)]

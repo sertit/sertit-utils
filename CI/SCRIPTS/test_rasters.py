@@ -1,4 +1,4 @@
-""" Script testing the geo_utils """
+""" Script testing the rasters """
 import os
 import tempfile
 
@@ -9,13 +9,14 @@ import geopandas as gpd
 from CI.SCRIPTS import script_utils
 from sertit import rasters
 
-RASTER_DATA = os.path.join(script_utils.get_ci_data_path(), "raster_utils")
+RASTER_DATA = os.path.join(script_utils.get_ci_data_path(), "rasters")
 
 
 def test_raster():
     """ Test raster functions """
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
+    raster_cropped_path = os.path.join(RASTER_DATA, "raster_cropped.tif")
     raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
     raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
     raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
@@ -28,6 +29,7 @@ def test_raster():
     # Create tmp file
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory(prefix=script_utils.get_ci_data_path()) as tmp_dir:
+
         # Get Extent
         extent = rasters.get_extent(raster_path)
         truth_extent = gpd.read_file(extent_path)
@@ -59,8 +61,14 @@ def test_raster():
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
             mask = gpd.read_file(mask_path)
-            mask_arr, mask_tr = rasters.ma_mask(dst, mask.geometry, crop=True)
+            mask_arr, mask_tr = rasters.mask(dst, mask.geometry)
             rasters.write(mask_arr, raster_masked_out, meta, transform=mask_tr)
+
+            # Crop
+            raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
+            crop = gpd.read_file(mask_path)
+            crop_arr, crop_tr = rasters.crop(dst, crop.geometry)
+            rasters.write(crop_arr, raster_cropped_out, meta, transform=crop_tr)
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
@@ -88,6 +96,7 @@ def test_raster():
         # Tests
         script_utils.assert_raster_equal(raster_path, raster_out)
         script_utils.assert_raster_equal(raster_masked_out, raster_masked_path)
+        script_utils.assert_raster_equal(raster_cropped_out, raster_cropped_path)
         script_utils.assert_raster_equal(sieve_out, raster_sieved_path)
         script_utils.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
         script_utils.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)

@@ -1,4 +1,4 @@
-""" Script testing the geo_utils """
+""" Script testing the vectors """
 import os
 import geopandas as gpd
 import pytest
@@ -6,7 +6,7 @@ from shapely import wkt
 from CI.SCRIPTS import script_utils
 from sertit import vectors
 
-GEO_DATA = os.path.join(script_utils.get_ci_data_path(), "geo_utils")
+GEO_DATA = os.path.join(script_utils.get_ci_data_path(), "vectors")
 
 
 # TODO: use geopandas.testing.assert_geoseries_equal() and assert_geodataframe_equal()
