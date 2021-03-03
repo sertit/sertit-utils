@@ -8,7 +8,9 @@ LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
 SU_NAME = 'sertit'
 
 
-def init_logger(curr_logger, log_lvl=logging.DEBUG, log_format=LOGGING_FORMAT):
+def init_logger(curr_logger: logging.Logger,
+                log_lvl: int = logging.DEBUG,
+                log_format: str = LOGGING_FORMAT) -> None:
     """
     Initialize a very basic logger to trace the first lines in the stream.
 
@@ -114,7 +116,7 @@ def create_logger(logger: logging.Logger,
             other_logger.addHandler(file_handler)
 
 
-def shutdown_logger(logger: logging.Logger):
+def shutdown_logger(logger: logging.Logger) -> None:
     """
     Shutdown logger (if you need to delete the log file for example)
 
@@ -127,7 +129,7 @@ def shutdown_logger(logger: logging.Logger):
         handler.close()
 
 
-def reset_logging():
+def reset_logging() -> None:
     """
     Reset root logger
     :warning: MAY BE OVERKILL

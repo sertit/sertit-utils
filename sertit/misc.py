@@ -126,7 +126,7 @@ def list_to_dict(dict_list: list) -> dict:
     return dictionary
 
 
-def nested_set(dic: dict, keys: list, value: Any):
+def nested_set(dic: dict, keys: list, value: Any) -> None:
     """
     Set value in nested directory:
 
@@ -308,13 +308,12 @@ def get_function_name() -> str:
     return sys._getframe(1).f_code.co_name
 
 
-def in_docker():
+def in_docker() -> bool:
     """
     Check if the session is running inside a docker
 
     Returns:
         bool: True if inside a docker
-
     """
     try:
         with open('/proc/1/cgroup', 'rt') as ifh:

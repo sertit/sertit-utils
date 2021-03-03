@@ -104,7 +104,7 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
     return gpd.GeoDataFrame(geometry=geometry, crs=geom_crs)
 
 
-def set_kml_driver():
+def set_kml_driver() -> None:
     """
     Set KML driver for Fiona data (use it at your own risks !)
     """

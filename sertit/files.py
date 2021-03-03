@@ -24,7 +24,7 @@ from sertit.logs import SU_NAME
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def get_root_path():
+def get_root_path() -> str:
     """
     Get the root path of the current disk:
 
@@ -49,7 +49,7 @@ def listdir_abspath(directory: str) -> list:
     return [os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)]
 
 
-def to_abspath(path_str: str, create: bool=True) -> str:
+def to_abspath(path_str: str, create: bool = True) -> str:
     """
     Return the absolute path of the specified path and check if it exists
 
@@ -477,7 +477,7 @@ class CustomEncoder(JSONEncoder):
         return out
 
 
-def read_json(json_file, print_file=True):
+def read_json(json_file: str, print_file: bool = True) -> dict:
     """
     Read a JSON file
 
