@@ -15,7 +15,18 @@ LOGGER = logging.getLogger(SU_NAME)
 
 @unique
 class ListEnum(Enum):
-    """ List Enum (enum with function listing names and values) """
+    """
+    List Enum (enum with function listing names and values)
+
+    ```python
+    >>> @unique
+    >>> class TsxPolarization(ListEnum):
+    >>>     SINGLE = "S"  # Single
+    >>>     DUAL = "D"  # Dual
+    >>>     QUAD = "Q"  # Quad
+    >>>     TWIN = "T"  # Twin
+    ```
+    """
 
     @classmethod
     def list_values(cls) -> list:
@@ -23,15 +34,8 @@ class ListEnum(Enum):
         Get the value list of this enum
 
         ```python
-        @unique
-        class TsxPolarization(ListEnum):
-            SINGLE = "S"  # Single
-            DUAL = "D"  # Dual
-            QUAD = "Q"  # Quad
-            TWIN = "T"  # Twin
-
-        TsxPolarization.list_values()
-        # >> ["S", "D", "Q", "T"]
+        >>> TsxPolarization.list_values()
+        ["S", "D", "Q", "T"]
         ```
 
         """
@@ -43,15 +47,8 @@ class ListEnum(Enum):
         Get the name list of this enum:
 
         ```python
-        @unique
-        class TsxPolarization(ListEnum):
-            SINGLE = "S"  # Single
-            DUAL = "D"  # Dual
-            QUAD = "Q"  # Quad
-            TWIN = "T"  # Twin
-
-        TsxPolarization.list_values()
-        # >> ["SINGLE", "DUAL", "QUAD", "TWIN"]
+        >>> TsxPolarization.list_values()
+        ["SINGLE", "DUAL", "QUAD", "TWIN"]
         ```
         """
         return list(map(lambda c: c.name, cls))
@@ -62,15 +59,8 @@ class ListEnum(Enum):
         Get the enum class from its value:
 
         ```python
-        @unique
-        class TsxPolarization(ListEnum):
-            SINGLE = "S"  # Single
-            DUAL = "D"  # Dual
-            QUAD = "Q"  # Quad
-            TWIN = "T"  # Twin
-
-        TsxPolarization.from_value("Q")
-        # >> <TsxPolarization.QUAD: 'Q'>
+        >>> TsxPolarization.from_value("Q")
+        <TsxPolarization.QUAD: 'Q'>
         ```
 
         Args:
@@ -92,9 +82,9 @@ def remove_empty_values(list_with_empty_values: list) -> list:
     Remove empty values from list:
 
     ```python
-    list = ["A", "T", "R", "", 3, None]
-    list_to_dict(list)
-    # >> ["A", "T", "R", 3]
+    >>> list = ["A", "T", "R", "", 3, None]
+    >>> list_to_dict(list)
+    ["A", "T", "R", 3]
     ```
 
     Args:
@@ -111,9 +101,9 @@ def list_to_dict(dict_list: list) -> dict:
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
     ```python
-    list = ["A","T", "R", 3]
-    list_to_dict(list)
-    # >> {"A": "T", "R": 3}
+    >>> list = ["A","T", "R", 3]
+    >>> list_to_dict(list)
+    {"A": "T", "R": 3}
     ```
 
     Args:
@@ -131,18 +121,17 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
     Set value in nested directory:
 
     ```python
-    dict = {"A": "T", "R": 3}
-    nested_set(test_dict, keys=["B", "C", "D"], value="value")
-    # >>
-    # {
-    # "A": "T",
-    # "R": 3,
-    # "B": {
-    #      "C": {
-    #           "D": "value"
-    #           }
-    #      }
-    # }
+    >>> dict = {"A": "T", "R": 3}
+    >>> nested_set(test_dict, keys=["B", "C", "D"], value="value")
+    {
+    "A": "T",
+    "R": 3,
+    "B": {
+         "C": {
+              "D": "value"
+              }
+         }
+    }
     ```
 
     Args:
@@ -163,9 +152,13 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
     **Note**: nested keys do not work here !
 
     ```python
-    dict = {"A": "T", "R": 3}
-    check_mandatory_keys(dict, ["A", "R"])  # Returns nothing, is OK
-    check_mandatory_keys(dict, ["C"])  # Raises Value Error, is NOK
+    >>> dict = {"A": "T", "R": 3}
+    >>> check_mandatory_keys(dict, ["A", "R"])  # Returns nothing, is OK
+    >>> check_mandatory_keys(dict, ["C"])
+    Traceback (most recent call last):
+      File "<input>", line 1, in <module>
+      File "<input>", line 167, in check_mandatory_keys
+    ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
     ```
 
     Args:
@@ -183,17 +176,17 @@ def find_by_key(data: dict, target: str) -> Any:
     Find a value by key in a dictionary.
 
     ```python
-    dict = {
-            "A": "T",
-            "R": 3,
-            "B": {
-                "C": {
-                    "D": "value"
-                     }
-                 }
-           }
-    find_by_key(dict, "D")
-    # >> "value"
+    >>> dict = {
+    >>>         "A": "T",
+    >>>         "R": 3,
+    >>>         "B": {
+    >>>             "C": {
+    >>>                 "D": "value"
+    >>>                  }
+    >>>              }
+    >>>        }
+    >>> find_by_key(dict, "D")
+    "value"
     ```
 
     Args:
@@ -224,17 +217,17 @@ def run_cli(cmd: Union[str, list],
     Run a command line.
 
     ```python
-    cmd_hillshade = ["gdaldem", "--config",
-                     "NUM_THREADS", "1",
-                     "hillshade", type_utils.to_cmd_string(dem_path),
-                     "-compute_edges",
-                     "-z", self.nof_threads,
-                     "-az", azimuth,
-                     "-alt", zenith,
-                     "-of", "GTiff",
-                     type_utils.to_cmd_string(hillshade_dem)]
-    # Run command
-    sys_utils.run_command(cmd_hillshade)
+    >>> cmd_hillshade = ["gdaldem", "--config",
+    >>>                  "NUM_THREADS", "1",
+    >>>                  "hillshade", strings.to_cmd_string(dem_path),
+    >>>                  "-compute_edges",
+    >>>                  "-z", self.nof_threads,
+    >>>                  "-az", azimuth,
+    >>>                  "-alt", zenith,
+    >>>                  "-of", "GTiff",
+    >>>                  strings.to_cmd_string(hillshade_dem)]
+    >>> # Run command
+    >>> run_cli(cmd_hillshade)
     ```
 
     Args:
@@ -301,6 +294,13 @@ def get_function_name() -> str:
     """
     Get the name of the function where this one is launched.
 
+    ```python
+    >>> def huhuhu():
+    >>>     return get_function_name()
+    >>> huhuhu()
+    "huhuhu"
+    ```
+
     Returns:
         str: Function's name
     """
@@ -311,6 +311,13 @@ def get_function_name() -> str:
 def in_docker() -> bool:
     """
     Check if the session is running inside a docker
+
+    ```python
+    if in_docker():
+        print("OMG we are stock in a Docker ! Get me out of here !")
+    else:
+        print("We are safe")
+    ```
 
     Returns:
         bool: True if inside a docker
@@ -328,14 +335,13 @@ def in_docker() -> bool:
 @contextmanager
 def chdir(newdir: str) -> None:
     """
-    Change current directory as a context manage, ie:
+    Change current directory, used as a context manager, ie:
 
     ```python
-    from sertit.core import sys_utils
-    folder = "."
-    with chdir(folder):
-        # Current directory
-        pwd = os.getcwd()
+    >>> folder = "C:\\"
+    >>> with chdir(folder):
+    >>>     print(os.getcwd())
+    'C:\\'
     ```
 
     Args:

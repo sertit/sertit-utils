@@ -4,14 +4,14 @@ import os
 import time
 import logging
 from random import Random
-
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
 
 # pylint: disable=R0913
 # Too many arguments (7/5) (too-many-arguments)
-def exponential_backoff(network_request,
+def exponential_backoff(network_request: Callable,
                         wait_time_slot: float,
                         increase_factor: float,
                         max_wait: float,
@@ -32,21 +32,19 @@ def exponential_backoff(network_request,
     No default value is provided on purpose
 
     Args:
-        network_request (function):
-            Python function taking no arguments which represents a network request which may fail. If it fails it must
-            raise an exception.
-        wait_time_slot (float): Smallest amount of time to wait between retries. Recommended range [0.1 - 10.0] seconds
-        increase_factor (float):
-            Exponent of the expected exponential increase in waiting time. In other words on average by how much should
-            the delay in time increase. Recommended range [1.5 - 3.0]
-        max_wait (float):
-            Maximum of time one will wait for the network request to perform successfully. If the maximum amount of time
-            is reached a timeout exception is thrown.
-        max_retries (int):
-            Number of total tries to perform the network request. Must be at least 2 and maximum
-            `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined). Recommended range [5 - 25].
-            If the value exceeds `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined). The
-            value will be set to `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
+        network_request (Callable): Python function taking no arguments which represents a
+            network request which may fail. If it fails it must raise an exception.
+        wait_time_slot (float): Smallest amount of time to wait between retries.
+            Recommended range [0.1 - 10.0] seconds
+        increase_factor (float): Exponent of the expected exponential increase in waiting time.
+            In other words on average by how much should the delay in time increase. Recommended range [1.5 - 3.0]
+        max_wait (float): Maximum of time one will wait for the network request to perform successfully.
+            If the maximum amount of time is reached a timeout exception is thrown.
+        max_retries (int): Number of total tries to perform the network request.
+            Must be at least 2 and maximum `EXP_BACK_OFF_ABS_MAX_RETRIES`
+            (or 100 if the environment value is not defined). Recommended range [5 - 25].
+            If the value exceeds `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
+            The value will be set to `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
         desc (str): Description of the network request being attempted
         random_state (int): Seed to the random number generator (optional)
     """

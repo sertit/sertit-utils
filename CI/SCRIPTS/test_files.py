@@ -99,11 +99,11 @@ def test_archive():
 
 def test_get_file_name():
     """ Test get_file_name """
-    file_name = files.get_file_name(__file__)
+    file_name = files.get_filename(__file__)
     assert file_name == "test_files"
-    file_name = files.get_file_name(__file__ + "\\")
+    file_name = files.get_filename(__file__ + "\\")
     assert file_name == "test_files"
-    file_name = files.get_file_name(__file__ + "/")
+    file_name = files.get_filename(__file__ + "/")
     assert file_name == "test_files"
 
 
@@ -204,7 +204,7 @@ def test_get_file_in_dir():
 
     # Test
     file = files.get_file_in_dir(folder, "file", ".py", filename_only=False, get_list=True, exact_name=False)
-    filename = files.get_file_in_dir(folder, files.get_file_name(__file__), "py",
+    filename = files.get_file_in_dir(folder, files.get_filename(__file__), "py",
                                      filename_only=True, get_list=False, exact_name=True)
 
     assert file[0] == __file__

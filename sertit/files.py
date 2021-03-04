@@ -29,7 +29,13 @@ def get_root_path() -> str:
     Get the root path of the current disk:
 
     - On Linux this returns `/`
-    - On Windows this returns `C:\\\\` or whatever the current drive is
+    - On Windows this returns `C:\\` or whatever the current drive is
+
+    ```python
+    >>> get_root_path()
+    "/" on Linux
+    "C:\\" on Windows (if you run this code from the C: drive)
+    ```
     """
     return os.path.abspath(os.sep)
 
@@ -39,6 +45,20 @@ def listdir_abspath(directory: str) -> list:
     Get absolute path of all files in the given directory.
 
     It is the same function than `os.listdir` but returning absolute paths.
+
+    ```python
+    >>> folder = "."
+    >>> listdir_abspath(folder)
+    ['D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\files.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\__init__.py']
+    ```
 
     Args:
         directory (str): Relative or absolute path to the directory to be scanned
@@ -58,17 +78,14 @@ def to_abspath(path_str: str, create: bool = True) -> str:
     - If it is a file (aka has an extension), it raises an exception
     - If it is a folder, it creates it
 
-    To be used with argparse like:
+    To be used with argparse to retrieve the absolute path of a file, like:
 
     ```python
-    import argparse
-    parser = argparse.ArgumentParser()
-
-    # Add config file path key
-    parser.add_argument("--config",
-                        help="Config file path (absolute or relative)",
-                        type=to_abspath,
-                        required=True)
+    >>> parser = argparse.ArgumentParser()
+    >>> # Add config file path key
+    >>> parser.add_argument("--config",
+                            help="Config file path (absolute or relative)",
+                            type=to_abspath)
     ```
 
     Args:
@@ -97,6 +114,13 @@ def real_rel_path(path: str, start: str) -> str:
     Gives the real relative path from a starting folder.
     (and not just adding `..\..` between the start and the target)
 
+    ```python
+    >>> path = 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit'
+    >>> start = os.path.join("..", "..")
+    >>> real_rel_path(path, start)
+    'sertit-utils\\sertit'
+    ```
+
     Args:
         path (str): Path to make relative
         start (str): Start, the path being relative from this folder.
@@ -111,6 +135,13 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
     """
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
+
+    ```python
+    >>> file_path = 'D:\\path\\to\\zip.zip'
+    >>> output = 'D:\\path\\to\\output'
+    >>> extract_file(file_path, output, overwrite=True)
+    D:\\path\\to\\output\zip'
+    ```
 
     Args:
         file_path (str): Archive file path
@@ -131,7 +162,7 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -> Union[
         extr_names = list({path.split("/")[0] for path in arch.namelist()})
     elif file_path.endswith(".tar.gz") or file_path.endswith(".tar"):
         # Tar files have no subdirectories, so create one
-        extr_names = [get_file_name(file_path)]
+        extr_names = [get_filename(file_path)]
         arch = tarfile.open(file_path, "r")
     else:
         raise TypeError(f"Only .zip, .tar and .tar.gz files can be extracted, not {file_path}")
@@ -199,6 +230,13 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     """
     Extract all archived files. Overwrites if specified.
 
+    ```python
+    >>> file_path = ['D:\\path\\to\\zip1.zip', 'D:\\path\\to\\zip2.zip']
+    >>> output = 'D:\\path\\to\\output'
+    >>> extract_files(file_path, output, overwrite=True)
+    ['D:\\path\\to\\output\zip1', 'D:\\path\\to\\output\zip2']
+    ```
+
     Args:
         archives (list of str): List of archives to be extracted
         output (str): Output folder where extracted files will be written
@@ -219,7 +257,14 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
 
 def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
     """
-    Archive a folder recursively.
+    Archives a folder recursively.
+
+    ```python
+    >>> folder_path = 'D:\\path\\to\\folder_to_archive'
+    >>> archive_path = 'D:\\path\\to\\output'
+    >>> archive = archive(folder_path, archive_path, fmt="gztar")
+    'D:\\path\\to\\output\\folder_to_archive.tar.gz'
+    ```
 
     Args:
         folder_path (str): Folder to archive
@@ -243,6 +288,13 @@ def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
 def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
     """
     Add folders to an already existing zip file (recursively).
+
+    ```python
+    >>> zip_path = 'D:\\path\\to\\zip.zip'
+    >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2']
+    >>> add_to_zip(zip_path, dirs_to_add)
+    >>> # zip.zip contains 2 more folders, dir1 and dir2
+    ```
 
     Args:
         zip_path (str): Already existing zip file
@@ -275,11 +327,15 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
                                                    os.path.join(dir_to_add, '..')))
 
 
-def get_file_name(file_path: str) -> str:
+def get_filename(file_path: str) -> str:
     """
     Get file name (without extension) from file path, ie:
 
-    `docs\\html\\sertit\\core\\files.html` -> `files`
+    ```python
+    >>> file_path = 'D:\\path\\to\\filename.zip'
+    >>> get_file_name(file_path)
+    'filename'
+    ```
 
     Args:
         file_path (str): Absolute or relative file path (the file doesn't need to exist)
@@ -297,7 +353,13 @@ def get_file_name(file_path: str) -> str:
 
 def remove(path: str) -> None:
     """
-    Delete a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
+    Deletes a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
+
+    ```python
+    >>> path_to_remove = 'D:\\path\\to\\remove'  # Could also be a file
+    >>> remove(path_to_remove)
+    path_to_remove deleted
+    ```
 
     Args:
         path (str): Path to be removed
@@ -322,6 +384,20 @@ def remove_by_pattern(directory: str, name_with_wildcard: str = "*", extension: 
     """
     Remove files corresponding to a pattern from a directory.
 
+    ```python
+    >>> directory = 'D:\\path\\to\\folder'
+    >>> os.listdir(directory)
+    ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
+
+    >>> remove(directory, "blabla*")
+    >>> os.listdir(directory)
+    ["huhu.exe", "haha.txt"] # Removes also directories
+
+    >>> remove(directory, "*", extension="txt")
+    >>> os.listdir(directory)
+    ["huhu.exe"]
+    ```
+
     Args:
         directory (str): Directory where to find the files
         name_with_wildcard (str): Filename (wildcards accepted)
@@ -340,6 +416,18 @@ def remove_by_pattern(directory: str, name_with_wildcard: str = "*", extension: 
 def copy(src: str, dst: str) -> str:
     """
     Copy a file or a directory (recursively) with `copytree` or `copy2`.
+
+    ```python
+    >>> src = 'D:\\path\\to\\copy'
+    >>> dst = 'D:\\path\\to\\output'
+    >>> copy(src, dst)
+    copydir 'D:\\path\\to\\output\\copy'
+
+    >>> src = 'D:\\path\\to\\copy.txt'
+    >>> dst = 'D:\\path\\to\\output\\huhu.txt'
+    >>> copyfile = copy(src, dst)
+    'D:\\path\\to\\output\\huhu.txt' but with the content of copy.txt
+    ```
 
     Args:
         src (str): Source Path
@@ -373,11 +461,31 @@ def find_files(names: Union[list, str],
 
     Regex are not allowed, only exact matches are looking for (using `os.walk()`)
 
+    ```python
+    >>> root_path = 'D:\\root'
+    >>> dir1_path = 'D:\\root\\dir1'
+    >>> dir2_path = 'D:\\root\\dir2'
+
+    >>> os.listdir(dir1_path)
+    ["haha.txt", "huhu.txt", "hoho.txt"]
+    >>> os.listdir(dir2_path)
+    ["huhu.txt", "hehe.txt"]
+
+    >>> find_files("huhu.txt", root_path)
+    ['D:\\root\\dir1\\huhu.txt', 'D:\\root\\dir2\\huhu.txt']
+
+    >>> find_files("huhu.txt", root_path, max_nof_files=1)
+    ['D:\\root\\dir1\\huhu.txt']
+
+    >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
+    found = 'D:\\root\\dir1\\huhu.txt'
+    ```
+
     Args:
-        names ([str]): File names.
-        root_paths ([str]): Root paths
+        names (Union[list, str]): File names.
+        root_paths (Union[list, str]): Root paths
         max_nof_files (int): Maximum number of files (set to -1 for unlimited)
-        get_as_str (bool): if only one file is requested, it can be retrieved as a string instead of a list
+        get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list
 
     Returns:
         list: File name
@@ -414,7 +522,7 @@ def find_files(names: Union[list, str],
     LOGGER.debug("Paths found in %s for filenames %s:\n%s", root_paths, names, pprint.pformat(paths))
 
     # Get str if needed
-    if max_nof_files == 1 and get_as_str:
+    if len(paths) == 1 and get_as_str:
         paths = paths[0]
 
     return paths
@@ -481,6 +589,12 @@ def read_json(json_file: str, print_file: bool = True) -> dict:
     """
     Read a JSON file
 
+    ```python
+    >>> json_path = 'D:\\path\\to\\json.json'
+    >>> read_json(json_path, print_file=False)
+    {"A": 1, "B": 2}
+    ```
+
     Args:
         json_file (str): Path to JSON file
         print_file (bool):  Print the configuration file
@@ -500,7 +614,13 @@ def read_json(json_file: str, print_file: bool = True) -> dict:
 
 def save_json(output_json: str, json_dict: dict) -> None:
     """
-    Save a JSON file, with datetime and numpy types management.
+    Save a JSON file, with datetime, numpy types and Enum management.
+
+    ```python
+    >>> output_json = 'D:\\path\\to\\json.json'
+    >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
+    >>> save_json(output_json, json_dict)
+    ```
 
     Args:
         output_json (str): Output file
@@ -513,14 +633,19 @@ def save_json(output_json: str, json_dict: dict) -> None:
 
 def save_obj(obj: Any, path: str) -> None:
     """
-    Save an object as a pickle.
+    Save an object as a pickle (can save any Python objects).
+
+    ```python
+    >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
+    >>> pkl_dict = {"A": np.ones([3, 3]),
+                    "B": datetime.today(),
+                    "C": SomeEnum.some_name}
+    >>> save_json(output_pkl, pkl_dict)
+    ```
 
     Args:
         obj (Any): Any object serializable
         path (str): Path where to write the pickle
-
-    Returns:
-
     """
     with open(path, 'wb+') as file:
         pickle.dump(obj, file)
@@ -529,6 +654,12 @@ def save_obj(obj: Any, path: str) -> None:
 def load_obj(path: str) -> Any:
     """
     Load a pickled object.
+
+    ```python
+    >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
+    >>> load_obj(output_pkl)
+    {"A": np.ones([3, 3]), "B": datetime.today(), "C": SomeEnum.some_name}
+    ```
 
     Args:
         path (str): Path of the pickle
@@ -554,6 +685,27 @@ def get_file_in_dir(directory: str,
     Note that the pattern is a regex with glob's convention, ie. `*pattern*`.
 
     If `exact_name` is `False`, the searched pattern will be `*{pattern}*.{extension}`, else `{pattern}.{extension}`.
+
+    ```python
+    >>> directory = 'D:\\path\\to\\dir'
+    >>> os.listdir(directory)
+    ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
+
+    >>> get_file_in_dir(directory, "huhu")
+    'D:\\path\\to\\dir\\huhu1.geojson'
+
+    >>> get_file_in_dir(directory, "huhu", extension="txt")
+    'D:\\path\\to\\dir\\huhu1.txt'
+
+    >>> get_file_in_dir(directory, "huhu", get_list=True)
+    ['D:\\path\\to\\dir\\huhu1.txt', 'D:\\path\\to\\dir\\huhu1.geojson']
+
+    >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
+    ['huhu1.txt', 'huhu1.geojson']
+
+    >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
+    []
+    ```
 
     Args:
         directory (str): Directory where to find the files
@@ -600,6 +752,14 @@ def get_file_in_dir(directory: str,
 def hash_file_content(file_content: str, len_param: int = 5) -> str:
     """
     Hash a file into a unique str.
+
+    ```python
+    >>> read_json("path\\to\\json.json")
+    {"A": 1, "B": 2}
+
+    >>> hash_file_content(str(file_content))
+    "d3fad5bdf9"
+    ```
 
     Args:
         file_content (str): File content
