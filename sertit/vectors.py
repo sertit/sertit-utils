@@ -7,7 +7,7 @@ import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, box
 from rasterio import crs
-from sertit_utils.core.log_utils import SU_NAME
+from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -19,8 +19,8 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     Find the EPSG code of the UTM projection from a lon/lat in WGS84.
 
     ```python
-    corresponding_utm_projection(lon=48.6, lat=7.8)  # Strasbourg
-    # >> "EPSG:32632"
+    >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
+    'EPSG:32632'
     ```
 
     Args:
@@ -41,6 +41,12 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
 def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, float, float, float):
     """
     Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
+
+    ```python
+    >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+    >>> from_polygon_to_bounds(poly)
+    (0.0, 0.0, 1.0, 1.0)
+    ```
 
     Args:
         polygon (MultiPolygon): polygon to convert
@@ -63,6 +69,12 @@ def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float)
     """
     Convert the bounds to a `shapely.polygon`.
 
+    ```python
+    >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
+    >>> print(poly)
+    'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
+    ```
+
     Args:
         left (float): Left coordinates
         bottom (float): Bottom coordinates
@@ -76,12 +88,21 @@ def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float)
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
 
-def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs.CRS, str]) -> gpd.GeoDataFrame:
+def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: Union[crs.CRS, str]) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
+
+    ```python
+    >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+    >>> geodf = get_geodf(poly, crs=WGS84)
+    >>> print(geodf)
+                                                geometry
+    0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+    ```
+
     Args:
         geometry (Union[Polygon, list]): List of Polygons, or Polygon or bounds
-        geom_crs (Union[crs.CRS, str]): CRS of the polygon
+        crs (Union[crs.CRS, str]): CRS of the polygon
 
     Returns:
         gpd.GeoDataFrame: Geometry as a geodataframe
@@ -97,16 +118,29 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], geom_crs: Union[crs
     elif isinstance(geometry, Polygon):
         geometry = [geometry]
     elif isinstance(geometry, gpd.GeoSeries):
-        geometry = [from_bounds_to_polygon(*geometry.values)]
+        geometry = geometry.geometry
     else:
         raise TypeError("geometry should be a list or a Polygon.")
 
-    return gpd.GeoDataFrame(geometry=geometry, crs=geom_crs)
+    return gpd.GeoDataFrame(geometry=geometry, crs=crs)
 
 
-def set_kml_driver():
+def set_kml_driver() -> None:
     """
     Set KML driver for Fiona data (use it at your own risks !)
+
+    ```python
+    >>> path = "path\\to\\kml.kml"
+    >>> gpd.read_file(path)
+    fiona.errors.DriverError: unsupported driver: 'LIBKML'
+
+    >>> set_kml_driver()
+    >>> gpd.read_file(path)
+                   Name  ...                                           geometry
+    0  CC679_new_AOI2_3  ...  POLYGON Z ((45.03532 32.49765 0.00000, 46.1947...
+    [1 rows x 12 columns]
+    ```
+
     """
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
     if 'LIBKML' not in drivers:
@@ -126,6 +160,13 @@ def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
 
     - only **one** polygon composes the AOI (as only the first one is read)
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
+    ```python
+    >>> path = "path\\to\\vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
+    >>> get_aoi_wkt(path)
+    'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
+    0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
+    34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
+    ```
 
     Args:
         aoi_path (str): Absolute or relative path to an AOI.

@@ -1,19 +1,10 @@
-# SERTIT Utils
-
 Library gathering utils functions for all SERTIT's projects.
 
-## Documentation
+# What is in it ?
+## Files
 
-An HTML documentation is provided to document the code.
-It can be found:
-- online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/),
-- on git, in `docs`.  
-  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  
-  To generate the HTML documentation, just type `pdoc sertit_utils -o docs\html -f --html`
-
-## CORE
-### File
 File gathering file-related functions:
+
 - paths
 - Create archive
 - Add folder to zip file
@@ -24,47 +15,56 @@ File gathering file-related functions:
 - JSON/pickles
 - hash
 
-### Log
+## Logs
 - Init simple logger
 - Create complex logger (file and stream + color)
 - Shutdown logger
 
-### Sys
-- Set up PROJ environment variables
-- Run a command line
-- Get a function name
-- Change current directory (`cd`) as a context manager
-- Test if in docker
-
-### Type
-- Conversion from string to bool, logging level, list, list of dates...
+## Misc
 - Function on lists: convert a list to a dict, remove empty values...
 - Function on dicts: nested set, check mandatory keys, find by key
+- Run a command line
+- Get a function name
+- Test if in docker
+- Change current directory (`cd`) as a context manager
+
+## Strings
+- Conversion from string to bool, logging level, list, list of dates...
+- Convert the string to be usable in command line
 - Case conversion (`snake_case` to/from `CamelCase`) 
 
-## EO
-
-### Geo
+## Vectors
 - Load an AOI as WKT
 - Get UTM projection from lat/lon
 - Manage bounds and polygons
 - Get `geopandas.Geodataframe` from polygon and CRS
 
-### Raster
+## Rasters
 Basically, these functions are overloads of rasterio's functions:
+
 - Get extent and footprint of a raster
 - Read/write overload of rasterio functions
-- Masking with masked array
+- Masking and cropping with masked array
 - Collocation (superimpose)
 - Sieving
-- Vectorization
+- Vectorization and get nodata vector
 - Merge rasters (as GTiff and VRT)
 - Get the path of the BEAM-DIMAP image that can be read by rasterio
+- Manage bit arrays
 
 ## Network
-### Control
 - Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm 
 
-## Generation
+
+# Documentation
+
+An HTML documentation is provided to document the code.
+It can be found:
+- online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/),
+- on git, in `docs`.  
+  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  
+  To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`
+
+# Packaging
 In order to generate a distribution, just upgrade the version in `setup.py` and run the command `python setup.py sdist bdist_wheel`.
 To upload the pypi package, just type `twine upload --config-file .pypirc --repository gitlab dist\*` from the root of this project.
