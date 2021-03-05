@@ -82,8 +82,8 @@ def remove_empty_values(list_with_empty_values: list) -> list:
     Remove empty values from list:
 
     ```python
-    >>> list = ["A", "T", "R", "", 3, None]
-    >>> list_to_dict(list)
+    >>> lst = ["A", "T", "R", "", 3, None]
+    >>> list_to_dict(lst)
     ["A", "T", "R", 3]
     ```
 
@@ -101,8 +101,8 @@ def list_to_dict(dict_list: list) -> dict:
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
     ```python
-    >>> list = ["A","T", "R", 3]
-    >>> list_to_dict(list)
+    >>> lst = ["A","T", "R", 3]
+    >>> list_to_dict(lst)
     {"A": "T", "R": 3}
     ```
 
@@ -121,8 +121,8 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
     Set value in nested directory:
 
     ```python
-    >>> dict = {"A": "T", "R": 3}
-    >>> nested_set(test_dict, keys=["B", "C", "D"], value="value")
+    >>> dct = {"A": "T", "R": 3}
+    >>> nested_set(dct, keys=["B", "C", "D"], value="value")
     {
     "A": "T",
     "R": 3,
@@ -152,9 +152,9 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
     **Note**: nested keys do not work here !
 
     ```python
-    >>> dict = {"A": "T", "R": 3}
-    >>> check_mandatory_keys(dict, ["A", "R"])  # Returns nothing, is OK
-    >>> check_mandatory_keys(dict, ["C"])
+    >>> dct = {"A": "T", "R": 3}
+    >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
+    >>> check_mandatory_keys(dct, ["C"])
     Traceback (most recent call last):
       File "<input>", line 1, in <module>
       File "<input>", line 167, in check_mandatory_keys
@@ -176,7 +176,7 @@ def find_by_key(data: dict, target: str) -> Any:
     Find a value by key in a dictionary.
 
     ```python
-    >>> dict = {
+    >>> dct = {
     >>>         "A": "T",
     >>>         "R": 3,
     >>>         "B": {
@@ -185,7 +185,7 @@ def find_by_key(data: dict, target: str) -> Any:
     >>>                  }
     >>>              }
     >>>        }
-    >>> find_by_key(dict, "D")
+    >>> find_by_key(dct, "D")
     "value"
     ```
 
@@ -338,7 +338,7 @@ def chdir(newdir: str) -> None:
     Change current directory, used as a context manager, ie:
 
     ```python
-    >>> folder = "C:\\"
+    >>> folder = r"C:\"
     >>> with chdir(folder):
     >>>     print(os.getcwd())
     'C:\\'

@@ -8,8 +8,12 @@ import pandas as pd
 import geopandas as gpd
 from rasterio.enums import Resampling
 from shapely.geometry import Polygon
-import rasterio
-from rasterio import features, warp, mask as rmask, merge
+
+try:
+    import rasterio
+    from rasterio import features, warp, mask as rmask, merge
+except ModuleNotFoundError as ex:
+    raise ModuleNotFoundError("Please install 'rasterio' to use the rasters package.") from ex
 
 from sertit import misc, files, vectors, strings
 
@@ -64,6 +68,7 @@ def path_or_dst(function: Callable) -> Callable:
     Returns:
         Callable: decorated function
     """
+
     @wraps(function)
     def path_or_dst_wrapper(path_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -> Any:
         """
@@ -630,7 +635,7 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
+def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
     """
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -649,7 +654,7 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> list:
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        list: .img file
+        str: .img file
     """
     if dim_path.endswith(".dim"):
         dim_path = dim_path.replace(".dim", ".data")
