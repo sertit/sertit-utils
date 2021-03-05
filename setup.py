@@ -17,10 +17,14 @@ setuptools.setup(
     install_requires=[
         'tqdm',
         'colorlog',
-        'twine',
-        'geopandas',
-        'rasterio'
+        "numpy"
     ],
+    extras_require={
+        'full': ["geopandas",
+                 "rasterio"],
+        'rasters': ["rasterio"],
+        'vectors': ["geopandas"]
+    },
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent"
