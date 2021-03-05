@@ -12,7 +12,7 @@ colorlog
 ./CI/COTS/Fiona-1.8.18-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 ./CI/COTS/Shapely-1.7.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 ./CI/COTS/geopandas-0.8.2-py3-none-any.whl;platform_system=="Windows"
-./CI/COTS/rasterio-1.2.0cp37-cp37m-win_amd64.whl;platform_system=="Windows"
+./CI/COTS/rasterio-1.2.0-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 
 # For Linux
 # For now, GDAL 3.0.4 does not work smoothly on Linux. Use 2.2.4 instead.
