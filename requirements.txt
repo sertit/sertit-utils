@@ -8,7 +8,7 @@ colorlog
 
 # For Windows (use wheels)
 ./CI/COTS/pyproj-3.0.0.post1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-./CI/COTS/GDAL-3.3.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
+./CI/COTS/GDAL-3.2.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 ./CI/COTS/Fiona-1.8.18-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 ./CI/COTS/Shapely-1.7.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
 ./CI/COTS/geopandas-0.8.2-py3-none-any.whl;platform_system=="Windows"
