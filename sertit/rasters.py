@@ -1,19 +1,23 @@
-""" Raster tools """
+"""
+Raster tools
+
+You can use this only if you have installed sertit[full] or sertit[rasters]
+"""
 import os
 from functools import wraps
 from typing import Union, Optional, Any, Callable
 import affine
 import numpy as np
-import pandas as pd
-import geopandas as gpd
-from rasterio.enums import Resampling
-from shapely.geometry import Polygon
 
 try:
+    import pandas as pd
+    import geopandas as gpd
+    from shapely.geometry import Polygon
     import rasterio
     from rasterio import features, warp, mask as rmask, merge
+    from rasterio.enums import Resampling
 except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError("Please install 'rasterio' to use the rasters package.") from ex
+    raise ModuleNotFoundError("Please install 'rasterio' and 'geopandas' to use the rasters package.") from ex
 
 from sertit import misc, files, vectors, strings
 

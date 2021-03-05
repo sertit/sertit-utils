@@ -57,23 +57,26 @@ Basically, these functions are overloads of rasterio's functions:
 
 # Installing
 
-For installing this library to your environment, please type this :
+For installing this library to your environment, please type this:
+
 - in your console: `pip install sertit[full] --extra-index-url https://gitlab-deploy-token:4ieKmsaqk4zLfM3WLxF4@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple`
 - type this in your `requirement.txt`:  
     `--extra-index-url https://gitlab-deploy-token:4ieKmsaqk4zLfM3WLxF4@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
 
-:bulb:
 `[full]` will allow you to use the whole library, but you will need to install also`rasterio` and `geopandas` 
 (with GDAL installation issues on Windows, so please install them from wheels that you can find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)). 
+
 However, if you do not need everything, you can type instead:
+
 - *nothing*, and you won't need neither `rasterio` nor `geopandas`: `pip install sertit --extra-index-url ...`
 - *vectors*, and you won't need `rasterio`: `pip install sertit[vectors] --extra-index-url ...`
-- *rasters*, and you won't need `geopandas`: `pip install sertit[rasters] --extra-index-url ...` 
+- *rasters*: `pip install sertit[rasters] --extra-index-url ...` 
 
 # Documentation
 
 An HTML documentation is provided to document the code.
 It can be found:
+
 - online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/),
 - on git, in `docs`.  
   To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  

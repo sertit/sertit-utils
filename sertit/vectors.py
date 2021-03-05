@@ -1,12 +1,21 @@
-""" Geo tools """
+"""
+Vectors tools
+
+You can use this only if you have installed sertit[full] or sertit[vectors]
+"""
 import logging
 import os
 from typing import Union
 import numpy as np
-import geopandas as gpd
-from shapely import wkt
-from shapely.geometry import MultiPolygon, Polygon, box
-from rasterio import crs
+
+try:
+    import geopandas as gpd
+    from shapely import wkt
+    from shapely.geometry import MultiPolygon, Polygon, box
+except ModuleNotFoundError as ex:
+    raise ModuleNotFoundError("Please install 'geopandas' to use the rasters package.") from ex
+
+
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -88,7 +97,7 @@ def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float)
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
 
-def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: Union[crs.CRS, str]) -> gpd.GeoDataFrame:
+def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
 
@@ -102,7 +111,7 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: Union[crs.CRS,
 
     Args:
         geometry (Union[Polygon, list]): List of Polygons, or Polygon or bounds
-        crs (Union[crs.CRS, str]): CRS of the polygon
+        crs (str): CRS of the polygon
 
     Returns:
         gpd.GeoDataFrame: Geometry as a geodataframe

@@ -22,7 +22,8 @@ setuptools.setup(
     extras_require={
         'full': ["geopandas",
                  "rasterio"],
-        'rasters': ["rasterio"],
+        'rasters': ["geopandas",
+                    "rasterio"],
         'vectors': ["geopandas"]
     },
     classifiers=[
