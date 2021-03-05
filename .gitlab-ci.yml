@@ -8,7 +8,7 @@ pytest:
   stage: test
   before_script:
     - pip install coverage pytest pytest-cov
-    - python setup.py develop easy_install sertit[full]
+    - pip install -e .[full]
   script:
     - pytest -v --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
