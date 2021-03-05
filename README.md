@@ -69,8 +69,8 @@ For installing this library to your environment, please type this:
 However, if you do not need everything, you can type instead:
 
 - *nothing*, and you won't need neither `rasterio` nor `geopandas`: `pip install sertit --extra-index-url ...`
-- *vectors*, and you won't need `rasterio`: `pip install sertit[vectors] --extra-index-url ...`
-- *rasters*: `pip install sertit[rasters] --extra-index-url ...` 
+- `[vectors]`, and you won't need `rasterio`: `pip install sertit[vectors] --extra-index-url ...`
+- `[rasters]`: `pip install sertit[rasters] --extra-index-url ...` 
 
 # Documentation
 

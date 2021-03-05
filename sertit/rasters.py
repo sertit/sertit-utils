@@ -187,9 +187,10 @@ def _vectorize(dst: Union[str, rasterio.DatasetReader],
 def vectorize(dst: Union[str, rasterio.DatasetReader],
               default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Vectorize a raster to get the class vectors
+    Vectorize a raster to get the class vectors.
 
     **WARNING**:
+
     - Please only use this function on a classified raster.
     - This could take a while as the computing time directly depends on the number of polygons to vectorize.
         Please be careful.
@@ -217,7 +218,10 @@ def vectorize(dst: Union[str, rasterio.DatasetReader],
 def get_nodata_vec(dst: Union[str, rasterio.DatasetReader],
                    default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Get nodata vector.
+    Get the nodata of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
@@ -292,8 +296,10 @@ def mask(dst: Union[str, rasterio.DatasetReader],
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
-    HOW:
+    **HOW:**
+
     Overload of rasterio mask function in order to create a masked_array.
+
     The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
@@ -332,8 +338,10 @@ def crop(dst: Union[str, rasterio.DatasetReader],
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
 
-    HOW:
+    **HOW:**
+
     Overload of rasterio mask function in order to create a masked_array.
+
     The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
