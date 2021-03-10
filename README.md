@@ -1,5 +1,7 @@
 Library gathering utils functions for all SERTIT's projects.
 
+Find the API documentation [**here**](https://sertit.pages.sertit.unistra.fr/sertit-utils/).
+
 # What is in it ?
 ## Files
 
