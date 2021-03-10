@@ -78,3 +78,7 @@ def test_enum():
 
     with pytest.raises(ValueError):
         Polarization.from_value("ZZ")
+
+    assert Polarization.convert_from(["HH", "vv", Polarization.hv]) == [Polarization.hh,
+                                                                        Polarization.vv,
+                                                                        Polarization.hv]

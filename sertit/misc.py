@@ -76,6 +76,41 @@ class ListEnum(Enum):
         except StopIteration as ex:
             raise ValueError(f"Non existing {val} in {cls.list_values()}") from ex
 
+    @classmethod
+    def convert_from(cls, to_convert: Union[list, str]) -> list:
+        """
+        Convert from a list or a string to an enum instance
+
+        ```python
+        >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
+        [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
+        ```
+
+        Args:
+            to_convert (Union[list, str]): List or string to convert into an enum instance
+
+        Returns:
+            list: Converted list
+
+        """
+        if not isinstance(to_convert, list):
+            to_convert = [to_convert]
+
+        enums = []
+
+        for tc in to_convert:
+            if tc in cls.list_values():
+                enums.append(cls.from_value(tc))
+            elif tc in cls.list_names():
+                enums.append(getattr(cls, tc))
+            elif isinstance(tc, cls):
+                enums.append(tc)
+            else:
+                raise TypeError(f"Invalid name {tc}, "
+                                f"should be chosen among {cls.list_values()} or {cls.list_names()}")
+
+        return enums
+
 
 def remove_empty_values(list_with_empty_values: list) -> list:
     """
