@@ -57,6 +57,10 @@ Basically, these functions are overloads of rasterio's functions:
 ## Network
 - Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm 
 
+## SNAP
+- Function converting bytes to SNAP understanding
+- Function creating a SNAP optimized commande line
+
 # Installing
 
 For installing this library to your environment, please type this:
