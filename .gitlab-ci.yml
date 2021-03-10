@@ -4,7 +4,7 @@ stages:
   - doc
 
 pytest:
-  image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
+  image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
   stage: test
   before_script:
     - pip install coverage pytest pytest-cov
