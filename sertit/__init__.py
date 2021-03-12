@@ -3,3 +3,7 @@
 
 .. include:: ../README.md
 """
+
+__pdoc__ = {
+    "sertit.version": False
+}
