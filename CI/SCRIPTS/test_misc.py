@@ -1,12 +1,9 @@
 """ Script testing the sys_utils """
 import os
-from enum import unique
-
 import pytest
 
 from CI.SCRIPTS.script_utils import Polarization
 from sertit import misc
-from sertit.misc import ListEnum
 
 
 def test_run_command():

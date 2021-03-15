@@ -35,7 +35,7 @@ def test_conversion():
     list_of_datetimes = [datetime(2020, 9, 9, 10, 50, 55), datetime(2019, 8, 6),
                          datetime(1956, 7, 2, 12, 12, 12), datetime(2020, 8, 9)]
     list_of_dates = [datetime(2020, 9, 9, 10, 50, 55), date(2019, 8, 6),
-                         datetime(1956, 7, 2, 12, 12, 12), date(2020, 8, 9)]
+                     datetime(1956, 7, 2, 12, 12, 12), date(2020, 8, 9)]
     assert (strings.str_to_list_of_dates(list_of_str_dates,
                                          date_format="%Y%m%d%H%M%S",
                                          additional_separator="\t") == list_of_datetimes)

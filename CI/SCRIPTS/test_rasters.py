@@ -6,10 +6,8 @@ import pytest
 import rasterio
 import numpy as np
 import geopandas as gpd
-from CI.SCRIPTS import script_utils
-from sertit import rasters
-
-RASTER_DATA = os.path.join(script_utils.get_ci_data_path(), "rasters")
+from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
+from sertit import rasters, ci
 
 
 def test_raster():
@@ -28,17 +26,16 @@ def test_raster():
 
     # Create tmp file
     # VRT needs to be build on te same disk
-    with tempfile.TemporaryDirectory(prefix=script_utils.get_ci_data_path()) as tmp_dir:
-
+    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
         # Get Extent
         extent = rasters.get_extent(raster_path)
         truth_extent = gpd.read_file(extent_path)
-        script_utils.assert_geom_equal(extent, truth_extent)
+        ci.assert_geom_equal(extent, truth_extent)
 
         # Get Footprint
         footprint = rasters.get_footprint(raster_path)
         truth_footprint = gpd.read_file(footprint_path)
-        script_utils.assert_geom_equal(footprint, truth_footprint)
+        ci.assert_geom_equal(footprint, truth_footprint)
 
         with rasterio.open(raster_path) as dst:
             # Read
@@ -91,15 +88,15 @@ def test_raster():
             vect = rasters.vectorize(raster_path)
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
-            script_utils.assert_geom_equal(vect, vect_truth)
+            ci.assert_geom_equal(vect, vect_truth)
 
         # Tests
-        script_utils.assert_raster_equal(raster_path, raster_out)
-        script_utils.assert_raster_equal(raster_masked_out, raster_masked_path)
-        script_utils.assert_raster_equal(raster_cropped_out, raster_cropped_path)
-        script_utils.assert_raster_equal(sieve_out, raster_sieved_path)
-        script_utils.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
-        script_utils.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+        ci.assert_raster_equal(raster_path, raster_out)
+        ci.assert_raster_equal(raster_masked_out, raster_masked_path)
+        ci.assert_raster_equal(raster_cropped_out, raster_cropped_path)
+        ci.assert_raster_equal(sieve_out, raster_sieved_path)
+        ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
+        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
 def test_dim():

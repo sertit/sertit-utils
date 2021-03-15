@@ -3,13 +3,9 @@ import os
 import geopandas as gpd
 import pytest
 from shapely import wkt
-from CI.SCRIPTS import script_utils
-from sertit import vectors
+from CI.SCRIPTS.script_utils import GEO_DATA
+from sertit import vectors, ci
 
-GEO_DATA = os.path.join(script_utils.get_ci_data_path(), "vectors")
-
-
-# TODO: use geopandas.testing.assert_geoseries_equal() and assert_geodataframe_equal()
 
 def test_vectors():
     """ Test geo functions """
@@ -49,9 +45,9 @@ def test_vectors():
 
     # GeoDataFrame
     geodf = vectors.get_geodf(env, aoi.crs)  # GeoDataFrame from Polygon
-    script_utils.assert_geom_equal(geodf.geometry, aoi.envelope)
-    script_utils.assert_geom_equal(vectors.get_geodf(geodf.geometry, aoi.crs), geodf)  # GeoDataFrame from Geoseries
-    script_utils.assert_geom_equal(vectors.get_geodf([env], aoi.crs), geodf)  # GeoDataFrame from list of poly
+    ci.assert_geom_equal(geodf.geometry, aoi.envelope)
+    ci.assert_geom_equal(vectors.get_geodf(geodf.geometry, aoi.crs), geodf)  # GeoDataFrame from Geoseries
+    ci.assert_geom_equal(vectors.get_geodf([env], aoi.crs), geodf)  # GeoDataFrame from list of poly
 
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2, 3, 4, 5], aoi.crs)

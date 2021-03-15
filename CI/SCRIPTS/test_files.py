@@ -7,11 +7,10 @@ from datetime import datetime, date
 
 import pytest
 
-from CI.SCRIPTS.script_utils import Polarization
-from sertit import files, misc
+from CI.SCRIPTS.script_utils import Polarization, FILE_DATA
+from sertit import files, misc, ci
 from CI.SCRIPTS import script_utils
 
-FILE_DATA = os.path.join(script_utils.get_ci_data_path(), "files")
 
 
 def test_paths():
@@ -62,7 +61,7 @@ def test_archive():
 
         # Test
         for ex_dir in extracted_dirs:
-            script_utils.assert_dir_equal(core_dir, ex_dir)
+            ci.assert_dir_equal(core_dir, ex_dir)
 
         # Archive
         archive_base = os.path.join(tmp_dir, "archive")
@@ -72,11 +71,11 @@ def test_archive():
                                        fmt=fmt)
             out = files.extract_file(archive_fn, tmp_dir)
             if fmt == "zip":
-                script_utils.assert_dir_equal(core_dir, out)
+                ci.assert_dir_equal(core_dir, out)
             else:
                 # For tar and tar.gz, an additional folder is created because these formats dont have any given file tree
                 out_dir = files.listdir_abspath(out)[0]
-                script_utils.assert_dir_equal(core_dir, out_dir)
+                ci.assert_dir_equal(core_dir, out_dir)
 
             # Remove out directory in order to avoid any interferences
             files.remove(out)
@@ -94,7 +93,7 @@ def test_archive():
         unzip_dirs = files.listdir_abspath(unzip_out)
 
         assert len(unzip_dirs) == 2
-        script_utils.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
+        ci.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
 
 
 def test_get_file_name():
