@@ -1,7 +1,7 @@
 """
-\\ds2\database02 → /mnt/ds2_db2
-\\ds2\database03 → /mnt/ds2_db3
-\\ds2\database04 → /mnt/ds2_db4
+CI tools
+
+You can use `assert_raster_equal` only if you have installed sertit[full] or sertit[rasters]
 """
 import filecmp
 import os
@@ -105,7 +105,7 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
     ```python
     >>> path = r"CI\DATA\rasters\raster.tif"
     >>> assert_raster_equal(path, path)
-    >>> # Raises AssertError if sth goes wrong
+    >>> # Raises AssertionError if sth goes wrong
     ```
 
     Args:
@@ -127,7 +127,7 @@ def assert_dir_equal(path_1: str, path_2: str) -> None:
     ```python
     >>> path = r"CI\DATA\rasters"
     >>> assert_dir_equal(path, path)
-    >>> # Raises AssertError if sth goes wrong
+    >>> # Raises AssertionError if sth goes wrong
     ```
 
     Args:
@@ -166,7 +166,7 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
     ```python
     >>> path = r"CI\DATA\vectors\aoi.geojson"
     >>> assert_geom_equal(path, path)
-    >>> # Raises AssertError if sth goes wrong
+    >>> # Raises AssertionError if sth goes wrong
     ```
 
     **WARNING**: only checks:
