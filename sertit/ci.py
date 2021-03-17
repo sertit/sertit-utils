@@ -115,7 +115,7 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
     with rasterio.open(path_1) as dst_1:
         with rasterio.open(path_2) as dst_2:
             assert dst_1.meta == dst_2.meta
-            np.testing.assert_array_equal(dst_1.read(), dst_2.read())
+            np.testing.assert_array_equal(dst_1.read(masked=True), dst_2.read(masked=True))
 
 
 def assert_dir_equal(path_1: str, path_2: str) -> None:
