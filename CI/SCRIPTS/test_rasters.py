@@ -78,7 +78,7 @@ def test_raster():
 
             # Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
-            rasters.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out)
+            rasters.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out, method="max")
 
             # Merge VRT
             raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")

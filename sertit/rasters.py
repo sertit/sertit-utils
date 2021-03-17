@@ -770,7 +770,7 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
         crs_merged_path (str): Path to the merged raster
-        kwargs (dict): Other gdlabuildvrt arguments
+        kwargs: Other gdlabuildvrt arguments
     """
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
@@ -783,7 +783,7 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
-def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
+def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
@@ -804,6 +804,8 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
         crs_merged_path (str): Path to the merged raster
+        kwargs: Other rasterio.merge arguments
+            More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     """
     # Open datasets for merging
     crs_datasets = []
@@ -812,7 +814,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str) -> None:
             crs_datasets.append(rasterio.open(path))
 
         # Merge all datasets
-        merged_array, merged_transform = merge.merge(crs_datasets, method='max')
+        merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
         merged_meta = crs_datasets[0].meta.copy()
         merged_meta.update({"driver": "GTiff",
                             "height": merged_array.shape[1],
