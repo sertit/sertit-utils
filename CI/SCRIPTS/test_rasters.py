@@ -58,14 +58,14 @@ def test_raster():
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
             mask = gpd.read_file(mask_path)
-            mask_arr, mask_tr = rasters.mask(dst, mask.geometry)
-            rasters.write(mask_arr, raster_masked_out, meta, transform=mask_tr)
+            mask_arr, mask_meta = rasters.mask(dst, mask.geometry)
+            rasters.write(mask_arr, raster_masked_out, mask_meta)
 
             # Crop
             raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
             crop = gpd.read_file(mask_path)
-            crop_arr, crop_tr = rasters.crop(dst, crop.geometry)
-            rasters.write(crop_arr, raster_cropped_out, meta, transform=crop_tr)
+            crop_arr, crop_meta = rasters.crop(dst, crop.geometry)
+            rasters.write(crop_arr, raster_cropped_out, crop_meta)
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")

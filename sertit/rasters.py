@@ -6,7 +6,6 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 import os
 from functools import wraps
 from typing import Union, Optional, Any, Callable
-import affine
 import numpy as np
 
 try:
@@ -22,6 +21,84 @@ except ModuleNotFoundError as ex:
 from sertit import misc, files, vectors, strings
 
 MAX_CORES = os.cpu_count() - 2
+
+
+def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
+    """
+    Basic metadata update from a numpy array. Updates everything that we can find in the array:
+
+    - `dtype`: array dtype,
+    - `count`: first dimension of the array if the array is in 3D, else 1
+    - `height`: second dimension of the array
+    - `width`: third dimension of the array
+    - `nodata`: if a masked array is given, nodata is its fill_value
+
+    **WARNING**: The array's shape is interpreted in rasterio's way (count, height, width) !
+
+    ```python
+    >>> raster_path = "path\\to\\raster.tif"
+    >>> with rasterio.open(raster_path) as dst:
+    >>>      meta = dst.meta
+    >>>      arr = dst.read()
+    >>> meta
+    {
+        'driver': 'GTiff',
+        'dtype': 'float32',
+        'nodata': None,
+        'width': 300,
+        'height': 300,
+        'count': 4,
+        'crs': CRS.from_epsg(32630),
+        'transform': Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
+    }
+    >>> new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
+    >>> new_arr.shape
+    (4, 150, 150)
+    >>> new_arr.dtype
+    dtype('uint8')
+    >>> new_arr.fill_value
+    0
+    >>> update_meta(new_arr, meta)
+    {
+        'driver': 'GTiff',
+        'dtype': dtype('uint8'),
+        'nodata': 0,
+        'width': 150,
+        'height': 150,
+        'count': 4,
+        'crs': CRS.from_epsg(32630),
+        'transform': Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
+    }
+    ```
+
+    Args:
+        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
+        meta (dict): Metadata to update
+
+    Returns:
+        dict: Update metadata
+
+    """
+    # Manage raster shape (Stored in rasterio's way)
+    shape = arr.shape
+    count = 1 if len(shape) == 2 else shape[0]
+    width = shape[-1]
+    height = shape[-2]
+
+    # Update metadata that can be derived from raster
+    out_meta = meta.copy()
+    out_meta.update({
+        "dtype": arr.dtype,
+        "count": count,
+        "height": height,
+        "width": width
+    })
+
+    # Nodata
+    if isinstance(arr, np.ma.masked_array):
+        out_meta["nodata"] = arr.fill_value
+
+    return out_meta
 
 
 def _to_polygons(val: Any) -> Polygon:
@@ -249,7 +326,7 @@ def _mask(dst: Union[str, rasterio.DatasetReader],
           shapes: Union[Polygon, list],
           nodata: Optional[int] = None,
           msk=False,
-          **kwargs) -> (np.ma.masked_array, affine.Affine):
+          **kwargs) -> (np.ma.masked_array, dict):
     """
     Overload of rasterio mask function in order to create a masked_array.
 
@@ -265,7 +342,7 @@ def _mask(dst: Union[str, rasterio.DatasetReader],
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
+         (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
     if isinstance(shapes, Polygon):
         shapes = [Polygon]
@@ -284,14 +361,18 @@ def _mask(dst: Union[str, rasterio.DatasetReader],
     nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
     mask_array = np.ma.masked_array(msk, nodata_mask, fill_value=nodata)
 
-    return mask_array, trf
+    # Update meta
+    out_meta = update_meta(mask_array, dst.meta)
+    out_meta["transform"] = trf
+
+    return mask_array, out_meta
 
 
 @path_or_dst
 def mask(dst: Union[str, rasterio.DatasetReader],
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
-         **kwargs) -> (np.ma.masked_array, affine.Affine):
+         **kwargs) -> (np.ma.masked_array, dict):
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
@@ -307,13 +388,13 @@ def mask(dst: Union[str, rasterio.DatasetReader],
     >>> raster_path = "path\\to\\raster.tif"
     >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
     >>> shapes = gpd.read_file(shape_path)
-    >>> masked_raster1, new_transform1 = mask(raster_path, shapes)
+    >>> masked_raster1, meta1 = mask(raster_path, shapes)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
-    >>>     masked_raster2, new_transform2 = mask(dst, shapes)
+    >>>     masked_raster2, meta2 = mask(dst, shapes)
     >>> masked_raster1 == masked_raster2
     True
-    >>> new_transform1 == new_transform2
+    >>> meta1 == meta2
     True
     ```
 
@@ -324,7 +405,7 @@ def mask(dst: Union[str, rasterio.DatasetReader],
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
+         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
     """
     return _mask(dst, shapes=shapes, nodata=nodata, msk=False, **kwargs)
 
@@ -333,7 +414,7 @@ def mask(dst: Union[str, rasterio.DatasetReader],
 def crop(dst: Union[str, rasterio.DatasetReader],
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
-         **kwargs) -> (np.ma.masked_array, affine.Affine):
+         **kwargs) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
@@ -349,13 +430,13 @@ def crop(dst: Union[str, rasterio.DatasetReader],
     >>> raster_path = "path\\to\\raster.tif"
     >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
     >>> shapes = gpd.read_file(shape_path)
-    >>> cropped_raster1, new_transform1 = crop(raster_path, shapes)
+    >>> cropped_raster1, meta1 = crop(raster_path, shapes)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
-    >>>     cropped_raster2, new_transform2 = crop(dst, shapes)
+    >>>     cropped_raster2, meta2 = crop(dst, shapes)
     >>> cropped_raster1 == cropped_raster2
     True
-    >>> new_transform1 == new_transform2
+    >>> meta1 == meta2
     True
     ```
 
@@ -366,7 +447,7 @@ def crop(dst: Union[str, rasterio.DatasetReader],
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, affine.Affine): Cropped array as a masked array and the new transform
+         (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
     return _mask(dst, shapes=shapes, nodata=nodata, msk=True, **kwargs)
 
@@ -508,27 +589,16 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
     if raster.dtype == np.uint8:
         out_meta['compress'] = "lzw"
 
+    # Update metadata with array data
+    out_meta = update_meta(raster, out_meta)
+
     # Update metadata with additional params
     for key, val in kwargs.items():
         out_meta[key] = val
 
     # Manage raster shape
-    shape = raster.shape
-    if len(shape) == 2:
+    if len(raster.shape) == 2:
         raster = np.expand_dims(raster, axis=0)
-        count = 1
-    else:
-        count = shape[0]
-
-    # Stored in rasterio's way
-    width = shape[-1]
-    height = shape[-2]
-
-    # Update metadata that can be derived from raster
-    out_meta["dtype"] = raster.dtype
-    out_meta["count"] = count
-    out_meta["height"] = height
-    out_meta["width"] = width
 
     # Write product
     with rasterio.open(path, "w", **out_meta) as dst:
@@ -626,7 +696,7 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
         connectivity (int): Connectivity, either 4 or 8
 
     Returns:
-        Union[np.ma.masked_array, np.ndarray], dict: Sieved array and updated meta
+        (Union[np.ma.masked_array, np.ndarray], dict): Sieved array and updated meta
     """
     assert connectivity in [4, 8]
 
