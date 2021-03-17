@@ -6,7 +6,6 @@ import geopandas as gpd
 
 from CI.SCRIPTS.script_utils import RASTER_DATA, FILE_DATA, GEO_DATA
 from sertit import ci
-from sertit.misc import in_docker
 
 
 def test_assert():
