@@ -14,6 +14,11 @@ pytest:
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - linux
+  except:
+    changes:
+      - "*.md"
+      - sertit/version.py
+      - doc_template
 
 upload_wheel:linux:
   image: python:3.7-buster
