@@ -40,8 +40,9 @@ def test_raster():
         with rasterio.open(raster_path) as dst:
             # Read
             raster, meta = rasters.read(dst)
-            raster_1, _ = rasters.read(dst, resolution=20)
+            raster_1, meta1 = rasters.read(dst, resolution=20)
             raster_2, _ = rasters.read(dst, resolution=[20, 20])
+            raster_3, _ = rasters.read(dst, size=(meta1["width"], meta1["height"]))
             with pytest.raises(ValueError):
                 rasters.read(dst, resolution=[20, 20, 20])
 
@@ -49,6 +50,7 @@ def test_raster():
             assert meta["crs"] == dst.crs
             assert meta["transform"] == dst.transform
             np.testing.assert_array_equal(raster_1, raster_2)
+            np.testing.assert_array_equal(raster_1, raster_3)
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")

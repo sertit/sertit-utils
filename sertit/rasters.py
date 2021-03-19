@@ -455,6 +455,7 @@ def crop(dst: Union[str, rasterio.DatasetReader],
 @path_or_dst
 def read(dst: Union[str, rasterio.DatasetReader],
          resolution: Union[tuple, list, float] = None,
+         size: Union[tuple, list]=None,
          resampling: Resampling = Resampling.nearest,
          masked=True) -> (np.ma.masked_array, dict):
     """
@@ -481,6 +482,7 @@ def read(dst: Union[str, rasterio.DatasetReader],
     Args:
         dst (rasterio.DatasetReader): Raster dataset to read
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
         masked (bool); Get a masked array
 
@@ -507,23 +509,30 @@ def read(dst: Union[str, rasterio.DatasetReader],
     new_width = dst.width
 
     # Compute new shape
-    if isinstance(resolution, (int, float)):
-        new_height = get_new_dim(dst.height, dst.res[1], resolution)
-        new_width = get_new_dim(dst.width, dst.res[0], resolution)
-    elif resolution is None:
-        pass
-    else:
+    if resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height = get_new_dim(dst.height, dst.res[1], resolution)
+            new_width = get_new_dim(dst.width, dst.res[0], resolution)
+        elif resolution is None:
+            pass
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError("We should have a resolution for X and Y dimensions")
+
+                if resolution[0] is not None:
+                    new_width = get_new_dim(dst.width, dst.res[0], resolution[0])
+
+                if resolution[1] is not None:
+                    new_height = get_new_dim(dst.height, dst.res[1], resolution[1])
+            except (TypeError, KeyError):
+                raise ValueError(f"Resolution should be None, 2 floats or a castable to a list: {resolution}")
+    elif size is not None:
         try:
-            if len(resolution) != 2:
-                raise ValueError("We should have a resolution for X and Y dimensions")
-
-            if resolution[0] is not None:
-                new_width = get_new_dim(dst.width, dst.res[0], resolution[0])
-
-            if resolution[1] is not None:
-                new_height = get_new_dim(dst.height, dst.res[1], resolution[1])
+            new_height = size[1]
+            new_width = size[0]
         except (TypeError, KeyError):
-            raise ValueError(f"Resolution should be None, 2 floats or a castable to a list: {resolution}")
+            raise ValueError(f"Size should be None or a castable to a list: {size}")
 
     # Read data
     array = dst.read(out_shape=(dst.count, new_height, new_width),
