@@ -1,8 +1,9 @@
 """ Logging tools """
 import os
 import logging
+import logging.config
 from datetime import datetime
-from colorlog import ColoredFormatter
+from typing import Union
 
 LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
 SU_NAME = 'sertit'
@@ -28,30 +29,50 @@ def init_logger(curr_logger: logging.Logger,
         log_lvl (int): Logging level to be set
         log_format (str): Logger format to be set
     """
-    curr_logger.setLevel(log_lvl)
-    formatter = logging.Formatter(log_format)
-
-    # Set stream handler
-    if curr_logger.handlers:
-        curr_logger.handlers[0].setLevel(log_lvl)
-        curr_logger.handlers[0].setFormatter(formatter)
-    else:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(log_lvl)
-        stream_handler.setFormatter(formatter)
-        curr_logger.addHandler(stream_handler)
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "fmt": {
+                    "format": log_format,
+                }
+            },
+            "handlers": {
+                "stream": {
+                    "level": logging.getLevelName(log_lvl),
+                    "class": "logging.StreamHandler",
+                    "formatter": "fmt",
+                },
+            },
+            "loggers": {
+                curr_logger.name: {
+                    "handlers": ["stream"],
+                    "propagate": True,
+                    "level": logging.getLevelName(log_lvl)
+                }
+            }
+        }
+    )
 
 
 # pylint: disable=R0913
-# Too many arguments (6/5) (too-many-arguments)
+# Too many arguments (8/5) (too-many-arguments)
 def create_logger(logger: logging.Logger,
-                  file_log_level: int,
-                  stream_log_level: int,
-                  output_folder: str,
-                  name: str,
-                  other_logger_names: list = None) -> None:
+                  file_log_level: int = logging.DEBUG,
+                  stream_log_level: int = logging.INFO,
+                  output_folder: str = None,
+                  name: str = None,
+                  other_loggers_names: Union[str, list] = None,
+                  other_loggers_file_log_level: int = None,
+                  other_loggers_stream_log_level: int = None) -> None:
     """
-    Create file and stream logger with colored logs.
+    Create file and stream logger at the wanted level for the given logger.
+
+    - If you have `colorlog` installed, it will produce colored logs.
+    - If you do not give any output and name, it won't create any file logger
+
+    It will also manage the log level of other specified logger that you give.
 
     ```python
     >>> logger = logging.getLogger("logger_test")
@@ -67,70 +88,128 @@ def create_logger(logger: logging.Logger,
         logger (logging.Logger): Logger to create
         file_log_level (int): File log level
         stream_log_level (int): Stream log level
-        output_folder (str): Output folder
-        name (str): Name of the log
-        other_logger_names (list): Other existing logger to manage (setting the right format and log level)
+        output_folder (str): Output folder. Won't create File logger if not specified
+        name (str): Name of the log file, prefixed with the date and suffixed with _log. Can be None.
+        other_loggers_names (Union[str, list]): Other existing logger to manage (setting the right format and log level)
+        other_loggers_file_log_level (int): File log level for other loggers
+        other_loggers_stream_log_level (int): Stream log level for other loggers
     """
-    # Logger data
-    date = datetime.today().replace(microsecond=0).strftime("%y%m%d_%H%M%S")
-    log_file_name = f"{date}_{name}_log.txt"
+    if not isinstance(other_loggers_names, list):
+        other_loggers_names = [other_loggers_names]
 
-    # Remove already created console handler
-    if logger.handlers:
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
+    # Manage other log levels
+    if other_loggers_file_log_level is None:
+        other_loggers_file_log_level = file_log_level
+    if other_loggers_stream_log_level is None:
+        other_loggers_stream_log_level = stream_log_level
 
-    # Add stream handler
-    color_fmt = ColoredFormatter(
-        "%(asctime)s - [%(log_color)s%(levelname)s%(reset)s] - %(message_log_color)s%(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        reset=True,
-        log_colors={
-            'DEBUG': 'white',
-            'INFO': 'green',
-            'WARNING': 'cyan',
-            'ERROR': 'red',
-            'CRITICAL': 'fg_bold_red,bg_white',
-        },
-        secondary_log_colors={
-            'message': {
+    try:
+        from colorlog import ColoredFormatter
+        formatter = {
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(asctime)s - [%(log_color)s%(levelname)s%(reset)s] - %(message_log_color)s%(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "reset": True,
+            "log_colors": {
                 'DEBUG': 'white',
                 'INFO': 'green',
                 'WARNING': 'cyan',
                 'ERROR': 'red',
-                'CRITICAL': 'bold_red'
-            }
+                'CRITICAL': 'fg_bold_red,bg_white',
+            },
+            "secondary_log_colors": {
+                'message': {
+                    'DEBUG': 'white',
+                    'INFO': 'green',
+                    'WARNING': 'cyan',
+                    'ERROR': 'red',
+                    'CRITICAL': 'bold_red'
+                }
+            },
+            "style": '%'
+        }
+    except ModuleNotFoundError:
+        logger.debug("Impossible to import colorlog, will log without colors.")
+        formatter = {
+            "format": "%(asctime)s - [%(levelname)s%] - %(message)s",
+        }
+
+    # Initiate the logging configuration dictionary
+    logging_dict = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "fmt": formatter
         },
-        style='%'
+        "handlers": {
+            "stream_main": {
+                "level": logging.getLevelName(stream_log_level),
+                "class": "logging.StreamHandler",
+                "formatter": "fmt",
+            },
+            "stream_other": {
+                "level": logging.getLevelName(other_loggers_stream_log_level),
+                "class": "logging.StreamHandler",
+                "formatter": "fmt",
+            },
+        }
+    }
+
+    # Get logger file path
+    if output_folder:
+        date = datetime.today().replace(microsecond=0).strftime("%y%m%d_%H%M%S")
+        log_file_name = f"{date}{f'_{name}' if name else ''}_log.txt"
+        log_path = os.path.join(output_folder, log_file_name)
+
+        logging_dict["handlers"].update(
+            {
+                "file_main": {
+                    "level": logging.getLevelName(file_log_level),
+                    "class": "logging.FileHandler",
+                    'filename': log_path,
+                    "formatter": "fmt",
+                },
+                "file_other": {
+                    "level": logging.getLevelName(other_loggers_file_log_level),
+                    "class": "logging.FileHandler",
+                    'filename': log_path,
+                    "formatter": "fmt",
+                }
+            }
+        )
+        handlers_main = ["stream_main", "file_main"]
+        handlers_other = ["stream_other", "file_other"]
+    else:
+        handlers_main = ["stream_main"]
+        handlers_other = ["stream_other"]
+
+    # Add logger to the config dict
+    logging_dict.update(
+        {
+            "loggers": {
+                logger.name: {
+                    "handlers": handlers_main,
+                    "propagate": True,
+                    "level": "DEBUG",
+                }
+            }
+        }
     )
 
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(stream_log_level)
-    stream_handler.setFormatter(color_fmt)
-    logger.addHandler(stream_handler)
-
-    # Get logger file output path
-    log_path = os.path.join(output_folder, log_file_name)
-
-    # Create file handler
-    file_handler = logging.FileHandler(log_path)
-    file_handler.setLevel(file_log_level)
-    file_handler.setFormatter(logging.Formatter(LOGGING_FORMAT))
-    logger.addHandler(file_handler)
-
     # Manage other loggers
-    if other_logger_names:
-        for log_name in other_logger_names:
-            other_logger = logging.getLogger(log_name)
+    if other_loggers_names:
+        for log_name in other_loggers_names:
+            logging_dict["loggers"].update(
+                {
+                    log_name: {
+                        "handlers": handlers_other,
+                        "propagate": True,
+                        "level": "DEBUG",
+                    }
+                }
+            )
 
-            # Remove all handlers (brand new logger)
-            other_logger.handlers = []
-
-            # Set the right format and log level
-            # Set log to info as these other loggers are not really important
-            other_logger.setLevel(logging.INFO)
-            other_logger.addHandler(stream_handler)
-            other_logger.addHandler(file_handler)
+    logging.config.dictConfig(logging_dict)
 
 
 def shutdown_logger(logger: logging.Logger) -> None:

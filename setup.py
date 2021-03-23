@@ -16,12 +16,12 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'tqdm',
-        'colorlog',
         "numpy"
     ],
     extras_require={
         'full': ["geopandas",
-                 "rasterio"],
+                 "rasterio",
+                 "colorlog"],
         'rasters': ["geopandas",
                     "rasterio"],
         'vectors': ["geopandas"]

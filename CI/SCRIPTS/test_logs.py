@@ -2,11 +2,13 @@
 import os
 import logging
 import tempfile
+import sys
+import colorlog as clog
+
 from sertit import logs
 from sertit.logs import LOGGING_FORMAT
 
 LOGGER = logging.getLogger("Test_logger")
-
 
 def test_log():
     """ Testing log functions """
@@ -27,6 +29,7 @@ def test_log():
     assert LOGGER.handlers[0].formatter._fmt == LOGGING_FORMAT
 
     # -- CREATE LOGGER --
+    logger_test = logging.getLogger("test")
     file_log_lvl = logging.DEBUG
     stream_log_lvl = logging.DEBUG
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -35,11 +38,12 @@ def test_log():
                            stream_log_level=stream_log_lvl,
                            output_folder=tmp_dir,
                            name="test_log.txt",
-                           other_logger_names=["test"])
+                           other_loggers_names=["test"])
 
         # Test create
         assert len(LOGGER.handlers) == 2  # File and stream
-        for handler in LOGGER.handlers:
+        assert len(logger_test.handlers) == 2  # File and stream
+        for handler in LOGGER.handlers + logger_test.handlers:
             if isinstance(handler, logging.FileHandler):
                 assert handler.level == file_log_lvl
                 log_file = handler.baseFilename
@@ -49,6 +53,36 @@ def test_log():
             else:
                 raise TypeError(f"Invalid handler type: {handler.__class__}, "
                                 f"the logger should only have Stream and File handlers")
+
+        logs.reset_logging()
+        logs.create_logger(LOGGER,
+                           stream_log_level=stream_log_lvl,
+                           other_loggers_names="test")
+
+        # Test create
+        assert len(LOGGER.handlers) == 1  # Only stream
+        assert len(logger_test.handlers) == 1  # Only stream
+        colored_fmt_cls = clog.ColoredFormatter
+        for handler in LOGGER.handlers + logger_test.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                assert handler.level == stream_log_lvl
+                assert isinstance(handler.formatter, colored_fmt_cls)
+            else:
+                raise TypeError(f"Invalid handler type: {handler.__class__}, "
+                                f"the logger should only have Stream handler")
+
+        # Without color
+        import colorlog
+        colorlog_sys = sys.modules['colorlog']
+        del colorlog
+        sys.modules['colorlog'] = None
+        logs.create_logger(LOGGER, stream_log_level=stream_log_lvl)
+
+        for handler in LOGGER.handlers:
+            assert isinstance(handler.formatter, logging.Formatter)
+
+        # Just in case
+        sys.modules['colorlog'] = colorlog_sys
 
         # Cleanup
         logs.shutdown_logger(LOGGER)  # If this fails, we will not be able to cleanup the tmp dir

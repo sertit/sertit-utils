@@ -18,7 +18,7 @@ class NetworkRequestMocker:
             raise Exception("Resource is unavailable")
 
 
-def test_log():
+def test_network():
     mocker = NetworkRequestMocker(5)
 
     with pytest.raises(Exception):
