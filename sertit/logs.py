@@ -48,7 +48,7 @@ def init_logger(curr_logger: logging.Logger,
             "loggers": {
                 curr_logger.name: {
                     "handlers": ["stream"],
-                    "propagate": True,
+                    "propagate": False,
                     "level": logging.getLevelName(log_lvl)
                 }
             }
@@ -189,7 +189,7 @@ def create_logger(logger: logging.Logger,
             "loggers": {
                 logger.name: {
                     "handlers": handlers_main,
-                    "propagate": True,
+                    "propagate": False,
                     "level": "DEBUG",
                 }
             }
@@ -203,7 +203,7 @@ def create_logger(logger: logging.Logger,
                 {
                     log_name: {
                         "handlers": handlers_other,
-                        "propagate": True,
+                        "propagate": False,
                         "level": "DEBUG",
                     }
                 }
