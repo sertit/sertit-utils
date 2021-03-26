@@ -103,9 +103,13 @@ def create_logger(logger: logging.Logger,
     if other_loggers_stream_log_level is None:
         other_loggers_stream_log_level = stream_log_level
 
+    # Formatters
+    basic_fmter = {
+        "format": "%(asctime)s - [%(levelname)s%] - %(message)s",
+    }
     try:
         from colorlog import ColoredFormatter
-        formatter = {
+        color_fmter = {
             "()": "colorlog.ColoredFormatter",
             "format": "%(asctime)s - [%(log_color)s%(levelname)s%(reset)s] - %(message_log_color)s%(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
@@ -130,27 +134,26 @@ def create_logger(logger: logging.Logger,
         }
     except ModuleNotFoundError:
         logger.debug("Impossible to import colorlog, will log without colors.")
-        formatter = {
-            "format": "%(asctime)s - [%(levelname)s%] - %(message)s",
-        }
+        color_fmter = basic_fmter
 
     # Initiate the logging configuration dictionary
     logging_dict = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "fmt": formatter
+            "color_fmter": color_fmter,
+            "basic_fmter": basic_fmter
         },
         "handlers": {
             "stream_main": {
                 "level": logging.getLevelName(stream_log_level),
                 "class": "logging.StreamHandler",
-                "formatter": "fmt",
+                "formatter": "color_fmter",
             },
             "stream_other": {
                 "level": logging.getLevelName(other_loggers_stream_log_level),
                 "class": "logging.StreamHandler",
-                "formatter": "fmt",
+                "formatter": "color_fmter",
             },
         }
     }
@@ -167,13 +170,13 @@ def create_logger(logger: logging.Logger,
                     "level": logging.getLevelName(file_log_level),
                     "class": "logging.FileHandler",
                     'filename': log_path,
-                    "formatter": "fmt",
+                    "formatter": "basic_fmter",
                 },
                 "file_other": {
                     "level": logging.getLevelName(other_loggers_file_log_level),
                     "class": "logging.FileHandler",
                     'filename': log_path,
-                    "formatter": "fmt",
+                    "formatter": "basic_fmter",
                 }
             }
         )
