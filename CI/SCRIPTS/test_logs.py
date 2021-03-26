@@ -40,6 +40,8 @@ def test_log():
                            name="test_log.txt",
                            other_loggers_names=["test"])
 
+        LOGGER.info("Hey you!")
+
         # Test create
         assert len(LOGGER.handlers) == 2  # File and stream
         assert len(logger_test.handlers) == 2  # File and stream
@@ -59,6 +61,8 @@ def test_log():
                            stream_log_level=stream_log_lvl,
                            other_loggers_names="test")
 
+        LOGGER.info("Hi there!")
+
         # Test create
         assert len(LOGGER.handlers) == 1  # Only stream
         assert len(logger_test.handlers) == 1  # Only stream
@@ -77,6 +81,8 @@ def test_log():
         del colorlog
         sys.modules['colorlog'] = None
         logs.create_logger(LOGGER, stream_log_level=stream_log_lvl)
+
+        LOGGER.info("Urk!")
 
         for handler in LOGGER.handlers:
             assert isinstance(handler.formatter, logging.Formatter)
