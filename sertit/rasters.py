@@ -172,7 +172,7 @@ def path_or_dst(function: Callable) -> Callable:
     return path_or_dst_wrapper
 
 
-def get_nodata_mask(array: np.ma.masked_array,
+def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
                     has_nodata: bool,
                     default_nodata: int = 0) -> np.ma.masked_array:
     """
@@ -207,16 +207,17 @@ def get_nodata_mask(array: np.ma.masked_array,
 
     """
     # Nodata mask
-    if has_nodata:  # Unspecified nodata is set to None by rasterio
-        nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
-    else:
+    if not has_nodata or not isinstance(array, np.ma.masked_array):  # Unspecified nodata is set to None by rasterio
         nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
+    else:
+        nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
 
     return nodata_mask
 
 
 @path_or_dst
 def _vectorize(dst: Union[str, rasterio.DatasetReader],
+               values: Union[None, int, list] = None,
                get_nodata: bool = False,
                default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
@@ -232,6 +233,7 @@ def _vectorize(dst: Union[str, rasterio.DatasetReader],
 
     Args:
         dst (str): Path to the raster or its dataset
+        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -240,16 +242,29 @@ def _vectorize(dst: Union[str, rasterio.DatasetReader],
     # Get the shapes
     array = dst.read(masked=True)
 
-    # Nodata mask
-    nodata_mask = get_nodata_mask(array, dst.nodata is not None, default_nodata)
+    # Manage nodata value
+    has_nodata = dst.nodata is not None
+    nodata = dst.nodata if has_nodata else default_nodata
+
+    # Manage values
+    if values is not None:
+        if not isinstance(values, list):
+            values = [values]
+        data = np.where(np.isin(array, values), array, nodata).astype(array.dtype)
+    else:
+        data = array.data
+
+    # Get nodata mask
+    nodata_mask = get_nodata_mask(data, has_nodata=False, default_nodata=nodata)
 
     # Get shapes (on array or on mask to get nodata vector)
-    shapes = features.shapes(nodata_mask if get_nodata else array.data,
+    shapes = features.shapes(nodata_mask if get_nodata else data,
                              mask=None if get_nodata else nodata_mask,
                              transform=dst.transform)
 
     # Convert results to pandas (because of invalid geometries) and save it
     pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
+
     if not pd_results.empty:
         # Convert to proper polygons(correct geometries)
         pd_results.geometry = pd_results.geometry.apply(_to_polygons)
@@ -262,6 +277,7 @@ def _vectorize(dst: Union[str, rasterio.DatasetReader],
 
 @path_or_dst
 def vectorize(dst: Union[str, rasterio.DatasetReader],
+              values: Union[None, int, list] = None,
               default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Vectorize a raster to get the class vectors.
@@ -284,11 +300,12 @@ def vectorize(dst: Union[str, rasterio.DatasetReader],
 
     Args:
         dst (str): Path to the raster or its dataset
+        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
     """
-    return _vectorize(dst, get_nodata=False, default_nodata=default_nodata)
+    return _vectorize(dst, values=values, get_nodata=False, default_nodata=default_nodata)
 
 
 @path_or_dst
@@ -317,8 +334,8 @@ def get_nodata_vec(dst: Union[str, rasterio.DatasetReader],
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(dst, get_nodata=True, default_nodata=default_nodata)
-    return nodata[nodata.raster_val != 0]
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_or_dst

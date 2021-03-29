@@ -87,10 +87,13 @@ def test_raster():
             rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
 
             # Vectorize
+            val = 2
             vect = rasters.vectorize(raster_path)
+            vect_val = rasters.vectorize(raster_path, values=val)
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
+            ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
 
         # Tests
         ci.assert_raster_equal(raster_path, raster_out)
