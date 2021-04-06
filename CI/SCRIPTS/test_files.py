@@ -6,11 +6,11 @@ import numpy as np
 from datetime import datetime, date
 
 import pytest
+from lxml import etree
 
 from CI.SCRIPTS.script_utils import Polarization, FILE_DATA
 from sertit import files, misc, ci
 from CI.SCRIPTS import script_utils
-
 
 
 def test_paths():
@@ -73,7 +73,7 @@ def test_archive():
             if fmt == "zip":
                 ci.assert_dir_equal(core_dir, out)
             else:
-                # For tar and tar.gz, an additional folder is created because these formats dont have any given file tree
+                # For tar and tar.gz, an additional folder is created because these formats dont have any file tree
                 out_dir = files.listdir_abspath(out)[0]
                 ci.assert_dir_equal(core_dir, out_dir)
 
@@ -94,6 +94,48 @@ def test_archive():
 
         assert len(unzip_dirs) == 2
         ci.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
+
+
+def test_archived_files():
+    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
+    ok_folder = os.path.join(FILE_DATA, landsat_name)
+    zip_file = os.path.join(FILE_DATA, f"{landsat_name}.zip")
+    tar_file = os.path.join(FILE_DATA, f"{landsat_name}.tar")
+    targz_file = os.path.join(FILE_DATA, f"{landsat_name}.tar.gz")
+    sz_file = os.path.join(FILE_DATA, f"{landsat_name}.7z")
+
+    # RASTERIO
+    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
+    tif_regex = f".*{tif_name}"
+    tif_zip = files.get_archived_rio_path(zip_file, tif_regex)
+    tif_tar = files.get_archived_rio_path(tar_file, ".*RADSAT")
+    tif_ok = os.path.join(ok_folder, tif_name)
+    ci.assert_raster_equal(tif_ok, tif_zip)
+    ci.assert_raster_equal(tif_ok, tif_tar)
+
+    # XML
+    xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_regex = f".*{xml_name}"
+    xml_zip = files.read_archived_xml(zip_file, xml_regex)
+    xml_tar = files.read_archived_xml(tar_file, ".*_MTL.xml")
+    xml_ok = etree.parse(os.path.join(ok_folder, xml_name)).getroot()
+    ci.assert_xml_equal(xml_ok, xml_zip)
+    ci.assert_xml_equal(xml_ok, xml_tar)
+
+    # ERRORS
+    with pytest.raises(TypeError):
+        files.get_archived_rio_path(targz_file, tif_regex)
+    with pytest.raises(TypeError):
+        files.get_archived_rio_path(sz_file, tif_regex)
+    with pytest.raises(FileNotFoundError):
+        files.get_archived_rio_path(zip_file, "cdzeferf")
+    with pytest.raises(TypeError):
+        files.read_archived_xml(targz_file, xml_regex)
+    with pytest.raises(TypeError):
+        files.read_archived_xml(sz_file, xml_regex)
+    with pytest.raises(FileNotFoundError):
+        files.read_archived_xml(zip_file, "cdzeferf")
+
 
 
 def test_get_file_name():

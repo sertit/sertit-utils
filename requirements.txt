@@ -5,6 +5,7 @@ twine
 pylint
 pdoc3
 psutil
+lxml
 
 # For Windows (use wheels)
 ./CI/COTS/pyproj-3.0.0.post1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"

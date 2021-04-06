@@ -5,10 +5,13 @@ You can use `assert_raster_equal` only if you have installed sertit[full] or ser
 """
 import filecmp
 import os
+from doctest import Example
 
 import numpy as np
 import geopandas as gpd
 import rasterio
+from lxml import etree
+from lxml.doctestcompare import LXMLOutputChecker
 
 
 def get_mnt_path() -> str:
@@ -27,6 +30,7 @@ def get_mnt_path() -> str:
     """
     return r"/mnt"
 
+
 def _get_db_path(db_nb=2) -> str:
     """
     Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2\database02`.
@@ -44,6 +48,7 @@ def _get_db_path(db_nb=2) -> str:
         raise NotADirectoryError(f"Directory not found: {db_path}")
 
     return db_path
+
 
 def get_db2_path() -> str:
     """
@@ -100,7 +105,7 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
     """
     Assert that two rasters are equal.
 
-    Useful in pytests.
+    # Useful for pytests.
 
     ```python
     >>> path = r"CI\DATA\rasters\raster.tif"
@@ -122,7 +127,7 @@ def assert_dir_equal(path_1: str, path_2: str) -> None:
     """
     Assert that two directories are equal.
 
-    Useful in pytests.
+    # Useful for pytests.
 
     ```python
     >>> path = r"CI\DATA\rasters"
@@ -161,7 +166,7 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
 
-    Useful in pytests.
+    # Useful for pytests.
 
     ```python
     >>> path = r"CI\DATA\vectors\aoi.geojson"
@@ -184,3 +189,21 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
         if geom_1.geometry.iat[idx].is_valid and geom_2.geometry.iat[idx].is_valid:
             # If valid geometries, assert that the both are equal
             assert geom_1.geometry.iat[idx].equals(geom_2.geometry.iat[idx])
+
+
+def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
+    """
+    Assert that 2 XML (as etree Elements) are equal.
+
+    # Useful for pytests.
+
+    Args:
+        xml_elem_1 (etree._Element): 1st Element
+        xml_elem_2 (etree._Element): 2nd Element
+    """
+    str_1 = etree.tounicode(xml_elem_1)
+    str_2 = etree.tounicode(xml_elem_2)
+    checker = LXMLOutputChecker()
+    if not checker.check_output(str_1, str_2, 0):
+        message = checker.output_difference(Example("", str_1), str_2, 0)
+        raise AssertionError(message)

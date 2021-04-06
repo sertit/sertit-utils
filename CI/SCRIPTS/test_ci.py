@@ -3,6 +3,7 @@ import os
 import pytest
 
 import geopandas as gpd
+from lxml import etree
 
 from CI.SCRIPTS.script_utils import RASTER_DATA, FILE_DATA, GEO_DATA
 from sertit import ci
@@ -35,6 +36,17 @@ def test_assert():
     ci.assert_raster_equal(raster_path, raster_path)
     with pytest.raises(AssertionError):
         ci.assert_raster_equal(raster_path, raster2_path)
+
+    # XML
+    xml_folder = os.path.join(FILE_DATA, "LM05_L1TP_200030_20121230_20200820_02_T2_CI")
+    xml_path = os.path.join(xml_folder, "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
+    xml_bad_path = os.path.join(xml_folder, "false_xml.xml")
+    xml_ok = etree.parse(xml_path).getroot()
+    xml_nok = etree.parse(xml_bad_path).getroot()
+
+    ci.assert_xml_equal(xml_ok, xml_ok)
+    with pytest.raises(AssertionError):
+        ci.assert_xml_equal(xml_ok, xml_nok)
 
 
 def test_mnt():

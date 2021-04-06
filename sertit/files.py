@@ -4,6 +4,7 @@ import glob
 import os
 import logging
 import pprint
+import re
 import tarfile
 import tempfile
 import zipfile
@@ -11,6 +12,7 @@ import json
 import shutil
 import pickle
 import hashlib
+from lxml import etree
 from enum import Enum
 from json import JSONDecoder, JSONEncoder
 from datetime import date, datetime
@@ -253,6 +255,114 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
         extracts.append(extract_file(arch, output, overwrite))
 
     return extracts
+
+
+def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
+    """
+    Get archived file path from inside the archive, to be read with rasterio:
+
+    - `zip+file://{zip_path}!{file_name}`
+    - `tar+file://{tar_path}!{file_name}`
+
+    See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
+    for more information.
+
+    **WARNING**:  It wont be readable by pandas, geopandas or xmltree !
+
+    You can use this [site](https://regexr.com/) to build your regex.
+
+    ```python
+    >>> arch_path = 'D:\\path\\to\\zip.zip'
+    >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+    >>> get_archived_tif_path(arch_path, file_regex)
+    zip+file://D:\\path\\to\\output\zip!dir/filename.tif'
+    ```
+
+    Args:
+        archive_path (str): Archive path
+        file_regex (str): File regex (used by re) as it can be found in the getmembers() list
+
+    Returns:
+        str: Band path that can be read by rasterio
+    """
+    if archive_path.endswith(".tar"):
+        prefix = "tar"
+        with tarfile.open(archive_path) as tar_ds:
+            tar_mb = tar_ds.getmembers()
+            name_list = [mb.name for mb in tar_mb]
+    elif archive_path.endswith(".zip"):
+        prefix = "zip"
+        with zipfile.ZipFile(archive_path) as zip_ds:
+            name_list = [f.filename for f in zip_ds.filelist]
+    elif archive_path.endswith(".tar.gz"):
+        raise TypeError(".tar.gz files are too slow to read from inside the archive. Please extract them instead.")
+    else:
+        raise TypeError("Only .zip and .tar files can be read from inside its archive.")
+
+    try:
+        regex = re.compile(file_regex)
+        archived_band_path = list(filter(regex.match, name_list))[0]
+        archived_band_path = f"{prefix}+file://{archive_path}!{archived_band_path}"
+    except IndexError:
+        raise FileNotFoundError(f"Impossible to find file {file_regex} in {get_filename(archive_path)}")
+
+    return archived_band_path
+
+
+def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
+    """
+    Get archived .tif file path from inside the archive, to be read with rasterio:
+
+    - `zip+file://{zip_path}!{file_name}`
+    - `tar+file://{tar_path}!{file_name}`
+
+    See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
+    for more information.
+
+    **WARNING**:  It wont be readable by pandas, geopandas or xmltree !
+
+    You can use this [site](https://regexr.com/) to build your regex.
+
+    ```python
+    >>> arch_path = 'D:\\path\\to\\zip.zip'
+    >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+    >>> read_archived_xml(arch_path, file_regex)*
+    <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
+    ```
+
+    Args:
+        archive_path (str): Archive path
+        xml_regex (str): File regex (used by re) as it can be found in the getmembers() list
+
+    Returns:
+        str: Band path that can be read by rasterio
+    """
+    # Compile regex
+    regex = re.compile(xml_regex)
+
+    # Open tar and zip XML
+    try:
+        if archive_path.endswith(".tar"):
+            with tarfile.open(archive_path) as tar_ds:
+                tar_mb = tar_ds.getmembers()
+                name_list = [mb.name for mb in tar_mb]
+                band_name = list(filter(regex.match, name_list))[0]
+                tarinfo = [mb for mb in tar_mb if mb.name == band_name][0]
+                xml_str = tar_ds.extractfile(tarinfo).read()
+        elif archive_path.endswith(".zip"):
+            with zipfile.ZipFile(archive_path) as zip_ds:
+                name_list = [f.filename for f in zip_ds.filelist]
+                band_name = list(filter(regex.match, name_list))[0]
+                xml_str = zip_ds.read(band_name)
+
+        elif archive_path.endswith(".tar.gz"):
+            raise TypeError(".tar.gz files are too slow to read from inside the archive. Please extract them instead.")
+        else:
+            raise TypeError("Only .zip and .tar files can be read from inside its archive.")
+    except IndexError:
+        raise FileNotFoundError(f"Impossible to find XML file {xml_regex} in {get_filename(archive_path)}")
+
+    return etree.fromstring(xml_str)
 
 
 def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
