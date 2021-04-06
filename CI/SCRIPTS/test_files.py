@@ -3,6 +3,7 @@ import os
 import tempfile
 
 import numpy as np
+import geopandas as gpd
 from datetime import datetime, date
 
 import pytest
@@ -117,10 +118,19 @@ def test_archived_files():
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
     xml_regex = f".*{xml_name}"
     xml_zip = files.read_archived_xml(zip_file, xml_regex)
-    xml_tar = files.read_archived_xml(tar_file, ".*_MTL.xml")
+    xml_tar = files.read_archived_xml(tar_file, ".*_MTL\.xml")
     xml_ok = etree.parse(os.path.join(ok_folder, xml_name)).getroot()
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
+
+    # VECTORS
+    vect_name = "map-overlay.kml"
+    vect_regex = f".*{vect_name}"
+    vect_zip = files.read_archived_vector(zip_file, vect_regex)
+    vect_tar = files.read_archived_vector(tar_file, ".*overlay\.kml")
+    vect_ok = gpd.read_file(os.path.join(ok_folder, vect_name))
+    ci.assert_geom_equal(vect_ok, vect_zip)
+    ci.assert_geom_equal(vect_ok, vect_tar)
 
     # ERRORS
     with pytest.raises(TypeError):
@@ -135,7 +145,6 @@ def test_archived_files():
         files.read_archived_xml(sz_file, xml_regex)
     with pytest.raises(FileNotFoundError):
         files.read_archived_xml(zip_file, "cdzeferf")
-
 
 
 def test_get_file_name():

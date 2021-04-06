@@ -257,6 +257,36 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     return extracts
 
 
+def get_archived_file_list(archive_path) -> list:
+    """
+    Get the list of all the files contained in an archive.
+
+    ```python
+    >>> arch_path = 'D:\\path\\to\\zip.zip'
+    >>> get_archived_file_list(arch_path, file_regex)
+    ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
+    ```
+
+    Args:
+        archive_path (str): Archive path
+
+    Returns:
+        list: All files contained in the given archive
+    """
+    if archive_path.endswith(".zip"):
+        with zipfile.ZipFile(archive_path) as zip_ds:
+            file_list = [f.filename for f in zip_ds.filelist]
+    else:
+        try:
+            with tarfile.open(archive_path) as tar_ds:
+                tar_mb = tar_ds.getmembers()
+                file_list = [mb.name for mb in tar_mb]
+        except tarfile.ReadError as ex:
+            raise TypeError(f"Impossible to open archive: {archive_path}") from ex
+
+    return file_list
+
+
 def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     """
     Get archived file path from inside the archive, to be read with rasterio:
@@ -285,15 +315,11 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     Returns:
         str: Band path that can be read by rasterio
     """
-    if archive_path.endswith(".tar"):
-        prefix = "tar"
-        with tarfile.open(archive_path) as tar_ds:
-            tar_mb = tar_ds.getmembers()
-            name_list = [mb.name for mb in tar_mb]
-    elif archive_path.endswith(".zip"):
-        prefix = "zip"
-        with zipfile.ZipFile(archive_path) as zip_ds:
-            name_list = [f.filename for f in zip_ds.filelist]
+    # Get file list
+    file_list = get_archived_file_list(archive_path)
+
+    if archive_path.endswith(".tar") or archive_path.endswith(".zip"):
+        prefix = archive_path[-3:]
     elif archive_path.endswith(".tar.gz"):
         raise TypeError(".tar.gz files are too slow to read from inside the archive. Please extract them instead.")
     else:
@@ -301,7 +327,7 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
 
     try:
         regex = re.compile(file_regex)
-        archived_band_path = list(filter(regex.match, name_list))[0]
+        archived_band_path = list(filter(regex.match, file_list))[0]
         archived_band_path = f"{prefix}+file://{archive_path}!{archived_band_path}"
     except IndexError:
         raise FileNotFoundError(f"Impossible to find file {file_regex} in {get_filename(archive_path)}")
@@ -311,15 +337,7 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
 
 def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
     """
-    Get archived .tif file path from inside the archive, to be read with rasterio:
-
-    - `zip+file://{zip_path}!{file_name}`
-    - `tar+file://{tar_path}!{file_name}`
-
-    See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
-    for more information.
-
-    **WARNING**:  It wont be readable by pandas, geopandas or xmltree !
+    Read archived XML from `zip` or `tar` archives.
 
     You can use this [site](https://regexr.com/) to build your regex.
 
@@ -332,10 +350,10 @@ def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
 
     Args:
         archive_path (str): Archive path
-        xml_regex (str): File regex (used by re) as it can be found in the getmembers() list
+        xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list
 
     Returns:
-        str: Band path that can be read by rasterio
+         etree._Element: XML file
     """
     # Compile regex
     regex = re.compile(xml_regex)
@@ -363,6 +381,54 @@ def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
         raise FileNotFoundError(f"Impossible to find XML file {xml_regex} in {get_filename(archive_path)}")
 
     return etree.fromstring(xml_str)
+
+
+def read_archived_vector(archive_path: str, vector_regex: str):
+    """
+    Read archived vector from `zip` or `tar` archives.
+
+    You can use this [site](https://regexr.com/) to build your regex.
+
+    ```python
+    >>> arch_path = 'D:\\path\\to\\zip.zip'
+    >>> files.read_archived_vector(arch_path, ".*map-overlay\.kml")
+                           Name  ...                                           geometry
+    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+    ```
+
+    Args:
+        archive_path (str): Archive path
+        vector_regex (str): Vector regex (used by re) as it can be found in the getmembers() list
+
+    Returns:
+        gpd.GeoDataFrame: Vector
+    """
+    # Import here as we don't want geopandas to pollute this file import
+    import geopandas as gpd
+
+    # Get file list
+    file_list = get_archived_file_list(archive_path)
+    if archive_path.endswith(".tar") or archive_path.endswith(".zip"):
+        prefix = archive_path[-3:]
+    elif archive_path.endswith(".tar.gz"):
+        raise TypeError(".tar.gz files are too slow to read from inside the archive. Please extract them instead.")
+    else:
+        raise TypeError("Only .zip and .tar files can be read from inside its archive.")
+
+    # Open tar and zip vectors
+    try:
+        regex = re.compile(vector_regex)
+        archived_vect_path = list(filter(regex.match, file_list))[0]
+        archived_vect_path = f"{prefix}://{archive_path}!{archived_vect_path}"
+        if archived_vect_path.endswith("kml"):
+            from sertit import vectors
+            vectors.set_kml_driver()
+
+        vect = gpd.read_file(archived_vect_path)
+    except IndexError:
+        raise FileNotFoundError(f"Impossible to find vector {vector_regex} in {get_filename(archive_path)}")
+
+    return vect
 
 
 def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
