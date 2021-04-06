@@ -304,8 +304,10 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     ```python
     >>> arch_path = 'D:\\path\\to\\zip.zip'
     >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-    >>> get_archived_tif_path(arch_path, file_regex)
-    zip+file://D:\\path\\to\\output\zip!dir/filename.tif'
+    >>> path = get_archived_tif_path(arch_path, file_regex)
+    'zip+file://D:\\path\\to\\output\zip!dir/filename.tif'
+    >>> rasterio.open(path)
+    <open DatasetReader name='zip+file://D:\\path\\to\\output\zip!dir/filename.tif' mode='r'>
     ```
 
     Args:
@@ -344,7 +346,7 @@ def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
     ```python
     >>> arch_path = 'D:\\path\\to\\zip.zip'
     >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-    >>> read_archived_xml(arch_path, file_regex)*
+    >>> read_archived_xml(arch_path, file_regex)
     <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     ```
 
