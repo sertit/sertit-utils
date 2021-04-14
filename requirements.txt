@@ -1,3 +1,6 @@
+# Use windows wheels on windows
+--extra-index-url ${WINDOWS_WHEELS}
+
 # Libs for all platforms
 pytest
 tqdm
@@ -6,23 +9,7 @@ pylint
 pdoc3
 psutil
 lxml
-
-# For Windows (use wheels)
-./CI/COTS/pyproj-3.0.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-./CI/COTS/GDAL-3.2.2-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-./CI/COTS/Fiona-1.8.19-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-./CI/COTS/Shapely-1.7.1-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-./CI/COTS/geopandas-0.9.0-py3-none-any.whl;platform_system=="Windows"
-./CI/COTS/rasterio-1.2.3-cp37-cp37m-win_amd64.whl;platform_system=="Windows"
-
-# For Linux
-# For now, GDAL 3.0.4 does not work smoothly on Linux. Use 2.2.4 instead.
-# If error:
-# sudo apt-get install libgdal-dev
-# export CPLUS_INCLUDE_PATH=/usr/include/gdal
-# export C_INCLUDE_PATH=/usr/include/gdal
-GDAL==2.2.4;platform_system=="Linux"
-geopandas;platform_system=="Linux"
-rasterio;platform_system=="Linux"
-
+colorlog
+rasterio
 rioxarray
+geopandas
