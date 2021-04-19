@@ -7,10 +7,10 @@ import rasterio
 import numpy as np
 import geopandas as gpd
 from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import rasters, ci
+from sertit import rasters_rio, ci
 
 
-def test_raster():
+def test_rasters_rio():
     """ Test raster functions """
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
@@ -28,23 +28,23 @@ def test_raster():
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
         # Get Extent
-        extent = rasters.get_extent(raster_path)
+        extent = rasters_rio.get_extent(raster_path)
         truth_extent = gpd.read_file(extent_path)
         ci.assert_geom_equal(extent, truth_extent)
 
         # Get Footprint
-        footprint = rasters.get_footprint(raster_path)
+        footprint = rasters_rio.get_footprint(raster_path)
         truth_footprint = gpd.read_file(footprint_path)
         ci.assert_geom_equal(footprint, truth_footprint)
 
         with rasterio.open(raster_path) as dst:
             # Read
-            raster, meta = rasters.read(dst)
-            raster_1, meta1 = rasters.read(dst, resolution=20)
-            raster_2, _ = rasters.read(dst, resolution=[20, 20])
-            raster_3, _ = rasters.read(dst, size=(meta1["width"], meta1["height"]))
+            raster, meta = rasters_rio.read(dst)
+            raster_1, meta1 = rasters_rio.read(dst, resolution=20)
+            raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
+            raster_3, _ = rasters_rio.read(dst, size=(meta1["width"], meta1["height"]))
             with pytest.raises(ValueError):
-                rasters.read(dst, resolution=[20, 20, 20])
+                rasters_rio.read(dst, resolution=[20, 20, 20])
 
             assert raster.shape == (dst.count, dst.height, dst.width)
             assert meta["crs"] == dst.crs
@@ -54,42 +54,42 @@ def test_raster():
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
-            rasters.write(raster, raster_out, meta)
+            rasters_rio.write(raster, raster_out, meta)
             assert os.path.isfile(raster_out)
 
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
             mask = gpd.read_file(mask_path)
-            mask_arr, mask_meta = rasters.mask(dst, mask.geometry)
-            rasters.write(mask_arr, raster_masked_out, mask_meta)
+            mask_arr, mask_meta = rasters_rio.mask(dst, mask.geometry)
+            rasters_rio.write(mask_arr, raster_masked_out, mask_meta)
 
             # Crop
             raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
             crop = gpd.read_file(mask_path)
-            crop_arr, crop_meta = rasters.crop(dst, crop.geometry)
-            rasters.write(crop_arr, raster_cropped_out, crop_meta)
+            crop_arr, crop_meta = rasters_rio.crop(dst, crop.geometry)
+            rasters_rio.write(crop_arr, raster_cropped_out, crop_meta)
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
-            sieve_arr, sieve_meta = rasters.sieve(raster, meta, sieve_thresh=20, connectivity=4)
-            rasters.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
+            sieve_arr, sieve_meta = rasters_rio.sieve(raster, meta, sieve_thresh=20, connectivity=4)
+            rasters_rio.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
 
             # Collocate
-            coll_arr, coll_meta = rasters.collocate(meta, raster, meta)  # Just hope that it doesnt crash
+            coll_arr, coll_meta = rasters_rio.collocate(meta, raster, meta)  # Just hope that it doesnt crash
             assert coll_meta == meta
 
             # Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
-            rasters.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out, method="max")
+            rasters_rio.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out, method="max")
 
             # Merge VRT
             raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-            rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+            rasters_rio.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
 
             # Vectorize
             val = 2
-            vect = rasters.vectorize(raster_path)
-            vect_val = rasters.vectorize(raster_path, values=val)
+            vect = rasters_rio.vectorize(raster_path)
+            vect_val = rasters_rio.vectorize(raster_path, values=val)
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
@@ -107,14 +107,14 @@ def test_raster():
 def test_dim():
     """ Test on BEAM-DIMAP function """
     dim_path = os.path.join(RASTER_DATA, "DIM.dim")
-    assert (rasters.get_dim_img_path(dim_path) == os.path.join(RASTER_DATA, "DIM.data", "dim.img"))
+    assert (rasters_rio.get_dim_img_path(dim_path) == os.path.join(RASTER_DATA, "DIM.data", "dim.img"))
 
 
 def test_bit():
     """ Test bit arrays """
     np_ones = np.ones((1, 2, 2), dtype=np.uint16)
-    ones = rasters.read_bit_array(np_ones, bit_id=0)
-    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 15)))
+    ones = rasters_rio.read_bit_array(np_ones, bit_id=0)
+    zeros = rasters_rio.read_bit_array(np_ones, bit_id=list(np.arange(1, 15)))
     assert (np_ones == ones).all()
     for arr in zeros:
         assert (np_ones == 1 + arr).all()

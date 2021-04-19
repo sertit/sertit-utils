@@ -23,8 +23,10 @@ setuptools.setup(
         'full': ["geopandas",
                  "rasterio",
                  "colorlog"],
+        'rasters_rio': ["geopandas",
+                        "rasterio"],
         'rasters': ["geopandas",
-                    "rasterio"],
+                    "rioxarray"],
         'vectors': ["geopandas"]
     },
     classifiers=[

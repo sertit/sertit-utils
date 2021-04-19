@@ -69,14 +69,15 @@ For installing this library to your environment, please type this:
 - type this in your `requirement.txt`:  
     `--extra-index-url https://gitlab-deploy-token:4ieKmsaqk4zLfM3WLxF4@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
 
-`[full]` will allow you to use the whole library, but you will need to install also`rasterio` and `geopandas` 
+`[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas` 
 (with GDAL installation issues on Windows, so please install them from wheels that you can find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)). 
 
 However, if you do not need everything, you can type instead:
 
-- *nothing*, and you won't need neither `rasterio` nor `geopandas`: `pip install sertit --extra-index-url ...`
-- `[vectors]`, and you won't need `rasterio`: `pip install sertit[vectors] --extra-index-url ...`
-- `[rasters]`: `pip install sertit[rasters] --extra-index-url ...` 
+- *nothing*, and you won't need `rasterio`, `rioxarray` or `geopandas`: `pip install sertit --extra-index-url ...`
+- `[vectors]`, and you won't need `rasterio` or `rioxarray`: `pip install sertit[vectors] --extra-index-url ...`
+- `[rasters]`, and you won't need `rioxarray`: `pip install sertit[rasters] --extra-index-url ...`
+- `[rasters_rio]`: `pip install sertit[rasters_rio] --extra-index-url ...`
 
 # Documentation
 

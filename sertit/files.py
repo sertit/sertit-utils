@@ -55,7 +55,7 @@ def listdir_abspath(directory: str) -> list:
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py',
-    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters_rio.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py',
