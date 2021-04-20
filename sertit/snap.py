@@ -9,6 +9,7 @@ MAX_MEM = int(os.environ.get('JAVA_OPTS_XMX', 0.95 * psutil.virtual_memory().tot
 TILE_SIZE = 2048
 LOGGER = logging.getLogger(SU_NAME)
 
+
 def bytes2snap(nof_bytes: int) -> str:
     """
     Convert nof bytes into snap-compatible Java options.

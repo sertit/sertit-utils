@@ -55,7 +55,7 @@ def listdir_abspath(directory: str) -> list:
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py',
-    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters.py',
+    'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters_rio.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py',
     'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py',
@@ -297,7 +297,8 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
     for more information.
 
-    **WARNING**:  It wont be readable by pandas, geopandas or xmltree !
+    .. WARNING::
+        It wont be readable by pandas, geopandas or xmltree !
 
     You can use this [site](https://regexr.com/) to build your regex.
 

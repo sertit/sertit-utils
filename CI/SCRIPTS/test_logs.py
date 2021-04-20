@@ -10,6 +10,7 @@ from sertit.logs import LOGGING_FORMAT
 
 LOGGER = logging.getLogger("Test_logger")
 
+
 def test_log():
     """ Testing log functions """
     # -- INIT LOGGER --

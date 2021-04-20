@@ -5,8 +5,9 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 import logging
 import os
-from typing import Union
+from typing import Union, Generator, Any
 import numpy as np
+import pandas as pd
 
 try:
     import geopandas as gpd
@@ -14,7 +15,6 @@ try:
     from shapely.geometry import MultiPolygon, Polygon, box
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError("Please install 'geopandas' to use the rasters package.") from ex
-
 
 from sertit.logs import SU_NAME
 
@@ -158,7 +158,7 @@ def set_kml_driver() -> None:
         drivers['KML'] = 'rw'
 
 
-def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
+def get_aoi_wkt(aoi_path: str, as_str: bool = True) -> Union[str, Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -224,3 +224,56 @@ def get_aoi_wkt(aoi_path, as_str=True) -> Union[str, Polygon]:
 
     LOGGER.debug('Specified AOI in WKT: %s', aoi)
     return aoi
+
+
+def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """TODO"""
+
+    # Get the footprint max (discard small holes stored in other polygons)
+    wider = vector[vector.area == np.max(vector.area)]
+
+    # Only select the exterior of this footprint(sometimes some holes persist)
+    if not wider.empty:
+        poly = Polygon(list(wider.exterior.iat[0].coords))
+        wider = gpd.GeoDataFrame(geometry=[poly], crs=wider.crs)
+
+        # Resets index as we only got one polygon left which should have index 0
+        wider.reset_index(inplace=True)
+
+    return wider
+
+
+def _to_polygons(val: Any) -> Polygon:
+    """
+    Convert to polygon (to be used in pandas) -> convert the geometry column
+
+    Args:
+        val (Any): Pandas value that has a "coordinates" field
+
+    Returns:
+        Polygon: Pandas value as a Polygon
+    """
+    # Donut cases
+    if len(val["coordinates"]) > 1:
+        poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
+    else:
+        poly = Polygon(val["coordinates"][0])
+
+    # Note: it doesn't check if polygons are valid or not !
+    # If needed, do:
+    # if not poly.is_valid:
+    #   poly = poly.buffer(1.0E-9)
+    return poly
+
+
+def shapes_to_gdf(shapes: Generator, crs: str):
+    """TODO"""
+    # Convert results to pandas (because of invalid geometries) and save it
+    pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
+
+    if not pd_results.empty:
+        # Convert to proper polygons(correct geometries)
+        pd_results.geometry = pd_results.geometry.apply(_to_polygons)
+
+    # Convert to geodataframe with correct geometry
+    return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)

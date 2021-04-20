@@ -1,5 +1,5 @@
 import setuptools
-from sertit.version import __version__
+from sertit import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -23,8 +23,10 @@ setuptools.setup(
         'full': ["geopandas",
                  "rasterio",
                  "colorlog"],
+        'rasters_rio': ["geopandas",
+                        "rasterio"],
         'rasters': ["geopandas",
-                    "rasterio"],
+                    "rioxarray"],
         'vectors': ["geopandas"]
     },
     classifiers=[

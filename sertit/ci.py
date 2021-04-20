@@ -18,7 +18,8 @@ def get_mnt_path() -> str:
     """
     Return mounting directory `/mnt`.
 
-    **WARNING**:  This won't work on Windows !
+    .. WARNING::
+        This won't work on Windows !
 
     ```python
     >>> get_mnt_path()
@@ -35,7 +36,8 @@ def _get_db_path(db_nb=2) -> str:
     """
     Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2\database02`.
 
-    **WARNING**: Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    .. WARNING::
+        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     ```python
     >>> get_db_path(db_nb=2)
@@ -54,7 +56,8 @@ def get_db2_path() -> str:
     """
     Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2\database02`.
 
-    **WARNING**: Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    .. WARNING::
+        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     ```python
     >>> get_db2_path()
@@ -71,7 +74,8 @@ def get_db3_path() -> str:
     """
     Return mounted directory `/mnt/ds2_db3` which corresponds to `\\ds2\database03`.
 
-    **WARNING**: Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    .. WARNING::
+        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     ```python
     >>> get_db3_path()
@@ -88,7 +92,8 @@ def get_db4_path() -> str:
     """
     Return mounted directory `/mnt/ds2_db4` which corresponds to `\\ds2\database04`.
 
-    **WARNING**: Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    .. WARNING::
+        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     ```python
     >>> get_db4_path()
@@ -174,10 +179,11 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
     >>> # Raises AssertionError if sth goes wrong
     ```
 
-    **WARNING**: only checks:
-     - valid geometries
-     - length of GeoDataFrame
-     - CRS
+    .. WARNING::
+        Only checks:
+         - valid geometries
+         - length of GeoDataFrame
+         - CRS
 
     Args:
         geom_1 (gpd.GeoDataFrame): Geometry 1

@@ -4,6 +4,4 @@
 .. include:: ../README.md
 """
 
-__pdoc__ = {
-    "sertit.version": False
-}
+__version__ = '1.2.0'
