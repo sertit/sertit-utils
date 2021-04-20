@@ -26,6 +26,7 @@ setuptools.setup(
         'rasters_rio': ["geopandas",
                         "rasterio"],
         'rasters': ["geopandas",
+                    "xarray",
                     "rioxarray"],
         'vectors': ["geopandas"]
     },
