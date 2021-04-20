@@ -41,7 +41,7 @@ File gathering file-related functions:
 - Manage bounds and polygons
 - Get `geopandas.Geodataframe` from polygon and CRS
 
-## Rasters
+## Rasters and rasters_rio
 Basically, these functions are overloads of rasterio's functions:
 
 - Get extent and footprint of a raster
@@ -53,6 +53,9 @@ Basically, these functions are overloads of rasterio's functions:
 - Merge rasters (as GTiff and VRT)
 - Get the path of the BEAM-DIMAP image that can be read by rasterio
 - Manage bit arrays
+
+The main difference between the two is that `rasters` outputs one `xarray` variable
+when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster array and its metadata.
 
 ## Network
 - Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm 
