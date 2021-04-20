@@ -297,7 +297,8 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
     for more information.
 
-    **WARNING**:  It wont be readable by pandas, geopandas or xmltree !
+    .. WARNING::
+        It wont be readable by pandas, geopandas or xmltree !
 
     You can use this [site](https://regexr.com/) to build your regex.
 

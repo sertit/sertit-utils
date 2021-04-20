@@ -7,7 +7,7 @@ import os
 from functools import wraps
 from typing import Union, Optional, Any, Callable
 import numpy as np
-from sertit.rasters_rio import path_or_arr_or_dst, PATH_ARR_DS
+from sertit.rasters_rio import path_arr_dst, PATH_ARR_DS
 
 try:
     import pandas as pd
@@ -27,33 +27,29 @@ except ModuleNotFoundError as ex:
 from sertit import vectors, rasters_rio
 
 MAX_CORES = os.cpu_count() - 2
-XDS_TYPE = Union[xr.Dataset, xr.DataArray]
-PATH_XARR_DS = Union[str, xr.Dataset, xr.DataArray, rasterio.DatasetReader]
 ORIGIN_DTYPE = 'original_dtype'
+PATH_XARR_DS = Union[str, xr.Dataset, xr.DataArray, rasterio.DatasetReader]
+"""
+Types: 
+
+- Path
+- rasterio Dataset
+- `xarray`
+"""
+
+XDS_TYPE = Union[xr.Dataset, xr.DataArray]
+"""
+Xarray types: xr.Dataset and xr.DataArray
+"""
 
 
-def _get_nodata_pos(xds: XDS_TYPE) -> tuple:
-    nodata = xds.rio.nodata
-    if np.isnan(nodata):
-        nodata_pos = np.isnan(xds.data)
-    else:
-        nodata_pos = xds.data == nodata
-
-    return nodata_pos
-
-
-def to_np(xds: XDS_TYPE, dtype: str = None) -> np.ndarray:
-    """TODO"""
-    if not dtype:
-        dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
-    arr = np.where(_get_nodata_pos(xds), xds.rio.encoded_nodata, xds.data).astype(dtype)
-
-    return arr
-
-
-def path_or_xarr_or_dst(function: Callable) -> Callable:
+def path_xarr_dst(function: Callable) -> Callable:
     """
-    Path or dataset decorator: allows a function to ingest a path or a rasterio dataset
+    Path, `xarray` or dataset decorator. Allows a function to ingest:
+
+    - a path
+    - a `xarray`
+    - a `rasterio` dataset
 
     ```python
     >>> # Create mock function
@@ -106,49 +102,113 @@ def path_or_xarr_or_dst(function: Callable) -> Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
+def _get_nodata_pos(xds: XDS_TYPE) -> np.ndarray:
     """
-    Get nodata mask from a masked array.
+    Get nodata positions in the xarray as a `np.ndarray` with `True` where nodata values are.
 
-    The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
+    Args:
+        xds (XDS_TYPE): Xarray
+
+    Returns:
+        np.ndarray: Boolean array with True w
+
+    """
+    nodata = xds.rio.nodata
+
+    try:
+        is_nan = np.isnan(nodata)
+    except TypeError:
+        is_nan = False
+
+    if is_nan:
+        nodata_pos = np.isnan(xds.data)
+    else:
+        nodata_pos = xds.data == nodata
+
+    return nodata_pos
+
+
+def to_np(xds: XDS_TYPE, dtype: str = None) -> np.ndarray:
+    """
+    Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
+
+    This is particularly useful when reading with `masked=True`.
 
     ```python
-    >>> diag_arr = np.diag([1,2,3])
+    >>> raster_path = "path\\to\\mask.tif"  # Classified raster in np.uint8 with nodata = 255
+    >>> # We read with masked=True so the data is converted to float
+    >>> xds = read(raster_path)
+    <xarray.DataArray 'path/to/mask.tif' (band: 1, y: 322, x: 464)>
+    [149408 values with dtype=float64]
+    Coordinates:
+      * band         (band) int32 1
+      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+        spatial_ref  int32 0
+    >>> to_np(xds)  # Getting back np.uint8 and encoded nodata
+    array([[[255, 255, 255, ..., 255, 255, 255],
+        [255, 255, 255, ..., 255, 255, 255],
+        [255, 255, 255, ..., 255, 255, 255],
+        ...,
+        [255, 255, 255, ...,   1, 255, 255],
+        [255, 255, 255, ...,   1, 255, 255],
+        [255, 255, 255, ...,   1, 255, 255]]], dtype=uint8)
+
+    True
+    ```
+    Args:
+        xds (XDS_TYPE): `xarray` to convert
+        dtype (str): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
+
+    Returns:
+
+    """
+    if not dtype:
+        dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
+    arr = np.where(_get_nodata_pos(xds), xds.rio.encoded_nodata, xds.data).astype(dtype)
+
+    return arr
+
+
+def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
+    """
+    Get nodata mask from a xarray.
+
+    ```python
+    >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
+    >>> diag_arr.rio.write_nodata(0, inplace=True)
+    <xarray.DataArray (dim_0: 3, dim_1: 3)>
     array([[1, 0, 0],
            [0, 2, 0],
            [0, 0, 3]])
+    Dimensions without coordinates: dim_0, dim_1
+    Attributes: _FillValue:  0
 
-    >>> get_nodata_mask(diag_arr, has_nodata=False)
+    >>> get_nodata_mask(diag_arr)
     array([[1, 0, 0],
            [0, 1, 0],
            [0, 0, 1]], dtype=uint8)
-
-    >>> get_nodata_mask(diag_arr, has_nodata=False, default_nodata=1)
-    array([[0, 1, 1],
-           [1, 1, 1],
-           [1, 1, 1]], dtype=uint8)
     ```
 
     Args:
         xds (XDS_TYPE): Array to evaluate
-        default_nodata (int): Default nodata used if the array's nodata is not set
 
     Returns:
-        np.ma.masked_array: Pixelwise nodata array
+        np.ndarray: Pixelwise nodata array
 
     """
     return np.where(_get_nodata_pos(xds), 0, 1).astype(np.uint8)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def _vectorize(xds: PATH_XARR_DS,
                values: Union[None, int, list] = None,
                get_nodata: bool = False,
                default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Vectorize a raster, both to get classes or nodata.
+    Vectorize a xarray, both to get classes or nodata.
 
-    ::WARNING:
+    .. WARNING::
         - If `get_nodata` is set to False:
             - Your data is casted by force into np.uint8, so be sure that your data is classified.
             - This could take a while as the computing time directly depends on the number of polygons to vectorize.
@@ -190,21 +250,21 @@ def _vectorize(xds: PATH_XARR_DS,
     return vectors.shapes_to_gdf(shapes, xds.rio.crs)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def vectorize(xds: PATH_XARR_DS,
               values: Union[None, int, list] = None,
               default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Vectorize a raster to get the class vectors.
+    Vectorize a `xarray` to get the class vectors.
 
 
-    ::WARNING:
+    .. WARNING::
         - Your data is casted by force into np.uint8, so be sure that your data is classified.
         - This could take a while as the computing time directly depends on the number of polygons to vectorize.
             Please be careful.
 
     ```python
-    >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+    >>> raster_path = "path\\to\\raster.tif"
     >>> vec1 = vectorize(raster_path)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
@@ -223,7 +283,7 @@ def vectorize(xds: PATH_XARR_DS,
     return _vectorize(xds, values=values, get_nodata=False, default_nodata=default_nodata)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def get_nodata_vec(xds: PATH_XARR_DS,
                    default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
@@ -233,7 +293,7 @@ def get_nodata_vec(xds: PATH_XARR_DS,
     If you want only the footprint of the raster, please use `get_footprint`.
 
     ```python
-    >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+    >>> raster_path = "path\\to\\raster.tif"
     >>> nodata1 = get_nodata_vec(raster_path)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
@@ -253,7 +313,7 @@ def get_nodata_vec(xds: PATH_XARR_DS,
     return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def mask(xds: PATH_XARR_DS,
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
@@ -261,8 +321,6 @@ def mask(xds: PATH_XARR_DS,
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
-
-    **HOW:**
 
     Overload of rasterio mask function in order to create a masked_array.
 
@@ -299,7 +357,7 @@ def mask(xds: PATH_XARR_DS,
     return xds.copy(data=arr, deep=True)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def crop(xds: PATH_XARR_DS,
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
@@ -308,12 +366,9 @@ def crop(xds: PATH_XARR_DS,
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
 
-    **HOW:**
-
-    Overload of rioxarray clip function in order to create a masked_array.
-
-    The `clip` function doc can be seen
-    [here](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip).
+    Overload of [`rioxarray`
+    clip](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip)
+    function in order to create a masked_array.
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"
@@ -344,14 +399,19 @@ def crop(xds: PATH_XARR_DS,
     return xds_new.rio.clip(shapes, from_disk=True, **kwargs)  # Keep consistency with rasterio
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def read(dst: PATH_ARR_DS,
          resolution: Union[tuple, list, float] = None,
          size: Union[tuple, list] = None,
          resampling: Resampling = Resampling.nearest,
          masked: bool = True) -> XDS_TYPE:
     """
-    Read a raster dataset from a `rasterio.Dataset` or a path.
+    Read a raster dataset from a :
+
+    - `xarray` (compatibility issues)
+    - `rasterio.Dataset`
+    - `rasterio` opened data (array, metadata)
+    - a path.
 
     The resolution can be provided (in dataset unit) as:
 
@@ -374,7 +434,7 @@ def read(dst: PATH_ARR_DS,
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
-        masked (bool); Get a masked array
+        masked (bool): Get a masked array
 
     Returns:
         Union[xarray.Dataset, xarray.DataArray]: Masked xarray corresponding to the raster data and its meta data
@@ -400,11 +460,12 @@ def write(xds: PATH_XARR_DS,
           path: str,
           **kwargs) -> None:
     """
-    Write raster to disk (encapsulation of rasterio's function)
+    Write raster to disk.
+    (encapsulation of `rasterio`'s function, because for now `rioxarray` to_raster doesn't work as expected)
 
-    Metadata will be copied and updated with raster's information (ie. width, height, count, type...)
-    The driver is GTiff by default, and no nodata value is provided.
-    The file will be compressed if the raster is a mask (saved as uint8)
+    Metadata will be created with the `xarray` metadata (ie. width, height, count, type...)
+    The driver is `GTiff` by default, and no nodata value is provided.
+    The file will be compressed if the raster is a mask (saved as uint8).
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"
@@ -434,7 +495,7 @@ def write(xds: PATH_XARR_DS,
             'transform': xds.rio.transform()
             }
 
-    rasters_rio.write(xds_arr, path, meta)
+    rasters_rio.write(xds_arr, path, meta, **kwargs)
     # xds_out.rio.to_raster(path, **kwargs)  # Misuse of dtype for now
 
 
@@ -452,19 +513,11 @@ def collocate(master_xds: XDS_TYPE,
     >>> slave_path = "path\\to\\slave.tif"
     >>> col_path = "path\\to\\collocated.tif"
 
-    >>> # Just open the master data
-    >>> with rasterio.open(master_path) as master_dst:
-    >>>     # Read slave
-    >>>     slave, slave_meta = read(slave_path)
-
-    >>>     # Collocate the slave to the master
-    >>>     col_arr, col_meta = collocate(master_dst.meta,
-    >>>                                   slave,
-    >>>                                   slave_meta,
-    >>>                                   Resampling.bilinear)
+    >>> # Collocate the slave to the master
+    >>> col_xds = collocate(read(master_path), read(slave_path), Resampling.bilinear)
 
     >>> # Write it
-    >>> write(col_arr, col_path, col_meta)
+    >>> write(col_xds, col_path)
     ```
 
     Args:
@@ -479,24 +532,21 @@ def collocate(master_xds: XDS_TYPE,
     return slave_xds.rio.reproject_match(master_xds, resampling=resampling)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def sieve(xds: PATH_XARR_DS,
           sieve_thresh: int,
           connectivity: int = 4) -> XDS_TYPE:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
-    ::WARNING:
-        Your data is casted by force into np.uint8, so be sure that your data is classified.
+    .. WARNING::
+        Your data is casted by force into `np.uint8`, so be sure that your data is classified.
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"  # classified raster
 
-    >>> # Read raster
-    >>> out = read(raster_path)
-
     >>> # Rewrite it
-    >>> sieved_xds = sieve(out, sieve_thresh=20)
+    >>> sieved_xds = sieve(raster_path, sieve_thresh=20)
 
     >>> # Write it
     >>> raster_out = "path\\to\\raster_sieved.tif"
@@ -545,7 +595,7 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
     return rasters_rio.get_dim_img_path(dim_path, img_name)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a `geopandas.Geodataframe`.
@@ -570,7 +620,7 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     return vectors.get_geodf(geometry=[*xds.rio.bounds()], crs=xds.rio.crs)
 
 
-@path_or_xarr_or_dst
+@path_xarr_dst
 def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, in french == emprise utile)
@@ -603,7 +653,8 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
 
     Creates VRT with relative paths !
 
-    **WARNING:** They should have the same CRS otherwise the mosaic will be false !
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
 
     ```python
     >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
@@ -629,7 +680,8 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
-    **WARNING:** They should have the same CRS otherwise the mosaic will be false !
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
 
     ```python
     >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]

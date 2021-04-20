@@ -22,151 +22,25 @@ from sertit import misc, files, vectors, strings
 
 MAX_CORES = os.cpu_count() - 2
 PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
+"""
+Types: 
+
+- Path
+- Rasterio open data: (array, meta)
+- rasterio Dataset
+- `xarray`
+"""
 
 
-def get_new_shape(dst: Union[str, rasterio.DatasetReader],
-                  resolution: Union[tuple, list, float],
-                  size: Union[tuple, list]) -> (int, int):
+def path_arr_dst(function: Callable) -> Callable:
     """
-    Get the new shape (height, width) of a resampled raster.
+    Path, `xarray`, (array, metadata) or dataset decorator.
+    Allows a function to ingest:
 
-    Args:
-        dst (rasterio.DatasetReader): Raster dataset to read
-        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
-
-    Returns:
-        (int, int): Height, width
-
-    """
-
-    def _get_new_dim(dim: int, res_old: float, res_new: float) -> int:
-        """
-        Get the new dimension in pixels
-        Args:
-            dim (int): Old dimension
-            res_old (float): Old resolution
-            res_new (float): New resolution
-
-        Returns:
-            int: New dimension
-        """
-        return int(np.round(dim * res_old / res_new))
-
-    # By default keep original shape
-    new_height = dst.height
-    new_width = dst.width
-
-    # Compute new shape
-    if resolution is not None:
-        if isinstance(resolution, (int, float)):
-            new_height = _get_new_dim(dst.height, dst.res[1], resolution)
-            new_width = _get_new_dim(dst.width, dst.res[0], resolution)
-        elif resolution is None:
-            pass
-        else:
-            try:
-                if len(resolution) != 2:
-                    raise ValueError("We should have a resolution for X and Y dimensions")
-
-                if resolution[0] is not None:
-                    new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
-
-                if resolution[1] is not None:
-                    new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
-            except (TypeError, KeyError):
-                raise ValueError(f"Resolution should be None, 2 floats or a castable to a list: {resolution}")
-    elif size is not None:
-        try:
-            new_height = size[1]
-            new_width = size[0]
-        except (TypeError, KeyError):
-            raise ValueError(f"Size should be None or a castable to a list: {size}")
-
-    return (new_height, new_width)
-
-
-def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
-    """
-    Basic metadata update from a numpy array. Updates everything that we can find in the array:
-
-    - `dtype`: array dtype,
-    - `count`: first dimension of the array if the array is in 3D, else 1
-    - `height`: second dimension of the array
-    - `width`: third dimension of the array
-    - `nodata`: if a masked array is given, nodata is its fill_value
-
-    **WARNING**: The array's shape is interpreted in rasterio's way (count, height, width) !
-
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> with rasterio.open(raster_path) as dst:
-    >>>      meta = dst.meta
-    >>>      arr = dst.read()
-    >>> meta
-    {
-        'driver': 'GTiff',
-        'dtype': 'float32',
-        'nodata': None,
-        'width': 300,
-        'height': 300,
-        'count': 4,
-        'crs': CRS.from_epsg(32630),
-        'transform': Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
-    }
-    >>> new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
-    >>> new_arr.shape
-    (4, 150, 150)
-    >>> new_arr.dtype
-    dtype('uint8')
-    >>> new_arr.fill_value
-    0
-    >>> update_meta(new_arr, meta)
-    {
-        'driver': 'GTiff',
-        'dtype': dtype('uint8'),
-        'nodata': 0,
-        'width': 150,
-        'height': 150,
-        'count': 4,
-        'crs': CRS.from_epsg(32630),
-        'transform': Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
-    }
-    ```
-
-    Args:
-        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
-        meta (dict): Metadata to update
-
-    Returns:
-        dict: Update metadata
-
-    """
-    # Manage raster shape (Stored in rasterio's way)
-    shape = arr.shape
-    count = 1 if len(shape) == 2 else shape[0]
-    width = shape[-1]
-    height = shape[-2]
-
-    # Update metadata that can be derived from raster
-    out_meta = meta.copy()
-    out_meta.update({
-        "dtype": arr.dtype,
-        "count": count,
-        "height": height,
-        "width": width
-    })
-
-    # Nodata
-    if isinstance(arr, np.ma.masked_array):
-        out_meta["nodata"] = arr.fill_value
-
-    return out_meta
-
-
-def path_or_arr_or_dst(function: Callable) -> Callable:
-    """
-    Path or dataset decorator: allows a function to ingest a path or a rasterio dataset
+    - a path
+    - a `xarray`
+    - a `rasterio` dataset
+    - `rasterio` open data: (array, meta)
 
     ```python
     >>> # Create mock function
@@ -240,6 +114,148 @@ def path_or_arr_or_dst(function: Callable) -> Callable:
     return path_or_arr_or_dst_wrapper
 
 
+@path_arr_dst
+def get_new_shape(dst: PATH_ARR_DS,
+                  resolution: Union[tuple, list, float],
+                  size: Union[tuple, list]) -> (int, int):
+    """
+    Get the new shape (height, width) of a resampled raster.
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+
+    Returns:
+        (int, int): Height, width
+
+    """
+
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -> int:
+        """
+        Get the new dimension in pixels
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            int: New dimension
+        """
+        return int(np.round(dim * res_old / res_new))
+
+    # By default keep original shape
+    new_height = dst.height
+    new_width = dst.width
+
+    # Compute new shape
+    if resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height = _get_new_dim(dst.height, dst.res[1], resolution)
+            new_width = _get_new_dim(dst.width, dst.res[0], resolution)
+        elif resolution is None:
+            pass
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError("We should have a resolution for X and Y dimensions")
+
+                if resolution[0] is not None:
+                    new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
+
+                if resolution[1] is not None:
+                    new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
+            except (TypeError, KeyError):
+                raise ValueError(f"Resolution should be None, 2 floats or a castable to a list: {resolution}")
+    elif size is not None:
+        try:
+            new_height = size[1]
+            new_width = size[0]
+        except (TypeError, KeyError):
+            raise ValueError(f"Size should be None or a castable to a list: {size}")
+
+    return new_height, new_width
+
+
+def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
+    """
+    Basic metadata update from a numpy array. Updates everything that we can find in the array:
+
+    - `dtype`: array dtype,
+    - `count`: first dimension of the array if the array is in 3D, else 1
+    - `height`: second dimension of the array
+    - `width`: third dimension of the array
+    - `nodata`: if a masked array is given, nodata is its fill_value
+
+    .. WARNING::
+        The array's shape is interpreted in rasterio's way (count, height, width) !
+
+    ```python
+    >>> raster_path = "path\\to\\raster.tif"
+    >>> with rasterio.open(raster_path) as dst:
+    >>>      meta = dst.meta
+    >>>      arr = dst.read()
+    >>> meta
+    {
+        'driver': 'GTiff',
+        'dtype': 'float32',
+        'nodata': None,
+        'width': 300,
+        'height': 300,
+        'count': 4,
+        'crs': CRS.from_epsg(32630),
+        'transform': Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
+    }
+    >>> new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
+    >>> new_arr.shape
+    (4, 150, 150)
+    >>> new_arr.dtype
+    dtype('uint8')
+    >>> new_arr.fill_value
+    0
+    >>> update_meta(new_arr, meta)
+    {
+        'driver': 'GTiff',
+        'dtype': dtype('uint8'),
+        'nodata': 0,
+        'width': 150,
+        'height': 150,
+        'count': 4,
+        'crs': CRS.from_epsg(32630),
+        'transform': Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
+    }
+    ```
+
+    Args:
+        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
+        meta (dict): Metadata to update
+
+    Returns:
+        dict: Update metadata
+
+    """
+    # Manage raster shape (Stored in rasterio's way)
+    shape = arr.shape
+    count = 1 if len(shape) == 2 else shape[0]
+    width = shape[-1]
+    height = shape[-2]
+
+    # Update metadata that can be derived from raster
+    out_meta = meta.copy()
+    out_meta.update({
+        "dtype": arr.dtype,
+        "count": count,
+        "height": height,
+        "width": width
+    })
+
+    # Nodata
+    if isinstance(arr, np.ma.masked_array):
+        out_meta["nodata"] = arr.fill_value
+
+    return out_meta
+
+
 def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
                     has_nodata: bool,
                     default_nodata: int = 0) -> np.ma.masked_array:
@@ -283,7 +299,7 @@ def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
     return nodata_mask
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def _vectorize(dst: PATH_ARR_DS,
                values: Union[None, int, list] = None,
                get_nodata: bool = False,
@@ -291,16 +307,16 @@ def _vectorize(dst: PATH_ARR_DS,
     """
     Vectorize a raster, both to get classes or nodata.
 
-    **WARNING**:
-    If `get_nodata` is set to False:
-        - Please only use this function on a classified raster.
-        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-            Please be careful.
+    .. WARNING::
+        If `get_nodata` is set to False:
+            - Please only use this function on a classified raster.
+            - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+                Please be careful.
     Else:
         - You will get a classified polygon with data (value=0)/nodata pixels. To
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
@@ -333,18 +349,17 @@ def _vectorize(dst: PATH_ARR_DS,
     return vectors.shapes_to_gdf(shapes, dst.crs)
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def vectorize(dst: PATH_ARR_DS,
               values: Union[None, int, list] = None,
               default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Vectorize a raster to get the class vectors.
 
-    **WARNING**:
-
-    - Please only use this function on a classified raster.
-    - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-        Please be careful.
+    .. WARNING::
+        - Please only use this function on a classified raster.
+        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+            Please be careful.
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
@@ -357,7 +372,7 @@ def vectorize(dst: PATH_ARR_DS,
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -366,7 +381,7 @@ def vectorize(dst: PATH_ARR_DS,
     return _vectorize(dst, values=values, get_nodata=False, default_nodata=default_nodata)
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def get_nodata_vec(dst: PATH_ARR_DS,
                    default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
@@ -386,7 +401,7 @@ def get_nodata_vec(dst: PATH_ARR_DS,
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Nodata Vector
@@ -396,7 +411,7 @@ def get_nodata_vec(dst: PATH_ARR_DS,
     return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def _mask(dst: PATH_ARR_DS,
           shapes: Union[Polygon, list],
           nodata: Optional[int] = None,
@@ -410,7 +425,7 @@ def _mask(dst: PATH_ARR_DS,
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         shapes (Union[Polygon, list]): Shapes
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
@@ -443,7 +458,7 @@ def _mask(dst: PATH_ARR_DS,
     return mask_array, out_meta
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def mask(dst: PATH_ARR_DS,
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
@@ -451,8 +466,6 @@ def mask(dst: PATH_ARR_DS,
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
-
-    **HOW:**
 
     Overload of rasterio mask function in order to create a masked_array.
 
@@ -474,7 +487,7 @@ def mask(dst: PATH_ARR_DS,
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         shapes (Union[Polygon, list]): Shapes
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
@@ -485,7 +498,7 @@ def mask(dst: PATH_ARR_DS,
     return _mask(dst, shapes=shapes, nodata=nodata, crop=False, **kwargs)
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def crop(dst: PATH_ARR_DS,
          shapes: Union[Polygon, list],
          nodata: Optional[int] = None,
@@ -516,7 +529,7 @@ def crop(dst: PATH_ARR_DS,
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         shapes (Union[Polygon, list]): Shapes
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
@@ -527,12 +540,12 @@ def crop(dst: PATH_ARR_DS,
     return _mask(dst, shapes=shapes, nodata=nodata, crop=True, **kwargs)
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def read(dst: PATH_ARR_DS,
          resolution: Union[tuple, list, float] = None,
          size: Union[tuple, list] = None,
          resampling: Resampling = Resampling.nearest,
-         masked=True) -> (np.ma.masked_array, dict):
+         masked: bool = True) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset from a `rasterio.Dataset` or a path.
 
@@ -555,11 +568,11 @@ def read(dst: PATH_ARR_DS,
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
-        masked (bool); Get a masked array
+        masked (bool): Get a masked array
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -796,7 +809,7 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
     return files.get_file_in_dir(dim_path, img_name, extension='img')
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a `geopandas.Geodataframe`.
@@ -813,7 +826,7 @@ def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
 
     Returns:
         gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
@@ -821,7 +834,7 @@ def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     return vectors.get_geodf(geometry=[*dst.bounds], crs=dst.crs)
 
 
-@path_or_arr_or_dst
+@path_arr_dst
 def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, in french == emprise utile)
@@ -838,7 +851,7 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     ```
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or its dataset or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
     Returns:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
     """
@@ -855,7 +868,8 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
 
     Creates VRT with relative paths !
 
-    **WARNING:** They should have the same CRS otherwise the mosaic will be false !
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
 
     ```python
     >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
@@ -889,7 +903,8 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
-    **WARNING:** They should have the same CRS otherwise the mosaic will be false !
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
 
     ```python
     >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
