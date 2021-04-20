@@ -17,12 +17,14 @@ setuptools.setup(
     install_requires=[
         'tqdm',
         "numpy",
-        "lxml"
+        "lxml",
     ],
     extras_require={
+        'colorlog': ["colorlog"],
         'full': ["geopandas",
                  "rasterio",
-                 "colorlog"],
+                 "xarray",
+                 "rioxarray"],
         'rasters_rio': ["geopandas",
                         "rasterio"],
         'rasters': ["geopandas",

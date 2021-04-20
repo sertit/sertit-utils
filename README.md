@@ -81,6 +81,7 @@ However, if you do not need everything, you can type instead:
 - `[vectors]`, and you won't need `rasterio` or `rioxarray`: `pip install sertit[vectors] --extra-index-url ...`
 - `[rasters]`, and you won't need `rioxarray`: `pip install sertit[rasters] --extra-index-url ...`
 - `[rasters_rio]`: `pip install sertit[rasters_rio] --extra-index-url ...`
+- `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
 
 # Documentation
 
