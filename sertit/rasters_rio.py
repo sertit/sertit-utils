@@ -415,7 +415,7 @@ def get_nodata_vec(dst: PATH_ARR_DS,
 def _mask(dst: PATH_ARR_DS,
           shapes: Union[Polygon, list],
           nodata: Optional[int] = None,
-          crop: bool = False,
+          do_crop: bool = False,
           **kwargs) -> (np.ma.masked_array, dict):
     """
     Overload of rasterio mask function in order to create a masked_array.
@@ -428,7 +428,7 @@ def _mask(dst: PATH_ARR_DS,
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         shapes (Union[Polygon, list]): Shapes
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
-        crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
+        do_crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
         **kwargs: Other rasterio.mask options
 
     Returns:
@@ -445,7 +445,7 @@ def _mask(dst: PATH_ARR_DS,
             nodata = 0
 
     # Crop dataset
-    msk, trf = rmask.mask(dst, shapes, nodata=nodata, crop=crop, **kwargs)
+    msk, trf = rmask.mask(dst, shapes, nodata=nodata, crop=do_crop, **kwargs)
 
     # Create masked array
     nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
@@ -495,7 +495,7 @@ def mask(dst: PATH_ARR_DS,
     Returns:
          (np.ma.masked_array, dict): Masked array as a masked array and its metadata
     """
-    return _mask(dst, shapes=shapes, nodata=nodata, crop=False, **kwargs)
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)
 
 
 @path_arr_dst
@@ -537,7 +537,7 @@ def crop(dst: PATH_ARR_DS,
     Returns:
          (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
-    return _mask(dst, shapes=shapes, nodata=nodata, crop=True, **kwargs)
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)
 
 
 @path_arr_dst
