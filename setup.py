@@ -22,13 +22,11 @@ setuptools.setup(
     extras_require={
         'colorlog': ["colorlog"],
         'full': ["geopandas",
-                 "rasterio",
-                 "xarray",
-                 "rioxarray"],
+                 "rioxarray",
+                 "colorlog"],
         'rasters_rio': ["geopandas",
                         "rasterio"],
         'rasters': ["geopandas",
-                    "xarray",
                     "rioxarray"],
         'vectors': ["geopandas"]
     },
