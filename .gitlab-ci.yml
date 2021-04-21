@@ -38,7 +38,7 @@ pages:
   script:
     - pip install -r requirements.txt
     - pdoc sertit -o doc -f --html --template-dir doc_template
-    - mv doc/* public/
+    - cp -r doc/* public/
   artifacts:
     paths:
       - public
