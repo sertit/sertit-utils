@@ -1,3 +1,5 @@
 <header>
-    <img src="https://code.sertit.unistra.fr/uploads/-/system/project/avatar/134/sertit_utils.png" alt="" style="width:20%;"/>
+    <img src="/sertit_utils.png"
+         alt="logo"
+         style="width:40%;"/>
 </header>
