@@ -39,7 +39,7 @@ pages:
     - pip install -r requirements.txt
     - pdoc sertit -o doc -f --html --template-dir doc_template
     - cp doc_template/index.html doc/
-    - mv doc/sertit/ public/
+    - mv doc/ public/
   artifacts:
     paths:
       - public
