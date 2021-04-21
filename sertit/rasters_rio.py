@@ -416,7 +416,7 @@ def get_valid_vector(dst: PATH_ARR_DS,
 
 @path_arr_dst
 def get_nodata_vector(dst: PATH_ARR_DS,
-                     default_nodata: int = 0) -> gpd.GeoDataFrame:
+                      default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -442,6 +442,7 @@ def get_nodata_vector(dst: PATH_ARR_DS,
     """
     nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
     return nodata[nodata.raster_val == 0]  # 0 is the values of not nodata put there by rasterio
+
 
 @path_arr_dst
 def _mask(dst: PATH_ARR_DS,

@@ -1,6 +1,6 @@
 Library gathering utils functions for all SERTIT's projects.
 
-Find the API documentation [**here**](https://sertit.pages.sertit.unistra.fr/sertit-utils/).
+Find the API documentation [**here**](https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit).
 
 # What is in it ?
 ## Files
@@ -88,7 +88,7 @@ However, if you do not need everything, you can type instead:
 An HTML documentation is provided to document the code.
 It can be found:
 
-- online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/),
+- online [here](https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit),
 - on git, in `docs`.  
   To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  
   To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`
