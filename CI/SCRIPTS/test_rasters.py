@@ -42,6 +42,7 @@ def test_rasters():
         ci.assert_geom_equal(footprint, truth_footprint)
 
         with rasterio.open(raster_path) as dst:
+            dst_dtype = dst.meta["dtype"]
             # Read
             raster = rasters.read(raster_path)
             raster_1 = rasters.read(raster_path, resolution=dst.res[0])
@@ -58,25 +59,25 @@ def test_rasters():
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
-            rasters.write(raster, raster_out)
+            rasters.write(raster, raster_out, dtype=dst_dtype)
             assert os.path.isfile(raster_out)
 
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
             mask = gpd.read_file(mask_path)
             mask_arr = rasters.mask(dst, mask.geometry)
-            rasters.write(mask_arr, raster_masked_out)
+            rasters.write(mask_arr, raster_masked_out, dtype=np.uint8)
 
             # Crop
             raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
             crop = gpd.read_file(mask_path)
             crop_arr = rasters.crop(dst, crop.geometry)
-            rasters.write(crop_arr, raster_cropped_out)
+            rasters.write(crop_arr, raster_cropped_out, dtype=np.uint8)
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
             sieve_arr = rasters.sieve(raster, sieve_thresh=20, connectivity=4)
-            rasters.write(sieve_arr, sieve_out)
+            rasters.write(sieve_arr, sieve_out, dtype=np.uint8)
 
             # Collocate
             coll_arr = rasters.collocate(raster, raster)  # Just hope that it doesnt crash

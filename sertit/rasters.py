@@ -483,20 +483,7 @@ def write(xds: PATH_XARR_DS,
         path (str): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     """
-    # Write product
-    xds_arr = to_np(xds)
-    meta = {'driver': 'GTiff',
-            'dtype': xds.attrs.get(ORIGIN_DTYPE, xds_arr.dtype),
-            'nodata': xds.rio.encoded_nodata,
-            'width': xds.rio.width,
-            'height': xds.rio.height,
-            'count': xds.rio.count,
-            'crs': xds.rio.crs,
-            'transform': xds.rio.transform()
-            }
-
-    rasters_rio.write(xds_arr, path, meta, **kwargs)
-    # xds_out.rio.to_raster(path, **kwargs)  # Misuse of dtype for now
+    xds.rio.to_raster(path, **kwargs)
 
 
 def collocate(master_xds: XDS_TYPE,
