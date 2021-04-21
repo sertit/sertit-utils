@@ -450,7 +450,7 @@ def crop(xds: PATH_XARR_DS,
     else:
         xds_new = xds
 
-    return xds_new.rio.clip(shapes, from_disk=True, **kwargs)  # Keep consistency with rasterio
+    return xds_new.rio.clip(shapes, **kwargs)  # Keep consistency with rasterio
 
 
 @path_arr_dst

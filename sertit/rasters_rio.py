@@ -102,7 +102,10 @@ def path_arr_dst(function: Callable) -> Callable:
                             }
                     with MemoryFile() as memfile:
                         with memfile.open(**meta) as dst:
-                            dst.write(path_or_arr_or_ds.data)
+                            xds = path_or_arr_or_ds.copy()
+                            if xds.rio.encoded_nodata is not None:
+                                xds = xds.fillna(xds.rio.encoded_nodata)
+                            dst.write(xds.data)
                             out = function(dst, *args, **kwargs)
             except ModuleNotFoundError:
                 pass

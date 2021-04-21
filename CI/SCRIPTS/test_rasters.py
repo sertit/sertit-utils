@@ -139,7 +139,7 @@ def test_rasters():
         # Tests
         ci.assert_raster_equal(raster_path, xda_out)
         ci.assert_raster_equal(xda_masked, raster_masked_path)
-        ci.assert_raster_equal(xda_cropped, raster_cropped_path)
+        ci.assert_raster_equal(xda_cropped, raster_cropped_xarray_path)
         ci.assert_raster_equal(xda_sieved, raster_sieved_path)
         ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
