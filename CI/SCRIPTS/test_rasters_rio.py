@@ -23,6 +23,8 @@ def test_rasters_rio():
     extent_path = os.path.join(RASTER_DATA, "extent.geojson")
     footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
     vect_truth_path = os.path.join(RASTER_DATA, "vector.geojson")
+    nodata_truth_path = os.path.join(RASTER_DATA, "nodata.geojson")
+    valid_truth_path = os.path.join(RASTER_DATA, "valid.geojson")
 
     # Create tmp file
     # VRT needs to be build on te same disk
@@ -94,6 +96,17 @@ def test_rasters_rio():
             vect_truth = gpd.read_file(vect_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
+
+            # Get valid vec
+            valid_vec = rasters_rio.get_valid_vector(raster_path)
+            valid_truth = gpd.read_file(valid_truth_path)
+            ci.assert_geom_equal(valid_vec, valid_truth)
+
+            # Get nodata vec
+            nodata_vec = rasters_rio.get_nodata_vector(raster_path)
+            nodata_truth = gpd.read_file(nodata_truth_path)
+            ci.assert_geom_equal(nodata_vec, nodata_truth)
+
 
         # Tests
         ci.assert_raster_equal(raster_path, raster_out)

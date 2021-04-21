@@ -8,7 +8,7 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import rasters, ci
+from sertit import rasters, ci, files
 
 
 def test_rasters():
@@ -16,6 +16,7 @@ def test_rasters():
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
     raster_cropped_path = os.path.join(RASTER_DATA, "raster_cropped.tif")
+    raster_cropped_xarray_path = os.path.join(RASTER_DATA, "raster_cropped_xarray.tif")
     raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
     raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
     raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
@@ -24,6 +25,8 @@ def test_rasters():
     extent_path = os.path.join(RASTER_DATA, "extent.geojson")
     footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
     vect_truth_path = os.path.join(RASTER_DATA, "vector.geojson")
+    nodata_truth_path = os.path.join(RASTER_DATA, "nodata.geojson")
+    valid_truth_path = os.path.join(RASTER_DATA, "valid.geojson")
 
     # Create tmp file
     # VRT needs to be build on te same disk
@@ -44,44 +47,61 @@ def test_rasters():
         with rasterio.open(raster_path) as dst:
             dst_dtype = dst.meta["dtype"]
             # Read
-            raster = rasters.read(raster_path)
-            raster_1 = rasters.read(raster_path, resolution=dst.res[0])
-            raster_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
-            raster_3 = rasters.read(raster_path, size=(raster_1.rio.width, raster_1.rio.height))
+            xda = rasters.read(raster_path)
+            xda_1 = rasters.read(raster_path, resolution=dst.res[0])
+            xda_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
+            xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
             with pytest.raises(ValueError):
                 rasters.read(dst, resolution=[20, 20, 20])
 
-            assert raster.shape == (dst.count, dst.height, dst.width)
-            assert raster_1.rio.crs == dst.crs
-            assert raster_1.rio.transform() == dst.transform
-            np.testing.assert_array_equal(raster_1, raster_2)
-            np.testing.assert_array_equal(raster_1, raster_3)
+            # Create xr.Dataset
+            name = files.get_filename(dst.name)
+            xds = xr.Dataset({name: xda})
+
+            assert xda.shape == (dst.count, dst.height, dst.width)
+            assert xds[name].shape == xda.shape
+            assert xda_1.rio.crs == dst.crs
+            assert xda_1.rio.transform() == dst.transform
+            np.testing.assert_array_equal(xda_1, xda_2)
+            np.testing.assert_array_equal(xda_1, xda_3)
 
             # Write
-            raster_out = os.path.join(tmp_dir, "test.tif")
-            rasters.write(raster, raster_out, dtype=dst_dtype)
-            assert os.path.isfile(raster_out)
+            xda_out = os.path.join(tmp_dir, "test_xda.tif")
+            xds_out = os.path.join(tmp_dir, "test_xds.tif")
+            rasters.write(xda, xda_out, dtype=dst_dtype)
+            rasters.write(xds, xds_out, dtype=dst_dtype)
+            assert os.path.isfile(xda_out)
 
             # Mask
-            raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
+            xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
+            xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
             mask = gpd.read_file(mask_path)
-            mask_arr = rasters.mask(dst, mask.geometry)
-            rasters.write(mask_arr, raster_masked_out, dtype=np.uint8)
+            mask_xda = rasters.mask(xda, mask.geometry)
+            mask_xds = rasters.mask(xda, mask.geometry)
+            rasters.write(mask_xda, xda_masked, dtype=np.uint8)
+            rasters.write(mask_xds, xds_masked, dtype=np.uint8)
 
             # Crop
-            raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
-            crop = gpd.read_file(mask_path)
-            crop_arr = rasters.crop(dst, crop.geometry)
-            rasters.write(crop_arr, raster_cropped_out, dtype=np.uint8)
+            xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
+            xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
+            crop_xda = rasters.crop(xda, mask.geometry)
+            crop_xds = rasters.crop(xds, mask.geometry)
+            rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
+            rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
 
             # Sieve
-            sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
-            sieve_arr = rasters.sieve(raster, sieve_thresh=20, connectivity=4)
-            rasters.write(sieve_arr, sieve_out, dtype=np.uint8)
+            xda_sieved = os.path.join(tmp_dir, "test_sieved_xda.tif")
+            xds_sieved = os.path.join(tmp_dir, "test_sieved_xds.tif")
+            sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
+            sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
+            rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
+            rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
 
             # Collocate
-            coll_arr = rasters.collocate(raster, raster)  # Just hope that it doesnt crash
-            xr.testing.assert_equal(coll_arr, raster)
+            coll_xda = rasters.collocate(xda, xda)  # Just hope that it doesnt crash
+            xr.testing.assert_equal(coll_xda, xda)
+            coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesnt crash
+            xr.testing.assert_equal(coll_xds, xds)
 
             # Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
@@ -94,19 +114,40 @@ def test_rasters():
             # Vectorize
             val = 2
             vect = rasters.vectorize(raster_path)
+            vect_xds = rasters.vectorize(xds)
             vect_val = rasters.vectorize(raster_path, values=val)
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
+            ci.assert_geom_equal(vect_xds[name], vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
 
+            # Get valid vec
+            valid_vec = rasters.get_valid_vector(raster_path)
+            valid_vec_xds = rasters.get_valid_vector(xds)
+            valid_truth = gpd.read_file(valid_truth_path)
+            ci.assert_geom_equal(valid_vec, valid_truth)
+            ci.assert_geom_equal(valid_vec_xds[name], valid_truth)
+
+            # Get nodata vec
+            nodata_vec = rasters.get_nodata_vector(raster_path)
+            nodata_vec_xds = rasters.get_nodata_vector(xds)
+            nodata_truth = gpd.read_file(nodata_truth_path)
+            ci.assert_geom_equal(nodata_vec, nodata_truth)
+            ci.assert_geom_equal(nodata_vec_xds[name], nodata_truth)
+
         # Tests
-        ci.assert_raster_equal(raster_path, raster_out)
-        ci.assert_raster_equal(raster_masked_out, raster_masked_path)
-        ci.assert_raster_equal(raster_cropped_out, raster_cropped_path)
-        ci.assert_raster_equal(sieve_out, raster_sieved_path)
+        ci.assert_raster_equal(raster_path, xda_out)
+        ci.assert_raster_equal(xda_masked, raster_masked_path)
+        ci.assert_raster_equal(xda_cropped, raster_cropped_path)
+        ci.assert_raster_equal(xda_sieved, raster_sieved_path)
         ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+
+        ci.assert_raster_equal(raster_path, xds_out)
+        ci.assert_raster_equal(xds_masked, raster_masked_path)
+        ci.assert_raster_equal(xds_cropped, raster_cropped_xarray_path)
+        ci.assert_raster_equal(xds_sieved, raster_sieved_path)
 
 
 def test_dim():

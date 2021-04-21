@@ -7,6 +7,8 @@ import os
 from functools import wraps
 from typing import Union, Optional, Any, Callable
 import numpy as np
+import xarray
+
 from sertit.rasters_rio import path_arr_dst, PATH_ARR_DS
 
 try:
@@ -28,13 +30,13 @@ from sertit import vectors, rasters_rio
 
 MAX_CORES = os.cpu_count() - 2
 ORIGIN_DTYPE = 'original_dtype'
-PATH_XARR_DS = Union[str, xr.Dataset, xr.DataArray, rasterio.DatasetReader]
+PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
 """
 Types: 
 
 - Path
 - rasterio Dataset
-- `xarray`
+- `xarray.DataArray` and `xarray.Dataset`
 """
 
 XDS_TYPE = Union[xr.Dataset, xr.DataArray]
@@ -74,19 +76,41 @@ def path_xarr_dst(function: Callable) -> Callable:
     """
 
     @wraps(function)
-    def path_or_xarr_or_dst_wrapper(path_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -> Any:
+    def path_or_xarr_or_dst_wrapper(path_or_ds: PATH_XARR_DS, *args, **kwargs) -> Any:
         """
         Path or dataset wrapper
         Args:
-            path_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
+            path_or_ds (PATH_XARR_DS): Raster path or its dataset
             *args: args
             **kwargs: kwargs
 
         Returns:
             Any: regular output
         """
-        if isinstance(path_or_ds, (xr.Dataset, xr.DataArray)):
+        if isinstance(path_or_ds, (xr.DataArray)):
             out = function(path_or_ds, *args, **kwargs)
+        elif isinstance(path_or_ds, (xr.Dataset)):
+            # Try on the whole dataset
+            try:
+                out = function(path_or_ds, *args, **kwargs)
+            except Exception:
+                # Try on every dataarray
+                try:
+                    xds_dict = {}
+                    convert_to_xdataset = False
+                    for var in path_or_ds.data_vars:
+                        xds_dict[var] = function(path_or_ds[var], *args, **kwargs)
+                        if isinstance(xds_dict[var], xr.DataArray):
+                            convert_to_xdataset = True
+
+                    # Convert in dataset if we have dataarrays, else keep the dict
+                    if convert_to_xdataset:
+                        xds = xr.Dataset(xds_dict)
+                    else:
+                        xds = xds_dict
+                    return xds
+                except Exception as ex:
+                    raise TypeError("Function not available for xarray.Dataset") from ex
         else:
             # Get name
             if isinstance(path_or_ds, str):
@@ -128,7 +152,7 @@ def _get_nodata_pos(xds: XDS_TYPE) -> np.ndarray:
     return nodata_pos
 
 
-def to_np(xds: XDS_TYPE, dtype: str = None) -> np.ndarray:
+def to_np(xds: xarray.DataArray, dtype: str = None) -> np.ndarray:
     """
     Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
 
@@ -157,7 +181,7 @@ def to_np(xds: XDS_TYPE, dtype: str = None) -> np.ndarray:
     True
     ```
     Args:
-        xds (XDS_TYPE): `xarray` to convert
+        xds (xarray.DataArray): `xarray.DataArray` to convert
         dtype (str): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
 
     Returns:
@@ -284,10 +308,10 @@ def vectorize(xds: PATH_XARR_DS,
 
 
 @path_xarr_dst
-def get_nodata_vec(xds: PATH_XARR_DS,
-                   default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_valid_vector(xds: PATH_XARR_DS,
+                     default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Get the nodata of a raster as a vector.
+    Get the valid data of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
     If you want only the footprint of the raster, please use `get_footprint`.
@@ -311,6 +335,36 @@ def get_nodata_vec(xds: PATH_XARR_DS,
     """
     nodata = _vectorize(xds, values=None, get_nodata=True, default_nodata=default_nodata)
     return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
+
+
+@path_xarr_dst
+def get_nodata_vector(dst: PATH_ARR_DS,
+                      default_nodata: int = 0) -> gpd.GeoDataFrame:
+    """
+    Get the nodata vector of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
+
+    ```python
+    >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+    >>> nodata1 = get_nodata_vec(raster_path)
+    >>> # or
+    >>> with rasterio.open(raster_path) as dst:
+    >>>     nodata2 = get_nodata_vec(dst)
+    >>> nodata1 == nodata2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    """
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val == 0]
 
 
 @path_xarr_dst
@@ -437,7 +491,7 @@ def read(dst: PATH_ARR_DS,
         masked (bool): Get a masked array
 
     Returns:
-        Union[xarray.Dataset, xarray.DataArray]: Masked xarray corresponding to the raster data and its meta data
+        Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
 
     """
     # Get new height and width
@@ -456,7 +510,8 @@ def read(dst: PATH_ARR_DS,
     return xds
 
 
-def write(xds: PATH_XARR_DS,
+@path_xarr_dst
+def write(xds: XDS_TYPE,
           path: str,
           **kwargs) -> None:
     """
@@ -479,7 +534,7 @@ def write(xds: PATH_XARR_DS,
     ```
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
         path (str): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     """
@@ -628,7 +683,7 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
     """
-    footprint = get_nodata_vec(xds)
+    footprint = get_valid_vector(xds)
     return vectors.get_wider_exterior(footprint)
 
 
