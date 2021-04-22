@@ -813,6 +813,25 @@ def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
+def read_uint8_array(bit_mask: Union[xr.DataArray, np.ndarray],
+                     bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+    """
+    Read 8 bit arrays as a succession of binary masks.
+
+    Forces array to `np.uint8`.
+
+    See `read_bit_array`.
+
+    Args:
+        bit_mask (np.ndarray): Bit array to read
+        bit_id (int): Bit ID of the slice to be read
+          Example: read the bit 0 of the mask as a cloud mask (Theia)
+
+    Returns:
+        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+    """
+    return read_bit_array(bit_mask.astype(np.uint8), bit_id)
+
 def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) -> xr.DataArray:
     """
     Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs).
@@ -883,6 +902,7 @@ def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) 
         naked_xda = naked_xda.rename(new_name)
 
     return naked_xda
+
 
 def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray:
     """
