@@ -184,4 +184,8 @@ def test_xarray_fct():
     assert sum.rio.encoded_nodata == xda.rio.encoded_nodata
     assert sum.attrs == xda.attrs
     assert sum.encoding == xda.encoding
+    assert sum.rio.transform() == xda.rio.transform()
+    assert sum.rio.width == xda.rio.width
+    assert sum.rio.height == xda.rio.height
+    assert sum.rio.count == xda.rio.count
     assert sum.name == "sum"
