@@ -26,7 +26,7 @@ try:
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError("Please install 'rioxarray' and 'geopandas' to use the 'rasters' package.") from ex
 
-from sertit import vectors, rasters_rio
+from sertit import vectors, rasters_rio, files
 
 MAX_CORES = os.cpu_count() - 2
 ORIGIN_DTYPE = 'original_dtype'
@@ -498,7 +498,7 @@ def read(dst: PATH_ARR_DS,
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data
-    xds = rioxarray.open_rasterio(dst, mask_and_scale=masked, default_name=dst.name)
+    xds = rioxarray.open_rasterio(dst, mask_and_scale=masked, default_name=files.get_filename(dst.name))
     if masked:
         xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(dst).dtype  # TODO
     else:
@@ -811,3 +811,15 @@ def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
         bit_mask = bit_mask.data
 
     return rasters_rio.read_bit_array(bit_mask, bit_id)
+
+def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray) -> None:
+    """
+    Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs)
+    Args:
+        naked_xda (xr.DataArray): DataArray to complete
+        mtd_xda (xr.DataArray): DataArray with the correct metdata
+    """
+    naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
+    naked_xda.rio.write_nodata(mtd_xda.rio.nodata, inplace=True)
+    naked_xda.encoding = mtd_xda.encoding
