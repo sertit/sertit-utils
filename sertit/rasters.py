@@ -835,7 +835,7 @@ def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) 
       * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
       * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
 
-    >>> We need to set the metadata back (and we can set a new name)
+    >>> # We need to set the metadata back (and we can set a new name)
     >>> sum = set_metadata(sum, xda, new_name="sum")
     <xarray.DataArray 'sum' (band: 1, y: 322, x: 464)>
     array([[[nan, nan, nan, ..., nan, nan, nan],
