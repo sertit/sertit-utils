@@ -68,9 +68,11 @@ when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster arra
 
 For installing this library to your environment, please type this:
 
-- in your console: `pip install sertit[full] --extra-index-url https://gitlab-deploy-token:4ieKmsaqk4zLfM3WLxF4@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple`
+- in your console: `pip install --index-url https://%GITLAB_SERTIT_READ_TOKEN%:
+  %GITLAB_SERTIT_READ_PWD%@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
 - type this in your `requirement.txt`:  
-    `--extra-index-url https://gitlab-deploy-token:4ieKmsaqk4zLfM3WLxF4@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
+    `--extra-index-url https://${GITLAB_SERTIT_READ_TOKEN}:
+  ${GITLAB_SERTIT_READ_PWD}@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
 
 `[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas` 
 (with GDAL installation issues on Windows, so please install them from wheels that you can find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)). 

@@ -108,8 +108,7 @@
                 params = ', <br>'.join(f.params(annotate=show_type_annotations, link=link))
                 return_type = get_annotation(f.return_annotation, '\N{non-breaking hyphen}>')
             %>
-            <p>${f.funcdef()} ${ident(f.name)}(</p>
-            <p>${params})${return_type}</p>
+            <p>${f.funcdef()} ${ident(f.name)}(</p><p>${params})${return_type}</p>
         </code></dt>
         <dd>${show_desc(f)}</dd>
     </%def>
@@ -372,24 +371,24 @@
                                 %>
                                 <ul>
                                     <li>
-                                        % if fcts and var:
-                                            <h4><code>Functions</code></h4>
-                                        % endif
+                                    % if fcts and var:
+                                        <h4><code>Functions</code></h4>
+                                    % endif
                                     </li>
                                     <li>
-                                        % if fcts:
+                                    % if fcts:
                                         ${show_column_list(fcts)}
-                                        % endif
+                                    % endif
                                     </li>
                                     <li>
-                                        % if fcts and var:
-                                            <h4><code>Variables</code></h4>
-                                        % endif
+                                    % if fcts and var:
+                                        <h4><code>Variables</code></h4>
+                                    % endif
                                     </li>
                                     <li>
-                                        % if var:
+                                    % if var:
                                         ${show_column_list(var)}
-                                        % endif
+                                    % endif
                                     </li>
                                 </ul>
                             </li>
