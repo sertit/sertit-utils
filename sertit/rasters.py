@@ -781,7 +781,8 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return rasters_rio.unpackbits(array, nof_bits)
 
 
-def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
+                   bit_id: Union[list, int]) -> Union[np.ndarray, list]:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 
@@ -806,5 +807,7 @@ def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -> Union[np.n
     Returns:
         Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
     """
+    if isinstance(bit_mask, xr.DataArray):
+        bit_mask = bit_mask.data
 
     return rasters_rio.read_bit_array(bit_mask, bit_id)
