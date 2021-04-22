@@ -158,12 +158,31 @@ def test_dim():
 
 def test_bit():
     """ Test bit arrays """
+    # Bit
     np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint16))
     ones = rasters.read_bit_array(np_ones, bit_id=0)
     zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 15)))
     assert (np_ones.data == ones).all()
     for arr in zeros:
         assert (np_ones.data == 1 + arr).all()
+
+    # uint8
+    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint8))
+    ones = rasters.read_uint8_array(np_ones, bit_id=0)
+    zeros = rasters.read_uint8_array(np_ones, bit_id=list(np.arange(1, 7)))
+    assert (np_ones.data == ones).all()
+    for arr in zeros:
+        assert (np_ones.data == 1 + arr).all()
+
+    # uint8 from floats
+    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=float))
+    ones = rasters.read_uint8_array(np_ones, bit_id=0)
+    zeros = rasters.read_uint8_array(np_ones, bit_id=list(np.arange(1, 7)))
+    assert (np_ones.data == ones).all()
+    for arr in zeros:
+        assert (np_ones.data == 1 + arr).all()
+
+
 
 def test_xarray_fct():
     # Set nodata
