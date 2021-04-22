@@ -812,14 +812,110 @@ def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
 
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
-def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray) -> None:
+
+def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) -> xr.DataArray:
     """
-    Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs)
+    Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs).
+
+    Useful when performing operations on xarray that result in metadata loss such as sums.
+
+    ```python
+    >>> # xda: some xr.DataArray
+    >>> sum = xda + xda  # Sum loses its metadata here
+    <xarray.DataArray 'xda' (band: 1, y: 322, x: 464)>
+    array([[[nan, nan, nan, ..., nan, nan, nan],
+            [nan, nan, nan, ..., nan, nan, nan],
+            [nan, nan, nan, ..., nan, nan, nan],
+            ...,
+            [nan, nan, nan, ...,  2., nan, nan],
+            [nan, nan, nan, ...,  2., nan, nan],
+            [nan, nan, nan, ...,  2., nan, nan]]])
+    Coordinates:
+      * band         (band) int32 1
+      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+
+    >>> We need to set the metadata back (and we can set a new name)
+    >>> sum = set_metadata(sum, xda, new_name="sum")
+    <xarray.DataArray 'sum' (band: 1, y: 322, x: 464)>
+    array([[[nan, nan, nan, ..., nan, nan, nan],
+            [nan, nan, nan, ..., nan, nan, nan],
+            [nan, nan, nan, ..., nan, nan, nan],
+            ...,
+            [nan, nan, nan, ...,  2., nan, nan],
+            [nan, nan, nan, ...,  2., nan, nan],
+            [nan, nan, nan, ...,  2., nan, nan]]])
+    Coordinates:
+      * band         (band) int32 1
+      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+        spatial_ref  int32 0
+    Attributes: (12/13)
+        grid_mapping:              spatial_ref
+        BandName:                  Band_1
+        RepresentationType:        ATHEMATIC
+        STATISTICS_COVARIANCES:    0.2358157950609785
+        STATISTICS_MAXIMUM:        2
+        STATISTICS_MEAN:           1.3808942647686
+        ...                        ...
+        STATISTICS_SKIPFACTORX:    1
+        STATISTICS_SKIPFACTORY:    1
+        STATISTICS_STDDEV:         0.48560665546817
+        STATISTICS_VALID_PERCENT:  80.07
+        original_dtype:            uint8
+        _FillValue:                nan
+    ```
+
     Args:
         naked_xda (xr.DataArray): DataArray to complete
-        mtd_xda (xr.DataArray): DataArray with the correct metdata
+        mtd_xda (xr.DataArray): DataArray with the correct metadata
+        new_name (str): New name for naked DataArray
+
+    Returns:
+        xr.DataArray: Complete DataArray
     """
     naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
-    naked_xda.rio.write_nodata(mtd_xda.rio.nodata, inplace=True)
+    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
     naked_xda.encoding = mtd_xda.encoding
+
+    if new_name:
+        naked_xda = naked_xda.rename(new_name)
+
+    return naked_xda
+
+def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray:
+    """
+    Set nodata to a xarray that have no default nodata value.
+
+    In the data array, the no data will be set to `np.nan`.
+    The encoded value can be retrieved with `xda.rio.encoded_nodata`.
+
+    ```python
+    >>> A = xr.DataArray(dims=("x", "y"), data=np.zeros((3,3), dtype=np.uint8))
+    >>> A[0, 0] = 1
+    <xarray.DataArray (x: 3, y: 3)>
+    array([[1, 0, 0],
+           [0, 0, 0],
+           [0, 0, 0]], dtype=uint8)
+    Dimensions without coordinates: x, y
+
+    >>> A_nodata = set_nodata(A, 0)
+    <xarray.DataArray (x: 3, y: 3)>
+    array([[ 1., nan, nan],
+           [nan, nan, nan],
+           [nan, nan, nan]])
+    Dimensions without coordinates: x, y
+    ```
+
+    Args:
+        xda (xr.DataArray): DataArray
+        nodata_val (Union[float, int]): Nodata value
+
+    Returns:
+        xr.DataArray: DataArray with nodata set
+    """
+    xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
+    xda_nodata.rio.write_nodata(np.nan)
+    xda_nodata.encoding["_FillValue"] = nodata_val
+    return xda_nodata

@@ -164,3 +164,24 @@ def test_bit():
     assert (np_ones.data == ones).all()
     for arr in zeros:
         assert (np_ones.data == 1 + arr).all()
+
+def test_xarray_fct():
+    # Set nodata
+    A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 0], [0, 0, 0]])
+    nodata = xr.DataArray(dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]])
+    A_nodata = rasters.set_nodata(A, 0)
+
+    xr.testing.assert_equal(A_nodata, nodata)
+
+    # Mtd
+    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    xda = rasters.read(raster_path)
+    sum = xda + xda
+    sum = rasters.set_metadata(sum, xda, "sum")
+
+    assert sum.rio.crs == xda.rio.crs
+    assert np.isnan(sum.rio.nodata)
+    assert sum.rio.encoded_nodata == xda.rio.encoded_nodata
+    assert sum.attrs == xda.attrs
+    assert sum.encoding == xda.encoding
+    assert sum.name == "sum"
