@@ -571,7 +571,12 @@ def collocate(master_xds: XDS_TYPE,
         XDS_TYPE: Collocated xarray
 
     """
-    return slave_xds.rio.reproject_match(master_xds, resampling=resampling)
+    collocated_xds = slave_xds.rio.reproject_match(master_xds, resampling=resampling)
+    collocated_xds = collocated_xds.assign_coords({
+        "x": master_xds.x,
+        "y": master_xds.y,
+    })  # Bug for now, tiny difference in coords
+    return collocated_xds
 
 
 @path_xarr_dst
@@ -831,6 +836,7 @@ def read_uint8_array(bit_mask: Union[xr.DataArray, np.ndarray],
         Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
     """
     return read_bit_array(bit_mask.astype(np.uint8), bit_id)
+
 
 def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) -> xr.DataArray:
     """
