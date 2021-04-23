@@ -110,7 +110,7 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
     """
     Assert that two rasters are equal.
 
-    # Useful for pytests.
+    -> Useful for pytests.
 
     ```python
     >>> path = r"CI\DATA\rasters\raster.tif"
@@ -126,6 +126,39 @@ def assert_raster_equal(path_1: str, path_2: str) -> None:
         with rasterio.open(path_2) as dst_2:
             assert dst_1.meta == dst_2.meta
             np.testing.assert_array_equal(dst_1.read(), dst_2.read())
+
+
+def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -> None:
+    """
+    Assert that two rasters are almost equal.
+    (everything is equal except the transform and the arrays that are almost equal)
+
+    Accepts an offset of `1E{decimal}` on the array and the transform
+
+    -> Useful for pytests.
+
+    ```python
+    >>> path = r"CI\DATA\rasters\raster.tif"
+    >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+    >>> assert_raster_equal(path, path2)
+    >>> # Raises AssertionError if sth goes wrong
+    ```
+
+    Args:
+        path_1 (str): Raster 1
+        path_2 (str): Raster 2
+    """
+    with rasterio.open(path_1) as dst_1:
+        with rasterio.open(path_2) as dst_2:
+            assert dst_1.meta["driver"] == dst_2.meta["driver"]
+            assert dst_1.meta["dtype"] == dst_2.meta["dtype"]
+            assert dst_1.meta["nodata"] == dst_2.meta["nodata"]
+            assert dst_1.meta["width"] == dst_2.meta["width"]
+            assert dst_1.meta["height"] == dst_2.meta["height"]
+            assert dst_1.meta["count"] == dst_2.meta["count"]
+            assert dst_1.meta["crs"] == dst_2.meta["crs"]
+            dst_1.meta["transform"].almost_equals(dst_1.meta["transform"], precision=float(f"1E-{decimal}"))
+            np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
 def assert_dir_equal(path_1: str, path_2: str) -> None:
@@ -171,7 +204,7 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
 
-    # Useful for pytests.
+    -> Useful for pytests.
 
     ```python
     >>> path = r"CI\DATA\vectors\aoi.geojson"
@@ -201,7 +234,7 @@ def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> 
     """
     Assert that 2 XML (as etree Elements) are equal.
 
-    # Useful for pytests.
+    -> Useful for pytests.
 
     Args:
         xml_elem_1 (etree._Element): 1st Element
