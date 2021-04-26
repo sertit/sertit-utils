@@ -46,7 +46,7 @@ setuptools.setup(
     python_requires=">=3.7",
     project_urls={
         "Bug Tracker": "https://github.com/sertit/sertit-utils/issues/",
-        "Documentation": "https://eodag.readthedocs.io",
+        "Documentation": "https://corteva.github.io/sertit-utils/",
         "Source Code": "https://github.com/sertit/sertit-utils",
     },
 )
