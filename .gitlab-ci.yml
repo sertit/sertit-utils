@@ -12,7 +12,7 @@ lint:
   tags:
     - linux
 
-pytest3.7:
+pytest:
   image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
   stage: test
   before_script:
