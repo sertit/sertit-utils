@@ -1,7 +1,7 @@
 stages:
   - test
   - publish
-  - doc
+  - docs
 
 pytest:
   image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
@@ -34,11 +34,11 @@ upload_wheel:linux:
 
 pages:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
-  stage: doc
+  stage: docs
   script:
     - pip install -r requirements.txt
-    - pdoc sertit -o doc -f --html --template-dir doc_template
-    - mv doc/ public/
+    - pdoc sertit -o docs -f --html --template-dir doc_template
+    - mv docs/ public/
   artifacts:
     paths:
       - public

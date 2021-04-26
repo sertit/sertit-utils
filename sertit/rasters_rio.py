@@ -469,7 +469,7 @@ def _mask(dst: PATH_ARR_DS,
     """
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
 
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
@@ -518,7 +518,7 @@ def mask(dst: PATH_ARR_DS,
 
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     ```python
@@ -560,7 +560,7 @@ def crop(dst: PATH_ARR_DS,
 
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function doc can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     ```python

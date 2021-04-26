@@ -1,0 +1,2889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
+<meta name="generator" content="pdoc 0.9.2"/>
+<title>sertit.rasters_rio API documentation</title>
+<meta name="description" content="Raster tools …"/>
+<link rel="preload stylesheet" as="style"
+href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css"
+integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style"
+href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css"
+integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style"
+href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/darcula.min.css"
+crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100%;padding:3em 4em;border-left:1px solid #ddd;overflow-x:hidden}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}table{display:block;overflow-x:auto;word-break:keep-all;border-collapse:separate;border-spacing:0}th{background-color:#c4d5e780;padding:5px;border-bottom:0.1px solid gray;border-right:0.1px solid gray;border-top:0.1px solid gray}td,th{margin:0}td{white-space:nowrap;border-bottom:0.1px solid gray;border-right:0.1px solid gray}td:empty{background-color:#ececec}th:nth-child(1){border-left:0.1px solid gray}td:nth-child(1){border-left:0.1px solid gray;border-right:0.1px solid gray}th:nth-child(1),td:nth-child(1){background-color:#c4d5e7;position:-webkit-sticky;position:sticky;left:0}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"
+integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"
+integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>sertit.rasters_rio</code></h1>
+</header>
+<section id="section-intro">
+<p>Raster tools</p>
+<p>You can use this only if you have installed sertit[full] or sertit[rasters_rio]</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+# Copyright 2021, SERTIT-ICube - France, https://sertit.unistra.fr/
+# This file is part of sertit-utils project
+#     https://github.com/sertit/sertit-utils
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+&#34;&#34;&#34;
+Raster tools
+
+You can use this only if you have installed sertit[full] or sertit[rasters_rio]
+&#34;&#34;&#34;
+import os
+from functools import wraps
+from typing import Union, Optional, Any, Callable
+import numpy as np
+
+try:
+    import pandas as pd
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+    import rasterio
+    from rasterio import features, warp, mask as rmask, merge, MemoryFile
+    from rasterio.enums import Resampling
+except ModuleNotFoundError as ex:
+    raise ModuleNotFoundError(&#34;Please install &#39;rasterio&#39; and &#39;geopandas&#39; to use the &#39;rasters_rio&#39; package.&#34;) from ex
+
+from sertit import misc, files, vectors, strings
+
+MAX_CORES = os.cpu_count() - 2
+PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
+&#34;&#34;&#34;
+Types: 
+
+- Path
+- Rasterio open data: (array, meta)
+- rasterio Dataset
+- `xarray`
+&#34;&#34;&#34;
+
+
+def path_arr_dst(function: Callable) -&gt; Callable:
+    &#34;&#34;&#34;
+    Path, `xarray`, (array, metadata) or dataset decorator.
+    Allows a function to ingest:
+
+    - a path
+    - a `xarray`
+    - a `rasterio` dataset
+    - `rasterio` open data: (array, meta)
+
+    ```python
+    &gt;&gt;&gt; # Create mock function
+    &gt;&gt;&gt; @path_or_dst
+    &gt;&gt;&gt; def fct(dst):
+    &gt;&gt;&gt;     read(dst)
+    &gt;&gt;&gt;
+    &gt;&gt;&gt; # Test the two ways
+    &gt;&gt;&gt; read1 = fct(&#34;path\\to\\raster.tif&#34;)
+    &gt;&gt;&gt; with rasterio.open(&#34;path\\to\\raster.tif&#34;) as dst:
+    &gt;&gt;&gt;     read2 = fct(dst)
+    &gt;&gt;&gt;
+    &gt;&gt;&gt; # Test
+    &gt;&gt;&gt; read1 == read2
+    True
+    ```
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    &#34;&#34;&#34;
+
+    @wraps(function)
+    def path_or_arr_or_dst_wrapper(path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;
+        Path or dataset wrapper
+        Args:
+            path_or_arr_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        &#34;&#34;&#34;
+        if isinstance(path_or_arr_or_ds, str):
+            with rasterio.open(path_or_arr_or_ds) as dst:
+                out = function(dst, *args, **kwargs)
+        elif isinstance(path_or_arr_or_ds, tuple):
+            arr, meta = path_or_arr_or_ds
+            with MemoryFile() as memfile:
+                with memfile.open(**meta) as dst:
+                    dst.write(arr)
+                    out = function(dst, *args, **kwargs)
+        else:
+            out = None
+            # Try if xarray is importable
+            try:
+                import xarray as xr
+                if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
+                    meta = {&#39;driver&#39;: &#39;GTiff&#39;,
+                            &#39;dtype&#39;: path_or_arr_or_ds.dtype,
+                            &#39;nodata&#39;: path_or_arr_or_ds.rio.encoded_nodata,
+                            &#39;width&#39;: path_or_arr_or_ds.rio.width,
+                            &#39;height&#39;: path_or_arr_or_ds.rio.height,
+                            &#39;count&#39;: path_or_arr_or_ds.rio.count,
+                            &#39;crs&#39;: path_or_arr_or_ds.rio.crs,
+                            &#39;transform&#39;: path_or_arr_or_ds.rio.transform()
+                            }
+                    with MemoryFile() as memfile:
+                        with memfile.open(**meta) as dst:
+                            xds = path_or_arr_or_ds.copy()
+                            if xds.rio.encoded_nodata is not None:
+                                xds = xds.fillna(xds.rio.encoded_nodata)
+                            dst.write(xds.data)
+                            out = function(dst, *args, **kwargs)
+            except ModuleNotFoundError:
+                pass
+
+            if not out:
+                out = function(path_or_arr_or_ds, *args, **kwargs)
+        return out
+
+    return path_or_arr_or_dst_wrapper
+
+
+@path_arr_dst
+def get_new_shape(dst: PATH_ARR_DS,
+                  resolution: Union[tuple, list, float],
+                  size: Union[tuple, list]) -&gt; (int, int):
+    &#34;&#34;&#34;
+    Get the new shape (height, width) of a resampled raster.
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+
+    Returns:
+        (int, int): Height, width
+
+    &#34;&#34;&#34;
+
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -&gt; int:
+        &#34;&#34;&#34;
+        Get the new dimension in pixels
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            int: New dimension
+        &#34;&#34;&#34;
+        return int(np.round(dim * res_old / res_new))
+
+    # By default keep original shape
+    new_height = dst.height
+    new_width = dst.width
+
+    # Compute new shape
+    if resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height = _get_new_dim(dst.height, dst.res[1], resolution)
+            new_width = _get_new_dim(dst.width, dst.res[0], resolution)
+        elif resolution is None:
+            pass
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+
+                if resolution[0] is not None:
+                    new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
+
+                if resolution[1] is not None:
+                    new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
+            except (TypeError, KeyError):
+                raise ValueError(f&#34;Resolution should be None, 2 floats or a castable to a list: {resolution}&#34;)
+    elif size is not None:
+        try:
+            new_height = size[1]
+            new_width = size[0]
+        except (TypeError, KeyError):
+            raise ValueError(f&#34;Size should be None or a castable to a list: {size}&#34;)
+
+    return new_height, new_width
+
+
+def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -&gt; dict:
+    &#34;&#34;&#34;
+    Basic metadata update from a numpy array. Updates everything that we can find in the array:
+
+    - `dtype`: array dtype,
+    - `count`: first dimension of the array if the array is in 3D, else 1
+    - `height`: second dimension of the array
+    - `width`: third dimension of the array
+    - `nodata`: if a masked array is given, nodata is its fill_value
+
+    .. WARNING::
+        The array&#39;s shape is interpreted in rasterio&#39;s way (count, height, width) !
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;      meta = dst.meta
+    &gt;&gt;&gt;      arr = dst.read()
+    &gt;&gt;&gt; meta
+    {
+        &#39;driver&#39;: &#39;GTiff&#39;,
+        &#39;dtype&#39;: &#39;float32&#39;,
+        &#39;nodata&#39;: None,
+        &#39;width&#39;: 300,
+        &#39;height&#39;: 300,
+        &#39;count&#39;: 4,
+        &#39;crs&#39;: CRS.from_epsg(32630),
+        &#39;transform&#39;: Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
+    }
+    &gt;&gt;&gt; new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
+    &gt;&gt;&gt; new_arr.shape
+    (4, 150, 150)
+    &gt;&gt;&gt; new_arr.dtype
+    dtype(&#39;uint8&#39;)
+    &gt;&gt;&gt; new_arr.fill_value
+    0
+    &gt;&gt;&gt; update_meta(new_arr, meta)
+    {
+        &#39;driver&#39;: &#39;GTiff&#39;,
+        &#39;dtype&#39;: dtype(&#39;uint8&#39;),
+        &#39;nodata&#39;: 0,
+        &#39;width&#39;: 150,
+        &#39;height&#39;: 150,
+        &#39;count&#39;: 4,
+        &#39;crs&#39;: CRS.from_epsg(32630),
+        &#39;transform&#39;: Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
+    }
+    ```
+
+    Args:
+        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
+        meta (dict): Metadata to update
+
+    Returns:
+        dict: Update metadata
+
+    &#34;&#34;&#34;
+    # Manage raster shape (Stored in rasterio&#39;s way)
+    shape = arr.shape
+    count = 1 if len(shape) == 2 else shape[0]
+    width = shape[-1]
+    height = shape[-2]
+
+    # Update metadata that can be derived from raster
+    out_meta = meta.copy()
+    out_meta.update({
+        &#34;dtype&#34;: arr.dtype,
+        &#34;count&#34;: count,
+        &#34;height&#34;: height,
+        &#34;width&#34;: width
+    })
+
+    # Nodata
+    if isinstance(arr, np.ma.masked_array):
+        out_meta[&#34;nodata&#34;] = arr.fill_value
+
+    return out_meta
+
+
+def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
+                    has_nodata: bool,
+                    default_nodata: int = 0) -&gt; np.ma.masked_array:
+    &#34;&#34;&#34;
+    Get nodata mask from a masked array.
+
+    The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
+
+    ```python
+    &gt;&gt;&gt; diag_arr = np.diag([1,2,3])
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]])
+
+    &gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False)
+    array([[1, 0, 0],
+           [0, 1, 0],
+           [0, 0, 1]], dtype=uint8)
+
+    &gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False, default_nodata=1)
+    array([[0, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1]], dtype=uint8)
+    ```
+
+    Args:
+        array (np.ma.masked_array): Array to evaluate
+        has_nodata (bool): If the array as its nodata specified. If not, using default_nodata.
+        default_nodata (int): Default nodata used if the array&#39;s nodata is not set
+
+    Returns:
+        np.ma.masked_array: Pixelwise nodata array
+
+    &#34;&#34;&#34;
+    # Nodata mask
+    if not has_nodata or not isinstance(array, np.ma.masked_array):  # Unspecified nodata is set to None by rasterio
+        nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
+    else:
+        nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
+
+    return nodata_mask
+
+
+@path_arr_dst
+def _vectorize(dst: PATH_ARR_DS,
+               values: Union[None, int, list] = None,
+               get_nodata: bool = False,
+               default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Vectorize a raster, both to get classes or nodata.
+
+    .. WARNING::
+        If `get_nodata` is set to False:
+            - Please only use this function on a classified raster.
+            - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+                Please be careful.
+    Else:
+        - You will get a classified polygon with data (value=0)/nodata pixels. To
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Vector
+    &#34;&#34;&#34;
+    # Get the shapes
+    array = dst.read(masked=True)
+
+    # Manage nodata value
+    has_nodata = dst.nodata is not None
+    nodata = dst.nodata if has_nodata else default_nodata
+
+    # Manage values
+    if values is not None:
+        if not isinstance(values, list):
+            values = [values]
+        data = np.where(np.isin(array, values), array, nodata).astype(array.dtype)
+    else:
+        data = array.data
+
+    # Get nodata mask
+    nodata_mask = get_nodata_mask(data, has_nodata=False, default_nodata=nodata)
+
+    # Get shapes (on array or on mask to get nodata vector)
+    shapes = features.shapes(nodata_mask if get_nodata else data,
+                             mask=None if get_nodata else nodata_mask,
+                             transform=dst.transform)
+
+    return vectors.shapes_to_gdf(shapes, dst.crs)
+
+
+@path_arr_dst
+def vectorize(dst: PATH_ARR_DS,
+              values: Union[None, int, list] = None,
+              default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Vectorize a raster to get the class vectors.
+
+    .. WARNING::
+        - Please only use this function on a classified raster.
+        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+            Please be careful.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; vec1 = vectorize(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     vec2 = vectorize(dst)
+    &gt;&gt;&gt; vec1 == vec2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Classes Vector
+    &#34;&#34;&#34;
+    return _vectorize(dst, values=values, get_nodata=False, default_nodata=default_nodata)
+
+
+@path_arr_dst
+def get_valid_vector(dst: PATH_ARR_DS,
+                     default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the valid data of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+    &gt;&gt;&gt; nodata1 == nodata2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    &#34;&#34;&#34;
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
+
+
+@path_arr_dst
+def get_nodata_vector(dst: PATH_ARR_DS,
+                      default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the nodata vector of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+    &gt;&gt;&gt; nodata1 == nodata2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    &#34;&#34;&#34;
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val == 0]  # 0 is the values of not nodata put there by rasterio
+
+
+@path_arr_dst
+def _mask(dst: PATH_ARR_DS,
+          shapes: Union[Polygon, list],
+          nodata: Optional[int] = None,
+          do_crop: bool = False,
+          **kwargs) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        do_crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
+    &#34;&#34;&#34;
+    if isinstance(shapes, Polygon):
+        shapes = [Polygon]
+
+    # Set nodata
+    if not nodata:
+        if dst.nodata:
+            nodata = dst.nodata
+        else:
+            nodata = 0
+
+    # Crop dataset
+    msk, trf = rmask.mask(dst, shapes, nodata=nodata, crop=do_crop, **kwargs)
+
+    # Create masked array
+    nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
+    mask_array = np.ma.masked_array(msk, nodata_mask, fill_value=nodata)
+
+    # Update meta
+    out_meta = update_meta(mask_array, dst.meta)
+    out_meta[&#34;transform&#34;] = trf
+
+    return mask_array, out_meta
+
+
+@path_arr_dst
+def mask(dst: PATH_ARR_DS,
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Masking a dataset:
+    setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
+
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
+    &gt;&gt;&gt; masked_raster1 == masked_raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
+    &#34;&#34;&#34;
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)
+
+
+@path_arr_dst
+def crop(dst: PATH_ARR_DS,
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Cropping a dataset:
+    setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
+
+    **HOW:**
+
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; cropped_raster1, meta1 = crop(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     cropped_raster2, meta2 = crop(dst, shapes)
+    &gt;&gt;&gt; cropped_raster1 == cropped_raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
+    &#34;&#34;&#34;
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)
+
+
+@path_arr_dst
+def read(dst: PATH_ARR_DS,
+         resolution: Union[tuple, list, float] = None,
+         size: Union[tuple, list] = None,
+         resampling: Resampling = Resampling.nearest,
+         masked: bool = True) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Read a raster dataset from a `rasterio.Dataset` or a path.
+
+    The resolution can be provided (in dataset unit) as:
+
+    - a tuple or a list of (X, Y) resolutions
+    - a float, in which case X resolution = Y resolution
+    - None, in which case the dataset resolution will be used
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; raster1, meta1 = read(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;    raster2, meta2 = read(dst)
+    &gt;&gt;&gt; raster1 == raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        resampling (Resampling): Resampling method
+        masked (bool): Get a masked array
+
+    Returns:
+        np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
+
+    &#34;&#34;&#34;
+    # Get new height and width
+    new_height, new_width = get_new_shape(dst, resolution, size)
+
+    # Read data
+    array = dst.read(out_shape=(dst.count, new_height, new_width),
+                     resampling=resampling,
+                     masked=masked)
+
+    # Update meta
+    dst_transform = dst.transform * dst.transform.scale((dst.width / new_width),
+                                                        (dst.height / new_height))
+    dst_meta = dst.meta.copy()
+    dst_meta.update({&#34;height&#34;: new_height,
+                     &#34;width&#34;: new_width,
+                     &#34;transform&#34;: dst_transform,
+                     &#34;dtype&#34;: array.dtype,
+                     &#34;nodata&#34;: dst.nodata})
+
+    return array, dst_meta
+
+
+def write(raster: Union[np.ma.masked_array, np.ndarray],
+          path: str,
+          meta: dict,
+          **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Write raster to disk (encapsulation of rasterio&#39;s function)
+
+    Metadata will be copied and updated with raster&#39;s information (ie. width, height, count, type...)
+    The driver is GTiff by default, and no nodata value is provided.
+    The file will be compressed if the raster is a mask (saved as uint8)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; raster_out = &#34;path\\to\\out.tif&#34;
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(raster_path)
+
+    &gt;&gt;&gt; # Rewrite it
+    &gt;&gt;&gt; write(raster, raster_out, meta)
+    ```
+
+    Args:
+        raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
+        path (str): Path where to save it (directories should be existing)
+        meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
+        **kwargs: Overloading metadata, ie `nodata=255`
+    &#34;&#34;&#34;
+    # Manage raster type (impossible to write boolean arrays)
+    if raster.dtype == bool:
+        raster = raster.astype(np.uint8)
+
+    # Update metadata
+    out_meta = meta.copy()
+
+    # Update raster to be sure to write down correct nodata pixels
+    if isinstance(raster, np.ma.masked_array):
+        raster[raster.mask] = raster.fill_value
+
+    # Force compression and driver (but can be overwritten by kwargs)
+    out_meta[&#34;driver&#34;] = &#34;GTiff&#34;
+
+    # Compress only if uint8 data
+    if raster.dtype == np.uint8:
+        out_meta[&#39;compress&#39;] = &#34;lzw&#34;
+
+    # Update metadata with array data
+    out_meta = update_meta(raster, out_meta)
+
+    # Update metadata with additional params
+    for key, val in kwargs.items():
+        out_meta[key] = val
+
+    # Manage raster shape
+    if len(raster.shape) == 2:
+        raster = np.expand_dims(raster, axis=0)
+
+    # Write product
+    with rasterio.open(path, &#34;w&#34;, **out_meta) as dst:
+        dst.write(raster)
+
+
+def collocate(master_meta: dict,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
+              slave_meta: dict,
+              resampling: Resampling = Resampling.nearest) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Collocate two georeferenced arrays:
+    forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
+
+    Use it like `OTB SuperImpose`.
+
+    ```python
+    &gt;&gt;&gt; master_path = &#34;path\\to\\master.tif&#34;
+    &gt;&gt;&gt; slave_path = &#34;path\\to\\slave.tif&#34;
+    &gt;&gt;&gt; col_path = &#34;path\\to\\collocated.tif&#34;
+
+    &gt;&gt;&gt; # Just open the master data
+    &gt;&gt;&gt; with rasterio.open(master_path) as master_dst:
+    &gt;&gt;&gt;     # Read slave
+    &gt;&gt;&gt;     slave, slave_meta = read(slave_path)
+
+    &gt;&gt;&gt;     # Collocate the slave to the master
+    &gt;&gt;&gt;     col_arr, col_meta = collocate(master_dst.meta,
+    &gt;&gt;&gt;                                   slave,
+    &gt;&gt;&gt;                                   slave_meta,
+    &gt;&gt;&gt;                                   Resampling.bilinear)
+
+    &gt;&gt;&gt; # Write it
+    &gt;&gt;&gt; write(col_arr, col_path, col_meta)
+    ```
+
+    Args:
+        master_meta (dict): Master metadata
+        slave_arr (np.ma.masked_array): Slave array to be collocated
+        slave_meta (dict): Slave metadata
+        resampling (Resampling): Resampling method
+
+    Returns:
+        np.ma.masked_array, dict: Collocated array and its metadata
+
+    &#34;&#34;&#34;
+    collocated_arr = np.zeros((master_meta[&#34;count&#34;], master_meta[&#34;height&#34;], master_meta[&#34;width&#34;]),
+                              dtype=master_meta[&#34;dtype&#34;])
+    warp.reproject(source=slave_arr,
+                   destination=collocated_arr,
+                   src_transform=slave_meta[&#34;transform&#34;],
+                   src_crs=slave_meta[&#34;crs&#34;],
+                   dst_transform=master_meta[&#34;transform&#34;],
+                   dst_crs=master_meta[&#34;crs&#34;],
+                   src_nodata=slave_meta[&#34;nodata&#34;],
+                   dst_nodata=slave_meta[&#34;nodata&#34;],
+                   resampling=resampling,
+                   num_threads=MAX_CORES)
+
+    meta = master_meta.copy()
+    meta.update({&#34;dtype&#34;: slave_meta[&#34;dtype&#34;],
+                 &#34;driver&#34;: slave_meta[&#34;driver&#34;],
+                 &#34;nodata&#34;: slave_meta[&#34;nodata&#34;]})
+
+    return collocated_arr, meta
+
+
+def sieve(array: Union[np.ma.masked_array, np.ndarray],
+          out_meta: dict,
+          sieve_thresh: int,
+          connectivity: int = 4) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+
+    Forces the output to `np.uint8` (as only classified rasters should be sieved)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # classified raster
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(raster_path)
+
+    &gt;&gt;&gt; # Rewrite it
+    &gt;&gt;&gt; sieved, sieved_meta = sieve(raster, meta, sieve_thresh=20)
+
+    &gt;&gt;&gt; # Write it
+    &gt;&gt;&gt; raster_out = &#34;path\\to\\raster_sieved.tif&#34;
+    &gt;&gt;&gt; write(sieved, raster_out, sieved_meta)
+    ```
+
+    Args:
+        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        out_meta (dict): Metadata to update
+        sieve_thresh (int): Sieving threshold in pixels
+        connectivity (int): Connectivity, either 4 or 8
+
+    Returns:
+        (Union[np.ma.masked_array, np.ndarray], dict): Sieved array and updated meta
+    &#34;&#34;&#34;
+    assert connectivity in [4, 8]
+
+    # Read extraction array
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Convert to np.uint8 if needed
+    dtype = np.uint8
+    meta = out_meta.copy()
+    if meta[&#39;dtype&#39;] != dtype:
+        array = array.astype(dtype)
+        meta[&#39;dtype&#39;] = dtype
+
+    # Sieve
+    result_array = np.empty(array.shape, dtype=array.dtype)
+    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+
+    # Use this trick to get the array back to &#39;normal&#39;
+    if expand:
+        result_array = np.expand_dims(result_array, axis=0)
+
+    return result_array, meta
+
+
+def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; str:
+    &#34;&#34;&#34;
+    Get the image path from a *BEAM-DIMAP* data.
+
+    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
+
+    ```python
+    &gt;&gt;&gt; dim_path = &#34;path\\to\\dimap.dim&#34;  # BEAM-DIMAP image
+    &gt;&gt;&gt; img_path = get_dim_img_path(dim_path)
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(img_path)
+    ```
+
+    Args:
+        dim_path (str): DIM path (.dim or .data)
+        img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
+
+    Returns:
+        str: .img file
+    &#34;&#34;&#34;
+    if dim_path.endswith(&#34;.dim&#34;):
+        dim_path = dim_path.replace(&#34;.dim&#34;, &#34;.data&#34;)
+
+    assert dim_path.endswith(&#34;.data&#34;) and os.path.isdir(dim_path)
+
+    return files.get_file_in_dir(dim_path, img_name, extension=&#39;img&#39;)
+
+
+@path_arr_dst
+def get_extent(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the extent of a raster as a `geopandas.Geodataframe`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+
+    &gt;&gt;&gt; extent1 = get_extent(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     extent2 = get_extent(dst)
+    &gt;&gt;&gt; extent1 == extent2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+
+    Returns:
+        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
+    &#34;&#34;&#34;
+    return vectors.get_geodf(geometry=[*dst.bounds], crs=dst.crs)
+
+
+@path_arr_dst
+def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get real footprint of the product (without nodata, in french == emprise utile)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+
+    &gt;&gt;&gt; footprint1 = get_footprint(raster_path)
+
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     footprint2 = get_footprint(dst)
+    &gt;&gt;&gt; footprint1 == footprint2
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+    Returns:
+        gpd.GeoDataFrame: Footprint as a GeoDataFrame
+    &#34;&#34;&#34;
+    footprint = get_valid_vector(dst)
+
+    return vectors.get_wider_exterior(footprint)
+
+
+def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+
+    See here: https://gdal.org/programs/gdalbuildvrt.html
+
+    Creates VRT with relative paths !
+
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
+
+    ```python
+    &gt;&gt;&gt; paths_utm32630 = [&#34;path\\to\\raster1.tif&#34;, &#34;path\\to\\raster2.tif&#34;, &#34;path\\to\\raster3.tif&#34;]
+    &gt;&gt;&gt; paths_utm32631 = [&#34;path\\to\\raster4.tif&#34;, &#34;path\\to\\raster5.tif&#34;]
+
+    &gt;&gt;&gt; mosaic_32630 = &#34;path\\to\\mosaic_32630.vrt&#34;
+    &gt;&gt;&gt; mosaic_32631 = &#34;path\\to\\mosaic_32631.vrt&#34;
+
+    &gt;&gt;&gt; # Create mosaic, one by CRS !
+    &gt;&gt;&gt; merge_vrt(paths_utm32630, mosaic_32630)
+    &gt;&gt;&gt; merge_vrt(paths_utm32631, mosaic_32631, {&#34;-srcnodata&#34;:255, &#34;-vrtnodata&#34;:0})
+    ```
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs: Other gdlabuildvrt arguments
+    &#34;&#34;&#34;
+    # Create relative paths
+    vrt_root = os.path.dirname(crs_merged_path)
+    rel_paths = [strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = strings.to_cmd_string(files.real_rel_path(crs_merged_path, vrt_root))
+
+    # Run cmd
+    arg_list = [val for item in kwargs.items() for val in item]
+    vrt_cmd = [&#34;gdalbuildvrt&#34;, rel_vrt, *rel_paths, *arg_list]
+    misc.run_cli(vrt_cmd, cwd=vrt_root)
+
+
+def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a GeoTiff.
+
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
+
+    ```python
+    &gt;&gt;&gt; paths_utm32630 = [&#34;path\\to\\raster1.tif&#34;, &#34;path\\to\\raster2.tif&#34;, &#34;path\\to\\raster3.tif&#34;]
+    &gt;&gt;&gt; paths_utm32631 = [&#34;path\\to\\raster4.tif&#34;, &#34;path\\to\\raster5.tif&#34;]
+
+    &gt;&gt;&gt; mosaic_32630 = &#34;path\\to\\mosaic_32630.tif&#34;
+    &gt;&gt;&gt; mosaic_32631 = &#34;path\\to\\mosaic_32631.tif&#34;
+
+    # Create mosaic, one by CRS !
+    &gt;&gt;&gt; merge_gtiff(paths_utm32630, mosaic_32630)
+    &gt;&gt;&gt; merge_gtiff(paths_utm32631, mosaic_32631)
+    ```
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs: Other rasterio.merge arguments
+            More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
+    &#34;&#34;&#34;
+    # Open datasets for merging
+    crs_datasets = []
+    try:
+        for path in crs_paths:
+            crs_datasets.append(rasterio.open(path))
+
+        # Merge all datasets
+        merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
+        merged_meta = crs_datasets[0].meta.copy()
+        merged_meta.update({&#34;driver&#34;: &#34;GTiff&#34;,
+                            &#34;height&#34;: merged_array.shape[1],
+                            &#34;width&#34;: merged_array.shape[2],
+                            &#34;transform&#34;: merged_transform})
+    finally:
+        # Close all datasets
+        for dataset in crs_datasets:
+            dataset.close()
+
+    # Save merge datasets
+    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)
+
+
+def unpackbits(array: np.ndarray, nof_bits: int) -&gt; np.ndarray:
+    &#34;&#34;&#34;
+    Function found here:
+    https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
+
+
+    ```python
+    &gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+    array([[1, 1, 3],
+           [4, 2, 0],
+           [4, 3, 2]], dtype=uint8)
+
+    # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
+    &gt;&gt;&gt; unpackbits(bit_array, 8)
+    array([[[1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0]],
+           [[0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]],
+           [[0, 0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
+    ```
+
+    Args:
+        array (np.ndarray): Array to unpack
+        nof_bits (int): Number of bits to unpack
+
+    Returns:
+        np.ndarray: Unpacked array
+    &#34;&#34;&#34;
+    xshape = list(array.shape)
+    array = array.reshape([-1, 1])
+    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+    return (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+
+
+def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -&gt; Union[np.ndarray, list]:
+    &#34;&#34;&#34;
+    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
+
+    ```python
+    &gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+    array([[1, 1, 3],
+           [4, 2, 0],
+           [4, 3, 2]], dtype=uint8)
+
+    # Get the 2nd bit array
+    &gt;&gt;&gt; read_bit_array(bit_array, 2)
+    array([[0, 0, 0],
+           [1, 0, 0],
+           [1, 0, 0]], dtype=uint8)
+    ```
+
+    Args:
+        bit_mask (np.ndarray): Bit array to read
+        bit_id (int): Bit ID of the slice to be read
+          Example: read the bit 0 of the mask as a cloud mask (Theia)
+
+    Returns:
+        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+    &#34;&#34;&#34;
+    # Get the number of bits
+    nof_bits = 8 * bit_mask.dtype.itemsize
+
+    # Read cloud mask as bits
+    msk = unpackbits(bit_mask, nof_bits)
+
+    # Only keep the bit number bit_id and reshape the vector
+    if isinstance(bit_id, list):
+        bit_arr = [msk[..., bid] for bid in bit_id]
+    else:
+        bit_arr = msk[..., bit_id]
+
+    return bit_arr</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="sertit.rasters_rio.PATH_ARR_DS"><code class="name">var <span class="ident">PATH_ARR_DS</span></code></dt>
+<dd>
+<div class="desc"><p>Types: </p>
+<ul>
+<li>Path</li>
+<li>Rasterio open data: (array, meta)</li>
+<li>rasterio Dataset</li>
+<li><code>xarray</code></li>
+</ul></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="sertit.rasters_rio.path_arr_dst"><code class="name flex">
+<p>def <span class="ident">path_arr_dst</span>(</p><p>function)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Path, <code>xarray</code>, (array, metadata) or dataset decorator.
+Allows a function to ingest:</p>
+<ul>
+<li>a path</li>
+<li>a <code>xarray</code></li>
+<li>a <code>rasterio</code> dataset</li>
+<li><code>rasterio</code> open data: (array, meta)</li>
+</ul>
+<pre><code class="language-python">&gt;&gt;&gt; # Create mock function
+&gt;&gt;&gt; @path_or_dst
+&gt;&gt;&gt; def fct(dst):
+&gt;&gt;&gt;     read(dst)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Test the two ways
+&gt;&gt;&gt; read1 = fct(&quot;path\to\raster.tif&quot;)
+&gt;&gt;&gt; with rasterio.open(&quot;path\to\raster.tif&quot;) as dst:
+&gt;&gt;&gt;     read2 = fct(dst)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Test
+&gt;&gt;&gt; read1 == read2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>function</code></strong> :&ensp;<code>Callable</code></dt>
+<dd>Function to decorate</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Callable</code></dt>
+<dd>decorated function</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def path_arr_dst(function: Callable) -&gt; Callable:
+    &#34;&#34;&#34;
+    Path, `xarray`, (array, metadata) or dataset decorator.
+    Allows a function to ingest:
+
+    - a path
+    - a `xarray`
+    - a `rasterio` dataset
+    - `rasterio` open data: (array, meta)
+
+    ```python
+    &gt;&gt;&gt; # Create mock function
+    &gt;&gt;&gt; @path_or_dst
+    &gt;&gt;&gt; def fct(dst):
+    &gt;&gt;&gt;     read(dst)
+    &gt;&gt;&gt;
+    &gt;&gt;&gt; # Test the two ways
+    &gt;&gt;&gt; read1 = fct(&#34;path\\to\\raster.tif&#34;)
+    &gt;&gt;&gt; with rasterio.open(&#34;path\\to\\raster.tif&#34;) as dst:
+    &gt;&gt;&gt;     read2 = fct(dst)
+    &gt;&gt;&gt;
+    &gt;&gt;&gt; # Test
+    &gt;&gt;&gt; read1 == read2
+    True
+    ```
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    &#34;&#34;&#34;
+
+    @wraps(function)
+    def path_or_arr_or_dst_wrapper(path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;
+        Path or dataset wrapper
+        Args:
+            path_or_arr_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        &#34;&#34;&#34;
+        if isinstance(path_or_arr_or_ds, str):
+            with rasterio.open(path_or_arr_or_ds) as dst:
+                out = function(dst, *args, **kwargs)
+        elif isinstance(path_or_arr_or_ds, tuple):
+            arr, meta = path_or_arr_or_ds
+            with MemoryFile() as memfile:
+                with memfile.open(**meta) as dst:
+                    dst.write(arr)
+                    out = function(dst, *args, **kwargs)
+        else:
+            out = None
+            # Try if xarray is importable
+            try:
+                import xarray as xr
+                if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
+                    meta = {&#39;driver&#39;: &#39;GTiff&#39;,
+                            &#39;dtype&#39;: path_or_arr_or_ds.dtype,
+                            &#39;nodata&#39;: path_or_arr_or_ds.rio.encoded_nodata,
+                            &#39;width&#39;: path_or_arr_or_ds.rio.width,
+                            &#39;height&#39;: path_or_arr_or_ds.rio.height,
+                            &#39;count&#39;: path_or_arr_or_ds.rio.count,
+                            &#39;crs&#39;: path_or_arr_or_ds.rio.crs,
+                            &#39;transform&#39;: path_or_arr_or_ds.rio.transform()
+                            }
+                    with MemoryFile() as memfile:
+                        with memfile.open(**meta) as dst:
+                            xds = path_or_arr_or_ds.copy()
+                            if xds.rio.encoded_nodata is not None:
+                                xds = xds.fillna(xds.rio.encoded_nodata)
+                            dst.write(xds.data)
+                            out = function(dst, *args, **kwargs)
+            except ModuleNotFoundError:
+                pass
+
+            if not out:
+                out = function(path_or_arr_or_ds, *args, **kwargs)
+        return out
+
+    return path_or_arr_or_dst_wrapper</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_new_shape"><code class="name flex">
+<p>def <span class="ident">get_new_shape</span>(</p><p>dst, <br>resolution, <br>size)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the new shape (height, width) of a resampled raster.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>resolution</code></strong> :&ensp;<code>Union[tuple, list, float]</code></dt>
+<dd>Resolution of the wanted band, in dataset resolution unit (X, Y)</dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>Union[tuple, list]</code></dt>
+<dd>Size of the array (width, height). Not used if resolution is provided.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>(int, int): Height, width</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def get_new_shape(dst: PATH_ARR_DS,
+                  resolution: Union[tuple, list, float],
+                  size: Union[tuple, list]) -&gt; (int, int):
+    &#34;&#34;&#34;
+    Get the new shape (height, width) of a resampled raster.
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+
+    Returns:
+        (int, int): Height, width
+
+    &#34;&#34;&#34;
+
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -&gt; int:
+        &#34;&#34;&#34;
+        Get the new dimension in pixels
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            int: New dimension
+        &#34;&#34;&#34;
+        return int(np.round(dim * res_old / res_new))
+
+    # By default keep original shape
+    new_height = dst.height
+    new_width = dst.width
+
+    # Compute new shape
+    if resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height = _get_new_dim(dst.height, dst.res[1], resolution)
+            new_width = _get_new_dim(dst.width, dst.res[0], resolution)
+        elif resolution is None:
+            pass
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError(&#34;We should have a resolution for X and Y dimensions&#34;)
+
+                if resolution[0] is not None:
+                    new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
+
+                if resolution[1] is not None:
+                    new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
+            except (TypeError, KeyError):
+                raise ValueError(f&#34;Resolution should be None, 2 floats or a castable to a list: {resolution}&#34;)
+    elif size is not None:
+        try:
+            new_height = size[1]
+            new_width = size[0]
+        except (TypeError, KeyError):
+            raise ValueError(f&#34;Size should be None or a castable to a list: {size}&#34;)
+
+    return new_height, new_width</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.update_meta"><code class="name flex">
+<p>def <span class="ident">update_meta</span>(</p><p>arr, <br>meta)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Basic metadata update from a numpy array. Updates everything that we can find in the array:</p>
+<ul>
+<li><code>dtype</code>: array dtype,</li>
+<li><code>count</code>: first dimension of the array if the array is in 3D, else 1</li>
+<li><code>height</code>: second dimension of the array</li>
+<li><code>width</code>: third dimension of the array</li>
+<li><code>nodata</code>: if a masked array is given, nodata is its fill_value</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The array's shape is interpreted in rasterio's way (count, height, width) !</p>
+</div>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;      meta = dst.meta
+&gt;&gt;&gt;      arr = dst.read()
+&gt;&gt;&gt; meta
+{
+    'driver': 'GTiff',
+    'dtype': 'float32',
+    'nodata': None,
+    'width': 300,
+    'height': 300,
+    'count': 4,
+    'crs': CRS.from_epsg(32630),
+    'transform': Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
+}
+&gt;&gt;&gt; new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
+&gt;&gt;&gt; new_arr.shape
+(4, 150, 150)
+&gt;&gt;&gt; new_arr.dtype
+dtype('uint8')
+&gt;&gt;&gt; new_arr.fill_value
+0
+&gt;&gt;&gt; update_meta(new_arr, meta)
+{
+    'driver': 'GTiff',
+    'dtype': dtype('uint8'),
+    'nodata': 0,
+    'width': 150,
+    'height': 150,
+    'count': 4,
+    'crs': CRS.from_epsg(32630),
+    'transform': Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
+}
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>arr</code></strong> :&ensp;<code>Union[np.ndarray, np.ma.masked_array]</code></dt>
+<dd>Array from which to update the metadata</dd>
+<dt><strong><code>meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Metadata to update</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Update metadata</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -&gt; dict:
+    &#34;&#34;&#34;
+    Basic metadata update from a numpy array. Updates everything that we can find in the array:
+
+    - `dtype`: array dtype,
+    - `count`: first dimension of the array if the array is in 3D, else 1
+    - `height`: second dimension of the array
+    - `width`: third dimension of the array
+    - `nodata`: if a masked array is given, nodata is its fill_value
+
+    .. WARNING::
+        The array&#39;s shape is interpreted in rasterio&#39;s way (count, height, width) !
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;      meta = dst.meta
+    &gt;&gt;&gt;      arr = dst.read()
+    &gt;&gt;&gt; meta
+    {
+        &#39;driver&#39;: &#39;GTiff&#39;,
+        &#39;dtype&#39;: &#39;float32&#39;,
+        &#39;nodata&#39;: None,
+        &#39;width&#39;: 300,
+        &#39;height&#39;: 300,
+        &#39;count&#39;: 4,
+        &#39;crs&#39;: CRS.from_epsg(32630),
+        &#39;transform&#39;: Affine(20.0, 0.0, 630000.0,0.0, -20.0, 4870020.0)
+    }
+    &gt;&gt;&gt; new_arr = np.ma.masked_array(arr[:, ::2, ::2].astype(np.uint8), fill_value=0)
+    &gt;&gt;&gt; new_arr.shape
+    (4, 150, 150)
+    &gt;&gt;&gt; new_arr.dtype
+    dtype(&#39;uint8&#39;)
+    &gt;&gt;&gt; new_arr.fill_value
+    0
+    &gt;&gt;&gt; update_meta(new_arr, meta)
+    {
+        &#39;driver&#39;: &#39;GTiff&#39;,
+        &#39;dtype&#39;: dtype(&#39;uint8&#39;),
+        &#39;nodata&#39;: 0,
+        &#39;width&#39;: 150,
+        &#39;height&#39;: 150,
+        &#39;count&#39;: 4,
+        &#39;crs&#39;: CRS.from_epsg(32630),
+        &#39;transform&#39;: Affine(20.0, 0.0, 630000.0, 0.0, -20.0, 4870020.0)
+    }
+    ```
+
+    Args:
+        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
+        meta (dict): Metadata to update
+
+    Returns:
+        dict: Update metadata
+
+    &#34;&#34;&#34;
+    # Manage raster shape (Stored in rasterio&#39;s way)
+    shape = arr.shape
+    count = 1 if len(shape) == 2 else shape[0]
+    width = shape[-1]
+    height = shape[-2]
+
+    # Update metadata that can be derived from raster
+    out_meta = meta.copy()
+    out_meta.update({
+        &#34;dtype&#34;: arr.dtype,
+        &#34;count&#34;: count,
+        &#34;height&#34;: height,
+        &#34;width&#34;: width
+    })
+
+    # Nodata
+    if isinstance(arr, np.ma.masked_array):
+        out_meta[&#34;nodata&#34;] = arr.fill_value
+
+    return out_meta</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_nodata_mask"><code class="name flex">
+<p>def <span class="ident">get_nodata_mask</span>(</p><p>array, <br>has_nodata, <br>default_nodata=0)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get nodata mask from a masked array.</p>
+<p>The nodata may not be set before, then pass a nodata value that will be evaluated on the array.</p>
+<pre><code class="language-python">&gt;&gt;&gt; diag_arr = np.diag([1,2,3])
+array([[1, 0, 0],
+       [0, 2, 0],
+       [0, 0, 3]])
+
+&gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False)
+array([[1, 0, 0],
+       [0, 1, 0],
+       [0, 0, 1]], dtype=uint8)
+
+&gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False, default_nodata=1)
+array([[0, 1, 1],
+       [1, 1, 1],
+       [1, 1, 1]], dtype=uint8)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>array</code></strong> :&ensp;<code>np.ma.masked_array</code></dt>
+<dd>Array to evaluate</dd>
+<dt><strong><code>has_nodata</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If the array as its nodata specified. If not, using default_nodata.</dd>
+<dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Default nodata used if the array's nodata is not set</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ma.masked_array</code></dt>
+<dd>Pixelwise nodata array</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
+                    has_nodata: bool,
+                    default_nodata: int = 0) -&gt; np.ma.masked_array:
+    &#34;&#34;&#34;
+    Get nodata mask from a masked array.
+
+    The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
+
+    ```python
+    &gt;&gt;&gt; diag_arr = np.diag([1,2,3])
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]])
+
+    &gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False)
+    array([[1, 0, 0],
+           [0, 1, 0],
+           [0, 0, 1]], dtype=uint8)
+
+    &gt;&gt;&gt; get_nodata_mask(diag_arr, has_nodata=False, default_nodata=1)
+    array([[0, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1]], dtype=uint8)
+    ```
+
+    Args:
+        array (np.ma.masked_array): Array to evaluate
+        has_nodata (bool): If the array as its nodata specified. If not, using default_nodata.
+        default_nodata (int): Default nodata used if the array&#39;s nodata is not set
+
+    Returns:
+        np.ma.masked_array: Pixelwise nodata array
+
+    &#34;&#34;&#34;
+    # Nodata mask
+    if not has_nodata or not isinstance(array, np.ma.masked_array):  # Unspecified nodata is set to None by rasterio
+        nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
+    else:
+        nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
+
+    return nodata_mask</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.vectorize"><code class="name flex">
+<p>def <span class="ident">vectorize</span>(</p><p>dst, <br>values=None, <br>default_nodata=0)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Vectorize a raster to get the class vectors.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<ul>
+<li>Please only use this function on a classified raster.</li>
+<li>This could take a while as the computing time directly depends on the number of polygons to vectorize.
+Please be careful.</li>
+</ul>
+</div>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;  # Classified raster, with no data set to 255
+&gt;&gt;&gt; vec1 = vectorize(raster_path)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     vec2 = vectorize(dst)
+&gt;&gt;&gt; vec1 == vec2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>values</code></strong> :&ensp;<code>Union[None, int, list]</code></dt>
+<dd>Get only the polygons concerning this/these particular values</dd>
+<dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Default values for nodata in case of non existing in file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Classes Vector</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def vectorize(dst: PATH_ARR_DS,
+              values: Union[None, int, list] = None,
+              default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Vectorize a raster to get the class vectors.
+
+    .. WARNING::
+        - Please only use this function on a classified raster.
+        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+            Please be careful.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; vec1 = vectorize(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     vec2 = vectorize(dst)
+    &gt;&gt;&gt; vec1 == vec2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Classes Vector
+    &#34;&#34;&#34;
+    return _vectorize(dst, values=values, get_nodata=False, default_nodata=default_nodata)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_valid_vector"><code class="name flex">
+<p>def <span class="ident">get_valid_vector</span>(</p><p>dst, <br>default_nodata=0)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the valid data of a raster as a vector.</p>
+<p>Pay attention that every nodata pixel will appear too.
+If you want only the footprint of the raster, please use <code><a title="sertit.rasters_rio.get_footprint" href="#sertit.rasters_rio.get_footprint">get_footprint()</a></code>.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;  # Classified raster, with no data set to 255
+&gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+&gt;&gt;&gt; nodata1 == nodata2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Default values for nodata in case of non existing in file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Nodata Vector</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def get_valid_vector(dst: PATH_ARR_DS,
+                     default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the valid data of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+    &gt;&gt;&gt; nodata1 == nodata2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    &#34;&#34;&#34;
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_nodata_vector"><code class="name flex">
+<p>def <span class="ident">get_nodata_vector</span>(</p><p>dst, <br>default_nodata=0)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the nodata vector of a raster as a vector.</p>
+<p>Pay attention that every nodata pixel will appear too.
+If you want only the footprint of the raster, please use <code><a title="sertit.rasters_rio.get_footprint" href="#sertit.rasters_rio.get_footprint">get_footprint()</a></code>.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;  # Classified raster, with no data set to 255
+&gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+&gt;&gt;&gt; nodata1 == nodata2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Default values for nodata in case of non existing in file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Nodata Vector</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def get_nodata_vector(dst: PATH_ARR_DS,
+                      default_nodata: int = 0) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the nodata vector of a raster as a vector.
+
+    Pay attention that every nodata pixel will appear too.
+    If you want only the footprint of the raster, please use `get_footprint`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # Classified raster, with no data set to 255
+    &gt;&gt;&gt; nodata1 = get_nodata_vec(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     nodata2 = get_nodata_vec(dst)
+    &gt;&gt;&gt; nodata1 == nodata2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        default_nodata (int): Default values for nodata in case of non existing in file
+    Returns:
+        gpd.GeoDataFrame: Nodata Vector
+
+    &#34;&#34;&#34;
+    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    return nodata[nodata.raster_val == 0]  # 0 is the values of not nodata put there by rasterio</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.mask"><code class="name flex">
+<p>def <span class="ident">mask</span>(</p><p>dst, <br>shapes, <br>nodata=None, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Masking a dataset:
+setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.</p>
+<p>Overload of rasterio mask function in order to create a masked_array.</p>
+<p>The <code><a title="sertit.rasters_rio.mask" href="#sertit.rasters_rio.mask">mask()</a></code> function docs can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.
+It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; shape_path = &quot;path\to\shapes.geojson&quot;  # Any vector that geopandas can read
+&gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+&gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
+&gt;&gt;&gt; masked_raster1 == masked_raster2
+True
+&gt;&gt;&gt; meta1 == meta2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
+<dd>Shapes</dd>
+<dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Other rasterio.mask options</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>(np.ma.masked_array, dict): Masked array as a masked array and its metadata</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def mask(dst: PATH_ARR_DS,
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Masking a dataset:
+    setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
+
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
+    &gt;&gt;&gt; masked_raster1 == masked_raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
+    &#34;&#34;&#34;
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.crop"><code class="name flex">
+<p>def <span class="ident">crop</span>(</p><p>dst, <br>shapes, <br>nodata=None, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Cropping a dataset:
+setting nodata outside of the given shapes AND cropping the raster to the shapes extent.</p>
+<p><strong>HOW:</strong></p>
+<p>Overload of rasterio mask function in order to create a masked_array.</p>
+<p>The <code><a title="sertit.rasters_rio.mask" href="#sertit.rasters_rio.mask">mask()</a></code> function docs can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.
+It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; shape_path = &quot;path\to\shapes.geojson&quot;  # Any vector that geopandas can read
+&gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+&gt;&gt;&gt; cropped_raster1, meta1 = crop(raster_path, shapes)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     cropped_raster2, meta2 = crop(dst, shapes)
+&gt;&gt;&gt; cropped_raster1 == cropped_raster2
+True
+&gt;&gt;&gt; meta1 == meta2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
+<dd>Shapes</dd>
+<dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
+<dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Other rasterio.mask options</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>(np.ma.masked_array, dict): Cropped array as a masked array and its metadata</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def crop(dst: PATH_ARR_DS,
+         shapes: Union[Polygon, list],
+         nodata: Optional[int] = None,
+         **kwargs) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Cropping a dataset:
+    setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
+
+    **HOW:**
+
+    Overload of rasterio mask function in order to create a masked_array.
+
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; cropped_raster1, meta1 = crop(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     cropped_raster2, meta2 = crop(dst, shapes)
+    &gt;&gt;&gt; cropped_raster1 == cropped_raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        shapes (Union[Polygon, list]): Shapes
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
+    &#34;&#34;&#34;
+    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.read"><code class="name flex">
+<p>def <span class="ident">read</span>(</p><p>dst, <br>resolution=None, <br>size=None, <br>resampling=Resampling.nearest, <br>masked=True)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Read a raster dataset from a <code>rasterio.Dataset</code> or a path.</p>
+<p>The resolution can be provided (in dataset unit) as:</p>
+<ul>
+<li>a tuple or a list of (X, Y) resolutions</li>
+<li>a float, in which case X resolution = Y resolution</li>
+<li>None, in which case the dataset resolution will be used</li>
+</ul>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; raster1, meta1 = read(raster_path)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;    raster2, meta2 = read(dst)
+&gt;&gt;&gt; raster1 == raster2
+True
+&gt;&gt;&gt; meta1 == meta2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+<dt><strong><code>resolution</code></strong> :&ensp;<code>Union[tuple, list, float]</code></dt>
+<dd>Resolution of the wanted band, in dataset resolution unit (X, Y)</dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>Union[tuple, list]</code></dt>
+<dd>Size of the array (width, height). Not used if resolution is provided.</dd>
+<dt><strong><code>resampling</code></strong> :&ensp;<code>Resampling</code></dt>
+<dd>Resampling method</dd>
+<dt><strong><code>masked</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Get a masked array</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ma.masked_array, dict</code></dt>
+<dd>Masked array corresponding to the raster data and its meta data</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def read(dst: PATH_ARR_DS,
+         resolution: Union[tuple, list, float] = None,
+         size: Union[tuple, list] = None,
+         resampling: Resampling = Resampling.nearest,
+         masked: bool = True) -&gt; (np.ma.masked_array, dict):
+    &#34;&#34;&#34;
+    Read a raster dataset from a `rasterio.Dataset` or a path.
+
+    The resolution can be provided (in dataset unit) as:
+
+    - a tuple or a list of (X, Y) resolutions
+    - a float, in which case X resolution = Y resolution
+    - None, in which case the dataset resolution will be used
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; raster1, meta1 = read(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;    raster2, meta2 = read(dst)
+    &gt;&gt;&gt; raster1 == raster2
+    True
+    &gt;&gt;&gt; meta1 == meta2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        resampling (Resampling): Resampling method
+        masked (bool): Get a masked array
+
+    Returns:
+        np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
+
+    &#34;&#34;&#34;
+    # Get new height and width
+    new_height, new_width = get_new_shape(dst, resolution, size)
+
+    # Read data
+    array = dst.read(out_shape=(dst.count, new_height, new_width),
+                     resampling=resampling,
+                     masked=masked)
+
+    # Update meta
+    dst_transform = dst.transform * dst.transform.scale((dst.width / new_width),
+                                                        (dst.height / new_height))
+    dst_meta = dst.meta.copy()
+    dst_meta.update({&#34;height&#34;: new_height,
+                     &#34;width&#34;: new_width,
+                     &#34;transform&#34;: dst_transform,
+                     &#34;dtype&#34;: array.dtype,
+                     &#34;nodata&#34;: dst.nodata})
+
+    return array, dst_meta</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.write"><code class="name flex">
+<p>def <span class="ident">write</span>(</p><p>raster, <br>path, <br>meta, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Write raster to disk (encapsulation of rasterio's function)</p>
+<p>Metadata will be copied and updated with raster's information (ie. width, height, count, type&hellip;)
+The driver is GTiff by default, and no nodata value is provided.
+The file will be compressed if the raster is a mask (saved as uint8)</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; raster_out = &quot;path\to\out.tif&quot;
+
+&gt;&gt;&gt; # Read raster
+&gt;&gt;&gt; raster, meta = read(raster_path)
+
+&gt;&gt;&gt; # Rewrite it
+&gt;&gt;&gt; write(raster, raster_out, meta)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>raster</code></strong> :&ensp;<code>Union[np.ma.masked_array, np.ndarray]</code></dt>
+<dd>Raster to save on disk</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path where to save it (directories should be existing)</dd>
+<dt><strong><code>meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Basic metadata that will be copied and updated with raster's information</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Overloading metadata, ie <code>nodata=255</code></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write(raster: Union[np.ma.masked_array, np.ndarray],
+          path: str,
+          meta: dict,
+          **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Write raster to disk (encapsulation of rasterio&#39;s function)
+
+    Metadata will be copied and updated with raster&#39;s information (ie. width, height, count, type...)
+    The driver is GTiff by default, and no nodata value is provided.
+    The file will be compressed if the raster is a mask (saved as uint8)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; raster_out = &#34;path\\to\\out.tif&#34;
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(raster_path)
+
+    &gt;&gt;&gt; # Rewrite it
+    &gt;&gt;&gt; write(raster, raster_out, meta)
+    ```
+
+    Args:
+        raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
+        path (str): Path where to save it (directories should be existing)
+        meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
+        **kwargs: Overloading metadata, ie `nodata=255`
+    &#34;&#34;&#34;
+    # Manage raster type (impossible to write boolean arrays)
+    if raster.dtype == bool:
+        raster = raster.astype(np.uint8)
+
+    # Update metadata
+    out_meta = meta.copy()
+
+    # Update raster to be sure to write down correct nodata pixels
+    if isinstance(raster, np.ma.masked_array):
+        raster[raster.mask] = raster.fill_value
+
+    # Force compression and driver (but can be overwritten by kwargs)
+    out_meta[&#34;driver&#34;] = &#34;GTiff&#34;
+
+    # Compress only if uint8 data
+    if raster.dtype == np.uint8:
+        out_meta[&#39;compress&#39;] = &#34;lzw&#34;
+
+    # Update metadata with array data
+    out_meta = update_meta(raster, out_meta)
+
+    # Update metadata with additional params
+    for key, val in kwargs.items():
+        out_meta[key] = val
+
+    # Manage raster shape
+    if len(raster.shape) == 2:
+        raster = np.expand_dims(raster, axis=0)
+
+    # Write product
+    with rasterio.open(path, &#34;w&#34;, **out_meta) as dst:
+        dst.write(raster)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.collocate"><code class="name flex">
+<p>def <span class="ident">collocate</span>(</p><p>master_meta, <br>slave_arr, <br>slave_meta, <br>resampling=Resampling.nearest)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Collocate two georeferenced arrays:
+forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master</em> raster by reprojection.</p>
+<p>Use it like <code>OTB SuperImpose</code>.</p>
+<pre><code class="language-python">&gt;&gt;&gt; master_path = &quot;path\to\master.tif&quot;
+&gt;&gt;&gt; slave_path = &quot;path\to\slave.tif&quot;
+&gt;&gt;&gt; col_path = &quot;path\to\collocated.tif&quot;
+
+&gt;&gt;&gt; # Just open the master data
+&gt;&gt;&gt; with rasterio.open(master_path) as master_dst:
+&gt;&gt;&gt;     # Read slave
+&gt;&gt;&gt;     slave, slave_meta = read(slave_path)
+
+&gt;&gt;&gt;     # Collocate the slave to the master
+&gt;&gt;&gt;     col_arr, col_meta = collocate(master_dst.meta,
+&gt;&gt;&gt;                                   slave,
+&gt;&gt;&gt;                                   slave_meta,
+&gt;&gt;&gt;                                   Resampling.bilinear)
+
+&gt;&gt;&gt; # Write it
+&gt;&gt;&gt; write(col_arr, col_path, col_meta)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>master_meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Master metadata</dd>
+<dt><strong><code>slave_arr</code></strong> :&ensp;<code>np.ma.masked_array</code></dt>
+<dd>Slave array to be collocated</dd>
+<dt><strong><code>slave_meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Slave metadata</dd>
+<dt><strong><code>resampling</code></strong> :&ensp;<code>Resampling</code></dt>
+<dd>Resampling method</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ma.masked_array, dict</code></dt>
+<dd>Collocated array and its metadata</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collocate(master_meta: dict,
+              slave_arr: Union[np.ma.masked_array, np.ndarray],
+              slave_meta: dict,
+              resampling: Resampling = Resampling.nearest) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Collocate two georeferenced arrays:
+    forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
+
+    Use it like `OTB SuperImpose`.
+
+    ```python
+    &gt;&gt;&gt; master_path = &#34;path\\to\\master.tif&#34;
+    &gt;&gt;&gt; slave_path = &#34;path\\to\\slave.tif&#34;
+    &gt;&gt;&gt; col_path = &#34;path\\to\\collocated.tif&#34;
+
+    &gt;&gt;&gt; # Just open the master data
+    &gt;&gt;&gt; with rasterio.open(master_path) as master_dst:
+    &gt;&gt;&gt;     # Read slave
+    &gt;&gt;&gt;     slave, slave_meta = read(slave_path)
+
+    &gt;&gt;&gt;     # Collocate the slave to the master
+    &gt;&gt;&gt;     col_arr, col_meta = collocate(master_dst.meta,
+    &gt;&gt;&gt;                                   slave,
+    &gt;&gt;&gt;                                   slave_meta,
+    &gt;&gt;&gt;                                   Resampling.bilinear)
+
+    &gt;&gt;&gt; # Write it
+    &gt;&gt;&gt; write(col_arr, col_path, col_meta)
+    ```
+
+    Args:
+        master_meta (dict): Master metadata
+        slave_arr (np.ma.masked_array): Slave array to be collocated
+        slave_meta (dict): Slave metadata
+        resampling (Resampling): Resampling method
+
+    Returns:
+        np.ma.masked_array, dict: Collocated array and its metadata
+
+    &#34;&#34;&#34;
+    collocated_arr = np.zeros((master_meta[&#34;count&#34;], master_meta[&#34;height&#34;], master_meta[&#34;width&#34;]),
+                              dtype=master_meta[&#34;dtype&#34;])
+    warp.reproject(source=slave_arr,
+                   destination=collocated_arr,
+                   src_transform=slave_meta[&#34;transform&#34;],
+                   src_crs=slave_meta[&#34;crs&#34;],
+                   dst_transform=master_meta[&#34;transform&#34;],
+                   dst_crs=master_meta[&#34;crs&#34;],
+                   src_nodata=slave_meta[&#34;nodata&#34;],
+                   dst_nodata=slave_meta[&#34;nodata&#34;],
+                   resampling=resampling,
+                   num_threads=MAX_CORES)
+
+    meta = master_meta.copy()
+    meta.update({&#34;dtype&#34;: slave_meta[&#34;dtype&#34;],
+                 &#34;driver&#34;: slave_meta[&#34;driver&#34;],
+                 &#34;nodata&#34;: slave_meta[&#34;nodata&#34;]})
+
+    return collocated_arr, meta</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.sieve"><code class="name flex">
+<p>def <span class="ident">sieve</span>(</p><p>array, <br>out_meta, <br>sieve_thresh, <br>connectivity=4)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Sieving, overloads rasterio function with raster shaped like (1, h, w).</p>
+<p>Forces the output to <code>np.uint8</code> (as only classified rasters should be sieved)</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;  # classified raster
+
+&gt;&gt;&gt; # Read raster
+&gt;&gt;&gt; raster, meta = read(raster_path)
+
+&gt;&gt;&gt; # Rewrite it
+&gt;&gt;&gt; sieved, sieved_meta = sieve(raster, meta, sieve_thresh=20)
+
+&gt;&gt;&gt; # Write it
+&gt;&gt;&gt; raster_out = &quot;path\to\raster_sieved.tif&quot;
+&gt;&gt;&gt; write(sieved, raster_out, sieved_meta)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>array</code></strong> :&ensp;<code>Union[np.ma.masked_array, np.ndarray]</code></dt>
+<dd>Array to sieve</dd>
+<dt><strong><code>out_meta</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Metadata to update</dd>
+<dt><strong><code>sieve_thresh</code></strong> :&ensp;<code>int</code></dt>
+<dd>Sieving threshold in pixels</dd>
+<dt><strong><code>connectivity</code></strong> :&ensp;<code>int</code></dt>
+<dd>Connectivity, either 4 or 8</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>(Union[np.ma.masked_array, np.ndarray], dict): Sieved array and updated meta</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sieve(array: Union[np.ma.masked_array, np.ndarray],
+          out_meta: dict,
+          sieve_thresh: int,
+          connectivity: int = 4) -&gt; (Union[np.ma.masked_array, np.ndarray], dict):
+    &#34;&#34;&#34;
+    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+
+    Forces the output to `np.uint8` (as only classified rasters should be sieved)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;  # classified raster
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(raster_path)
+
+    &gt;&gt;&gt; # Rewrite it
+    &gt;&gt;&gt; sieved, sieved_meta = sieve(raster, meta, sieve_thresh=20)
+
+    &gt;&gt;&gt; # Write it
+    &gt;&gt;&gt; raster_out = &#34;path\\to\\raster_sieved.tif&#34;
+    &gt;&gt;&gt; write(sieved, raster_out, sieved_meta)
+    ```
+
+    Args:
+        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        out_meta (dict): Metadata to update
+        sieve_thresh (int): Sieving threshold in pixels
+        connectivity (int): Connectivity, either 4 or 8
+
+    Returns:
+        (Union[np.ma.masked_array, np.ndarray], dict): Sieved array and updated meta
+    &#34;&#34;&#34;
+    assert connectivity in [4, 8]
+
+    # Read extraction array
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Convert to np.uint8 if needed
+    dtype = np.uint8
+    meta = out_meta.copy()
+    if meta[&#39;dtype&#39;] != dtype:
+        array = array.astype(dtype)
+        meta[&#39;dtype&#39;] = dtype
+
+    # Sieve
+    result_array = np.empty(array.shape, dtype=array.dtype)
+    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+
+    # Use this trick to get the array back to &#39;normal&#39;
+    if expand:
+        result_array = np.expand_dims(result_array, axis=0)
+
+    return result_array, meta</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_dim_img_path"><code class="name flex">
+<p>def <span class="ident">get_dim_img_path</span>(</p><p>dim_path, <br>img_name='*')</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the image path from a <em>BEAM-DIMAP</em> data.</p>
+<p>A <em>BEAM-DIMAP</em> file cannot be opened by rasterio, although its .img file can.</p>
+<pre><code class="language-python">&gt;&gt;&gt; dim_path = &quot;path\to\dimap.dim&quot;  # BEAM-DIMAP image
+&gt;&gt;&gt; img_path = get_dim_img_path(dim_path)
+
+&gt;&gt;&gt; # Read raster
+&gt;&gt;&gt; raster, meta = read(img_path)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dim_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>DIM path (.dim or .data)</dd>
+<dt><strong><code>img_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>.img file name (or regex), in case there are multiple .img files (ie. for S3 data)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>.img file</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_dim_img_path(dim_path: str, img_name: str = &#39;*&#39;) -&gt; str:
+    &#34;&#34;&#34;
+    Get the image path from a *BEAM-DIMAP* data.
+
+    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
+
+    ```python
+    &gt;&gt;&gt; dim_path = &#34;path\\to\\dimap.dim&#34;  # BEAM-DIMAP image
+    &gt;&gt;&gt; img_path = get_dim_img_path(dim_path)
+
+    &gt;&gt;&gt; # Read raster
+    &gt;&gt;&gt; raster, meta = read(img_path)
+    ```
+
+    Args:
+        dim_path (str): DIM path (.dim or .data)
+        img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
+
+    Returns:
+        str: .img file
+    &#34;&#34;&#34;
+    if dim_path.endswith(&#34;.dim&#34;):
+        dim_path = dim_path.replace(&#34;.dim&#34;, &#34;.data&#34;)
+
+    assert dim_path.endswith(&#34;.data&#34;) and os.path.isdir(dim_path)
+
+    return files.get_file_in_dir(dim_path, img_name, extension=&#39;img&#39;)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_extent"><code class="name flex">
+<p>def <span class="ident">get_extent</span>(</p><p>dst)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the extent of a raster as a <code>geopandas.Geodataframe</code>.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+
+&gt;&gt;&gt; extent1 = get_extent(raster_path)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     extent2 = get_extent(dst)
+&gt;&gt;&gt; extent1 == extent2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Extent as a <code>geopandas.Geodataframe</code></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def get_extent(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get the extent of a raster as a `geopandas.Geodataframe`.
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+
+    &gt;&gt;&gt; extent1 = get_extent(raster_path)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     extent2 = get_extent(dst)
+    &gt;&gt;&gt; extent1 == extent2
+    True
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+
+    Returns:
+        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
+    &#34;&#34;&#34;
+    return vectors.get_geodf(geometry=[*dst.bounds], crs=dst.crs)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.get_footprint"><code class="name flex">
+<p>def <span class="ident">get_footprint</span>(</p><p>dst)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Get real footprint of the product (without nodata, in french == emprise utile)</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+
+&gt;&gt;&gt; footprint1 = get_footprint(raster_path)
+
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     footprint2 = get_footprint(dst)
+&gt;&gt;&gt; footprint1 == footprint2
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Footprint as a GeoDataFrame</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_arr_dst
+def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Get real footprint of the product (without nodata, in french == emprise utile)
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+
+    &gt;&gt;&gt; footprint1 = get_footprint(raster_path)
+
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     footprint2 = get_footprint(dst)
+    &gt;&gt;&gt; footprint1 == footprint2
+    ```
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+    Returns:
+        gpd.GeoDataFrame: Footprint as a GeoDataFrame
+    &#34;&#34;&#34;
+    footprint = get_valid_vector(dst)
+
+    return vectors.get_wider_exterior(footprint)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.merge_vrt"><code class="name flex">
+<p>def <span class="ident">merge_vrt</span>(</p><p>crs_paths, <br>crs_merged_path, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Merge rasters as a VRT. Uses <code>gdalbuildvrt</code>.</p>
+<p>See here: <a href="https://gdal.org/programs/gdalbuildvrt.html">https://gdal.org/programs/gdalbuildvrt.html</a></p>
+<p>Creates VRT with relative paths !</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>They should have the same CRS otherwise the mosaic will be false !</p>
+</div>
+<pre><code class="language-python">&gt;&gt;&gt; paths_utm32630 = [&quot;path\to\raster1.tif&quot;, &quot;path\to\raster2.tif&quot;, &quot;path\to\raster3.tif&quot;]
+&gt;&gt;&gt; paths_utm32631 = [&quot;path\to\raster4.tif&quot;, &quot;path\to\raster5.tif&quot;]
+
+&gt;&gt;&gt; mosaic_32630 = &quot;path\to\mosaic_32630.vrt&quot;
+&gt;&gt;&gt; mosaic_32631 = &quot;path\to\mosaic_32631.vrt&quot;
+
+&gt;&gt;&gt; # Create mosaic, one by CRS !
+&gt;&gt;&gt; merge_vrt(paths_utm32630, mosaic_32630)
+&gt;&gt;&gt; merge_vrt(paths_utm32631, mosaic_32631, {&quot;-srcnodata&quot;:255, &quot;-vrtnodata&quot;:0})
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
+<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the merged raster</dd>
+<dt><strong><code>kwargs</code></strong></dt>
+<dd>Other gdlabuildvrt arguments</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+
+    See here: https://gdal.org/programs/gdalbuildvrt.html
+
+    Creates VRT with relative paths !
+
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
+
+    ```python
+    &gt;&gt;&gt; paths_utm32630 = [&#34;path\\to\\raster1.tif&#34;, &#34;path\\to\\raster2.tif&#34;, &#34;path\\to\\raster3.tif&#34;]
+    &gt;&gt;&gt; paths_utm32631 = [&#34;path\\to\\raster4.tif&#34;, &#34;path\\to\\raster5.tif&#34;]
+
+    &gt;&gt;&gt; mosaic_32630 = &#34;path\\to\\mosaic_32630.vrt&#34;
+    &gt;&gt;&gt; mosaic_32631 = &#34;path\\to\\mosaic_32631.vrt&#34;
+
+    &gt;&gt;&gt; # Create mosaic, one by CRS !
+    &gt;&gt;&gt; merge_vrt(paths_utm32630, mosaic_32630)
+    &gt;&gt;&gt; merge_vrt(paths_utm32631, mosaic_32631, {&#34;-srcnodata&#34;:255, &#34;-vrtnodata&#34;:0})
+    ```
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs: Other gdlabuildvrt arguments
+    &#34;&#34;&#34;
+    # Create relative paths
+    vrt_root = os.path.dirname(crs_merged_path)
+    rel_paths = [strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_vrt = strings.to_cmd_string(files.real_rel_path(crs_merged_path, vrt_root))
+
+    # Run cmd
+    arg_list = [val for item in kwargs.items() for val in item]
+    vrt_cmd = [&#34;gdalbuildvrt&#34;, rel_vrt, *rel_paths, *arg_list]
+    misc.run_cli(vrt_cmd, cwd=vrt_root)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.merge_gtiff"><code class="name flex">
+<p>def <span class="ident">merge_gtiff</span>(</p><p>crs_paths, <br>crs_merged_path, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Merge rasters as a GeoTiff.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>They should have the same CRS otherwise the mosaic will be false !</p>
+</div>
+<pre><code class="language-python">&gt;&gt;&gt; paths_utm32630 = [&quot;path\to\raster1.tif&quot;, &quot;path\to\raster2.tif&quot;, &quot;path\to\raster3.tif&quot;]
+&gt;&gt;&gt; paths_utm32631 = [&quot;path\to\raster4.tif&quot;, &quot;path\to\raster5.tif&quot;]
+
+&gt;&gt;&gt; mosaic_32630 = &quot;path\to\mosaic_32630.tif&quot;
+&gt;&gt;&gt; mosaic_32631 = &quot;path\to\mosaic_32631.tif&quot;
+
+# Create mosaic, one by CRS !
+&gt;&gt;&gt; merge_gtiff(paths_utm32630, mosaic_32630)
+&gt;&gt;&gt; merge_gtiff(paths_utm32631, mosaic_32631)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
+<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the merged raster</dd>
+<dt><strong><code>kwargs</code></strong></dt>
+<dd>Other rasterio.merge arguments
+More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge">here</a></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+    &#34;&#34;&#34;
+    Merge rasters as a GeoTiff.
+
+    .. WARNING::
+        They should have the same CRS otherwise the mosaic will be false !
+
+    ```python
+    &gt;&gt;&gt; paths_utm32630 = [&#34;path\\to\\raster1.tif&#34;, &#34;path\\to\\raster2.tif&#34;, &#34;path\\to\\raster3.tif&#34;]
+    &gt;&gt;&gt; paths_utm32631 = [&#34;path\\to\\raster4.tif&#34;, &#34;path\\to\\raster5.tif&#34;]
+
+    &gt;&gt;&gt; mosaic_32630 = &#34;path\\to\\mosaic_32630.tif&#34;
+    &gt;&gt;&gt; mosaic_32631 = &#34;path\\to\\mosaic_32631.tif&#34;
+
+    # Create mosaic, one by CRS !
+    &gt;&gt;&gt; merge_gtiff(paths_utm32630, mosaic_32630)
+    &gt;&gt;&gt; merge_gtiff(paths_utm32631, mosaic_32631)
+    ```
+
+    Args:
+        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_merged_path (str): Path to the merged raster
+        kwargs: Other rasterio.merge arguments
+            More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
+    &#34;&#34;&#34;
+    # Open datasets for merging
+    crs_datasets = []
+    try:
+        for path in crs_paths:
+            crs_datasets.append(rasterio.open(path))
+
+        # Merge all datasets
+        merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
+        merged_meta = crs_datasets[0].meta.copy()
+        merged_meta.update({&#34;driver&#34;: &#34;GTiff&#34;,
+                            &#34;height&#34;: merged_array.shape[1],
+                            &#34;width&#34;: merged_array.shape[2],
+                            &#34;transform&#34;: merged_transform})
+    finally:
+        # Close all datasets
+        for dataset in crs_datasets:
+            dataset.close()
+
+    # Save merge datasets
+    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.unpackbits"><code class="name flex">
+<p>def <span class="ident">unpackbits</span>(</p><p>array, <br>nof_bits)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Function found here:
+<a href="https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types">https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types</a></p>
+<pre><code class="language-python">&gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+array([[1, 1, 3],
+       [4, 2, 0],
+       [4, 3, 2]], dtype=uint8)
+
+# Unpack 8 bits (8*1, as itemsize of uint8 is 1)
+&gt;&gt;&gt; unpackbits(bit_array, 8)
+array([[[1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0, 0, 0]],
+       [[0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]],
+       [[0, 0, 1, 0, 0, 0, 0, 0],
+        [1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>array</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Array to unpack</dd>
+<dt><strong><code>nof_bits</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of bits to unpack</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.ndarray</code></dt>
+<dd>Unpacked array</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unpackbits(array: np.ndarray, nof_bits: int) -&gt; np.ndarray:
+    &#34;&#34;&#34;
+    Function found here:
+    https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
+
+
+    ```python
+    &gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+    array([[1, 1, 3],
+           [4, 2, 0],
+           [4, 3, 2]], dtype=uint8)
+
+    # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
+    &gt;&gt;&gt; unpackbits(bit_array, 8)
+    array([[[1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0]],
+           [[0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0]],
+           [[0, 0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
+    ```
+
+    Args:
+        array (np.ndarray): Array to unpack
+        nof_bits (int): Number of bits to unpack
+
+    Returns:
+        np.ndarray: Unpacked array
+    &#34;&#34;&#34;
+    xshape = list(array.shape)
+    array = array.reshape([-1, 1])
+    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+    return (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters_rio.read_bit_array"><code class="name flex">
+<p>def <span class="ident">read_bit_array</span>(</p><p>bit_mask, <br>bit_id)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)</p>
+<pre><code class="language-python">&gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+array([[1, 1, 3],
+       [4, 2, 0],
+       [4, 3, 2]], dtype=uint8)
+
+# Get the 2nd bit array
+&gt;&gt;&gt; read_bit_array(bit_array, 2)
+array([[0, 0, 0],
+       [1, 0, 0],
+       [1, 0, 0]], dtype=uint8)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>bit_mask</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Bit array to read</dd>
+<dt><strong><code>bit_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>Bit ID of the slice to be read
+Example: read the bit 0 of the mask as a cloud mask (Theia)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[np.ndarray, list]</code></dt>
+<dd>Binary mask or list of binary masks if a list of bit_id is given</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -&gt; Union[np.ndarray, list]:
+    &#34;&#34;&#34;
+    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
+
+    ```python
+    &gt;&gt;&gt; bit_array = np.random.randint(5, size=[3,3])
+    array([[1, 1, 3],
+           [4, 2, 0],
+           [4, 3, 2]], dtype=uint8)
+
+    # Get the 2nd bit array
+    &gt;&gt;&gt; read_bit_array(bit_array, 2)
+    array([[0, 0, 0],
+           [1, 0, 0],
+           [1, 0, 0]], dtype=uint8)
+    ```
+
+    Args:
+        bit_mask (np.ndarray): Bit array to read
+        bit_id (int): Bit ID of the slice to be read
+          Example: read the bit 0 of the mask as a cloud mask (Theia)
+
+    Returns:
+        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+    &#34;&#34;&#34;
+    # Get the number of bits
+    nof_bits = 8 * bit_mask.dtype.itemsize
+
+    # Read cloud mask as bits
+    msk = unpackbits(bit_mask, nof_bits)
+
+    # Only keep the bit number bit_id and reshape the vector
+    if isinstance(bit_id, list):
+        bit_arr = [msk[..., bid] for bid in bit_id]
+    else:
+        bit_arr = msk[..., bit_id]
+
+    return bit_arr</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="Home" href="/sertit-utils/">
+<img src="https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit_utils.png"
+alt="logo"
+style="width:40%;"/>
+</a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="sertit" href="index.html">sertit</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="">
+<li><code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="sertit.rasters_rio.path_arr_dst" href="#sertit.rasters_rio.path_arr_dst">path_arr_dst</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_new_shape" href="#sertit.rasters_rio.get_new_shape">get_new_shape</a></code></li>
+<li><code><a title="sertit.rasters_rio.update_meta" href="#sertit.rasters_rio.update_meta">update_meta</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_nodata_mask" href="#sertit.rasters_rio.get_nodata_mask">get_nodata_mask</a></code></li>
+<li><code><a title="sertit.rasters_rio.vectorize" href="#sertit.rasters_rio.vectorize">vectorize</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_valid_vector" href="#sertit.rasters_rio.get_valid_vector">get_valid_vector</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_nodata_vector" href="#sertit.rasters_rio.get_nodata_vector">get_nodata_vector</a></code></li>
+<li><code><a title="sertit.rasters_rio.mask" href="#sertit.rasters_rio.mask">mask</a></code></li>
+<li><code><a title="sertit.rasters_rio.crop" href="#sertit.rasters_rio.crop">crop</a></code></li>
+<li><code><a title="sertit.rasters_rio.read" href="#sertit.rasters_rio.read">read</a></code></li>
+<li><code><a title="sertit.rasters_rio.write" href="#sertit.rasters_rio.write">write</a></code></li>
+<li><code><a title="sertit.rasters_rio.collocate" href="#sertit.rasters_rio.collocate">collocate</a></code></li>
+<li><code><a title="sertit.rasters_rio.sieve" href="#sertit.rasters_rio.sieve">sieve</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_dim_img_path" href="#sertit.rasters_rio.get_dim_img_path">get_dim_img_path</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_extent" href="#sertit.rasters_rio.get_extent">get_extent</a></code></li>
+<li><code><a title="sertit.rasters_rio.get_footprint" href="#sertit.rasters_rio.get_footprint">get_footprint</a></code></li>
+<li><code><a title="sertit.rasters_rio.merge_vrt" href="#sertit.rasters_rio.merge_vrt">merge_vrt</a></code></li>
+<li><code><a title="sertit.rasters_rio.merge_gtiff" href="#sertit.rasters_rio.merge_gtiff">merge_gtiff</a></code></li>
+<li><code><a title="sertit.rasters_rio.unpackbits" href="#sertit.rasters_rio.unpackbits">unpackbits</a></code></li>
+<li><code><a title="sertit.rasters_rio.read_bit_array" href="#sertit.rasters_rio.read_bit_array">read_bit_array</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

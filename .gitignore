@@ -12,7 +12,3 @@ build/
 *.egg-info/
 dist
 
-# Doc
-doc
-!doc/index.html
-!doc/sertit_utils.png
