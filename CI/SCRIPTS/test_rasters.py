@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing raster functions (with XARRAY) """
 import os
+import shutil
 import tempfile
 
 import geopandas as gpd
@@ -36,7 +37,6 @@ def test_rasters():
     raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
     raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
     raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
-    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
     mask_path = os.path.join(RASTER_DATA, "raster_mask.geojson")
     extent_path = os.path.join(RASTER_DATA, "extent.geojson")
     footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
@@ -46,7 +46,7 @@ def test_rasters():
 
     # Create tmp file
     # VRT needs to be build on te same disk
-    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         # tmp_dir = os.path.join(RASTER_DATA, "OUTPUT_XARRAY")
         # os.makedirs(tmp_dir, exist_ok=True)
 
@@ -127,12 +127,6 @@ def test_rasters():
                 method="max",
             )
 
-            # Merge VRT
-            raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-            rasters.merge_vrt(
-                [raster_path, raster_to_merge_path], raster_merged_vrt_out
-            )
-
             # Vectorize
             val = 2
             vect = rasters.vectorize(raster_path)
@@ -164,12 +158,27 @@ def test_rasters():
         ci.assert_raster_equal(xda_cropped, raster_cropped_xarray_path)
         ci.assert_raster_equal(xda_sieved, raster_sieved_path)
         ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
-        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
         ci.assert_raster_equal(raster_path, xds_out)
         ci.assert_raster_equal(xds_masked, raster_masked_path)
         ci.assert_raster_equal(xds_cropped, raster_cropped_xarray_path)
         ci.assert_raster_equal(xds_sieved, raster_sieved_path)
+
+
+@pytest.mark.skipif(
+    shutil.which("gdalbuildvrt") is not None,
+    reason="Only works if gdalbuildvrt can be found.",
+)
+def test_vrt():
+    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
+    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
+    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+
+    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+        # Merge VRT
+        raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
+        rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+    ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
 def test_dim():
@@ -220,16 +229,16 @@ def test_xarray_fct():
     # Mtd
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     xda = rasters.read(raster_path)
-    sum = xda + xda
-    sum = rasters.set_metadata(sum, xda, "sum")
+    xda_sum = xda + xda
+    xda_sum = rasters.set_metadata(xda_sum, xda, "sum")
 
-    assert sum.rio.crs == xda.rio.crs
-    assert np.isnan(sum.rio.nodata)
-    assert sum.rio.encoded_nodata == xda.rio.encoded_nodata
-    assert sum.attrs == xda.attrs
-    assert sum.encoding == xda.encoding
-    assert sum.rio.transform() == xda.rio.transform()
-    assert sum.rio.width == xda.rio.width
-    assert sum.rio.height == xda.rio.height
-    assert sum.rio.count == xda.rio.count
-    assert sum.name == "sum"
+    assert xda_sum.rio.crs == xda.rio.crs
+    assert np.isnan(xda_sum.rio.nodata)
+    assert xda_sum.rio.encoded_nodata == xda.rio.encoded_nodata
+    assert xda_sum.attrs == xda.attrs
+    assert xda_sum.encoding == xda.encoding
+    assert xda_sum.rio.transform() == xda.rio.transform()
+    assert xda_sum.rio.width == xda.rio.width
+    assert xda_sum.rio.height == xda.rio.height
+    assert xda_sum.rio.count == xda.rio.count
+    assert xda_sum.name == "sum"

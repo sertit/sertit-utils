@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing raster function (with rasterio) """
 import os
+import shutil
 import tempfile
 
 import geopandas as gpd
@@ -35,7 +36,6 @@ def test_rasters_rio():
     raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
     raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
     raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
-    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
     mask_path = os.path.join(RASTER_DATA, "raster_mask.geojson")
     extent_path = os.path.join(RASTER_DATA, "extent.geojson")
     footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
@@ -109,12 +109,6 @@ def test_rasters_rio():
                 method="max",
             )
 
-            # Merge VRT
-            raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-            rasters_rio.merge_vrt(
-                [raster_path, raster_to_merge_path], raster_merged_vrt_out
-            )
-
             # Vectorize
             val = 2
             vect = rasters_rio.vectorize(raster_path)
@@ -140,7 +134,24 @@ def test_rasters_rio():
         ci.assert_raster_equal(raster_cropped_out, raster_cropped_path)
         ci.assert_raster_equal(sieve_out, raster_sieved_path)
         ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
-        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+
+
+@pytest.mark.skipif(
+    shutil.which("gdalbuildvrt") is not None,
+    reason="Only works if gdalbuildvrt can be found.",
+)
+def test_vrt():
+    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
+    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
+    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+
+    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+        # Merge VRT
+        raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
+        rasters_rio.merge_vrt(
+            [raster_path, raster_to_merge_path], raster_merged_vrt_out
+        )
+    ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
 def test_dim():
