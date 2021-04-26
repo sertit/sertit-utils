@@ -20,7 +20,7 @@ pytest3.7:
     - pip install -r requirements.txt
     - pip install -e .[full]
   script:
-    - pytest -v --durations=0 --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS
+    - tox
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - linux
