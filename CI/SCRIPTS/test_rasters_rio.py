@@ -137,7 +137,7 @@ def test_rasters_rio():
 
 
 @pytest.mark.skipif(
-    shutil.which("gdalbuildvrt") is not None,
+    shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():

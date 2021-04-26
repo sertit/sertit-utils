@@ -32,7 +32,7 @@ def test_b2snap():
 
 
 @pytest.mark.skipif(
-    shutil.which("gpt") is not None, reason="Only works if SNAP GPT's exe can be found."
+    shutil.which("gpt") is None, reason="Only works if SNAP GPT's exe can be found."
 )
 def test_snap():
     # Do not test everything here, depends on the computer...
