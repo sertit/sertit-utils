@@ -12,8 +12,8 @@ lint:
   tags:
     - linux
 
-pytest:
-  image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
+pytest3.7:
+  image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
   stage: test
   before_script:
     - python -m pip install --upgrade pip
