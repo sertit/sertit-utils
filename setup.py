@@ -6,13 +6,12 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='sertit',
-    version=__version__,  # Semantic Versioning (see https://semver.org/)
+    version=__version__,
     author="Rémi BRAUN",
-    author_email="remi.braun@unistra.fr",
+    author_email="dev-sertit@unistra.fr",
     description="SERTIT python library for generic tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://code.sertit.unistra.fr/SERTIT/sertit-utils",
     packages=setuptools.find_packages(),
     install_requires=[
         'tqdm',
@@ -31,7 +30,23 @@ setuptools.setup(
         'vectors': ["geopandas"]
     },
     classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Natural Language :: English",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
-        "Operating System :: OS Independent"
-    ]
+        "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering :: GIS",
+        "Topic :: Software Development :: Libraries :: Python Modules"
+    ],
+    package_data = {"": ["LICENSE", "NOTICE"]},
+    include_package_data=True,
+    python_requires=">=3.7",
+    project_urls={
+        "Bug Tracker": "https://github.com/sertit/sertit-utils/issues/",
+        "Documentation": "https://eodag.readthedocs.io",
+        "Source Code": "https://github.com/sertit/sertit-utils",
+    },
 )
