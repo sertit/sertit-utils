@@ -1,6 +1,24 @@
-Library gathering utils functions for all SERTIT's projects.
+Library gathering functions for all SERTIT's projects.
 
-Find the API documentation [**here**](https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit).
+Find the API documentation [**here**](https://sertit.github.io/sertit-utils/).
+
+# Installing
+
+For installing this library to your environment, please type this:
+
+- in your console: `pip install sertit[full]`
+
+`[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas`
+(with GDAL installation issues on Windows, so please install them from wheels that you can
+find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)).
+
+However, if you do not need everything, you can type instead:
+
+- *nothing*, and you won't need `rasterio`, `rioxarray` or `geopandas`: `pip install sertit --extra-index-url ...`
+- `[vectors]`, and you won't need `rasterio` or `rioxarray`: `pip install sertit[vectors] --extra-index-url ...`
+- `[rasters]`, and you won't need `rioxarray`: `pip install sertit[rasters] --extra-index-url ...`
+- `[rasters_rio]`: `pip install sertit[rasters_rio] --extra-index-url ...`
+- `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
 
 # What is in it ?
 ## Files
@@ -63,27 +81,6 @@ when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster arra
 ## SNAP
 - Function converting bytes to SNAP understanding
 - Function creating a SNAP optimized commande line
-
-# Installing
-
-For installing this library to your environment, please type this:
-
-- in your console: `pip install --index-url https://%GITLAB_SERTIT_READ_TOKEN%:
-  %GITLAB_SERTIT_READ_PWD%@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
-- type this in your `requirement.txt`:  
-    `--extra-index-url https://${GITLAB_SERTIT_READ_TOKEN}:
-  ${GITLAB_SERTIT_READ_PWD}@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]`
-
-`[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas` 
-(with GDAL installation issues on Windows, so please install them from wheels that you can find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)). 
-
-However, if you do not need everything, you can type instead:
-
-- *nothing*, and you won't need `rasterio`, `rioxarray` or `geopandas`: `pip install sertit --extra-index-url ...`
-- `[vectors]`, and you won't need `rasterio` or `rioxarray`: `pip install sertit[vectors] --extra-index-url ...`
-- `[rasters]`, and you won't need `rioxarray`: `pip install sertit[rasters] --extra-index-url ...`
-- `[rasters_rio]`: `pip install sertit[rasters_rio] --extra-index-url ...`
-- `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
 
 # Documentation
 
