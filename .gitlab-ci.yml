@@ -13,6 +13,11 @@ lint:
     - flake8 .
   tags:
     - linux
+  except:
+    changes:
+      - "*.md"
+      - sertit/version.py
+      - doc_template/*
 
 pytest:
   image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
