@@ -31,7 +31,9 @@ def test_b2snap():
     assert snap.bytes2snap(32000) == "31K"
 
 
-@pytest.mark.skipif(shutil.which("gpt") is not None, reason="Only works if SNAP GPT's exe can be found.")
+@pytest.mark.skipif(
+    shutil.which("gpt") is not None, reason="Only works if SNAP GPT's exe can be found."
+)
 def test_snap():
     # Do not test everything here, depends on the computer...
     cli = snap.get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
