@@ -5,8 +5,10 @@ stages:
   - docs
 
 lint:
+  image: python:3.7-buster
   stage: build
   script:
+    - python -m pip install --upgrade pip
     - pip install flake8
     - flake8 .
   tags:
