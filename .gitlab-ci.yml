@@ -9,6 +9,8 @@ lint:
   script:
     - pip install flake8
     - flake8 .
+  tags:
+    - linux
 
 pytest:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
