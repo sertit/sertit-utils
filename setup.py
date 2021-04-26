@@ -45,7 +45,7 @@ setuptools.setup(
     python_requires=">=3.7",
     project_urls={
         "Bug Tracker": "https://github.com/sertit/sertit-utils/issues/",
-        "Documentation": "https://corteva.github.io/sertit-utils/",
+        "Documentation": "https://sertit.github.io/sertit-utils/sertit/",
         "Source Code": "https://github.com/sertit/sertit-utils",
     },
 )

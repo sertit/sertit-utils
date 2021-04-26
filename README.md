@@ -87,7 +87,7 @@ when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster arra
 An HTML documentation is provided to document the code.
 It can be found:
 
-- online [here](https://sertit.github.io/sertit-utils/)),
+- online ([here](https://sertit.github.io/sertit-utils/)),
 - on git, in `docs`.
   To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
   To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`
