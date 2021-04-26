@@ -17,16 +17,22 @@
 """ Script testing SNAP functions """
 
 import logging
+import shutil
+
+import pytest
 
 from sertit import snap
 
 LOGGER = logging.getLogger("Test_logger")
 
 
-def test_snap():
+def test_b2snap():
     """Testing SNAP functions"""
     assert snap.bytes2snap(32000) == "31K"
 
+
+@pytest.mark.skipif(shutil.which("gpt") is not None, reason="Only works if SNAP GPT's exe can be found.")
+def test_snap():
     # Do not test everything here, depends on the computer...
     cli = snap.get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
     must_appear = [
