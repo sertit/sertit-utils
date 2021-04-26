@@ -43,7 +43,7 @@ upload_wheel:linux:
   script:
     - pip install twine
     - python setup.py sdist bdist_wheel
-    - TWINE_PASSWORD=${PYPI_PWD} TWINE_USERNAME=${PYPI_NAME} python -m twine upload dist/*
+    - TWINE_PASSWORD=${PYPI_PWD} TWINE_USERNAME=${PYPI_TOKEN} python -m twine upload dist/*
   tags:
     - linux
   only:
