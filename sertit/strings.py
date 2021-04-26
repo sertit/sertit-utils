@@ -19,7 +19,7 @@
 import argparse
 import logging
 import re
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Union
 
 from sertit.logs import SU_NAME
@@ -63,8 +63,10 @@ def str_to_bool(bool_str: str) -> bool:
     elif bool_str.lower() in false_str:
         bool_val = False
     else:
-        raise ValueError(f"Invalid true or false value, "
-                         f"should be {true_str} if True or {false_str} if False, not {bool_str}")
+        raise ValueError(
+            f"Invalid true or false value, "
+            f"should be {true_str} if True or {false_str} if False, not {bool_str}"
+        )
     return bool_val
 
 
@@ -97,10 +99,10 @@ def str_to_verbosity(verbosity_str: str) -> int:
     Returns:
         logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
     """
-    debug_str = ('debug', 'd', 10)
-    info_str = ('info', 'i', 20)
-    warn_str = ('warning', 'w', 'warn', 30)
-    err_str = ('error', 'e', 'err', 40)
+    debug_str = ("debug", "d", 10)
+    info_str = ("info", "i", 20)
+    warn_str = ("warning", "w", "warn", 30)
+    err_str = ("error", "e", "err", 40)
 
     if isinstance(verbosity_str, str):
         verbosity_str = verbosity_str.lower()
@@ -114,15 +116,17 @@ def str_to_verbosity(verbosity_str: str) -> int:
     elif verbosity_str in err_str:
         verbosity = logging.ERROR
     else:
-        raise argparse.ArgumentTypeError(f'Incorrect logging level value: {verbosity_str}, '
-                                         f'should be {info_str}, {debug_str}, {warn_str} or {err_str}')
+        raise argparse.ArgumentTypeError(
+            f"Incorrect logging level value: {verbosity_str}, "
+            f"should be {info_str}, {debug_str}, {warn_str} or {err_str}"
+        )
 
     return verbosity
 
 
-def str_to_list(list_str: Union[str, list],
-                additional_separator: str = '',
-                case: str = None) -> list:
+def str_to_list(
+    list_str: Union[str, list], additional_separator: str = "", case: str = None
+) -> list:
     """
     Convert str to list with `,`, `;`, ` ` separators.
 
@@ -140,24 +144,26 @@ def str_to_list(list_str: Union[str, list],
     """
     if isinstance(list_str, str):
         # Concatenate separators
-        separators = ',|;| '
+        separators = ",|;| "
         if additional_separator:
-            separators += '|' + additional_separator
+            separators += "|" + additional_separator
 
         # Split
         listed_str = re.split(separators, list_str)
     elif isinstance(list_str, list):
         listed_str = list_str
     else:
-        raise ValueError(f"List should be given as a string or a list of string: {list_str}")
+        raise ValueError(
+            f"List should be given as a string or a list of string: {list_str}"
+        )
 
     out_list = []
     for item in listed_str:
         # Check if there are null items
         if item:
-            if case == 'lower':
+            if case == "lower":
                 item_case = item.lower()
-            elif case == 'upper':
+            elif case == "upper":
                 item_case = item.upper()
             else:
                 item_case = item
@@ -167,7 +173,9 @@ def str_to_list(list_str: Union[str, list],
     return out_list
 
 
-def str_to_date(date_str: Union[str, datetime], date_format: str = DATE_FORMAT) -> datetime:
+def str_to_date(
+    date_str: Union[str, datetime], date_format: str = DATE_FORMAT
+) -> datetime:
     """
     Convert string to a `datetime.datetime`.
 
@@ -206,23 +214,29 @@ def str_to_date(date_str: Union[str, datetime], date_format: str = DATE_FORMAT) 
         try:
             if date_str.lower() == "now":
                 # Now with correct format (no microseconds if not specified and so on)
-                dtm = datetime.strptime(datetime.today().strftime(date_format), date_format)
+                dtm = datetime.strptime(
+                    datetime.today().strftime(date_format), date_format
+                )
             else:
                 dtm = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
-            json_date_format = '%Y-%m-%d'
+            json_date_format = "%Y-%m-%d"
             try:
                 dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
-                raise ValueError(f"Invalid date format: {date_str}; should be {date_format} "
-                                 f"or {json_date_format}") from ex
+                raise ValueError(
+                    f"Invalid date format: {date_str}; should be {date_format} "
+                    f"or {json_date_format}"
+                ) from ex
     return dtm
 
 
-def str_to_list_of_dates(date_str: Union[list, str],
-                         date_format: str = DATE_FORMAT,
-                         additional_separator: str = '') -> list:
+def str_to_list_of_dates(
+    date_str: Union[list, str],
+    date_format: str = DATE_FORMAT,
+    additional_separator: str = "",
+) -> list:
     """
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -298,7 +312,7 @@ def snake_to_camel_case(snake_str: str) -> str:
     Returns:
         str: String formatted in CamelCase
     """
-    return ''.join((w.capitalize() for w in snake_str.split('_')))
+    return "".join((w.capitalize() for w in snake_str.split("_")))
 
 
 def camel_to_snake_case(snake_str: str) -> str:
@@ -316,4 +330,6 @@ def camel_to_snake_case(snake_str: str) -> str:
     Returns:
         str: String formatted in snake_case
     """
-    return ''.join(['_' + c.lower() if c.isupper() else c for c in snake_str]).lstrip('_')
+    return "".join(["_" + c.lower() if c.isupper() else c for c in snake_str]).lstrip(
+        "_"
+    )

@@ -16,9 +16,9 @@
 # limitations under the License.
 """ Network control utils """
 
+import logging
 import os
 import time
-import logging
 from random import Random
 from typing import Callable
 
@@ -27,13 +27,15 @@ logger = logging.getLogger(__name__)
 
 # pylint: disable=R0913
 # Too many arguments (7/5) (too-many-arguments)
-def exponential_backoff(network_request: Callable,
-                        wait_time_slot: float,
-                        increase_factor: float,
-                        max_wait: float,
-                        max_retries: int,
-                        desc: str,
-                        random_state=None) -> None:
+def exponential_backoff(
+    network_request: Callable,
+    wait_time_slot: float,
+    increase_factor: float,
+    max_wait: float,
+    max_retries: int,
+    desc: str,
+    random_state=None,
+) -> None:
     """
     Implementation of the standard Exponential Backoff algorithm (https://en.wikipedia.org/wiki/Exponential_backoff)
 
@@ -65,34 +67,46 @@ def exponential_backoff(network_request: Callable,
         random_state (int): Seed to the random number generator (optional)
     """
 
-    abs_max_tries = int(os.environ.get('EXP_BACK_OFF_ABS_MAX_RETRIES', '100'))
+    abs_max_tries = int(os.environ.get("EXP_BACK_OFF_ABS_MAX_RETRIES", "100"))
     if abs_max_tries <= 2:
-        raise Exception("Environment variable 'EXP_BACK_OFF_ABS_MAX_RETRIES' must be positive finite integer greater "
-                        "than 2")
+        raise Exception(
+            "Environment variable 'EXP_BACK_OFF_ABS_MAX_RETRIES' must be positive finite integer greater "
+            "than 2"
+        )
 
     if not float(wait_time_slot) == wait_time_slot or wait_time_slot <= 0.0:
-        raise TypeError(f"Variable 'wait_time_slot' "
-                        f"(current value {wait_time_slot}) must be float strictly greater than 0.0")
+        raise TypeError(
+            f"Variable 'wait_time_slot' "
+            f"(current value {wait_time_slot}) must be float strictly greater than 0.0"
+        )
 
     if not float(increase_factor) == increase_factor or increase_factor <= 0.0:
-        raise TypeError(f"Variable 'increase_factor' (current value {increase_factor}) must be float strictly greater "
-                        f"than 0.0")
+        raise TypeError(
+            f"Variable 'increase_factor' (current value {increase_factor}) must be float strictly greater "
+            f"than 0.0"
+        )
 
     if not float(max_wait) == max_wait or max_wait <= 0.0:
-        raise TypeError(f"Variable 'max_wait' (current value {max_wait}) must be float strictly greater "
-                        f"than 0.0")
+        raise TypeError(
+            f"Variable 'max_wait' (current value {max_wait}) must be float strictly greater "
+            f"than 0.0"
+        )
 
     if not int(max_retries) == max_retries or max_retries <= 2:
-        raise TypeError(f"Variable 'max_retries' (current value {max_retries}) must be integer strictly greater "
-                        f"than 2")
+        raise TypeError(
+            f"Variable 'max_retries' (current value {max_retries}) must be integer strictly greater "
+            f"than 2"
+        )
 
     if random_state is not None and not int(random_state) == random_state:
         raise TypeError(
-            f"Variable 'random_state' (current value {random_state}) must be 'None' or integer value")
+            f"Variable 'random_state' (current value {random_state}) must be 'None' or integer value"
+        )
 
-    if desc == '':
+    if desc == "":
         raise TypeError(
-            f"Variable 'desc' (current value {desc}) must be non empty string")
+            f"Variable 'desc' (current value {desc}) must be non empty string"
+        )
 
     real_max_tries = min(max_retries, abs_max_tries)
     rng = Random(random_state)
@@ -108,16 +122,21 @@ def exponential_backoff(network_request: Callable,
         logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     for i in range(real_max_tries - 2):  # Avoids infinite loop
-        random_scale = rng.randint(0, 2**i - 1)
+        random_scale = rng.randint(0, 2 ** i - 1)
         curr_wait_time = wait_time_slot * increase_factor ** random_scale
 
-        logger.info('Retrying action %s in %s seconds...', desc, curr_wait_time)
+        logger.info("Retrying action %s in %s seconds...", desc, curr_wait_time)
 
         cumulated_wait_time += curr_wait_time
         if cumulated_wait_time > max_wait:
-            logger.error("Waited %s seconds : Maximum wait time (%s) reached\n !!! Aborting !!!",
-                         cumulated_wait_time, max_wait)
-            raise TimeoutError(f"About to exceed maximum wait time {max_wait} for action {desc}")
+            logger.error(
+                "Waited %s seconds : Maximum wait time (%s) reached\n !!! Aborting !!!",
+                cumulated_wait_time,
+                max_wait,
+            )
+            raise TimeoutError(
+                f"About to exceed maximum wait time {max_wait} for action {desc}"
+            )
 
         time.sleep(curr_wait_time)
         # pylint: disable=W0703
@@ -125,7 +144,9 @@ def exponential_backoff(network_request: Callable,
         try:
             return network_request()
         except Exception as ex:
-            logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
+            logger.error(
+                "Action '%s' failed with exception: %s", desc, ex, exc_info=True
+            )
 
     # Final blind try and hope for the best
     return network_request()

@@ -1,11 +1,12 @@
 import setuptools
+
 from sertit import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='sertit',
+    name="sertit",
     version=__version__,
     author="Rémi BRAUN",
     author_email="dev-sertit@unistra.fr",
@@ -14,20 +15,16 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
-        'tqdm',
+        "tqdm",
         "numpy",
         "lxml",
     ],
     extras_require={
-        'colorlog': ["colorlog"],
-        'full': ["geopandas",
-                 "rioxarray",
-                 "colorlog"],
-        'rasters_rio': ["geopandas",
-                        "rasterio"],
-        'rasters': ["geopandas",
-                    "rioxarray"],
-        'vectors': ["geopandas"]
+        "colorlog": ["colorlog"],
+        "full": ["geopandas", "rioxarray", "colorlog"],
+        "rasters_rio": ["geopandas", "rasterio"],
+        "rasters": ["geopandas", "rioxarray"],
+        "vectors": ["geopandas"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -37,11 +34,13 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: GIS",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    package_data = {"": ["LICENSE", "NOTICE"]},
+    package_data={"": ["LICENSE", "NOTICE"]},
     include_package_data=True,
     python_requires=">=3.7",
     project_urls={

@@ -18,17 +18,16 @@
 import os
 import tempfile
 
-import pytest
-
 import geopandas as gpd
+import pytest
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import RASTER_DATA, FILE_DATA, GEO_DATA
-from sertit import ci, rasters_rio
+from CI.SCRIPTS.script_utils import FILE_DATA, GEO_DATA, RASTER_DATA
+from sertit import ci, misc, rasters_rio
 
 
 def test_assert():
-    """ Test CI functions """
+    """Test CI functions"""
     # Dirs
     dir2 = os.path.join(FILE_DATA, "core")
 
@@ -65,7 +64,7 @@ def test_assert():
         rasters_rio.write(arr, raster_float_path, meta)
 
         # Slightly change it
-        offset = 1E-07
+        offset = 1e-07
         arr += offset
         meta["transform"].shear(offset, offset)
         raster_almost_path = os.path.join(tmp, "raster_almost.tif")
@@ -77,7 +76,7 @@ def test_assert():
             ci.assert_raster_almost_equal(raster_path, raster2_path)
 
         with pytest.raises(AssertionError):
-            offset = 1E-05
+            offset = 1e-05
             arr += offset
             meta["transform"].shear(offset, offset)
             raster_too_much_path = os.path.join(tmp, "raster_too_much.tif")
@@ -86,7 +85,9 @@ def test_assert():
 
     # XML
     xml_folder = os.path.join(FILE_DATA, "LM05_L1TP_200030_20121230_20200820_02_T2_CI")
-    xml_path = os.path.join(xml_folder, "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
+    xml_path = os.path.join(
+        xml_folder, "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    )
     xml_bad_path = os.path.join(xml_folder, "false_xml.xml")
     xml_ok = etree.parse(xml_path).getroot()
     xml_nok = etree.parse(xml_bad_path).getroot()
@@ -96,11 +97,12 @@ def test_assert():
         ci.assert_xml_equal(xml_ok, xml_nok)
 
 
+@pytest.mark.skipif(not misc.in_docker(), reason="Only works in docker")
 def test_mnt():
-    """ Test mounted directories """
-    assert ci.get_db2_path() == '/mnt/ds2_db2'
-    assert ci.get_db3_path() == '/mnt/ds2_db3'
-    assert ci.get_db4_path() == '/mnt/ds2_db4'
+    """Test mounted directories"""
+    assert ci.get_db2_path() == "/mnt/ds2_db2"
+    assert ci.get_db3_path() == "/mnt/ds2_db3"
+    assert ci.get_db4_path() == "/mnt/ds2_db4"
 
     with pytest.raises(NotADirectoryError):
         ci._get_db_path(5)

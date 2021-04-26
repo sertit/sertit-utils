@@ -17,21 +17,20 @@
 """ Script testing the files """
 import os
 import tempfile
+from datetime import date, datetime
 
-import numpy as np
 import geopandas as gpd
-from datetime import datetime, date
-
+import numpy as np
 import pytest
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import Polarization, FILE_DATA
-from sertit import files, misc, ci
 from CI.SCRIPTS import script_utils
+from CI.SCRIPTS.script_utils import FILE_DATA, Polarization
+from sertit import ci, files, misc
 
 
 def test_paths():
-    """ Test path functions """
+    """Test path functions"""
     curr_file = os.path.realpath(__file__)
     curr_dir = os.path.dirname(curr_file)
     with misc.chdir(curr_dir):
@@ -59,7 +58,7 @@ def test_paths():
 
 
 def test_archive():
-    """ Test extracting functions """
+    """Test extracting functions"""
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Archives
         zip_file = os.path.join(FILE_DATA, "test_zip.zip")
@@ -83,9 +82,9 @@ def test_archive():
         # Archive
         archive_base = os.path.join(tmp_dir, "archive")
         for fmt in ["zip", "tar", "gztar"]:
-            archive_fn = files.archive(folder_path=core_dir,
-                                       archive_path=archive_base,
-                                       fmt=fmt)
+            archive_fn = files.archive(
+                folder_path=core_dir, archive_path=archive_base, fmt=fmt
+            )
             out = files.extract_file(archive_fn, tmp_dir)
             if fmt == "zip":
                 ci.assert_dir_equal(core_dir, out)
@@ -134,7 +133,7 @@ def test_archived_files():
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
     xml_regex = f".*{xml_name}"
     xml_zip = files.read_archived_xml(zip_file, xml_regex)
-    xml_tar = files.read_archived_xml(tar_file, ".*_MTL\.xml")
+    xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
     xml_ok = etree.parse(os.path.join(ok_folder, xml_name)).getroot()
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
@@ -143,7 +142,7 @@ def test_archived_files():
     vect_name = "map-overlay.kml"
     vect_regex = f".*{vect_name}"
     vect_zip = files.read_archived_vector(zip_file, vect_regex)
-    vect_tar = files.read_archived_vector(tar_file, ".*overlay\.kml")
+    vect_tar = files.read_archived_vector(tar_file, r".*overlay\.kml")
     vect_ok = gpd.read_file(os.path.join(ok_folder, vect_name))
     ci.assert_geom_equal(vect_ok, vect_zip)
     ci.assert_geom_equal(vect_ok, vect_tar)
@@ -164,7 +163,7 @@ def test_archived_files():
 
 
 def test_get_file_name():
-    """ Test get_file_name """
+    """Test get_file_name"""
     file_name = files.get_filename(__file__)
     assert file_name == "test_files"
     file_name = files.get_filename(__file__ + "\\")
@@ -174,7 +173,7 @@ def test_get_file_name():
 
 
 def test_cp_rm():
-    """ Test CP/RM functions """
+    """Test CP/RM functions"""
     with tempfile.TemporaryDirectory() as tmp_dir:
         empty_tmp = os.listdir(tmp_dir)
 
@@ -185,7 +184,9 @@ def test_cp_rm():
 
         # Copy dir
         dir_path = os.path.dirname(curr_path)
-        test_dir = files.copy(dir_path, os.path.join(tmp_dir, os.path.basename(dir_path)))
+        test_dir = files.copy(
+            dir_path, os.path.join(tmp_dir, os.path.basename(dir_path))
+        )
 
         # Test copy
         assert os.path.isfile(file_1)
@@ -205,7 +206,7 @@ def test_cp_rm():
 
 
 def test_find_files():
-    """ Test find_files """
+    """Test find_files"""
     names = os.path.basename(__file__)
     root_paths = script_utils.get_proj_path()
     max_nof_files = 1
@@ -218,15 +219,17 @@ def test_find_files():
 
 
 def test_json():
-    """ Test json functions """
+    """Test json functions"""
 
-    test_dict = {"A": 3,
-                 "C": "m2",  # Can be parsed as a date, we do not want that !
-                 "D": datetime.today(),
-                 "Dbis": date.today(),
-                 "E": np.int64(15),
-                 "F": Polarization.vv,
-                 "G": True}
+    test_dict = {
+        "A": 3,
+        "C": "m2",  # Can be parsed as a date, we do not want that !
+        "D": datetime.today(),
+        "Dbis": date.today(),
+        "E": np.int64(15),
+        "F": Polarization.vv,
+        "G": True,
+    }
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         json_file = os.path.join(tmp_dir, "test.json")
@@ -237,18 +240,22 @@ def test_json():
         # Load pickle
         obj = files.read_json(json_file)
 
-        assert obj.pop("F") == test_dict.pop("F").value  # Enum are stored following their value
+        assert (
+            obj.pop("F") == test_dict.pop("F").value
+        )  # Enum are stored following their value
         assert obj == test_dict
 
 
 def test_pickle():
-    """ Test pickle functions """
+    """Test pickle functions"""
 
-    test_dict = {"A": 3,
-                 "B": np.zeros((3, 3)),
-                 "C": "str",
-                 "D": datetime.today(),
-                 "E": np.int64(15)}
+    test_dict = {
+        "A": 3,
+        "B": np.zeros((3, 3)),
+        "C": "str",
+        "D": datetime.today(),
+        "E": np.int64(15),
+    }
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         pkl_file = os.path.join(tmp_dir, "test.pkl")
@@ -264,25 +271,33 @@ def test_pickle():
 
 
 def test_get_file_in_dir():
-    """ Test get_file_in_dir """
+    """Test get_file_in_dir"""
     # Get parent dir
     folder = os.path.dirname(os.path.realpath(__file__))
 
     # Test
-    file = files.get_file_in_dir(folder, "file", ".py", filename_only=False, get_list=True, exact_name=False)
-    filename = files.get_file_in_dir(folder, files.get_filename(__file__), "py",
-                                     filename_only=True, get_list=False, exact_name=True)
+    file = files.get_file_in_dir(
+        folder, "file", ".py", filename_only=False, get_list=True, exact_name=False
+    )
+    filename = files.get_file_in_dir(
+        folder,
+        files.get_filename(__file__),
+        "py",
+        filename_only=True,
+        get_list=False,
+        exact_name=True,
+    )
 
     assert file[0] == __file__
     assert filename == os.path.basename(__file__)
 
 
 def test_hash_file_content():
-    """ Test hash_file_content """
+    """Test hash_file_content"""
     file_content = "This is a test."
 
     # Test
     hashed = files.hash_file_content(file_content)
 
     # Test
-    assert hashed == '16c5bf1fc5'
+    assert hashed == "16c5bf1fc5"

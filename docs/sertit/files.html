@@ -55,24 +55,25 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 &#34;&#34;&#34; Tools for paths and files &#34;&#34;&#34;
 
 import glob
-import os
+import hashlib
+import json
 import logging
+import os
+import pickle
 import pprint
 import re
+import shutil
 import tarfile
 import tempfile
 import zipfile
-import json
-import shutil
-import pickle
-import hashlib
-from lxml import etree
+from datetime import date, datetime
 from enum import Enum
 from json import JSONDecoder, JSONEncoder
-from datetime import date, datetime
-from typing import Union, Any
-from tqdm import tqdm
+from typing import Any, Union
+
 import numpy as np
+from lxml import etree
+from tqdm import tqdm
 
 from sertit import misc
 from sertit.logs import SU_NAME
@@ -122,7 +123,9 @@ def listdir_abspath(directory: str) -&gt; list:
     Returns:
         str: Absolute path of all files in the given directory
     &#34;&#34;&#34;
-    return [os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)]
+    return [
+        os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)
+    ]
 
 
 def to_abspath(path_str: str, create: bool = True) -&gt; str:
@@ -184,10 +187,14 @@ def real_rel_path(path: str, start: str) -&gt; str:
     Returns:
         Relative path
     &#34;&#34;&#34;
-    return os.path.join(os.path.relpath(os.path.dirname(path), start), os.path.basename(path))
+    return os.path.join(
+        os.path.relpath(os.path.dirname(path), start), os.path.basename(path)
+    )
 
 
-def extract_file(file_path: str, output: str, overwrite: bool = False) -&gt; Union[list, str]:
+def extract_file(
+    file_path: str, output: str, overwrite: bool = False
+) -&gt; Union[list, str]:
     &#34;&#34;&#34;
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
@@ -221,7 +228,9 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -&gt; Uni
         extr_names = [get_filename(file_path)]
         arch = tarfile.open(file_path, &#34;r&#34;)
     else:
-        raise TypeError(f&#34;Only .zip, .tar and .tar.gz files can be extracted, not {file_path}&#34;)
+        raise TypeError(
+            f&#34;Only .zip, .tar and .tar.gz files can be extracted, not {file_path}&#34;
+        )
 
     # Get extracted list
     extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
@@ -232,10 +241,16 @@ def extract_file(file_path: str, output: str, overwrite: bool = False) -&gt; Uni
         # Manage overwriting
         if os.path.isdir(extr_dir):
             if overwrite:
-                LOGGER.debug(&#34;Already existing extracted %s. It will be overwritten as asked.&#34;, extr_names)
+                LOGGER.debug(
+                    &#34;Already existing extracted %s. It will be overwritten as asked.&#34;,
+                    extr_names,
+                )
                 remove(extr_dir)
             else:
-                LOGGER.debug(&#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;, extr_names)
+                LOGGER.debug(
+                    &#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;,
+                    extr_names,
+                )
 
         else:
             LOGGER.info(&#34;Extracting %s&#34;, extr_names)
@@ -305,7 +320,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -&gt; li
     progress_bar = tqdm(archives)
     extracts = []
     for arch in progress_bar:
-        progress_bar.set_description(f&#39;Extracting product {os.path.basename(arch)}&#39;)
+        progress_bar.set_description(f&#34;Extracting product {os.path.basename(arch)}&#34;)
         extracts.append(extract_file(arch, output, overwrite))
 
     return extracts
@@ -378,7 +393,9 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -&gt; str:
     if archive_path.endswith(&#34;.tar&#34;) or archive_path.endswith(&#34;.zip&#34;):
         prefix = archive_path[-3:]
     elif archive_path.endswith(&#34;.tar.gz&#34;):
-        raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
     else:
         raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
 
@@ -387,7 +404,9 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -&gt; str:
         archived_band_path = list(filter(regex.match, file_list))[0]
         archived_band_path = f&#34;{prefix}+file://{archive_path}!{archived_band_path}&#34;
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find file {file_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find file {file_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return archived_band_path
 
@@ -431,11 +450,17 @@ def read_archived_xml(archive_path: str, xml_regex: str) -&gt; etree._Element:
                 xml_str = zip_ds.read(band_name)
 
         elif archive_path.endswith(&#34;.tar.gz&#34;):
-            raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+            raise TypeError(
+                &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+            )
         else:
-            raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
+            raise TypeError(
+                &#34;Only .zip and .tar files can be read from inside its archive.&#34;
+            )
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find XML file {xml_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find XML file {xml_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return etree.fromstring(xml_str)
 
@@ -468,7 +493,9 @@ def read_archived_vector(archive_path: str, vector_regex: str):
     if archive_path.endswith(&#34;.tar&#34;) or archive_path.endswith(&#34;.zip&#34;):
         prefix = archive_path[-3:]
     elif archive_path.endswith(&#34;.tar.gz&#34;):
-        raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
     else:
         raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
 
@@ -479,11 +506,14 @@ def read_archived_vector(archive_path: str, vector_regex: str):
         archived_vect_path = f&#34;{prefix}://{archive_path}!{archived_vect_path}&#34;
         if archived_vect_path.endswith(&#34;kml&#34;):
             from sertit import vectors
+
             vectors.set_kml_driver()
 
         vect = gpd.read_file(archived_vect_path)
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find vector {vector_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find vector {vector_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return vect
 
@@ -510,10 +540,12 @@ def archive(folder_path: str, archive_path: str, fmt: str = &#34;zip&#34;) -&gt;
     archive_base = os.path.splitext(archive_path)[0]
 
     # Archive the folder
-    archive_fn = shutil.make_archive(archive_base,
-                                     format=fmt,
-                                     root_dir=os.path.dirname(folder_path),
-                                     base_dir=os.path.basename(folder_path))
+    archive_fn = shutil.make_archive(
+        archive_base,
+        format=fmt,
+        root_dir=os.path.dirname(folder_path),
+        base_dir=os.path.basename(folder_path),
+    )
 
     return archive_fn
 
@@ -546,18 +578,23 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -&gt; None:
     with zipfile.ZipFile(zip_path, &#34;a&#34;) as zip_file:
         progress_bar = tqdm(dirs_to_add)
         for dir_to_add in progress_bar:
-            progress_bar.set_description(f&#39;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#39;)
+            progress_bar.set_description(
+                f&#34;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#34;
+            )
             for root, _, files in os.walk(dir_to_add):
-                base_path = os.path.join(dir_to_add, &#39;..&#39;)
+                base_path = os.path.join(dir_to_add, &#34;..&#34;)
 
                 # Write dir (in namelist at least)
                 zip_file.write(root, os.path.relpath(root, base_path))
 
                 # Write files
                 for file in files:
-                    zip_file.write(os.path.join(root, file),
-                                   os.path.relpath(os.path.join(root, file),
-                                                   os.path.join(dir_to_add, &#39;..&#39;)))
+                    zip_file.write(
+                        os.path.join(root, file),
+                        os.path.relpath(
+                            os.path.join(root, file), os.path.join(dir_to_add, &#34;..&#34;)
+                        ),
+                    )
 
 
 def get_filename(file_path: str) -&gt; str:
@@ -613,7 +650,9 @@ def remove(path: str) -&gt; None:
             LOGGER.debug(&#34;Impossible to remove the file %s&#34;, path, exc_info=True)
 
 
-def remove_by_pattern(directory: str, name_with_wildcard: str = &#34;*&#34;, extension: str = None) -&gt; None:
+def remove_by_pattern(
+    directory: str, name_with_wildcard: str = &#34;*&#34;, extension: str = None
+) -&gt; None:
     &#34;&#34;&#34;
     Remove files corresponding to a pattern from a directory.
 
@@ -638,7 +677,7 @@ def remove_by_pattern(directory: str, name_with_wildcard: str = &#34;*&#34;, ext
     &#34;&#34;&#34;
 
     if extension and not extension.startswith(&#34;.&#34;):
-        extension = &#39;.&#39; + extension
+        extension = &#34;.&#34; + extension
 
     pattern_str = os.path.join(directory, name_with_wildcard + extension)
     file_list = glob.glob(pattern_str, recursive=False)
@@ -680,15 +719,17 @@ def copy(src: str, dst: str) -&gt; str:
         out = src
         # eg. source or destination doesn&#39;t exist
     except IOError as ex:
-        raise IOError(f&#39;Copy error: {ex.strerror}&#39;) from ex
+        raise IOError(f&#34;Copy error: {ex.strerror}&#34;) from ex
 
     return out
 
 
-def find_files(names: Union[list, str],
-               root_paths: Union[list, str],
-               max_nof_files: int = -1,
-               get_as_str: bool = False) -&gt; Union[list, str]:
+def find_files(
+    names: Union[list, str],
+    root_paths: Union[list, str],
+    max_nof_files: int = -1,
+    get_as_str: bool = False,
+) -&gt; Union[list, str]:
     &#34;&#34;&#34;
     Returns matching files recursively from a list of root paths.
 
@@ -752,7 +793,12 @@ def find_files(names: Union[list, str],
     if not paths:
         raise FileNotFoundError(f&#34;Files {names} not found in {root_paths}&#34;)
 
-    LOGGER.debug(&#34;Paths found in %s for filenames %s:\n%s&#34;, root_paths, names, pprint.pformat(paths))
+    LOGGER.debug(
+        &#34;Paths found in %s for filenames %s:\n%s&#34;,
+        root_paths,
+        names,
+        pprint.pformat(paths),
+    )
 
     # Get str if needed
     if len(paths) == 1 and get_as_str:
@@ -763,7 +809,7 @@ def find_files(names: Union[list, str],
 
 # subclass JSONDecoder
 class CustomDecoder(JSONDecoder):
-    &#34;&#34;&#34; Decoder for JSON with methods for datetimes &#34;&#34;&#34;
+    &#34;&#34;&#34;Decoder for JSON with methods for datetimes&#34;&#34;&#34;
 
     # pylint: disable=W0221
     # Override the default method
@@ -801,11 +847,11 @@ class CustomDecoder(JSONDecoder):
 
 # subclass JSONEncoder
 class CustomEncoder(JSONEncoder):
-    &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
+    &#34;&#34;&#34;Encoder for JSON with methods for datetimes and np.int64&#34;&#34;&#34;
 
     # pylint: disable=W0221
     def default(self, obj):
-        &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
+        &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
             out = obj.isoformat()
         elif isinstance(obj, np.int64):
@@ -839,9 +885,11 @@ def read_json(json_file: str, print_file: bool = True) -&gt; dict:
     with open(json_file) as file:
         data = json.load(file, cls=CustomDecoder)
         if print_file:
-            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;,
-                         json_file,
-                         json.dumps(data, indent=3, cls=CustomEncoder))
+            LOGGER.debug(
+                &#34;Configuration file %s contains:\n%s&#34;,
+                json_file,
+                json.dumps(data, indent=3, cls=CustomEncoder),
+            )
     return data
 
 
@@ -860,7 +908,7 @@ def save_json(output_json: str, json_dict: dict) -&gt; None:
         json_dict (dict): Json dictionary
     &#34;&#34;&#34;
 
-    with open(output_json, &#39;w&#39;) as output_config_file:
+    with open(output_json, &#34;w&#34;) as output_config_file:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)
 
 
@@ -880,7 +928,7 @@ def save_obj(obj: Any, path: str) -&gt; None:
         obj (Any): Any object serializable
         path (str): Path where to write the pickle
     &#34;&#34;&#34;
-    with open(path, &#39;wb+&#39;) as file:
+    with open(path, &#34;wb+&#34;) as file:
         pickle.dump(obj, file)
 
 
@@ -900,18 +948,20 @@ def load_obj(path: str) -&gt; Any:
         object (Any): Pickled object
 
     &#34;&#34;&#34;
-    with open(path, &#39;rb&#39;) as file:
+    with open(path, &#34;rb&#34;) as file:
         return pickle.load(file)
 
 
 # too many arguments
 # pylint: disable=R0913
-def get_file_in_dir(directory: str,
-                    pattern_str: str,
-                    extension: str = None,
-                    filename_only: bool = False,
-                    get_list: bool = False,
-                    exact_name: bool = False) -&gt; Union[str, list]:
+def get_file_in_dir(
+    directory: str,
+    pattern_str: str,
+    extension: str = None,
+    filename_only: bool = False,
+    get_list: bool = False,
+    exact_name: bool = False,
+) -&gt; Union[str, list]:
     &#34;&#34;&#34;
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -955,25 +1005,31 @@ def get_file_in_dir(directory: str,
     if exact_name:
         glob_pattern = pattern_str
     else:
-        glob_pattern = &#39;*&#39; + pattern_str + &#39;*&#39;
+        glob_pattern = &#34;*&#34; + pattern_str + &#34;*&#34;
     if extension:
         if not extension.startswith(&#34;.&#34;):
-            extension = &#39;.&#39; + extension
+            extension = &#34;.&#34; + extension
         glob_pattern += extension
 
     # Search for the pattern in the directory
     file_list = glob.glob(os.path.join(directory, glob_pattern))
 
     if len(file_list) == 0:
-        raise FileNotFoundError(f&#34;File with pattern {glob_pattern} not found in {directory}&#34;)
+        raise FileNotFoundError(
+            f&#34;File with pattern {glob_pattern} not found in {directory}&#34;
+        )
 
     # Return list, file path or file name
     if get_list:
         file = file_list
     else:
         if len(file_list) &gt; 1:
-            LOGGER.warning(&#34;More than one file corresponding to the pattern %s has been found here %s. &#34;
-                           &#34;Only the first item will be returned.&#34;, glob_pattern, directory)
+            LOGGER.warning(
+                &#34;More than one file corresponding to the pattern %s has been found here %s. &#34;
+                &#34;Only the first item will be returned.&#34;,
+                glob_pattern,
+                directory,
+            )
         file = file_list[0]
         if filename_only:
             file = os.path.basename(file)
@@ -1104,7 +1160,9 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     Returns:
         str: Absolute path of all files in the given directory
     &#34;&#34;&#34;
-    return [os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)]</code></pre>
+    return [
+        os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)
+    ]</code></pre>
 </details>
 </dd>
 <dt id="sertit.files.to_abspath"><code class="name flex">
@@ -1223,7 +1281,9 @@ def hash_file_content(file_content: str, len_param: int = 5) -&gt; str:
     Returns:
         Relative path
     &#34;&#34;&#34;
-    return os.path.join(os.path.relpath(os.path.dirname(path), start), os.path.basename(path))</code></pre>
+    return os.path.join(
+        os.path.relpath(os.path.dirname(path), start), os.path.basename(path)
+    )</code></pre>
 </details>
 </dd>
 <dt id="sertit.files.extract_file"><code class="name flex">
@@ -1255,7 +1315,9 @@ D:\path\to\output\zip'
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def extract_file(file_path: str, output: str, overwrite: bool = False) -&gt; Union[list, str]:
+<pre><code class="python">def extract_file(
+    file_path: str, output: str, overwrite: bool = False
+) -&gt; Union[list, str]:
     &#34;&#34;&#34;
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
@@ -1289,7 +1351,9 @@ D:\path\to\output\zip'
         extr_names = [get_filename(file_path)]
         arch = tarfile.open(file_path, &#34;r&#34;)
     else:
-        raise TypeError(f&#34;Only .zip, .tar and .tar.gz files can be extracted, not {file_path}&#34;)
+        raise TypeError(
+            f&#34;Only .zip, .tar and .tar.gz files can be extracted, not {file_path}&#34;
+        )
 
     # Get extracted list
     extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
@@ -1300,10 +1364,16 @@ D:\path\to\output\zip'
         # Manage overwriting
         if os.path.isdir(extr_dir):
             if overwrite:
-                LOGGER.debug(&#34;Already existing extracted %s. It will be overwritten as asked.&#34;, extr_names)
+                LOGGER.debug(
+                    &#34;Already existing extracted %s. It will be overwritten as asked.&#34;,
+                    extr_names,
+                )
                 remove(extr_dir)
             else:
-                LOGGER.debug(&#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;, extr_names)
+                LOGGER.debug(
+                    &#34;Already existing extracted %s. It won&#39;t be overwritten.&#34;,
+                    extr_names,
+                )
 
         else:
             LOGGER.info(&#34;Extracting %s&#34;, extr_names)
@@ -1401,7 +1471,7 @@ D:\path\to\output\zip'
     progress_bar = tqdm(archives)
     extracts = []
     for arch in progress_bar:
-        progress_bar.set_description(f&#39;Extracting product {os.path.basename(arch)}&#39;)
+        progress_bar.set_description(f&#34;Extracting product {os.path.basename(arch)}&#34;)
         extracts.append(extract_file(arch, output, overwrite))
 
     return extracts</code></pre>
@@ -1536,7 +1606,9 @@ for more information.</p>
     if archive_path.endswith(&#34;.tar&#34;) or archive_path.endswith(&#34;.zip&#34;):
         prefix = archive_path[-3:]
     elif archive_path.endswith(&#34;.tar.gz&#34;):
-        raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
     else:
         raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
 
@@ -1545,7 +1617,9 @@ for more information.</p>
         archived_band_path = list(filter(regex.match, file_list))[0]
         archived_band_path = f&#34;{prefix}+file://{archive_path}!{archived_band_path}&#34;
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find file {file_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find file {file_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return archived_band_path</code></pre>
 </details>
@@ -1616,11 +1690,17 @@ for more information.</p>
                 xml_str = zip_ds.read(band_name)
 
         elif archive_path.endswith(&#34;.tar.gz&#34;):
-            raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+            raise TypeError(
+                &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+            )
         else:
-            raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
+            raise TypeError(
+                &#34;Only .zip and .tar files can be read from inside its archive.&#34;
+            )
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find XML file {xml_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find XML file {xml_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return etree.fromstring(xml_str)</code></pre>
 </details>
@@ -1680,7 +1760,9 @@ for more information.</p>
     if archive_path.endswith(&#34;.tar&#34;) or archive_path.endswith(&#34;.zip&#34;):
         prefix = archive_path[-3:]
     elif archive_path.endswith(&#34;.tar.gz&#34;):
-        raise TypeError(&#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;)
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
     else:
         raise TypeError(&#34;Only .zip and .tar files can be read from inside its archive.&#34;)
 
@@ -1691,11 +1773,14 @@ for more information.</p>
         archived_vect_path = f&#34;{prefix}://{archive_path}!{archived_vect_path}&#34;
         if archived_vect_path.endswith(&#34;kml&#34;):
             from sertit import vectors
+
             vectors.set_kml_driver()
 
         vect = gpd.read_file(archived_vect_path)
     except IndexError:
-        raise FileNotFoundError(f&#34;Impossible to find vector {vector_regex} in {get_filename(archive_path)}&#34;)
+        raise FileNotFoundError(
+            f&#34;Impossible to find vector {vector_regex} in {get_filename(archive_path)}&#34;
+        )
 
     return vect</code></pre>
 </details>
@@ -1750,10 +1835,12 @@ for more information.</p>
     archive_base = os.path.splitext(archive_path)[0]
 
     # Archive the folder
-    archive_fn = shutil.make_archive(archive_base,
-                                     format=fmt,
-                                     root_dir=os.path.dirname(folder_path),
-                                     base_dir=os.path.basename(folder_path))
+    archive_fn = shutil.make_archive(
+        archive_base,
+        format=fmt,
+        root_dir=os.path.dirname(folder_path),
+        base_dir=os.path.basename(folder_path),
+    )
 
     return archive_fn</code></pre>
 </details>
@@ -1807,18 +1894,23 @@ for more information.</p>
     with zipfile.ZipFile(zip_path, &#34;a&#34;) as zip_file:
         progress_bar = tqdm(dirs_to_add)
         for dir_to_add in progress_bar:
-            progress_bar.set_description(f&#39;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#39;)
+            progress_bar.set_description(
+                f&#34;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#34;
+            )
             for root, _, files in os.walk(dir_to_add):
-                base_path = os.path.join(dir_to_add, &#39;..&#39;)
+                base_path = os.path.join(dir_to_add, &#34;..&#34;)
 
                 # Write dir (in namelist at least)
                 zip_file.write(root, os.path.relpath(root, base_path))
 
                 # Write files
                 for file in files:
-                    zip_file.write(os.path.join(root, file),
-                                   os.path.relpath(os.path.join(root, file),
-                                                   os.path.join(dir_to_add, &#39;..&#39;)))</code></pre>
+                    zip_file.write(
+                        os.path.join(root, file),
+                        os.path.relpath(
+                            os.path.join(root, file), os.path.join(dir_to_add, &#34;..&#34;)
+                        ),
+                    )</code></pre>
 </details>
 </dd>
 <dt id="sertit.files.get_filename"><code class="name flex">
@@ -1945,7 +2037,9 @@ path_to_remove deleted
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def remove_by_pattern(directory: str, name_with_wildcard: str = &#34;*&#34;, extension: str = None) -&gt; None:
+<pre><code class="python">def remove_by_pattern(
+    directory: str, name_with_wildcard: str = &#34;*&#34;, extension: str = None
+) -&gt; None:
     &#34;&#34;&#34;
     Remove files corresponding to a pattern from a directory.
 
@@ -1970,7 +2064,7 @@ path_to_remove deleted
     &#34;&#34;&#34;
 
     if extension and not extension.startswith(&#34;.&#34;):
-        extension = &#39;.&#39; + extension
+        extension = &#34;.&#34; + extension
 
     pattern_str = os.path.join(directory, name_with_wildcard + extension)
     file_list = glob.glob(pattern_str, recursive=False)
@@ -2043,7 +2137,7 @@ copydir 'D:\path\to\output\copy'
         out = src
         # eg. source or destination doesn&#39;t exist
     except IOError as ex:
-        raise IOError(f&#39;Copy error: {ex.strerror}&#39;) from ex
+        raise IOError(f&#34;Copy error: {ex.strerror}&#34;) from ex
 
     return out</code></pre>
 </details>
@@ -2092,10 +2186,12 @@ found = 'D:\root\dir1\huhu.txt'
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def find_files(names: Union[list, str],
-               root_paths: Union[list, str],
-               max_nof_files: int = -1,
-               get_as_str: bool = False) -&gt; Union[list, str]:
+<pre><code class="python">def find_files(
+    names: Union[list, str],
+    root_paths: Union[list, str],
+    max_nof_files: int = -1,
+    get_as_str: bool = False,
+) -&gt; Union[list, str]:
     &#34;&#34;&#34;
     Returns matching files recursively from a list of root paths.
 
@@ -2159,7 +2255,12 @@ found = 'D:\root\dir1\huhu.txt'
     if not paths:
         raise FileNotFoundError(f&#34;Files {names} not found in {root_paths}&#34;)
 
-    LOGGER.debug(&#34;Paths found in %s for filenames %s:\n%s&#34;, root_paths, names, pprint.pformat(paths))
+    LOGGER.debug(
+        &#34;Paths found in %s for filenames %s:\n%s&#34;,
+        root_paths,
+        names,
+        pprint.pformat(paths),
+    )
 
     # Get str if needed
     if len(paths) == 1 and get_as_str:
@@ -2214,9 +2315,11 @@ found = 'D:\root\dir1\huhu.txt'
     with open(json_file) as file:
         data = json.load(file, cls=CustomDecoder)
         if print_file:
-            LOGGER.debug(&#34;Configuration file %s contains:\n%s&#34;,
-                         json_file,
-                         json.dumps(data, indent=3, cls=CustomEncoder))
+            LOGGER.debug(
+                &#34;Configuration file %s contains:\n%s&#34;,
+                json_file,
+                json.dumps(data, indent=3, cls=CustomEncoder),
+            )
     return data</code></pre>
 </details>
 </dd>
@@ -2255,7 +2358,7 @@ found = 'D:\root\dir1\huhu.txt'
         json_dict (dict): Json dictionary
     &#34;&#34;&#34;
 
-    with open(output_json, &#39;w&#39;) as output_config_file:
+    with open(output_json, &#34;w&#34;) as output_config_file:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)</code></pre>
 </details>
 </dd>
@@ -2297,7 +2400,7 @@ found = 'D:\root\dir1\huhu.txt'
         obj (Any): Any object serializable
         path (str): Path where to write the pickle
     &#34;&#34;&#34;
-    with open(path, &#39;wb+&#39;) as file:
+    with open(path, &#34;wb+&#34;) as file:
         pickle.dump(obj, file)</code></pre>
 </details>
 </dd>
@@ -2337,7 +2440,7 @@ found = 'D:\root\dir1\huhu.txt'
         object (Any): Pickled object
 
     &#34;&#34;&#34;
-    with open(path, &#39;rb&#39;) as file:
+    with open(path, &#34;rb&#34;) as file:
         return pickle.load(file)</code></pre>
 </details>
 </dd>
@@ -2391,12 +2494,14 @@ found = 'D:\root\dir1\huhu.txt'
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_file_in_dir(directory: str,
-                    pattern_str: str,
-                    extension: str = None,
-                    filename_only: bool = False,
-                    get_list: bool = False,
-                    exact_name: bool = False) -&gt; Union[str, list]:
+<pre><code class="python">def get_file_in_dir(
+    directory: str,
+    pattern_str: str,
+    extension: str = None,
+    filename_only: bool = False,
+    get_list: bool = False,
+    exact_name: bool = False,
+) -&gt; Union[str, list]:
     &#34;&#34;&#34;
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -2440,25 +2545,31 @@ found = 'D:\root\dir1\huhu.txt'
     if exact_name:
         glob_pattern = pattern_str
     else:
-        glob_pattern = &#39;*&#39; + pattern_str + &#39;*&#39;
+        glob_pattern = &#34;*&#34; + pattern_str + &#34;*&#34;
     if extension:
         if not extension.startswith(&#34;.&#34;):
-            extension = &#39;.&#39; + extension
+            extension = &#34;.&#34; + extension
         glob_pattern += extension
 
     # Search for the pattern in the directory
     file_list = glob.glob(os.path.join(directory, glob_pattern))
 
     if len(file_list) == 0:
-        raise FileNotFoundError(f&#34;File with pattern {glob_pattern} not found in {directory}&#34;)
+        raise FileNotFoundError(
+            f&#34;File with pattern {glob_pattern} not found in {directory}&#34;
+        )
 
     # Return list, file path or file name
     if get_list:
         file = file_list
     else:
         if len(file_list) &gt; 1:
-            LOGGER.warning(&#34;More than one file corresponding to the pattern %s has been found here %s. &#34;
-                           &#34;Only the first item will be returned.&#34;, glob_pattern, directory)
+            LOGGER.warning(
+                &#34;More than one file corresponding to the pattern %s has been found here %s. &#34;
+                &#34;Only the first item will be returned.&#34;,
+                glob_pattern,
+                directory,
+            )
         file = file_list[0]
         if filename_only:
             file = os.path.basename(file)
@@ -2527,7 +2638,7 @@ found = 'D:\root\dir1\huhu.txt'
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Decoder for JSON with methods for datetimes </p>
+<div class="desc"><p>Decoder for JSON with methods for datetimes</p>
 <p><code>object_hook</code>, if specified, will be called with the result
 of every JSON object decoded and its return value will be used in
 place of the given <code>dict</code>.
@@ -2562,7 +2673,7 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class CustomDecoder(JSONDecoder):
-    &#34;&#34;&#34; Decoder for JSON with methods for datetimes &#34;&#34;&#34;
+    &#34;&#34;&#34;Decoder for JSON with methods for datetimes&#34;&#34;&#34;
 
     # pylint: disable=W0221
     # Override the default method
@@ -2655,7 +2766,7 @@ including <code>'\t'</code> (tab), <code>'\n'</code>, <code>'\r'</code> and <cod
 <span>(</span><span>*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Encoder for JSON with methods for datetimes and np.int64 </p>
+<div class="desc"><p>Encoder for JSON with methods for datetimes and np.int64</p>
 <p>Constructor for JSONEncoder, with sensible defaults.</p>
 <p>If skipkeys is false, then it is a TypeError to attempt
 encoding of keys that are not str, int, float or None.
@@ -2697,11 +2808,11 @@ version of the object or raise a <code>TypeError</code>.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class CustomEncoder(JSONEncoder):
-    &#34;&#34;&#34; Encoder for JSON with methods for datetimes and np.int64 &#34;&#34;&#34;
+    &#34;&#34;&#34;Encoder for JSON with methods for datetimes and np.int64&#34;&#34;&#34;
 
     # pylint: disable=W0221
     def default(self, obj):
-        &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
+        &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
             out = obj.isoformat()
         elif isinstance(obj, np.int64):
@@ -2729,7 +2840,7 @@ version of the object or raise a <code>TypeError</code>.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def default(self, obj):
-    &#34;&#34;&#34; Overload of the default method &#34;&#34;&#34;
+    &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
     if isinstance(obj, (date, datetime)):
         out = obj.isoformat()
     elif isinstance(obj, np.int64):

@@ -6,9 +6,11 @@
 !*requirements.txt
 *.aux.xml
 __pycache__/
+.tox
+.coverage
+cov.xml
 
 # Build options
 build/
 *.egg-info/
 dist
-

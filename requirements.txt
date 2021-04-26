@@ -1,12 +1,27 @@
-# Libs for all platforms
+# Tests & lint
+tox
+tox-conda
+pre-commit
+black
 pytest
-tqdm
-twine
+coverage
+pytest-cov
+flake8
 pylint
+
+# Deploy
+twine
+
+# Doc
 pdoc3
+
+# Libs for all platforms
+tqdm
 psutil
 lxml
 colorlog
 rasterio
 rioxarray
 geopandas
+
+--extra-index-url ${WINDOWS_WHEELS}

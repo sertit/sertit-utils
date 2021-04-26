@@ -62,8 +62,8 @@ import filecmp
 import os
 from doctest import Example
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import rasterio
 from lxml import etree
 from lxml.doctestcompare import LXMLOutputChecker
@@ -212,7 +212,9 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -&gt; None:
             assert dst_1.meta[&#34;height&#34;] == dst_2.meta[&#34;height&#34;]
             assert dst_1.meta[&#34;count&#34;] == dst_2.meta[&#34;count&#34;]
             assert dst_1.meta[&#34;crs&#34;] == dst_2.meta[&#34;crs&#34;]
-            dst_1.meta[&#34;transform&#34;].almost_equals(dst_1.meta[&#34;transform&#34;], precision=float(f&#34;1E-{decimal}&#34;))
+            dst_1.meta[&#34;transform&#34;].almost_equals(
+                dst_1.meta[&#34;transform&#34;], precision=float(f&#34;1E-{decimal}&#34;)
+            )
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
@@ -568,7 +570,9 @@ aster_almost.tif&quot;
             assert dst_1.meta[&#34;height&#34;] == dst_2.meta[&#34;height&#34;]
             assert dst_1.meta[&#34;count&#34;] == dst_2.meta[&#34;count&#34;]
             assert dst_1.meta[&#34;crs&#34;] == dst_2.meta[&#34;crs&#34;]
-            dst_1.meta[&#34;transform&#34;].almost_equals(dst_1.meta[&#34;transform&#34;], precision=float(f&#34;1E-{decimal}&#34;))
+            dst_1.meta[&#34;transform&#34;].almost_equals(
+                dst_1.meta[&#34;transform&#34;], precision=float(f&#34;1E-{decimal}&#34;)
+            )
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)</code></pre>
 </details>
 </dd>

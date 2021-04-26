@@ -18,20 +18,20 @@
 import os
 import tempfile
 
+import geopandas as gpd
+import numpy as np
 import pytest
 import rasterio
-import numpy as np
 import xarray as xr
-import geopandas as gpd
+
 from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import rasters, ci, files
+from sertit import ci, files, rasters
 
 
 def test_rasters():
-    """ Test raster functions """
+    """Test raster functions"""
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
-    raster_cropped_path = os.path.join(RASTER_DATA, "raster_cropped.tif")
     raster_cropped_xarray_path = os.path.join(RASTER_DATA, "raster_cropped_xarray.tif")
     raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
     raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
@@ -121,11 +121,17 @@ def test_rasters():
 
             # Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
-            rasters.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out, method="max")
+            rasters.merge_gtiff(
+                [raster_path, raster_to_merge_path],
+                raster_merged_gtiff_out,
+                method="max",
+            )
 
             # Merge VRT
             raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-            rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+            rasters.merge_vrt(
+                [raster_path, raster_to_merge_path], raster_merged_vrt_out
+            )
 
             # Vectorize
             val = 2
@@ -167,13 +173,15 @@ def test_rasters():
 
 
 def test_dim():
-    """ Test on BEAM-DIMAP function """
+    """Test on BEAM-DIMAP function"""
     dim_path = os.path.join(RASTER_DATA, "DIM.dim")
-    assert (rasters.get_dim_img_path(dim_path) == os.path.join(RASTER_DATA, "DIM.data", "dim.img"))
+    assert rasters.get_dim_img_path(dim_path) == os.path.join(
+        RASTER_DATA, "DIM.data", "dim.img"
+    )
 
 
 def test_bit():
-    """ Test bit arrays """
+    """Test bit arrays"""
     # Bit
     np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint16))
     ones = rasters.read_bit_array(np_ones, bit_id=0)
@@ -202,7 +210,9 @@ def test_bit():
 def test_xarray_fct():
     # Set nodata
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 0], [0, 0, 0]])
-    nodata = xr.DataArray(dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]])
+    nodata = xr.DataArray(
+        dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
+    )
     A_nodata = rasters.set_nodata(A, 0)
 
     xr.testing.assert_equal(A_nodata, nodata)

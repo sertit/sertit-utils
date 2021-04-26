@@ -22,7 +22,8 @@ from sertit.misc import ListEnum
 
 @unique
 class Polarization(ListEnum):
-    """ SAR Polarizations """
+    """SAR Polarizations"""
+
     hh = "HH"
     vv = "VV"
     vh = "VH"
@@ -30,12 +31,12 @@ class Polarization(ListEnum):
 
 
 def get_proj_path():
-    """ Get project path """
+    """Get project path"""
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
 def get_ci_data_path():
-    """ Get CI DATA path """
+    """Get CI DATA path"""
     return os.path.join(get_proj_path(), "CI", "DATA")
 
 

@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing the miscellaneous functions """
 import os
+
 import pytest
 
 from CI.SCRIPTS.script_utils import Polarization
@@ -23,26 +24,28 @@ from sertit import misc
 
 
 def test_run_command():
-    """ Test run_command """
+    """Test run_command"""
     cmd = "ls .."
-    misc.run_cli(cmd, in_background=False, cwd='/')  # Just ensure no exception is thrown
+    misc.run_cli(
+        cmd, in_background=False, cwd="/"
+    )  # Just ensure no exception is thrown
     cmd = ["cd", ".."]
-    misc.run_cli(cmd, in_background=True, cwd='/')  # Just ensure no exception is thrown
+    misc.run_cli(cmd, in_background=True, cwd="/")  # Just ensure no exception is thrown
 
 
 def test_get_function_name():
-    """ Test get_function_name """
+    """Test get_function_name"""
     assert misc.get_function_name() == "test_get_function_name"
 
 
 def test_in_docker():
-    """ Test in_docker """
+    """Test in_docker"""
     # Hack: in docker if ni linux
     misc.in_docker()  # Just hope it doesn't crash
 
 
 def test_chdir():
-    """ Testing chdir functions """
+    """Testing chdir functions"""
     curr_dir = os.path.dirname(os.path.realpath(__file__))
     old_pwd = os.getcwd()
     with misc.chdir(curr_dir):
@@ -53,7 +56,7 @@ def test_chdir():
 
 
 def test_list_dict():
-    """ Test dict functions """
+    """Test dict functions"""
     test_list = ["A", "T", "R", "", 3, None]
     test_dict = {"A": "T", "R": 3}
     test_list = misc.remove_empty_values(test_list)
@@ -63,13 +66,7 @@ def test_list_dict():
     assert misc.list_to_dict(test_list) == test_dict
 
     # Nested set
-    res_dict = {"A": "T",
-                "R": 3,
-                "B": {
-                    "C": {
-                        "D": "value"
-                    }
-                }}
+    res_dict = {"A": "T", "R": 3, "B": {"C": {"D": "value"}}}
     misc.nested_set(test_dict, ["B", "C", "D"], "value")
     assert test_dict == res_dict
 
@@ -83,7 +80,7 @@ def test_list_dict():
 
 
 def test_enum():
-    """ Test ListEnum """
+    """Test ListEnum"""
     assert Polarization.list_values() == ["HH", "VV", "VH", "HV"]
     assert Polarization.list_names() == ["hh", "vv", "vh", "hv"]
     assert Polarization.from_value("HH") == Polarization.hh
@@ -92,6 +89,8 @@ def test_enum():
     with pytest.raises(ValueError):
         Polarization.from_value("ZZ")
 
-    assert Polarization.convert_from(["HH", "vv", Polarization.hv]) == [Polarization.hh,
-                                                                        Polarization.vv,
-                                                                        Polarization.hv]
+    assert Polarization.convert_from(["HH", "vv", Polarization.hv]) == [
+        Polarization.hh,
+        Polarization.vv,
+        Polarization.hv,
+    ]

@@ -16,11 +16,11 @@
 # limitations under the License.
 """ Script testing the network.control """
 import pytest
+
 from sertit.network import exponential_backoff
 
 
 class NetworkRequestMocker:
-
     def __init__(self, number_of_failures):
         self.number_of_failures = number_of_failures + 1
         self.try_number = 1
@@ -43,14 +43,22 @@ def test_network():
     with pytest.raises(TimeoutError):
         exponential_backoff(
             network_request=lambda: mocker.network_request(),
-            wait_time_slot=0.05, increase_factor=2, max_wait=0.1, max_retries=6,
-            desc="Requesting mock resource", random_state=0
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0,
         )
 
     resource = exponential_backoff(
         network_request=lambda: mocker.network_request(),
-        wait_time_slot=0.05, increase_factor=2, max_wait=10, max_retries=6,
-        desc="Requesting mock resource", random_state=0
+        wait_time_slot=0.05,
+        increase_factor=2,
+        max_wait=10,
+        max_retries=6,
+        desc="Requesting mock resource",
+        random_state=0,
     )
 
     assert resource == "The One Ring"

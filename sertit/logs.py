@@ -15,19 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Logging tools """
-import os
 import logging
 import logging.config
+import os
 from datetime import datetime
 from typing import Union
 
-LOGGING_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
-SU_NAME = 'sertit'
+LOGGING_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
+SU_NAME = "sertit"
 
 
-def init_logger(curr_logger: logging.Logger,
-                log_lvl: int = logging.DEBUG,
-                log_format: str = LOGGING_FORMAT) -> None:
+def init_logger(
+    curr_logger: logging.Logger,
+    log_lvl: int = logging.DEBUG,
+    log_format: str = LOGGING_FORMAT,
+) -> None:
     """
     Initialize a very basic logger to trace the first lines in the stream.
 
@@ -65,23 +67,25 @@ def init_logger(curr_logger: logging.Logger,
                 curr_logger.name: {
                     "handlers": ["stream"],
                     "propagate": False,
-                    "level": logging.getLevelName(log_lvl)
+                    "level": logging.getLevelName(log_lvl),
                 }
-            }
+            },
         }
     )
 
 
 # pylint: disable=R0913
 # Too many arguments (8/5) (too-many-arguments)
-def create_logger(logger: logging.Logger,
-                  file_log_level: int = logging.DEBUG,
-                  stream_log_level: int = logging.INFO,
-                  output_folder: str = None,
-                  name: str = None,
-                  other_loggers_names: Union[str, list] = None,
-                  other_loggers_file_log_level: int = None,
-                  other_loggers_stream_log_level: int = None) -> None:
+def create_logger(
+    logger: logging.Logger,
+    file_log_level: int = logging.DEBUG,
+    stream_log_level: int = logging.INFO,
+    output_folder: str = None,
+    name: str = None,
+    other_loggers_names: Union[str, list] = None,
+    other_loggers_file_log_level: int = None,
+    other_loggers_stream_log_level: int = None,
+) -> None:
     """
     Create file and stream logger at the wanted level for the given logger.
 
@@ -124,29 +128,31 @@ def create_logger(logger: logging.Logger,
         "format": "%(asctime)s - [%(levelname)s] - %(message)s",
     }
     try:
-        from colorlog import ColoredFormatter
+        # 'colorlog.ColoredFormatter' imported but unused
+        from colorlog import ColoredFormatter  # noqa: F401
+
         color_fmter = {
             "()": "colorlog.ColoredFormatter",
             "format": "%(asctime)s - [%(log_color)s%(levelname)s%(reset)s] - %(message_log_color)s%(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
             "reset": True,
             "log_colors": {
-                'DEBUG': 'white',
-                'INFO': 'green',
-                'WARNING': 'cyan',
-                'ERROR': 'red',
-                'CRITICAL': 'fg_bold_red,bg_white',
+                "DEBUG": "white",
+                "INFO": "green",
+                "WARNING": "cyan",
+                "ERROR": "red",
+                "CRITICAL": "fg_bold_red,bg_white",
             },
             "secondary_log_colors": {
-                'message': {
-                    'DEBUG': 'white',
-                    'INFO': 'green',
-                    'WARNING': 'cyan',
-                    'ERROR': 'red',
-                    'CRITICAL': 'bold_red'
+                "message": {
+                    "DEBUG": "white",
+                    "INFO": "green",
+                    "WARNING": "cyan",
+                    "ERROR": "red",
+                    "CRITICAL": "bold_red",
                 }
             },
-            "style": '%'
+            "style": "%",
         }
     except ModuleNotFoundError:
         logger.debug("Impossible to import colorlog, will log without colors.")
@@ -156,10 +162,7 @@ def create_logger(logger: logging.Logger,
     logging_dict = {
         "version": 1,
         "disable_existing_loggers": False,
-        "formatters": {
-            "color_fmter": color_fmter,
-            "basic_fmter": basic_fmter
-        },
+        "formatters": {"color_fmter": color_fmter, "basic_fmter": basic_fmter},
         "handlers": {
             "stream_main": {
                 "level": logging.getLevelName(stream_log_level),
@@ -171,7 +174,7 @@ def create_logger(logger: logging.Logger,
                 "class": "logging.StreamHandler",
                 "formatter": "color_fmter",
             },
-        }
+        },
     }
 
     # Get logger file path
@@ -185,15 +188,15 @@ def create_logger(logger: logging.Logger,
                 "file_main": {
                     "level": logging.getLevelName(file_log_level),
                     "class": "logging.FileHandler",
-                    'filename': log_path,
+                    "filename": log_path,
                     "formatter": "basic_fmter",
                 },
                 "file_other": {
                     "level": logging.getLevelName(other_loggers_file_log_level),
                     "class": "logging.FileHandler",
-                    'filename': log_path,
+                    "filename": log_path,
                     "formatter": "basic_fmter",
-                }
+                },
             }
         )
         handlers_main = ["stream_main", "file_main"]

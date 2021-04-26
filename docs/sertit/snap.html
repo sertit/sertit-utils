@@ -57,12 +57,14 @@ SNAP tools
 &#34;&#34;&#34;
 import logging
 import os
+
 import psutil
-from sertit import strings, misc
+
+from sertit import misc, strings
 from sertit.logs import SU_NAME
 
 MAX_CORES = os.cpu_count() - 2
-MAX_MEM = int(os.environ.get(&#39;JAVA_OPTS_XMX&#39;, 0.95 * psutil.virtual_memory().total))
+MAX_MEM = int(os.environ.get(&#34;JAVA_OPTS_XMX&#34;, 0.95 * psutil.virtual_memory().total))
 TILE_SIZE = 2048
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -83,18 +85,20 @@ def bytes2snap(nof_bytes: int) -&gt; str:
         str: Human-readable in bits
 
     &#34;&#34;&#34;
-    symbols = (&#39;K&#39;, &#39;M&#39;, &#39;G&#39;, &#39;T&#39;, &#39;P&#39;, &#39;E&#39;, &#39;Z&#39;, &#39;Y&#39;)
+    symbols = (&#34;K&#34;, &#34;M&#34;, &#34;G&#34;, &#34;T&#34;, &#34;P&#34;, &#34;E&#34;, &#34;Z&#34;, &#34;Y&#34;)
     prefix = {}
     for idx, sym in enumerate(symbols):
         prefix[sym] = 1 &lt;&lt; (idx + 1) * 10
     for sym in reversed(symbols):
         if nof_bytes &gt;= prefix[sym]:
             value = int(float(nof_bytes) / prefix[sym])
-            return &#39;%s%s&#39; % (value, sym)
+            return &#34;%s%s&#34; % (value, sym)
     return &#34;%sB&#34; % nof_bytes
 
 
-def get_gpt_cli(graph_path: str, other_args: list, display_snap_opt: bool = False) -&gt; list:
+def get_gpt_cli(
+    graph_path: str, other_args: list, display_snap_opt: bool = False
+) -&gt; list:
     &#34;&#34;&#34;
     Get GPT command line with system OK optimizations.
     To see options, type this command line with --diag (but it won&#39;t run the graph)
@@ -131,18 +135,21 @@ def get_gpt_cli(graph_path: str, other_args: list, display_snap_opt: bool = Fals
     Returns:
         list: GPT command line as a list
     &#34;&#34;&#34;
-    gpt_cli = [&#39;gpt&#39;,
-               strings.to_cmd_string(graph_path),
-               &#39;-q&#39;, MAX_CORES,  # Maximum parallelism
-               f&#39;-J-Xms2G -J-Xmx{bytes2snap(MAX_MEM)}&#39;,  # Initially/max allocated memory
-               &#39;-J-Dsnap.log.level=WARNING&#39;,
-               f&#39;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#39;,
-               f&#39;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#39;,
-               f&#39;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#39;,
-               &#39;-J-Dsnap.jai.prefetchTiles=true&#39;,
-               f&#39;-c {bytes2snap(int(0.5 * MAX_MEM))}&#39;,  # Tile cache set to 50% of max memory (up to 75%)
-               # &#39;-x&#39;,
-               *other_args]  # Clears the internal tile cache after writing a complete row to the target file
+    gpt_cli = [
+        &#34;gpt&#34;,
+        strings.to_cmd_string(graph_path),
+        &#34;-q&#34;,
+        MAX_CORES,  # Maximum parallelism
+        f&#34;-J-Xms2G -J-Xmx{bytes2snap(MAX_MEM)}&#34;,  # Initially/max allocated memory
+        &#34;-J-Dsnap.log.level=WARNING&#34;,
+        f&#34;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#34;,
+        &#34;-J-Dsnap.jai.prefetchTiles=true&#34;,
+        f&#34;-c {bytes2snap(int(0.5 * MAX_MEM))}&#34;,  # Tile cache set to 50% of max memory (up to 75%)
+        # &#39;-x&#39;,
+        *other_args,
+    ]  # Clears the internal tile cache after writing a complete row to the target file
 
     # LOGs
     LOGGER.debug(gpt_cli)
@@ -197,14 +204,14 @@ def get_gpt_cli(graph_path: str, other_args: list, display_snap_opt: bool = Fals
         str: Human-readable in bits
 
     &#34;&#34;&#34;
-    symbols = (&#39;K&#39;, &#39;M&#39;, &#39;G&#39;, &#39;T&#39;, &#39;P&#39;, &#39;E&#39;, &#39;Z&#39;, &#39;Y&#39;)
+    symbols = (&#34;K&#34;, &#34;M&#34;, &#34;G&#34;, &#34;T&#34;, &#34;P&#34;, &#34;E&#34;, &#34;Z&#34;, &#34;Y&#34;)
     prefix = {}
     for idx, sym in enumerate(symbols):
         prefix[sym] = 1 &lt;&lt; (idx + 1) * 10
     for sym in reversed(symbols):
         if nof_bytes &gt;= prefix[sym]:
             value = int(float(nof_bytes) / prefix[sym])
-            return &#39;%s%s&#39; % (value, sym)
+            return &#34;%s%s&#34; % (value, sym)
     return &#34;%sB&#34; % nof_bytes</code></pre>
 </details>
 </dd>
@@ -254,7 +261,9 @@ Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_gpt_cli(graph_path: str, other_args: list, display_snap_opt: bool = False) -&gt; list:
+<pre><code class="python">def get_gpt_cli(
+    graph_path: str, other_args: list, display_snap_opt: bool = False
+) -&gt; list:
     &#34;&#34;&#34;
     Get GPT command line with system OK optimizations.
     To see options, type this command line with --diag (but it won&#39;t run the graph)
@@ -291,18 +300,21 @@ Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
     Returns:
         list: GPT command line as a list
     &#34;&#34;&#34;
-    gpt_cli = [&#39;gpt&#39;,
-               strings.to_cmd_string(graph_path),
-               &#39;-q&#39;, MAX_CORES,  # Maximum parallelism
-               f&#39;-J-Xms2G -J-Xmx{bytes2snap(MAX_MEM)}&#39;,  # Initially/max allocated memory
-               &#39;-J-Dsnap.log.level=WARNING&#39;,
-               f&#39;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#39;,
-               f&#39;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#39;,
-               f&#39;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#39;,
-               &#39;-J-Dsnap.jai.prefetchTiles=true&#39;,
-               f&#39;-c {bytes2snap(int(0.5 * MAX_MEM))}&#39;,  # Tile cache set to 50% of max memory (up to 75%)
-               # &#39;-x&#39;,
-               *other_args]  # Clears the internal tile cache after writing a complete row to the target file
+    gpt_cli = [
+        &#34;gpt&#34;,
+        strings.to_cmd_string(graph_path),
+        &#34;-q&#34;,
+        MAX_CORES,  # Maximum parallelism
+        f&#34;-J-Xms2G -J-Xmx{bytes2snap(MAX_MEM)}&#34;,  # Initially/max allocated memory
+        &#34;-J-Dsnap.log.level=WARNING&#34;,
+        f&#34;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#34;,
+        &#34;-J-Dsnap.jai.prefetchTiles=true&#34;,
+        f&#34;-c {bytes2snap(int(0.5 * MAX_MEM))}&#34;,  # Tile cache set to 50% of max memory (up to 75%)
+        # &#39;-x&#39;,
+        *other_args,
+    ]  # Clears the internal tile cache after writing a complete row to the target file
 
     # LOGs
     LOGGER.debug(gpt_cli)

@@ -32,8 +32,24 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 </header>
 <section id="section-intro">
 <p><strong>Source Code</strong>: <a href="https://code.sertit.unistra.fr/SERTIT/sertit-utils">https://code.sertit.unistra.fr/SERTIT/sertit-utils</a></p>
-<p>Library gathering utils functions for all SERTIT's projects.</p>
-<p>Find the API documentation <a href="https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit"><strong>here</strong></a>.</p>
+<p>Library gathering functions for all SERTIT's projects.</p>
+<p>Find the API documentation <a href="https://sertit.github.io/sertit-utils/"><strong>here</strong></a>.</p>
+<h1 id="installing">Installing</h1>
+<p>For installing this library to your environment, please type this:</p>
+<ul>
+<li>in your console: <code>pip install <a title="sertit" href="#sertit">sertit</a>[full]</code></li>
+</ul>
+<p><code>[full]</code> will allow you to use the whole library, but you will need to install also<code>rioxarray</code> and <code>geopandas</code>
+(with GDAL installation issues on Windows, so please install them from wheels that you can
+find <a href="https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio">here</a>).</p>
+<p>However, if you do not need everything, you can type instead:</p>
+<ul>
+<li><em>nothing</em>, and you won't need <code>rasterio</code>, <code>rioxarray</code> or <code>geopandas</code>: <code>pip install sertit --extra-index-url ...</code></li>
+<li><code>[<a title="sertit.vectors" href="vectors.html">sertit.vectors</a>]</code>, and you won't need <code>rasterio</code> or <code>rioxarray</code>: <code>pip install sertit[vectors] --extra-index-url ...</code></li>
+<li><code>[<a title="sertit.rasters" href="rasters.html">sertit.rasters</a>]</code>, and you won't need <code>rioxarray</code>: <code>pip install sertit[rasters] --extra-index-url ...</code></li>
+<li><code>[<a title="sertit.rasters_rio" href="rasters_rio.html">sertit.rasters_rio</a>]</code>: <code>pip install sertit[rasters_rio] --extra-index-url ...</code></li>
+<li><code>[colorlog]</code>: <code>pip install sertit[colorlog] --extra-index-url ...</code> to have <code>colorlog</code> installed</li>
+</ul>
 <h1 id="what-is-in-it">What is in it ?</h1>
 <h2 id="files">Files</h2>
 <p>File gathering file-related functions:</p>
@@ -67,7 +83,7 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 <ul>
 <li>Conversion from string to bool, logging level, list, list of dates&hellip;</li>
 <li>Convert the string to be usable in command line</li>
-<li>Case conversion (<code>snake_case</code> to/from <code>CamelCase</code>) </li>
+<li>Case conversion (<code>snake_case</code> to/from <code>CamelCase</code>)</li>
 </ul>
 <h2 id="vectors">Vectors</h2>
 <ul>
@@ -93,39 +109,20 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 when <code><a title="sertit.rasters_rio" href="rasters_rio.html">sertit.rasters_rio</a></code> outputs <code>numpy.ma.masked_arrays</code> + <code>dict</code> for the raster array and its metadata.</p>
 <h2 id="network">Network</h2>
 <ul>
-<li>Standard <a href="https://en.wikipedia.org/wiki/Exponential_backoff">Exponential Backoff</a> algorithm </li>
+<li>Standard <a href="https://en.wikipedia.org/wiki/Exponential_backoff">Exponential Backoff</a> algorithm</li>
 </ul>
 <h2 id="snap">SNAP</h2>
 <ul>
 <li>Function converting bytes to SNAP understanding</li>
 <li>Function creating a SNAP optimized commande line</li>
 </ul>
-<h1 id="installing">Installing</h1>
-<p>For installing this library to your environment, please type this:</p>
-<ul>
-<li>in your console: <code>pip install --index-url &lt;https://%GITLAB_SERTIT_READ_TOKEN%:&gt;
-%GITLAB_SERTIT_READ_PWD%@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]</code></li>
-<li>type this in your <code>requirement.txt</code>:<br>
-<code>--extra-index-url &lt;https://${GITLAB_SERTIT_READ_TOKEN}:&gt;
-${GITLAB_SERTIT_READ_PWD}@code.sertit.unistra.fr/api/v4/projects/134/packages/pypi/simple sertit[full]</code></li>
-</ul>
-<p><code>[full]</code> will allow you to use the whole library, but you will need to install also<code>rioxarray</code> and <code>geopandas</code>
-(with GDAL installation issues on Windows, so please install them from wheels that you can find <a href="https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio">here</a>). </p>
-<p>However, if you do not need everything, you can type instead:</p>
-<ul>
-<li><em>nothing</em>, and you won't need <code>rasterio</code>, <code>rioxarray</code> or <code>geopandas</code>: <code>pip install sertit --extra-index-url ...</code></li>
-<li><code>[<a title="sertit.vectors" href="vectors.html">sertit.vectors</a>]</code>, and you won't need <code>rasterio</code> or <code>rioxarray</code>: <code>pip install sertit[vectors] --extra-index-url ...</code></li>
-<li><code>[<a title="sertit.rasters" href="rasters.html">sertit.rasters</a>]</code>, and you won't need <code>rioxarray</code>: <code>pip install sertit[rasters] --extra-index-url ...</code></li>
-<li><code>[<a title="sertit.rasters_rio" href="rasters_rio.html">sertit.rasters_rio</a>]</code>: <code>pip install sertit[rasters_rio] --extra-index-url ...</code></li>
-<li><code>[colorlog]</code>: <code>pip install sertit[colorlog] --extra-index-url ...</code> to have <code>colorlog</code> installed</li>
-</ul>
 <h1 id="documentation">Documentation</h1>
 <p>An HTML documentation is provided to document the code.
 It can be found:</p>
 <ul>
-<li>online <a href="https://sertit.pages.sertit.unistra.fr/sertit-utils/sertit">here</a>,</li>
-<li>on git, in <code>docs</code>.<br>
-To consult it, just open the <code>index.html</code> file in a web browser (you need first to clone this project)<br>
+<li>online <a href="https://sertit.github.io/sertit-utils/">here</a>),</li>
+<li>on git, in <code>docs</code>.
+To consult it, just open the <code>index.html</code> file in a web browser (you need first to clone this project)
 To generate the HTML documentation, just type <code>pdoc sertit -o docs\html -f --html -c sort_identifiers=False</code></li>
 </ul>
 <h1 id="packaging">Packaging</h1>
@@ -157,7 +154,7 @@ To upload the pypi package, just type <code>twine upload --config-file .pypirc -
 .. include:: ../README.md
 &#34;&#34;&#34;
 
-__version__ = &#39;1.2.8&#39;</code></pre>
+__version__ = &#34;1.2.8&#34;</code></pre>
 </details>
 </section>
 <section>
@@ -269,6 +266,7 @@ setTimeout(() => input.focus(), 100);
 <h1>Index</h1>
 <div class="toc">
 <ul>
+<li><a href="#installing">Installing</a></li>
 <li><a href="#what-is-in-it">What is in it ?</a><ul>
 <li><a href="#files">Files</a></li>
 <li><a href="#logs">Logs</a></li>
@@ -280,7 +278,6 @@ setTimeout(() => input.focus(), 100);
 <li><a href="#snap">SNAP</a></li>
 </ul>
 </li>
-<li><a href="#installing">Installing</a></li>
 <li><a href="#documentation">Documentation</a></li>
 <li><a href="#packaging">Packaging</a></li>
 </ul>

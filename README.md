@@ -51,7 +51,7 @@ File gathering file-related functions:
 ## Strings
 - Conversion from string to bool, logging level, list, list of dates...
 - Convert the string to be usable in command line
-- Case conversion (`snake_case` to/from `CamelCase`) 
+- Case conversion (`snake_case` to/from `CamelCase`)
 
 ## Vectors
 - Load an AOI as WKT
@@ -76,7 +76,7 @@ The main difference between the two is that `rasters` outputs one `xarray` varia
 when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster array and its metadata.
 
 ## Network
-- Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm 
+- Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm
 
 ## SNAP
 - Function converting bytes to SNAP understanding
@@ -88,8 +88,8 @@ An HTML documentation is provided to document the code.
 It can be found:
 
 - online [here](https://sertit.github.io/sertit-utils/)),
-- on git, in `docs`.  
-  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)  
+- on git, in `docs`.
+  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
   To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`
 
 # Packaging

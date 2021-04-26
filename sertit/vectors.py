@@ -21,7 +21,8 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 import logging
 import os
-from typing import Union, Generator, Any
+from typing import Any, Generator, Union
+
 import numpy as np
 import pandas as pd
 
@@ -30,7 +31,9 @@ try:
     from shapely import wkt
     from shapely.geometry import MultiPolygon, Polygon, box
 except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError("Please install 'geopandas' to use the rasters package.") from ex
+    raise ModuleNotFoundError(
+        "Please install 'geopandas' to use the rasters package."
+    ) from ex
 
 from sertit.logs import SU_NAME
 
@@ -63,7 +66,9 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     return f"EPSG:{epsg}"
 
 
-def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, float, float, float):
+def from_polygon_to_bounds(
+    polygon: Union[Polygon, MultiPolygon]
+) -> (float, float, float, float):
     """
     Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
@@ -90,7 +95,9 @@ def from_polygon_to_bounds(polygon: Union[Polygon, MultiPolygon]) -> (float, flo
     return left, bottom, right, top
 
 
-def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float) -> Polygon:
+def from_bounds_to_polygon(
+    left: float, bottom: float, right: float, top: float
+) -> Polygon:
     """
     Convert the bounds to a `shapely.polygon`.
 
@@ -113,7 +120,9 @@ def from_bounds_to_polygon(left: float, bottom: float, right: float, top: float)
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
 
-def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
+def get_geodf(
+    geometry: Union[Polygon, list, gpd.GeoSeries], crs: str
+) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
 
@@ -139,7 +148,9 @@ def get_geodf(geometry: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.Ge
             try:
                 geometry = [from_bounds_to_polygon(*geometry)]
             except TypeError as ex:
-                raise TypeError("Give the extent as 'left', 'bottom', 'right', and 'top'") from ex
+                raise TypeError(
+                    "Give the extent as 'left', 'bottom', 'right', and 'top'"
+                ) from ex
     elif isinstance(geometry, Polygon):
         geometry = [geometry]
     elif isinstance(geometry, gpd.GeoSeries):
@@ -168,10 +179,10 @@ def set_kml_driver() -> None:
 
     """
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
-    if 'LIBKML' not in drivers:
-        drivers['LIBKML'] = 'rw'
-    if 'KML' not in drivers:  # Just in case
-        drivers['KML'] = 'rw'
+    if "LIBKML" not in drivers:
+        drivers["LIBKML"] = "rw"
+    if "KML" not in drivers:  # Just in case
+        drivers["KML"] = "rw"
 
 
 def get_aoi_wkt(aoi_path: str, as_str: bool = True) -> Union[str, Polygon]:
@@ -204,12 +215,12 @@ def get_aoi_wkt(aoi_path: str, as_str: bool = True) -> Union[str, Polygon]:
     if not os.path.isfile(aoi_path):
         raise FileNotFoundError(f"AOI file {aoi_path} does not exist.")
 
-    if aoi_path.endswith('.wkt'):
+    if aoi_path.endswith(".wkt"):
         try:
-            with open(aoi_path, 'r') as aoi_f:
+            with open(aoi_path, "r") as aoi_f:
                 aoi = wkt.load(aoi_f)
         except Exception as ex:
-            raise ValueError('AOI WKT cannot be read') from ex
+            raise ValueError("AOI WKT cannot be read") from ex
     else:
         try:
             if aoi_path.endswith(".kml"):
@@ -223,22 +234,24 @@ def get_aoi_wkt(aoi_path: str, as_str: bool = True) -> Union[str, Polygon]:
                 aoi_file = aoi_file.to_crs(WGS84)
 
             # Get envelope polygon
-            geom = aoi_file['geometry']
+            geom = aoi_file["geometry"]
             if len(geom) > 1:
-                LOGGER.warning("Your AOI contains several polygons. Only the first will be treated !")
+                LOGGER.warning(
+                    "Your AOI contains several polygons. Only the first will be treated !"
+                )
             polygon = geom[0].convex_hull
 
             # Convert to WKT
             aoi = wkt.loads(str(polygon))
 
         except Exception as ex:
-            raise ValueError('AOI cannot be read by Fiona') from ex
+            raise ValueError("AOI cannot be read by Fiona") from ex
 
     # Convert to string if needed
     if as_str:
         aoi = wkt.dumps(aoi)
 
-    LOGGER.debug('Specified AOI in WKT: %s', aoi)
+    LOGGER.debug("Specified AOI in WKT: %s", aoi)
     return aoi
 
 

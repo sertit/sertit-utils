@@ -54,14 +54,15 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 # limitations under the License.
 &#34;&#34;&#34; Miscellaneous Tools &#34;&#34;&#34;
 
-import os
-import sys
-import subprocess
 import logging
+import os
 import pprint
+import subprocess
+import sys
 from contextlib import contextmanager
 from enum import Enum, unique
 from typing import Any, Union
+
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -108,7 +109,7 @@ class ListEnum(Enum):
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
+    def from_value(cls, val: Any) -&gt; &#34;ListEnum&#34;:
         &#34;&#34;&#34;
         Get the enum class from its value:
 
@@ -160,8 +161,10 @@ class ListEnum(Enum):
             elif isinstance(tc, cls):
                 enums.append(tc)
             else:
-                raise TypeError(f&#34;Invalid name {tc}, &#34;
-                                f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;)
+                raise TypeError(
+                    f&#34;Invalid name {tc}, &#34;
+                    f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;
+                )
 
         return enums
 
@@ -257,7 +260,9 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -&gt; None:
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise ValueError(f&#34;Missing mandatory key &#39;{mandatory_key}&#39; among {pprint.pformat(data_dict)}&#34;)
+            raise ValueError(
+                f&#34;Missing mandatory key &#39;{mandatory_key}&#39; among {pprint.pformat(data_dict)}&#34;
+            )
 
 
 def find_by_key(data: dict, target: str) -&gt; Any:
@@ -297,11 +302,13 @@ def find_by_key(data: dict, target: str) -&gt; Any:
     return val
 
 
-def run_cli(cmd: Union[str, list],
-            timeout: float = None,
-            check_return_value: bool = True,
-            in_background: bool = True,
-            cwd=&#39;/&#39;) -&gt; (int, str):
+def run_cli(
+    cmd: Union[str, list],
+    timeout: float = None,
+    check_return_value: bool = True,
+    in_background: bool = True,
+    cwd=&#34;/&#34;,
+) -&gt; (int, str):
     &#34;&#34;&#34;
     Run a command line.
 
@@ -331,11 +338,11 @@ def run_cli(cmd: Union[str, list],
     &#34;&#34;&#34;
     if isinstance(cmd, list):
         cmd = [str(cmd_i) for cmd_i in cmd]
-        cmd_line = &#39; &#39;.join(cmd)
+        cmd_line = &#34; &#34;.join(cmd)
     elif isinstance(cmd, str):
         cmd_line = cmd
     else:
-        raise TypeError(&#39;The command line should be given as a str or a list&#39;)
+        raise TypeError(&#34;The command line should be given as a str or a list&#34;)
 
     # Background
     LOGGER.debug(cmd_line)
@@ -350,19 +357,24 @@ def run_cli(cmd: Union[str, list],
 
     # The os.setsid() is passed in the argument preexec_fn so
     # it&#39;s run after the fork() and before  exec() to run the shell.
-    with subprocess.Popen(cmd_line,
-                          shell=True,
-                          stdout=stdout,
-                          stderr=stderr,
-                          cwd=cwd,
-                          start_new_session=True,
-                          close_fds=close_fds) as process:
-        output = &#39;&#39;
+    with subprocess.Popen(
+        cmd_line,
+        shell=True,
+        stdout=stdout,
+        stderr=stderr,
+        cwd=cwd,
+        start_new_session=True,
+        close_fds=close_fds,
+    ) as process:
+        output = &#34;&#34;
         if not in_background:
             for line in process.stdout:
-                line = line.decode(encoding=sys.stdout.encoding,
-                                   errors=&#39;replace&#39; if sys.version_info &lt; (3, 5)
-                                   else &#39;backslashreplace&#39;).rstrip()
+                line = line.decode(
+                    encoding=sys.stdout.encoding,
+                    errors=&#34;replace&#34;
+                    if sys.version_info &lt; (3, 5)
+                    else &#34;backslashreplace&#34;,
+                ).rstrip()
                 LOGGER.info(line)
                 output += line
 
@@ -412,8 +424,8 @@ def in_docker() -&gt; bool:
         bool: True if inside a docker
     &#34;&#34;&#34;
     try:
-        with open(&#39;/proc/1/cgroup&#39;, &#39;rt&#39;) as ifh:
-            in_dck = &#39;docker&#39; in ifh.read()
+        with open(&#34;/proc/1/cgroup&#34;, &#34;rt&#34;) as ifh:
+            in_dck = &#34;docker&#34; in ifh.read()
     # pylint: disable=W0703
     except Exception:
         in_dck = False
@@ -645,7 +657,9 @@ ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
 
     for mandatory_key in mandatory_keys:
         if mandatory_key not in data_dict:
-            raise ValueError(f&#34;Missing mandatory key &#39;{mandatory_key}&#39; among {pprint.pformat(data_dict)}&#34;)</code></pre>
+            raise ValueError(
+                f&#34;Missing mandatory key &#39;{mandatory_key}&#39; among {pprint.pformat(data_dict)}&#34;
+            )</code></pre>
 </details>
 </dd>
 <dt id="sertit.misc.find_by_key"><code class="name flex">
@@ -757,11 +771,13 @@ ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def run_cli(cmd: Union[str, list],
-            timeout: float = None,
-            check_return_value: bool = True,
-            in_background: bool = True,
-            cwd=&#39;/&#39;) -&gt; (int, str):
+<pre><code class="python">def run_cli(
+    cmd: Union[str, list],
+    timeout: float = None,
+    check_return_value: bool = True,
+    in_background: bool = True,
+    cwd=&#34;/&#34;,
+) -&gt; (int, str):
     &#34;&#34;&#34;
     Run a command line.
 
@@ -791,11 +807,11 @@ ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
     &#34;&#34;&#34;
     if isinstance(cmd, list):
         cmd = [str(cmd_i) for cmd_i in cmd]
-        cmd_line = &#39; &#39;.join(cmd)
+        cmd_line = &#34; &#34;.join(cmd)
     elif isinstance(cmd, str):
         cmd_line = cmd
     else:
-        raise TypeError(&#39;The command line should be given as a str or a list&#39;)
+        raise TypeError(&#34;The command line should be given as a str or a list&#34;)
 
     # Background
     LOGGER.debug(cmd_line)
@@ -810,19 +826,24 @@ ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
 
     # The os.setsid() is passed in the argument preexec_fn so
     # it&#39;s run after the fork() and before  exec() to run the shell.
-    with subprocess.Popen(cmd_line,
-                          shell=True,
-                          stdout=stdout,
-                          stderr=stderr,
-                          cwd=cwd,
-                          start_new_session=True,
-                          close_fds=close_fds) as process:
-        output = &#39;&#39;
+    with subprocess.Popen(
+        cmd_line,
+        shell=True,
+        stdout=stdout,
+        stderr=stderr,
+        cwd=cwd,
+        start_new_session=True,
+        close_fds=close_fds,
+    ) as process:
+        output = &#34;&#34;
         if not in_background:
             for line in process.stdout:
-                line = line.decode(encoding=sys.stdout.encoding,
-                                   errors=&#39;replace&#39; if sys.version_info &lt; (3, 5)
-                                   else &#39;backslashreplace&#39;).rstrip()
+                line = line.decode(
+                    encoding=sys.stdout.encoding,
+                    errors=&#34;replace&#34;
+                    if sys.version_info &lt; (3, 5)
+                    else &#34;backslashreplace&#34;,
+                ).rstrip()
                 LOGGER.info(line)
                 output += line
 
@@ -910,8 +931,8 @@ else:
         bool: True if inside a docker
     &#34;&#34;&#34;
     try:
-        with open(&#39;/proc/1/cgroup&#39;, &#39;rt&#39;) as ifh:
-            in_dck = &#39;docker&#39; in ifh.read()
+        with open(&#34;/proc/1/cgroup&#34;, &#34;rt&#34;) as ifh:
+            in_dck = &#34;docker&#34; in ifh.read()
     # pylint: disable=W0703
     except Exception:
         in_dck = False
@@ -1024,7 +1045,7 @@ def chdir(newdir: str) -&gt; None:
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
+    def from_value(cls, val: Any) -&gt; &#34;ListEnum&#34;:
         &#34;&#34;&#34;
         Get the enum class from its value:
 
@@ -1076,8 +1097,10 @@ def chdir(newdir: str) -&gt; None:
             elif isinstance(tc, cls):
                 enums.append(tc)
             else:
-                raise TypeError(f&#34;Invalid name {tc}, &#34;
-                                f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;)
+                raise TypeError(
+                    f&#34;Invalid name {tc}, &#34;
+                    f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;
+                )
 
         return enums</code></pre>
 </details>
@@ -1161,7 +1184,7 @@ def list_names(cls) -&gt; list:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def from_value(cls, val: Any) -&gt; &#39;ListEnum&#39;:
+def from_value(cls, val: Any) -&gt; &#34;ListEnum&#34;:
     &#34;&#34;&#34;
     Get the enum class from its value:
 
@@ -1236,8 +1259,10 @@ def convert_from(cls, to_convert: Union[list, str]) -&gt; list:
         elif isinstance(tc, cls):
             enums.append(tc)
         else:
-            raise TypeError(f&#34;Invalid name {tc}, &#34;
-                            f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;)
+            raise TypeError(
+                f&#34;Invalid name {tc}, &#34;
+                f&#34;should be chosen among {cls.list_values()} or {cls.list_names()}&#34;
+            )
 
     return enums</code></pre>
 </details>

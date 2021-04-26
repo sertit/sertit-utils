@@ -18,16 +18,17 @@
 import os
 import tempfile
 
+import geopandas as gpd
+import numpy as np
 import pytest
 import rasterio
-import numpy as np
-import geopandas as gpd
+
 from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import rasters_rio, ci
+from sertit import ci, rasters_rio
 
 
 def test_rasters_rio():
-    """ Test raster functions """
+    """Test raster functions"""
     raster_path = os.path.join(RASTER_DATA, "raster.tif")
     raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
     raster_cropped_path = os.path.join(RASTER_DATA, "raster_cropped.tif")
@@ -89,20 +90,30 @@ def test_rasters_rio():
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
-            sieve_arr, sieve_meta = rasters_rio.sieve(raster, meta, sieve_thresh=20, connectivity=4)
+            sieve_arr, sieve_meta = rasters_rio.sieve(
+                raster, meta, sieve_thresh=20, connectivity=4
+            )
             rasters_rio.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
 
             # Collocate
-            coll_arr, coll_meta = rasters_rio.collocate(meta, raster, meta)  # Just hope that it doesnt crash
+            coll_arr, coll_meta = rasters_rio.collocate(
+                meta, raster, meta
+            )  # Just hope that it doesnt crash
             assert coll_meta == meta
 
             # Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
-            rasters_rio.merge_gtiff([raster_path, raster_to_merge_path], raster_merged_gtiff_out, method="max")
+            rasters_rio.merge_gtiff(
+                [raster_path, raster_to_merge_path],
+                raster_merged_gtiff_out,
+                method="max",
+            )
 
             # Merge VRT
             raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-            rasters_rio.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+            rasters_rio.merge_vrt(
+                [raster_path, raster_to_merge_path], raster_merged_vrt_out
+            )
 
             # Vectorize
             val = 2
@@ -123,7 +134,6 @@ def test_rasters_rio():
             nodata_truth = gpd.read_file(nodata_truth_path)
             ci.assert_geom_equal(nodata_vec, nodata_truth)
 
-
         # Tests
         ci.assert_raster_equal(raster_path, raster_out)
         ci.assert_raster_equal(raster_masked_out, raster_masked_path)
@@ -134,13 +144,15 @@ def test_rasters_rio():
 
 
 def test_dim():
-    """ Test on BEAM-DIMAP function """
+    """Test on BEAM-DIMAP function"""
     dim_path = os.path.join(RASTER_DATA, "DIM.dim")
-    assert (rasters_rio.get_dim_img_path(dim_path) == os.path.join(RASTER_DATA, "DIM.data", "dim.img"))
+    assert rasters_rio.get_dim_img_path(dim_path) == os.path.join(
+        RASTER_DATA, "DIM.data", "dim.img"
+    )
 
 
 def test_bit():
-    """ Test bit arrays """
+    """Test bit arrays"""
     np_ones = np.ones((1, 2, 2), dtype=np.uint16)
     ones = rasters_rio.read_bit_array(np_ones, bit_id=0)
     zeros = rasters_rio.read_bit_array(np_ones, bit_id=list(np.arange(1, 15)))

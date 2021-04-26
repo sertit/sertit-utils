@@ -21,44 +21,43 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 """
 import os
 from functools import wraps
-from typing import Union, Optional, Any, Callable
+from typing import Any, Callable, Optional, Union
+
 import numpy as np
 import xarray
 
-from sertit.rasters_rio import path_arr_dst, PATH_ARR_DS
+from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
 
 try:
-    import pandas as pd
     import geopandas as gpd
-    from shapely.geometry import Polygon
-
     import rasterio
-    from rasterio import features
-
-    import xarray as xr
     import rioxarray
-    from rioxarray import merge
+    import xarray as xr
+    from rasterio import features
     from rasterio.enums import Resampling
+    from shapely.geometry import Polygon
 except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError("Please install 'rioxarray' and 'geopandas' to use the 'rasters' package.") from ex
+    raise ModuleNotFoundError(
+        "Please install 'rioxarray' and 'geopandas' to use the 'rasters' package."
+    ) from ex
 
-from sertit import vectors, rasters_rio, files
+from sertit import files, rasters_rio, vectors
 
 MAX_CORES = os.cpu_count() - 2
-ORIGIN_DTYPE = 'original_dtype'
+ORIGIN_DTYPE = "original_dtype"
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
 """
-Types: 
+Types:
 
 - Path
 - rasterio Dataset
 - `xarray.DataArray` and `xarray.Dataset`
-"""
+"""  # fmt:skip
 
 XDS_TYPE = Union[xr.Dataset, xr.DataArray]
 """
 Xarray types: xr.Dataset and xr.DataArray
-"""
+"""  # fmt:skip
 
 
 def path_xarr_dst(function: Callable) -> Callable:
@@ -134,8 +133,12 @@ def path_xarr_dst(function: Callable) -> Callable:
             else:
                 name = path_or_ds.name
 
-            with rioxarray.open_rasterio(path_or_ds, masked=True, default_name=name) as xds:
-                xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(path_or_ds).dtype  # TODO
+            with rioxarray.open_rasterio(
+                path_or_ds, masked=True, default_name=name
+            ) as xds:
+                xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(
+                    path_or_ds
+                ).dtype  # TODO
                 out = function(xds, *args, **kwargs)
         return out
 
@@ -241,10 +244,12 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
 
 
 @path_xarr_dst
-def _vectorize(xds: PATH_XARR_DS,
-               values: Union[None, int, list] = None,
-               get_nodata: bool = False,
-               default_nodata: int = 0) -> gpd.GeoDataFrame:
+def _vectorize(
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    get_nodata: bool = False,
+    default_nodata: int = 0,
+) -> gpd.GeoDataFrame:
     """
     Vectorize a xarray, both to get classes or nodata.
 
@@ -282,7 +287,9 @@ def _vectorize(xds: PATH_XARR_DS,
         if data.dtype != np.uint8:
             raise TypeError("Your data should be classified (np.uint8).")
 
-        nodata_arr = rasters_rio.get_nodata_mask(data, has_nodata=False, default_nodata=nodata)
+        nodata_arr = rasters_rio.get_nodata_mask(
+            data, has_nodata=False, default_nodata=nodata
+        )
 
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
@@ -291,9 +298,9 @@ def _vectorize(xds: PATH_XARR_DS,
 
 
 @path_xarr_dst
-def vectorize(xds: PATH_XARR_DS,
-              values: Union[None, int, list] = None,
-              default_nodata: int = 0) -> gpd.GeoDataFrame:
+def vectorize(
+    xds: PATH_XARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+) -> gpd.GeoDataFrame:
     """
     Vectorize a `xarray` to get the class vectors.
 
@@ -320,12 +327,13 @@ def vectorize(xds: PATH_XARR_DS,
     Returns:
         gpd.GeoDataFrame: Classes Vector
     """
-    return _vectorize(xds, values=values, get_nodata=False, default_nodata=default_nodata)
+    return _vectorize(
+        xds, values=values, get_nodata=False, default_nodata=default_nodata
+    )
 
 
 @path_xarr_dst
-def get_valid_vector(xds: PATH_XARR_DS,
-                     default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster as a vector.
 
@@ -349,13 +357,16 @@ def get_valid_vector(xds: PATH_XARR_DS,
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(xds, values=None, get_nodata=True, default_nodata=default_nodata)
-    return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
+    nodata = _vectorize(
+        xds, values=None, get_nodata=True, default_nodata=default_nodata
+    )
+    return nodata[
+        nodata.raster_val != 0
+    ]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_xarr_dst
-def get_nodata_vector(dst: PATH_ARR_DS,
-                      default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -379,15 +390,19 @@ def get_nodata_vector(dst: PATH_ARR_DS,
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
+    nodata = _vectorize(
+        dst, values=None, get_nodata=True, default_nodata=default_nodata
+    )
     return nodata[nodata.raster_val == 0]
 
 
 @path_xarr_dst
-def mask(xds: PATH_XARR_DS,
-         shapes: Union[Polygon, list],
-         nodata: Optional[int] = None,
-         **kwargs) -> XDS_TYPE:
+def mask(
+    xds: PATH_XARR_DS,
+    shapes: Union[Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs
+) -> XDS_TYPE:
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
@@ -428,10 +443,12 @@ def mask(xds: PATH_XARR_DS,
 
 
 @path_xarr_dst
-def crop(xds: PATH_XARR_DS,
-         shapes: Union[Polygon, list],
-         nodata: Optional[int] = None,
-         **kwargs) -> (np.ma.masked_array, dict):
+def crop(
+    xds: PATH_XARR_DS,
+    shapes: Union[Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs
+) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
@@ -470,11 +487,13 @@ def crop(xds: PATH_XARR_DS,
 
 
 @path_arr_dst
-def read(dst: PATH_ARR_DS,
-         resolution: Union[tuple, list, float] = None,
-         size: Union[tuple, list] = None,
-         resampling: Resampling = Resampling.nearest,
-         masked: bool = True) -> XDS_TYPE:
+def read(
+    dst: PATH_ARR_DS,
+    resolution: Union[tuple, list, float] = None,
+    size: Union[tuple, list] = None,
+    resampling: Resampling = Resampling.nearest,
+    masked: bool = True,
+) -> XDS_TYPE:
     """
     Read a raster dataset from a :
 
@@ -514,22 +533,24 @@ def read(dst: PATH_ARR_DS,
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data
-    xds = rioxarray.open_rasterio(dst, mask_and_scale=masked, default_name=files.get_filename(dst.name))
+    xds = rioxarray.open_rasterio(
+        dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
+    )
     if masked:
         xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(dst).dtype  # TODO
     else:
         xds.attrs[ORIGIN_DTYPE] = xds.dtype
 
     if new_height != dst.height or new_width != dst.width:
-        xds = xds.rio.reproject(xds.rio.crs, shape=(new_height, new_width), resampling=resampling)
+        xds = xds.rio.reproject(
+            xds.rio.crs, shape=(new_height, new_width), resampling=resampling
+        )
 
     return xds
 
 
 @path_xarr_dst
-def write(xds: XDS_TYPE,
-          path: str,
-          **kwargs) -> None:
+def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
     """
     Write raster to disk.
     (encapsulation of `rasterio`'s function, because for now `rioxarray` to_raster doesn't work as expected)
@@ -557,9 +578,11 @@ def write(xds: XDS_TYPE,
     xds.rio.to_raster(path, **kwargs)
 
 
-def collocate(master_xds: XDS_TYPE,
-              slave_xds: XDS_TYPE,
-              resampling: Resampling = Resampling.nearest) -> XDS_TYPE:
+def collocate(
+    master_xds: XDS_TYPE,
+    slave_xds: XDS_TYPE,
+    resampling: Resampling = Resampling.nearest,
+) -> XDS_TYPE:
     """
     Collocate two georeferenced arrays:
     forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
@@ -588,17 +611,17 @@ def collocate(master_xds: XDS_TYPE,
 
     """
     collocated_xds = slave_xds.rio.reproject_match(master_xds, resampling=resampling)
-    collocated_xds = collocated_xds.assign_coords({
-        "x": master_xds.x,
-        "y": master_xds.y,
-    })  # Bug for now, tiny difference in coords
+    collocated_xds = collocated_xds.assign_coords(
+        {
+            "x": master_xds.x,
+            "y": master_xds.y,
+        }
+    )  # Bug for now, tiny difference in coords
     return collocated_xds
 
 
 @path_xarr_dst
-def sieve(xds: PATH_XARR_DS,
-          sieve_thresh: int,
-          connectivity: int = 4) -> XDS_TYPE:
+def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TYPE:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -629,12 +652,14 @@ def sieve(xds: PATH_XARR_DS,
     # Sieve
     data = np.squeeze(to_np(xds))  # Use this trick to make the sieve work
     sieved_data = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
-    sieved_xds = xds.copy(data=np.expand_dims(sieved_data.astype(xds.dtype), axis=0), deep=True)
+    sieved_xds = xds.copy(
+        data=np.expand_dims(sieved_data.astype(xds.dtype), axis=0), deep=True
+    )
 
     return sieved_xds
 
 
-def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
+def get_dim_img_path(dim_path: str, img_name: str = "*") -> str:
     """
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -802,8 +827,9 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return rasters_rio.unpackbits(array, nof_bits)
 
 
-def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
-                   bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+def read_bit_array(
+    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
+) -> Union[np.ndarray, list]:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 
@@ -834,8 +860,9 @@ def read_bit_array(bit_mask: Union[xr.DataArray, np.ndarray],
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
-def read_uint8_array(bit_mask: Union[xr.DataArray, np.ndarray],
-                     bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+def read_uint8_array(
+    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
+) -> Union[np.ndarray, list]:
     """
     Read 8 bit arrays as a succession of binary masks.
 
@@ -854,7 +881,9 @@ def read_uint8_array(bit_mask: Union[xr.DataArray, np.ndarray],
     return read_bit_array(bit_mask.astype(np.uint8), bit_id)
 
 
-def set_metadata(naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None) -> xr.DataArray:
+def set_metadata(
+    naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
+) -> xr.DataArray:
     """
     Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs).
 

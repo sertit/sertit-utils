@@ -21,31 +21,35 @@ You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 import os
 from functools import wraps
-from typing import Union, Optional, Any, Callable
+from typing import Any, Callable, Optional, Union
+
 import numpy as np
 
 try:
-    import pandas as pd
     import geopandas as gpd
-    from shapely.geometry import Polygon
     import rasterio
-    from rasterio import features, warp, mask as rmask, merge, MemoryFile
+    from rasterio import MemoryFile, features
+    from rasterio import mask as rmask
+    from rasterio import merge, warp
     from rasterio.enums import Resampling
+    from shapely.geometry import Polygon
 except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError("Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package.") from ex
+    raise ModuleNotFoundError(
+        "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
+    ) from ex
 
-from sertit import misc, files, vectors, strings
+from sertit import files, misc, strings, vectors
 
 MAX_CORES = os.cpu_count() - 2
 PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
 """
-Types: 
+Types:
 
 - Path
 - Rasterio open data: (array, meta)
 - rasterio Dataset
 - `xarray`
-"""
+"""  # fmt:skip
 
 
 def path_arr_dst(function: Callable) -> Callable:
@@ -81,7 +85,9 @@ def path_arr_dst(function: Callable) -> Callable:
     """
 
     @wraps(function)
-    def path_or_arr_or_dst_wrapper(path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs) -> Any:
+    def path_or_arr_or_dst_wrapper(
+        path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs
+    ) -> Any:
         """
         Path or dataset wrapper
         Args:
@@ -106,16 +112,18 @@ def path_arr_dst(function: Callable) -> Callable:
             # Try if xarray is importable
             try:
                 import xarray as xr
+
                 if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
-                    meta = {'driver': 'GTiff',
-                            'dtype': path_or_arr_or_ds.dtype,
-                            'nodata': path_or_arr_or_ds.rio.encoded_nodata,
-                            'width': path_or_arr_or_ds.rio.width,
-                            'height': path_or_arr_or_ds.rio.height,
-                            'count': path_or_arr_or_ds.rio.count,
-                            'crs': path_or_arr_or_ds.rio.crs,
-                            'transform': path_or_arr_or_ds.rio.transform()
-                            }
+                    meta = {
+                        "driver": "GTiff",
+                        "dtype": path_or_arr_or_ds.dtype,
+                        "nodata": path_or_arr_or_ds.rio.encoded_nodata,
+                        "width": path_or_arr_or_ds.rio.width,
+                        "height": path_or_arr_or_ds.rio.height,
+                        "count": path_or_arr_or_ds.rio.count,
+                        "crs": path_or_arr_or_ds.rio.crs,
+                        "transform": path_or_arr_or_ds.rio.transform(),
+                    }
                     with MemoryFile() as memfile:
                         with memfile.open(**meta) as dst:
                             xds = path_or_arr_or_ds.copy()
@@ -134,9 +142,9 @@ def path_arr_dst(function: Callable) -> Callable:
 
 
 @path_arr_dst
-def get_new_shape(dst: PATH_ARR_DS,
-                  resolution: Union[tuple, list, float],
-                  size: Union[tuple, list]) -> (int, int):
+def get_new_shape(
+    dst: PATH_ARR_DS, resolution: Union[tuple, list, float], size: Union[tuple, list]
+) -> (int, int):
     """
     Get the new shape (height, width) of a resampled raster.
 
@@ -177,7 +185,9 @@ def get_new_shape(dst: PATH_ARR_DS,
         else:
             try:
                 if len(resolution) != 2:
-                    raise ValueError("We should have a resolution for X and Y dimensions")
+                    raise ValueError(
+                        "We should have a resolution for X and Y dimensions"
+                    )
 
                 if resolution[0] is not None:
                     new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
@@ -185,7 +195,9 @@ def get_new_shape(dst: PATH_ARR_DS,
                 if resolution[1] is not None:
                     new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
             except (TypeError, KeyError):
-                raise ValueError(f"Resolution should be None, 2 floats or a castable to a list: {resolution}")
+                raise ValueError(
+                    f"Resolution should be None, 2 floats or a castable to a list: {resolution}"
+                )
     elif size is not None:
         try:
             new_height = size[1]
@@ -261,12 +273,9 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
 
     # Update metadata that can be derived from raster
     out_meta = meta.copy()
-    out_meta.update({
-        "dtype": arr.dtype,
-        "count": count,
-        "height": height,
-        "width": width
-    })
+    out_meta.update(
+        {"dtype": arr.dtype, "count": count, "height": height, "width": width}
+    )
 
     # Nodata
     if isinstance(arr, np.ma.masked_array):
@@ -275,9 +284,11 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
     return out_meta
 
 
-def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
-                    has_nodata: bool,
-                    default_nodata: int = 0) -> np.ma.masked_array:
+def get_nodata_mask(
+    array: Union[np.ma.masked_array, np.ndarray],
+    has_nodata: bool,
+    default_nodata: int = 0,
+) -> np.ma.masked_array:
     """
     Get nodata mask from a masked array.
 
@@ -310,7 +321,9 @@ def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
 
     """
     # Nodata mask
-    if not has_nodata or not isinstance(array, np.ma.masked_array):  # Unspecified nodata is set to None by rasterio
+    if not has_nodata or not isinstance(
+        array, np.ma.masked_array
+    ):  # Unspecified nodata is set to None by rasterio
         nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
     else:
         nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
@@ -319,10 +332,12 @@ def get_nodata_mask(array: Union[np.ma.masked_array, np.ndarray],
 
 
 @path_arr_dst
-def _vectorize(dst: PATH_ARR_DS,
-               values: Union[None, int, list] = None,
-               get_nodata: bool = False,
-               default_nodata: int = 0) -> gpd.GeoDataFrame:
+def _vectorize(
+    dst: PATH_ARR_DS,
+    values: Union[None, int, list] = None,
+    get_nodata: bool = False,
+    default_nodata: int = 0,
+) -> gpd.GeoDataFrame:
     """
     Vectorize a raster, both to get classes or nodata.
 
@@ -361,17 +376,19 @@ def _vectorize(dst: PATH_ARR_DS,
     nodata_mask = get_nodata_mask(data, has_nodata=False, default_nodata=nodata)
 
     # Get shapes (on array or on mask to get nodata vector)
-    shapes = features.shapes(nodata_mask if get_nodata else data,
-                             mask=None if get_nodata else nodata_mask,
-                             transform=dst.transform)
+    shapes = features.shapes(
+        nodata_mask if get_nodata else data,
+        mask=None if get_nodata else nodata_mask,
+        transform=dst.transform,
+    )
 
     return vectors.shapes_to_gdf(shapes, dst.crs)
 
 
 @path_arr_dst
-def vectorize(dst: PATH_ARR_DS,
-              values: Union[None, int, list] = None,
-              default_nodata: int = 0) -> gpd.GeoDataFrame:
+def vectorize(
+    dst: PATH_ARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+) -> gpd.GeoDataFrame:
     """
     Vectorize a raster to get the class vectors.
 
@@ -397,12 +414,13 @@ def vectorize(dst: PATH_ARR_DS,
     Returns:
         gpd.GeoDataFrame: Classes Vector
     """
-    return _vectorize(dst, values=values, get_nodata=False, default_nodata=default_nodata)
+    return _vectorize(
+        dst, values=values, get_nodata=False, default_nodata=default_nodata
+    )
 
 
 @path_arr_dst
-def get_valid_vector(dst: PATH_ARR_DS,
-                     default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_valid_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster as a vector.
 
@@ -426,13 +444,16 @@ def get_valid_vector(dst: PATH_ARR_DS,
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
-    return nodata[nodata.raster_val != 0]  # 0 is the values of not nodata put there by rasterio
+    nodata = _vectorize(
+        dst, values=None, get_nodata=True, default_nodata=default_nodata
+    )
+    return nodata[
+        nodata.raster_val != 0
+    ]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_arr_dst
-def get_nodata_vector(dst: PATH_ARR_DS,
-                      default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -456,16 +477,22 @@ def get_nodata_vector(dst: PATH_ARR_DS,
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(dst, values=None, get_nodata=True, default_nodata=default_nodata)
-    return nodata[nodata.raster_val == 0]  # 0 is the values of not nodata put there by rasterio
+    nodata = _vectorize(
+        dst, values=None, get_nodata=True, default_nodata=default_nodata
+    )
+    return nodata[
+        nodata.raster_val == 0
+    ]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_arr_dst
-def _mask(dst: PATH_ARR_DS,
-          shapes: Union[Polygon, list],
-          nodata: Optional[int] = None,
-          do_crop: bool = False,
-          **kwargs) -> (np.ma.masked_array, dict):
+def _mask(
+    dst: PATH_ARR_DS,
+    shapes: Union[Polygon, list],
+    nodata: Optional[int] = None,
+    do_crop: bool = False,
+    **kwargs,
+) -> (np.ma.masked_array, dict):
     """
     Overload of rasterio mask function in order to create a masked_array.
 
@@ -508,10 +535,12 @@ def _mask(dst: PATH_ARR_DS,
 
 
 @path_arr_dst
-def mask(dst: PATH_ARR_DS,
-         shapes: Union[Polygon, list],
-         nodata: Optional[int] = None,
-         **kwargs) -> (np.ma.masked_array, dict):
+def mask(
+    dst: PATH_ARR_DS,
+    shapes: Union[Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs,
+) -> (np.ma.masked_array, dict):
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
@@ -548,10 +577,12 @@ def mask(dst: PATH_ARR_DS,
 
 
 @path_arr_dst
-def crop(dst: PATH_ARR_DS,
-         shapes: Union[Polygon, list],
-         nodata: Optional[int] = None,
-         **kwargs) -> (np.ma.masked_array, dict):
+def crop(
+    dst: PATH_ARR_DS,
+    shapes: Union[Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs,
+) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
@@ -590,11 +621,13 @@ def crop(dst: PATH_ARR_DS,
 
 
 @path_arr_dst
-def read(dst: PATH_ARR_DS,
-         resolution: Union[tuple, list, float] = None,
-         size: Union[tuple, list] = None,
-         resampling: Resampling = Resampling.nearest,
-         masked: bool = True) -> (np.ma.masked_array, dict):
+def read(
+    dst: PATH_ARR_DS,
+    resolution: Union[tuple, list, float] = None,
+    size: Union[tuple, list] = None,
+    resampling: Resampling = Resampling.nearest,
+    masked: bool = True,
+) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset from a `rasterio.Dataset` or a path.
 
@@ -631,27 +664,33 @@ def read(dst: PATH_ARR_DS,
     new_height, new_width = get_new_shape(dst, resolution, size)
 
     # Read data
-    array = dst.read(out_shape=(dst.count, new_height, new_width),
-                     resampling=resampling,
-                     masked=masked)
+    array = dst.read(
+        out_shape=(dst.count, new_height, new_width),
+        resampling=resampling,
+        masked=masked,
+    )
 
     # Update meta
-    dst_transform = dst.transform * dst.transform.scale((dst.width / new_width),
-                                                        (dst.height / new_height))
+    dst_transform = dst.transform * dst.transform.scale(
+        (dst.width / new_width), (dst.height / new_height)
+    )
     dst_meta = dst.meta.copy()
-    dst_meta.update({"height": new_height,
-                     "width": new_width,
-                     "transform": dst_transform,
-                     "dtype": array.dtype,
-                     "nodata": dst.nodata})
+    dst_meta.update(
+        {
+            "height": new_height,
+            "width": new_width,
+            "transform": dst_transform,
+            "dtype": array.dtype,
+            "nodata": dst.nodata,
+        }
+    )
 
     return array, dst_meta
 
 
-def write(raster: Union[np.ma.masked_array, np.ndarray],
-          path: str,
-          meta: dict,
-          **kwargs) -> None:
+def write(
+    raster: Union[np.ma.masked_array, np.ndarray], path: str, meta: dict, **kwargs
+) -> None:
     """
     Write raster to disk (encapsulation of rasterio's function)
 
@@ -692,7 +731,7 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
 
     # Compress only if uint8 data
     if raster.dtype == np.uint8:
-        out_meta['compress'] = "lzw"
+        out_meta["compress"] = "lzw"
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)
@@ -710,10 +749,12 @@ def write(raster: Union[np.ma.masked_array, np.ndarray],
         dst.write(raster)
 
 
-def collocate(master_meta: dict,
-              slave_arr: Union[np.ma.masked_array, np.ndarray],
-              slave_meta: dict,
-              resampling: Resampling = Resampling.nearest) -> (Union[np.ma.masked_array, np.ndarray], dict):
+def collocate(
+    master_meta: dict,
+    slave_arr: Union[np.ma.masked_array, np.ndarray],
+    slave_meta: dict,
+    resampling: Resampling = Resampling.nearest,
+) -> (Union[np.ma.masked_array, np.ndarray], dict):
     """
     Collocate two georeferenced arrays:
     forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
@@ -750,31 +791,41 @@ def collocate(master_meta: dict,
         np.ma.masked_array, dict: Collocated array and its metadata
 
     """
-    collocated_arr = np.zeros((master_meta["count"], master_meta["height"], master_meta["width"]),
-                              dtype=master_meta["dtype"])
-    warp.reproject(source=slave_arr,
-                   destination=collocated_arr,
-                   src_transform=slave_meta["transform"],
-                   src_crs=slave_meta["crs"],
-                   dst_transform=master_meta["transform"],
-                   dst_crs=master_meta["crs"],
-                   src_nodata=slave_meta["nodata"],
-                   dst_nodata=slave_meta["nodata"],
-                   resampling=resampling,
-                   num_threads=MAX_CORES)
+    collocated_arr = np.zeros(
+        (master_meta["count"], master_meta["height"], master_meta["width"]),
+        dtype=master_meta["dtype"],
+    )
+    warp.reproject(
+        source=slave_arr,
+        destination=collocated_arr,
+        src_transform=slave_meta["transform"],
+        src_crs=slave_meta["crs"],
+        dst_transform=master_meta["transform"],
+        dst_crs=master_meta["crs"],
+        src_nodata=slave_meta["nodata"],
+        dst_nodata=slave_meta["nodata"],
+        resampling=resampling,
+        num_threads=MAX_CORES,
+    )
 
     meta = master_meta.copy()
-    meta.update({"dtype": slave_meta["dtype"],
-                 "driver": slave_meta["driver"],
-                 "nodata": slave_meta["nodata"]})
+    meta.update(
+        {
+            "dtype": slave_meta["dtype"],
+            "driver": slave_meta["driver"],
+            "nodata": slave_meta["nodata"],
+        }
+    )
 
     return collocated_arr, meta
 
 
-def sieve(array: Union[np.ma.masked_array, np.ndarray],
-          out_meta: dict,
-          sieve_thresh: int,
-          connectivity: int = 4) -> (Union[np.ma.masked_array, np.ndarray], dict):
+def sieve(
+    array: Union[np.ma.masked_array, np.ndarray],
+    out_meta: dict,
+    sieve_thresh: int,
+    connectivity: int = 4,
+) -> (Union[np.ma.masked_array, np.ndarray], dict):
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -814,13 +865,15 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
     # Convert to np.uint8 if needed
     dtype = np.uint8
     meta = out_meta.copy()
-    if meta['dtype'] != dtype:
+    if meta["dtype"] != dtype:
         array = array.astype(dtype)
-        meta['dtype'] = dtype
+        meta["dtype"] = dtype
 
     # Sieve
     result_array = np.empty(array.shape, dtype=array.dtype)
-    features.sieve(array, size=sieve_thresh, out=result_array, connectivity=connectivity)
+    features.sieve(
+        array, size=sieve_thresh, out=result_array, connectivity=connectivity
+    )
 
     # Use this trick to get the array back to 'normal'
     if expand:
@@ -829,7 +882,7 @@ def sieve(array: Union[np.ma.masked_array, np.ndarray],
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
+def get_dim_img_path(dim_path: str, img_name: str = "*") -> str:
     """
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -855,7 +908,7 @@ def get_dim_img_path(dim_path: str, img_name: str = '*') -> str:
 
     assert dim_path.endswith(".data") and os.path.isdir(dim_path)
 
-    return files.get_file_in_dir(dim_path, img_name, extension='img')
+    return files.get_file_in_dir(dim_path, img_name, extension="img")
 
 
 @path_arr_dst
@@ -939,7 +992,9 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     """
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
-    rel_paths = [strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths]
+    rel_paths = [
+        strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths
+    ]
     rel_vrt = strings.to_cmd_string(files.real_rel_path(crs_merged_path, vrt_root))
 
     # Run cmd
@@ -982,17 +1037,23 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
         # Merge all datasets
         merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
         merged_meta = crs_datasets[0].meta.copy()
-        merged_meta.update({"driver": "GTiff",
-                            "height": merged_array.shape[1],
-                            "width": merged_array.shape[2],
-                            "transform": merged_transform})
+        merged_meta.update(
+            {
+                "driver": "GTiff",
+                "height": merged_array.shape[1],
+                "width": merged_array.shape[2],
+                "transform": merged_transform,
+            }
+        )
     finally:
         # Close all datasets
         for dataset in crs_datasets:
             dataset.close()
 
     # Save merge datasets
-    write(merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform)
+    write(
+        merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform
+    )
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
@@ -1033,7 +1094,9 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
 
 
-def read_bit_array(bit_mask: np.ndarray, bit_id: Union[list, int]) -> Union[np.ndarray, list]:
+def read_bit_array(
+    bit_mask: np.ndarray, bit_id: Union[list, int]
+) -> Union[np.ndarray, list]:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 

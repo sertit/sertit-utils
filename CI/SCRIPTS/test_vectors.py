@@ -16,15 +16,17 @@
 # limitations under the License.
 """ Script testing vector functions """
 import os
+
 import geopandas as gpd
 import pytest
 from shapely import wkt
+
 from CI.SCRIPTS.script_utils import GEO_DATA
-from sertit import vectors, ci
+from sertit import ci, vectors
 
 
 def test_vectors():
-    """ Test geo functions """
+    """Test geo functions"""
     kml_path = os.path.join(GEO_DATA, "aoi.kml")
     wkt_path = os.path.join(GEO_DATA, "aoi.wkt")
     utm_path = os.path.join(GEO_DATA, "aoi.geojson")
@@ -34,11 +36,13 @@ def test_vectors():
 
     # KML to WKT
     aoi_str_test = vectors.get_aoi_wkt(kml_path, as_str=True)
-    aoi_str = 'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, ' \
-              '45.0353174370802520 32.4976496856158974 0.0000000000000000, ' \
-              '45.0355748149750283 34.1139970085580018 0.0000000000000000, ' \
-              '46.1956059695554089 34.1144793800670882 0.0000000000000000, ' \
-              '46.1947755465253067 32.4973553439109324 0.0000000000000000))'
+    aoi_str = (
+        "POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, "
+        "45.0353174370802520 32.4976496856158974 0.0000000000000000, "
+        "45.0355748149750283 34.1139970085580018 0.0000000000000000, "
+        "46.1956059695554089 34.1144793800670882 0.0000000000000000, "
+        "46.1947755465253067 32.4973553439109324 0.0000000000000000))"
+    )
     assert aoi_str == aoi_str_test
 
     aoi = vectors.get_aoi_wkt(kml_path, as_str=False)
@@ -55,15 +59,22 @@ def test_vectors():
 
     # UTM and bounds
     aoi = gpd.read_file(kml_path)
-    assert vectors.corresponding_utm_projection(aoi.centroid.x, aoi.centroid.y) == "EPSG:32638"
+    assert "EPSG:32638" == vectors.corresponding_utm_projection(
+        aoi.centroid.x, aoi.centroid.y
+    )
     env = aoi.envelope[0]
-    assert env.bounds == vectors.from_bounds_to_polygon(*vectors.from_polygon_to_bounds(env)).bounds
+    from_env = vectors.from_bounds_to_polygon(*vectors.from_polygon_to_bounds(env))
+    assert env.bounds == from_env.bounds
 
     # GeoDataFrame
     geodf = vectors.get_geodf(env, aoi.crs)  # GeoDataFrame from Polygon
     ci.assert_geom_equal(geodf.geometry, aoi.envelope)
-    ci.assert_geom_equal(vectors.get_geodf(geodf.geometry, aoi.crs), geodf)  # GeoDataFrame from Geoseries
-    ci.assert_geom_equal(vectors.get_geodf([env], aoi.crs), geodf)  # GeoDataFrame from list of poly
+    ci.assert_geom_equal(
+        vectors.get_geodf(geodf.geometry, aoi.crs), geodf
+    )  # GeoDataFrame from Geoseries
+    ci.assert_geom_equal(
+        vectors.get_geodf([env], aoi.crs), geodf
+    )  # GeoDataFrame from list of poly
 
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2, 3, 4, 5], aoi.crs)

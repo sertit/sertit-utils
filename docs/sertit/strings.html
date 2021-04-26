@@ -57,7 +57,7 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 import argparse
 import logging
 import re
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Union
 
 from sertit.logs import SU_NAME
@@ -101,8 +101,10 @@ def str_to_bool(bool_str: str) -&gt; bool:
     elif bool_str.lower() in false_str:
         bool_val = False
     else:
-        raise ValueError(f&#34;Invalid true or false value, &#34;
-                         f&#34;should be {true_str} if True or {false_str} if False, not {bool_str}&#34;)
+        raise ValueError(
+            f&#34;Invalid true or false value, &#34;
+            f&#34;should be {true_str} if True or {false_str} if False, not {bool_str}&#34;
+        )
     return bool_val
 
 
@@ -135,10 +137,10 @@ def str_to_verbosity(verbosity_str: str) -&gt; int:
     Returns:
         logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
     &#34;&#34;&#34;
-    debug_str = (&#39;debug&#39;, &#39;d&#39;, 10)
-    info_str = (&#39;info&#39;, &#39;i&#39;, 20)
-    warn_str = (&#39;warning&#39;, &#39;w&#39;, &#39;warn&#39;, 30)
-    err_str = (&#39;error&#39;, &#39;e&#39;, &#39;err&#39;, 40)
+    debug_str = (&#34;debug&#34;, &#34;d&#34;, 10)
+    info_str = (&#34;info&#34;, &#34;i&#34;, 20)
+    warn_str = (&#34;warning&#34;, &#34;w&#34;, &#34;warn&#34;, 30)
+    err_str = (&#34;error&#34;, &#34;e&#34;, &#34;err&#34;, 40)
 
     if isinstance(verbosity_str, str):
         verbosity_str = verbosity_str.lower()
@@ -152,15 +154,17 @@ def str_to_verbosity(verbosity_str: str) -&gt; int:
     elif verbosity_str in err_str:
         verbosity = logging.ERROR
     else:
-        raise argparse.ArgumentTypeError(f&#39;Incorrect logging level value: {verbosity_str}, &#39;
-                                         f&#39;should be {info_str}, {debug_str}, {warn_str} or {err_str}&#39;)
+        raise argparse.ArgumentTypeError(
+            f&#34;Incorrect logging level value: {verbosity_str}, &#34;
+            f&#34;should be {info_str}, {debug_str}, {warn_str} or {err_str}&#34;
+        )
 
     return verbosity
 
 
-def str_to_list(list_str: Union[str, list],
-                additional_separator: str = &#39;&#39;,
-                case: str = None) -&gt; list:
+def str_to_list(
+    list_str: Union[str, list], additional_separator: str = &#34;&#34;, case: str = None
+) -&gt; list:
     &#34;&#34;&#34;
     Convert str to list with `,`, `;`, ` ` separators.
 
@@ -178,24 +182,26 @@ def str_to_list(list_str: Union[str, list],
     &#34;&#34;&#34;
     if isinstance(list_str, str):
         # Concatenate separators
-        separators = &#39;,|;| &#39;
+        separators = &#34;,|;| &#34;
         if additional_separator:
-            separators += &#39;|&#39; + additional_separator
+            separators += &#34;|&#34; + additional_separator
 
         # Split
         listed_str = re.split(separators, list_str)
     elif isinstance(list_str, list):
         listed_str = list_str
     else:
-        raise ValueError(f&#34;List should be given as a string or a list of string: {list_str}&#34;)
+        raise ValueError(
+            f&#34;List should be given as a string or a list of string: {list_str}&#34;
+        )
 
     out_list = []
     for item in listed_str:
         # Check if there are null items
         if item:
-            if case == &#39;lower&#39;:
+            if case == &#34;lower&#34;:
                 item_case = item.lower()
-            elif case == &#39;upper&#39;:
+            elif case == &#34;upper&#34;:
                 item_case = item.upper()
             else:
                 item_case = item
@@ -205,7 +211,9 @@ def str_to_list(list_str: Union[str, list],
     return out_list
 
 
-def str_to_date(date_str: Union[str, datetime], date_format: str = DATE_FORMAT) -&gt; datetime:
+def str_to_date(
+    date_str: Union[str, datetime], date_format: str = DATE_FORMAT
+) -&gt; datetime:
     &#34;&#34;&#34;
     Convert string to a `datetime.datetime`.
 
@@ -244,23 +252,29 @@ def str_to_date(date_str: Union[str, datetime], date_format: str = DATE_FORMAT) 
         try:
             if date_str.lower() == &#34;now&#34;:
                 # Now with correct format (no microseconds if not specified and so on)
-                dtm = datetime.strptime(datetime.today().strftime(date_format), date_format)
+                dtm = datetime.strptime(
+                    datetime.today().strftime(date_format), date_format
+                )
             else:
                 dtm = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
-            json_date_format = &#39;%Y-%m-%d&#39;
+            json_date_format = &#34;%Y-%m-%d&#34;
             try:
                 dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
-                raise ValueError(f&#34;Invalid date format: {date_str}; should be {date_format} &#34;
-                                 f&#34;or {json_date_format}&#34;) from ex
+                raise ValueError(
+                    f&#34;Invalid date format: {date_str}; should be {date_format} &#34;
+                    f&#34;or {json_date_format}&#34;
+                ) from ex
     return dtm
 
 
-def str_to_list_of_dates(date_str: Union[list, str],
-                         date_format: str = DATE_FORMAT,
-                         additional_separator: str = &#39;&#39;) -&gt; list:
+def str_to_list_of_dates(
+    date_str: Union[list, str],
+    date_format: str = DATE_FORMAT,
+    additional_separator: str = &#34;&#34;,
+) -&gt; list:
     &#34;&#34;&#34;
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -336,7 +350,7 @@ def snake_to_camel_case(snake_str: str) -&gt; str:
     Returns:
         str: String formatted in CamelCase
     &#34;&#34;&#34;
-    return &#39;&#39;.join((w.capitalize() for w in snake_str.split(&#39;_&#39;)))
+    return &#34;&#34;.join((w.capitalize() for w in snake_str.split(&#34;_&#34;)))
 
 
 def camel_to_snake_case(snake_str: str) -&gt; str:
@@ -354,7 +368,9 @@ def camel_to_snake_case(snake_str: str) -&gt; str:
     Returns:
         str: String formatted in snake_case
     &#34;&#34;&#34;
-    return &#39;&#39;.join([&#39;_&#39; + c.lower() if c.isupper() else c for c in snake_str]).lstrip(&#39;_&#39;)</code></pre>
+    return &#34;&#34;.join([&#34;_&#34; + c.lower() if c.isupper() else c for c in snake_str]).lstrip(
+        &#34;_&#34;
+    )</code></pre>
 </details>
 </section>
 <section>
@@ -429,8 +445,10 @@ True
     elif bool_str.lower() in false_str:
         bool_val = False
     else:
-        raise ValueError(f&#34;Invalid true or false value, &#34;
-                         f&#34;should be {true_str} if True or {false_str} if False, not {bool_str}&#34;)
+        raise ValueError(
+            f&#34;Invalid true or false value, &#34;
+            f&#34;should be {true_str} if True or {false_str} if False, not {bool_str}&#34;
+        )
     return bool_val</code></pre>
 </details>
 </dd>
@@ -503,10 +521,10 @@ True
     Returns:
         logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
     &#34;&#34;&#34;
-    debug_str = (&#39;debug&#39;, &#39;d&#39;, 10)
-    info_str = (&#39;info&#39;, &#39;i&#39;, 20)
-    warn_str = (&#39;warning&#39;, &#39;w&#39;, &#39;warn&#39;, 30)
-    err_str = (&#39;error&#39;, &#39;e&#39;, &#39;err&#39;, 40)
+    debug_str = (&#34;debug&#34;, &#34;d&#34;, 10)
+    info_str = (&#34;info&#34;, &#34;i&#34;, 20)
+    warn_str = (&#34;warning&#34;, &#34;w&#34;, &#34;warn&#34;, 30)
+    err_str = (&#34;error&#34;, &#34;e&#34;, &#34;err&#34;, 40)
 
     if isinstance(verbosity_str, str):
         verbosity_str = verbosity_str.lower()
@@ -520,8 +538,10 @@ True
     elif verbosity_str in err_str:
         verbosity = logging.ERROR
     else:
-        raise argparse.ArgumentTypeError(f&#39;Incorrect logging level value: {verbosity_str}, &#39;
-                                         f&#39;should be {info_str}, {debug_str}, {warn_str} or {err_str}&#39;)
+        raise argparse.ArgumentTypeError(
+            f&#34;Incorrect logging level value: {verbosity_str}, &#34;
+            f&#34;should be {info_str}, {debug_str}, {warn_str} or {err_str}&#34;
+        )
 
     return verbosity</code></pre>
 </details>
@@ -552,9 +572,9 @@ True
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def str_to_list(list_str: Union[str, list],
-                additional_separator: str = &#39;&#39;,
-                case: str = None) -&gt; list:
+<pre><code class="python">def str_to_list(
+    list_str: Union[str, list], additional_separator: str = &#34;&#34;, case: str = None
+) -&gt; list:
     &#34;&#34;&#34;
     Convert str to list with `,`, `;`, ` ` separators.
 
@@ -572,24 +592,26 @@ True
     &#34;&#34;&#34;
     if isinstance(list_str, str):
         # Concatenate separators
-        separators = &#39;,|;| &#39;
+        separators = &#34;,|;| &#34;
         if additional_separator:
-            separators += &#39;|&#39; + additional_separator
+            separators += &#34;|&#34; + additional_separator
 
         # Split
         listed_str = re.split(separators, list_str)
     elif isinstance(list_str, list):
         listed_str = list_str
     else:
-        raise ValueError(f&#34;List should be given as a string or a list of string: {list_str}&#34;)
+        raise ValueError(
+            f&#34;List should be given as a string or a list of string: {list_str}&#34;
+        )
 
     out_list = []
     for item in listed_str:
         # Check if there are null items
         if item:
-            if case == &#39;lower&#39;:
+            if case == &#34;lower&#34;:
                 item_case = item.lower()
-            elif case == &#39;upper&#39;:
+            elif case == &#34;upper&#34;:
                 item_case = item.upper()
             else:
                 item_case = item
@@ -638,7 +660,9 @@ datetime(2020, 9, 9, 10, 50, 55)
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def str_to_date(date_str: Union[str, datetime], date_format: str = DATE_FORMAT) -&gt; datetime:
+<pre><code class="python">def str_to_date(
+    date_str: Union[str, datetime], date_format: str = DATE_FORMAT
+) -&gt; datetime:
     &#34;&#34;&#34;
     Convert string to a `datetime.datetime`.
 
@@ -677,17 +701,21 @@ datetime(2020, 9, 9, 10, 50, 55)
         try:
             if date_str.lower() == &#34;now&#34;:
                 # Now with correct format (no microseconds if not specified and so on)
-                dtm = datetime.strptime(datetime.today().strftime(date_format), date_format)
+                dtm = datetime.strptime(
+                    datetime.today().strftime(date_format), date_format
+                )
             else:
                 dtm = datetime.strptime(date_str, date_format)
         except ValueError:
             # Just try with the usual JSON format
-            json_date_format = &#39;%Y-%m-%d&#39;
+            json_date_format = &#34;%Y-%m-%d&#34;
             try:
                 dtm = datetime.strptime(date_str, json_date_format)
             except ValueError as ex:
-                raise ValueError(f&#34;Invalid date format: {date_str}; should be {date_format} &#34;
-                                 f&#34;or {json_date_format}&#34;) from ex
+                raise ValueError(
+                    f&#34;Invalid date format: {date_str}; should be {date_format} &#34;
+                    f&#34;or {json_date_format}&#34;
+                ) from ex
     return dtm</code></pre>
 </details>
 </dd>
@@ -726,9 +754,11 @@ datetime(2020, 9, 9, 10, 50, 55)
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def str_to_list_of_dates(date_str: Union[list, str],
-                         date_format: str = DATE_FORMAT,
-                         additional_separator: str = &#39;&#39;) -&gt; list:
+<pre><code class="python">def str_to_list_of_dates(
+    date_str: Union[list, str],
+    date_format: str = DATE_FORMAT,
+    additional_separator: str = &#34;&#34;,
+) -&gt; list:
     &#34;&#34;&#34;
     Convert a string containing a list of dates to a list of `datetime.datetime`.
 
@@ -851,7 +881,7 @@ datetime(2020, 9, 9, 10, 50, 55)
     Returns:
         str: String formatted in CamelCase
     &#34;&#34;&#34;
-    return &#39;&#39;.join((w.capitalize() for w in snake_str.split(&#39;_&#39;)))</code></pre>
+    return &#34;&#34;.join((w.capitalize() for w in snake_str.split(&#34;_&#34;)))</code></pre>
 </details>
 </dd>
 <dt id="sertit.strings.camel_to_snake_case"><code class="name flex">
@@ -891,7 +921,9 @@ datetime(2020, 9, 9, 10, 50, 55)
     Returns:
         str: String formatted in snake_case
     &#34;&#34;&#34;
-    return &#39;&#39;.join([&#39;_&#39; + c.lower() if c.isupper() else c for c in snake_str]).lstrip(&#39;_&#39;)</code></pre>
+    return &#34;&#34;.join([&#34;_&#34; + c.lower() if c.isupper() else c for c in snake_str]).lstrip(
+        &#34;_&#34;
+    )</code></pre>
 </details>
 </dd>
 </dl>
