@@ -749,8 +749,8 @@ def write(
     &gt;&gt;&gt; # Read raster
     &gt;&gt;&gt; raster, meta = read(raster_path)
 
-    &gt;&gt;&gt; # Rewrite it
-    &gt;&gt;&gt; write(raster, raster_out, meta)
+    &gt;&gt;&gt; # Rewrite it on disk
+    &gt;&gt;&gt; write(raster, meta, raster_out)
     ```
 
     Args:
@@ -2137,8 +2137,8 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 &gt;&gt;&gt; # Read raster
 &gt;&gt;&gt; raster, meta = read(raster_path)
 
-&gt;&gt;&gt; # Rewrite it
-&gt;&gt;&gt; write(raster, raster_out, meta)
+&gt;&gt;&gt; # Rewrite it on disk
+&gt;&gt;&gt; write(raster, meta, raster_out)
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
@@ -2172,8 +2172,8 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
     &gt;&gt;&gt; # Read raster
     &gt;&gt;&gt; raster, meta = read(raster_path)
 
-    &gt;&gt;&gt; # Rewrite it
-    &gt;&gt;&gt; write(raster, raster_out, meta)
+    &gt;&gt;&gt; # Rewrite it on disk
+    &gt;&gt;&gt; write(raster, meta, raster_out)
     ```
 
     Args:
