@@ -84,4 +84,4 @@ pages-github:
     - linux
   only:
     - master
-#    - tags
+    - tags
