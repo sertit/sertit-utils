@@ -75,9 +75,12 @@ pages-github:
     - pip install -r requirements.txt
     - pdoc sertit -o docs -f --html --template-dir doc_template
     - tox -e docs
+    - git config user.email "remi.braun@unistra.fr"
+    - git config user.name "CI"
     - git add *.html
     - git diff-index --quiet HEAD || git commit -m "Updating documentation" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
-    - git push
+    - git remote rm origin && git remote add origin git@gitlab.com:$CI_PROJECT_PATH.git
+    - git push origin HEAD:$CI_COMMIT_REF_NAME
 
   tags:
     - linux
