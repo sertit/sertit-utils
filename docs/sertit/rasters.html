@@ -580,16 +580,25 @@ def read(
     with rioxarray.open_rasterio(
         dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
     ) as xds:
-        xds.load()
+        if masked:
+            # Save as float32 and load
+            xds = set_metadata(xds.astype(np.float32, casting=&#34;same_kind&#34;), xds)
 
-    # Set original dtype (to write it back)
-    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+        xds.load()
 
     # Manage resampling
     if new_height != dst.height or new_width != dst.width:
-        xds = xds.rio.reproject(
-            xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-        )
+        factor_h = dst.height / new_height
+        factor_w = dst.width / new_width
+        if factor_h.is_integer() and factor_w.is_integer():
+            xds = xds.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+        else:
+            xds = xds.rio.reproject(
+                xds.rio.crs, shape=(new_height, new_width), resampling=resampling
+            )
+
+    # Set original dtype (to write it back)
+    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
 
     return xds
 
@@ -1800,16 +1809,25 @@ def read(
     with rioxarray.open_rasterio(
         dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
     ) as xds:
-        xds.load()
+        if masked:
+            # Save as float32 and load
+            xds = set_metadata(xds.astype(np.float32, casting=&#34;same_kind&#34;), xds)
 
-    # Set original dtype (to write it back)
-    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+        xds.load()
 
     # Manage resampling
     if new_height != dst.height or new_width != dst.width:
-        xds = xds.rio.reproject(
-            xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-        )
+        factor_h = dst.height / new_height
+        factor_w = dst.width / new_width
+        if factor_h.is_integer() and factor_w.is_integer():
+            xds = xds.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+        else:
+            xds = xds.rio.reproject(
+                xds.rio.crs, shape=(new_height, new_width), resampling=resampling
+            )
+
+    # Set original dtype (to write it back)
+    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
 
     return xds</code></pre>
 </details>
