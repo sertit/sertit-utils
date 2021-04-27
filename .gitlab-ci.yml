@@ -77,11 +77,12 @@ pages-github:
     - tox -e docs
     - git config user.email "remi.braun@unistra.fr"
     - git config user.name "CI"
-    - git add *.html
-    - git diff-index --quiet HEAD || git commit -m "Updating documentation" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
-    - git remote rm origin && git remote add origin https://${DEPLOY_NAME}:${DEPLOY_PWD}@code.sertit.unistra.fr/sertit/sertit_utils.git
-    - git push origin HEAD:master
+    - git add .
+    - git diff-index --quiet HEAD || git commit -m "Documentating and linting" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
+    - git remote rm origin && git remote add origin https://${DEPLOY_NAME}:${DEPLOY_PWD}@code.sertit.unistra.fr/sertit/sertit-utils.git
+    - git push
   tags:
     - linux
   only:
     - master
+#    - tags
