@@ -1,6 +1,5 @@
 # Tests & lint
 tox
-tox-conda
 pre-commit
 black
 pytest
