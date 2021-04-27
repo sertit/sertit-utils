@@ -78,7 +78,7 @@ pages-github:
     - git config user.name "CI"
     - git add .
     - git diff-index --quiet HEAD || git commit -m "Documentating and linting" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
-    - git remote rm origin && git remote add origin https://${CI_DEPLOY_USER}:${CI_DEPLOY_PASSWORD}@code.sertit.unistra.fr/sertit/sertit-utils.git
+    - git remote rm origin && git remote add origin https://${CI_DEPLOY_USER}:${CI_DEPLOY_PASSWORD}@code.sertit.unistra.fr/SERTIT/sertit-utils.git
     - git push origin HEAD:master
   tags:
     - linux
