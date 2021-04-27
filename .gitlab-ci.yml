@@ -74,8 +74,6 @@ pages-github:
     - python -m pip install --upgrade pip
     - pip install pre-commit -r requirements.txt
     - pdoc sertit -o docs -f --html --template-dir doc_template
-    - tox -e docs
-    - pre-commit run --all-files
     - git config user.email "remi.braun@unistra.fr"
     - git config user.name "CI"
     - git add .

@@ -1,4 +1,4 @@
-exclude: '^$'
+exclude: '^.*html$'
 fail_fast: false
 repos:
 
