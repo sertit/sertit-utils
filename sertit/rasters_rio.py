@@ -710,8 +710,8 @@ def write(
     >>> # Read raster
     >>> raster, meta = read(raster_path)
 
-    >>> # Rewrite it
-    >>> write(raster, raster_out, meta)
+    >>> # Rewrite it on disk
+    >>> write(raster, meta, raster_out)
     ```
 
     Args:

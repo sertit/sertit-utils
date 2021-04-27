@@ -1,4 +1,7 @@
-exclude: '^.*html$'
+exclude: |
+  (?x)^(
+      docs/.*
+  )$
 fail_fast: false
 repos:
 
