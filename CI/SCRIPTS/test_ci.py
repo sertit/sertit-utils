@@ -61,14 +61,14 @@ def test_assert():
         arr = arr.astype(float)
         meta["dtype"] = float
         raster_float_path = os.path.join(tmp, "raster_float.tif")
-        rasters_rio.write(arr, raster_float_path, meta)
+        rasters_rio.write(arr, meta, raster_float_path)
 
         # Slightly change it
         offset = 1e-07
         arr += offset
         meta["transform"].shear(offset, offset)
         raster_almost_path = os.path.join(tmp, "raster_almost.tif")
-        rasters_rio.write(arr, raster_almost_path, meta)
+        rasters_rio.write(arr, meta, raster_almost_path)
 
         ci.assert_raster_almost_equal(raster_float_path, raster_almost_path)
         with pytest.raises(AssertionError):
@@ -80,7 +80,7 @@ def test_assert():
             arr += offset
             meta["transform"].shear(offset, offset)
             raster_too_much_path = os.path.join(tmp, "raster_too_much.tif")
-            rasters_rio.write(arr, raster_too_much_path, meta)
+            rasters_rio.write(arr, meta, raster_too_much_path)
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
 
     # XML

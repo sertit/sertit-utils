@@ -694,7 +694,7 @@ def read(
 
 
 def write(
-    raster: Union[np.ma.masked_array, np.ndarray], path: str, meta: dict, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
 ) -> None:
     """
     Write raster to disk (encapsulation of rasterio's function)
@@ -716,8 +716,8 @@ def write(
 
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
-        path (str): Path where to save it (directories should be existing)
         meta (dict): Basic metadata that will be copied and updated with raster's information
+        path (str): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     """
     # Manage raster type (impossible to write boolean arrays)
@@ -1057,7 +1057,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
 
     # Save merge datasets
     write(
-        merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform
+        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
     )
 
 

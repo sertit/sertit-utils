@@ -73,26 +73,26 @@ def test_rasters_rio():
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
-            rasters_rio.write(raster, raster_out, meta)
+            rasters_rio.write(raster, meta, raster_out)
             assert os.path.isfile(raster_out)
 
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
             mask = gpd.read_file(mask_path)
             mask_arr, mask_meta = rasters_rio.mask(dst, mask.geometry)
-            rasters_rio.write(mask_arr, raster_masked_out, mask_meta)
+            rasters_rio.write(mask_arr, mask_meta, raster_masked_out)
 
             # Crop
             raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
             crop_arr, crop_meta = rasters_rio.crop(dst, mask)
-            rasters_rio.write(crop_arr, raster_cropped_out, crop_meta)
+            rasters_rio.write(crop_arr, crop_meta, raster_cropped_out)
 
             # Sieve
             sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
             sieve_arr, sieve_meta = rasters_rio.sieve(
                 raster, meta, sieve_thresh=20, connectivity=4
             )
-            rasters_rio.write(sieve_arr, sieve_out, sieve_meta, nodata=255)
+            rasters_rio.write(sieve_arr, sieve_meta, sieve_out, nodata=255)
 
             # Collocate
             coll_arr, coll_meta = rasters_rio.collocate(

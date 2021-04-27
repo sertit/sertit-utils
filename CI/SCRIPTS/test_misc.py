@@ -25,7 +25,7 @@ from sertit import misc
 
 def test_run_command():
     """Test run_command"""
-    cmd = "ls .."
+    cmd = "cd .."
     misc.run_cli(
         cmd, in_background=False, cwd="/"
     )  # Just ensure no exception is thrown
