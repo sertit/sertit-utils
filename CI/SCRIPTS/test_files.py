@@ -204,6 +204,7 @@ def test_cp_rm():
         # Assert tempfile is empty
         assert os.listdir(tmp_dir) == empty_tmp
 
+
 @pytest.mark.xfail
 def test_find_files():
     """Test find_files"""
