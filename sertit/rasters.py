@@ -532,19 +532,18 @@ def read(
     # Get new height and width
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
-    # Read data
-    xds = rioxarray.open_rasterio(
-        dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    )
-    if masked:
-        xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(dst).dtype  # TODO
-    else:
-        xds.attrs[ORIGIN_DTYPE] = xds.dtype
+    # Read data (and load it to discard lock)
+    with rioxarray.open_rasterio(dst,
+                                 mask_and_scale=masked,
+                                 default_name=files.get_filename(dst.name)) as xds:
+        xds.load()
 
+    # Set original dtype (to write it back)
+    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
+    # Manage resampling
     if new_height != dst.height or new_width != dst.width:
-        xds = xds.rio.reproject(
-            xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-        )
+        xds = xds.rio.reproject(xds.rio.crs, shape=(new_height, new_width), resampling=resampling)
 
     return xds
 
