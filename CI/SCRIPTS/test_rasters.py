@@ -67,6 +67,9 @@ def test_rasters():
             xda_1 = rasters.read(raster_path, resolution=dst.res[0])
             xda_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
             xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
+            xda_4 = rasters.read(raster_path, resolution=dst.res[0] / 2)
+            assert xda_4.shape[-2] == xda.shape[-2] * 2
+            assert xda_4.shape[-1] == xda.shape[-1] * 2
             with pytest.raises(ValueError):
                 rasters.read(dst, resolution=[20, 20, 20])
 
