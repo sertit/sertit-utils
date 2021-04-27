@@ -985,9 +985,9 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     Returns:
         xr.DataArray: DataArray with nodata set
     """
-    # TODO: losing attributes here !
-
     xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
     xda_nodata.rio.write_nodata(np.nan)
+    xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.encoding["_FillValue"] = nodata_val
     return xda_nodata
