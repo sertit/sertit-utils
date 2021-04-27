@@ -91,7 +91,3 @@ It can be found:
 - on git, in `docs`.
   To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
   To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`
-
-# Packaging
-In order to generate a distribution, just upgrade the version in `setup.py` and run the command `python setup.py sdist bdist_wheel`.
-To upload the pypi package, just type `twine upload --config-file .pypirc --repository gitlab dist\*` from the root of this project.

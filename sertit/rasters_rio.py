@@ -488,7 +488,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 @path_arr_dst
 def _mask(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     do_crop: bool = False,
     **kwargs,
@@ -502,7 +502,8 @@ def _mask(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         do_crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
         **kwargs: Other rasterio.mask options
@@ -510,8 +511,10 @@ def _mask(
     Returns:
          (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
-    if isinstance(shapes, Polygon):
-        shapes = [Polygon]
+    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        shapes = shapes.to_crs(dst.crs).geometry
+    elif not isinstance(shapes, list):
+        shapes = [shapes]
 
     # Set nodata
     if not nodata:
@@ -537,7 +540,7 @@ def _mask(
 @path_arr_dst
 def mask(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
@@ -566,7 +569,8 @@ def mask(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -579,7 +583,7 @@ def mask(
 @path_arr_dst
 def crop(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
@@ -610,7 +614,8 @@ def crop(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 

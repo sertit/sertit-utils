@@ -84,8 +84,7 @@ def test_rasters_rio():
 
             # Crop
             raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
-            crop = gpd.read_file(mask_path)
-            crop_arr, crop_meta = rasters_rio.crop(dst, crop.geometry)
+            crop_arr, crop_meta = rasters_rio.crop(dst, mask)
             rasters_rio.write(crop_arr, raster_cropped_out, crop_meta)
 
             # Sieve

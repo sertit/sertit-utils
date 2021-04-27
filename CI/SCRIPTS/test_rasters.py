@@ -93,7 +93,7 @@ def test_rasters():
             xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
             mask = gpd.read_file(mask_path)
             mask_xda = rasters.mask(xda, mask.geometry)
-            mask_xds = rasters.mask(xda, mask.geometry)
+            mask_xds = rasters.mask(xda, mask)
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
             rasters.write(mask_xds, xds_masked, dtype=np.uint8)
 
@@ -101,7 +101,7 @@ def test_rasters():
             xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
             xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
             crop_xda = rasters.crop(xda, mask.geometry)
-            crop_xds = rasters.crop(xds, mask.geometry)
+            crop_xds = rasters.crop(xds, mask)
             rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
             rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
 

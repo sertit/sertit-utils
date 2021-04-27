@@ -399,7 +399,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 @path_xarr_dst
 def mask(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -> XDS_TYPE:
@@ -428,7 +428,8 @@ def mask(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -445,7 +446,7 @@ def mask(
 @path_xarr_dst
 def crop(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -> (np.ma.masked_array, dict):
@@ -471,7 +472,8 @@ def crop(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
@@ -483,7 +485,10 @@ def crop(
     else:
         xds_new = xds
 
-    return xds_new.rio.clip(shapes, **kwargs)  # Keep consistency with rasterio
+    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        shapes = shapes.to_crs(xds.rio.crs).geometry
+
+    return xds_new.rio.clip(shapes, **kwargs)
 
 
 @path_arr_dst
@@ -758,7 +763,7 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     """
@@ -785,7 +790,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
