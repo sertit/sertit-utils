@@ -56,7 +56,7 @@ pages-gitlab:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
     - pdoc sertit -o docs -f --html --template-dir doc_template
-    - cp docs/ public/
+    - mv docs/ public/
   artifacts:
     paths:
       - public
@@ -79,8 +79,9 @@ pages-github:
     - git config user.name "CI"
     - git add *.html
     - git diff-index --quiet HEAD || git commit -m "Updating documentation" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
-    - git remote rm origin && git remote add origin git@gitlab.com:$CI_PROJECT_PATH.git
-    - git push origin HEAD:$CI_COMMIT_REF_NAME
-
+    - git remote rm origin && git remote add origin https://${DEPLOY_NAME}:${DEPLOY_PWD}@code.sertit.unistra.fr/sertit/sertit_utils.git
+    - git push origin HEAD:master
   tags:
     - linux
+  only:
+    - master
