@@ -120,14 +120,11 @@ when <code><a title="sertit.rasters_rio" href="rasters_rio.html">sertit.rasters_
 <p>An HTML documentation is provided to document the code.
 It can be found:</p>
 <ul>
-<li>online <a href="https://sertit.github.io/sertit-utils/">here</a>),</li>
+<li>online (<a href="https://sertit.github.io/sertit-utils/">here</a>),</li>
 <li>on git, in <code>docs</code>.
 To consult it, just open the <code>index.html</code> file in a web browser (you need first to clone this project)
 To generate the HTML documentation, just type <code>pdoc sertit -o docs\html -f --html -c sort_identifiers=False</code></li>
 </ul>
-<h1 id="packaging">Packaging</h1>
-<p>In order to generate a distribution, just upgrade the version in <code>setup.py</code> and run the command <code>python setup.py sdist bdist_wheel</code>.
-To upload the pypi package, just type <code>twine upload --config-file .pypirc --repository gitlab dist\*</code> from the root of this project.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -154,7 +151,7 @@ To upload the pypi package, just type <code>twine upload --config-file .pypirc -
 .. include:: ../README.md
 &#34;&#34;&#34;
 
-__version__ = &#34;1.2.8&#34;</code></pre>
+__version__ = &#34;1.3.2&#34;</code></pre>
 </details>
 </section>
 <section>
@@ -279,7 +276,6 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li><a href="#documentation">Documentation</a></li>
-<li><a href="#packaging">Packaging</a></li>
 </ul>
 </div>
 <ul id="index">

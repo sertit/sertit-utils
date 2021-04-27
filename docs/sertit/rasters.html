@@ -438,7 +438,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -&gt; gpd.GeoDa
 @path_xarr_dst
 def mask(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -&gt; XDS_TYPE:
@@ -467,7 +467,8 @@ def mask(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -484,7 +485,7 @@ def mask(
 @path_xarr_dst
 def crop(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -&gt; (np.ma.masked_array, dict):
@@ -510,7 +511,8 @@ def crop(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
@@ -522,7 +524,10 @@ def crop(
     else:
         xds_new = xds
 
-    return xds_new.rio.clip(shapes, **kwargs)  # Keep consistency with rasterio
+    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        shapes = shapes.to_crs(xds.rio.crs).geometry
+
+    return xds_new.rio.clip(shapes, **kwargs)
 
 
 @path_arr_dst
@@ -571,15 +576,16 @@ def read(
     # Get new height and width
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
-    # Read data
-    xds = rioxarray.open_rasterio(
+    # Read data (and load it to discard lock)
+    with rioxarray.open_rasterio(
         dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    )
-    if masked:
-        xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(dst).dtype  # TODO
-    else:
-        xds.attrs[ORIGIN_DTYPE] = xds.dtype
+    ) as xds:
+        xds.load()
 
+    # Set original dtype (to write it back)
+    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
+    # Manage resampling
     if new_height != dst.height or new_width != dst.width:
         xds = xds.rio.reproject(
             xds.rio.crs, shape=(new_height, new_width), resampling=resampling
@@ -796,7 +802,7 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
@@ -823,7 +829,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
@@ -1025,10 +1031,10 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -&gt; xr.DataAr
     Returns:
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
-    # TODO: losing attributes here !
-
     xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
     xda_nodata.rio.write_nodata(np.nan)
+    xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.encoding[&#34;_FillValue&#34;] = nodata_val
     return xda_nodata</code></pre>
 </details>
@@ -1548,8 +1554,9 @@ True
 <dl>
 <dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
-<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
-<dd>Shapes</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
+<dd>Shapes with the same CRS as the dataset
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1564,7 +1571,7 @@ True
 <pre><code class="python">@path_xarr_dst
 def mask(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -&gt; XDS_TYPE:
@@ -1593,7 +1600,8 @@ def mask(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -1630,8 +1638,9 @@ True
 <dl>
 <dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
-<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
-<dd>Shapes</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
+<dd>Shapes with the same CRS as the dataset
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1649,7 +1658,7 @@ True
 <pre><code class="python">@path_xarr_dst
 def crop(
     xds: PATH_XARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs
 ) -&gt; (np.ma.masked_array, dict):
@@ -1675,7 +1684,8 @@ def crop(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
@@ -1687,7 +1697,10 @@ def crop(
     else:
         xds_new = xds
 
-    return xds_new.rio.clip(shapes, **kwargs)  # Keep consistency with rasterio</code></pre>
+    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        shapes = shapes.to_crs(xds.rio.crs).geometry
+
+    return xds_new.rio.clip(shapes, **kwargs)</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.read"><code class="name flex">
@@ -1783,15 +1796,16 @@ def read(
     # Get new height and width
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
-    # Read data
-    xds = rioxarray.open_rasterio(
+    # Read data (and load it to discard lock)
+    with rioxarray.open_rasterio(
         dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    )
-    if masked:
-        xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(dst).dtype  # TODO
-    else:
-        xds.attrs[ORIGIN_DTYPE] = xds.dtype
+    ) as xds:
+        xds.load()
 
+    # Set original dtype (to write it back)
+    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
+    # Manage resampling
     if new_height != dst.height or new_width != dst.width:
         xds = xds.rio.reproject(
             xds.rio.crs, shape=(new_height, new_width), resampling=resampling
@@ -2191,7 +2205,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
-<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dd>Path of the rasters to be merged with the same CRS</dd>
 <dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
@@ -2225,7 +2239,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
@@ -2254,7 +2268,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
-<dd>Path of the rasters to be merged with the same CRS)</dd>
+<dd>Path of the rasters to be merged with the same CRS</dd>
 <dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
@@ -2285,7 +2299,7 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
     ```
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
+        crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (str): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
@@ -2690,10 +2704,10 @@ Dimensions without coordinates: x, y
     Returns:
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
-    # TODO: losing attributes here !
-
     xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
     xda_nodata.rio.write_nodata(np.nan)
+    xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.encoding[&#34;_FillValue&#34;] = nodata_val
     return xda_nodata</code></pre>
 </details>

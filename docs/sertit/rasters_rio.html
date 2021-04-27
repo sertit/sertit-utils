@@ -527,7 +527,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -&gt; gpd.GeoDa
 @path_arr_dst
 def _mask(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     do_crop: bool = False,
     **kwargs,
@@ -541,7 +541,8 @@ def _mask(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         do_crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
         **kwargs: Other rasterio.mask options
@@ -549,8 +550,10 @@ def _mask(
     Returns:
          (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     &#34;&#34;&#34;
-    if isinstance(shapes, Polygon):
-        shapes = [Polygon]
+    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        shapes = shapes.to_crs(dst.crs).geometry
+    elif not isinstance(shapes, list):
+        shapes = [shapes]
 
     # Set nodata
     if not nodata:
@@ -576,7 +579,7 @@ def _mask(
 @path_arr_dst
 def mask(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
@@ -605,7 +608,8 @@ def mask(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -618,7 +622,7 @@ def mask(
 @path_arr_dst
 def crop(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
@@ -649,7 +653,8 @@ def crop(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -728,7 +733,7 @@ def read(
 
 
 def write(
-    raster: Union[np.ma.masked_array, np.ndarray], path: str, meta: dict, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
 ) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk (encapsulation of rasterio&#39;s function)
@@ -750,8 +755,8 @@ def write(
 
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
-        path (str): Path where to save it (directories should be existing)
         meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
+        path (str): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     &#34;&#34;&#34;
     # Manage raster type (impossible to write boolean arrays)
@@ -1091,7 +1096,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
 
     # Save merge datasets
     write(
-        merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform
+        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
     )
 
 
@@ -1865,8 +1870,9 @@ True
 <dl>
 <dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
-<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
-<dd>Shapes</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
+<dd>Shapes with the same CRS as the dataset
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1881,7 +1887,7 @@ True
 <pre><code class="python">@path_arr_dst
 def mask(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
@@ -1910,7 +1916,8 @@ def mask(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -1946,8 +1953,9 @@ True
 <dl>
 <dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
-<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[Polygon, list]</code></dt>
-<dd>Shapes</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
+<dd>Shapes with the same CRS as the dataset
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1962,7 +1970,7 @@ True
 <pre><code class="python">@path_arr_dst
 def crop(
     dst: PATH_ARR_DS,
-    shapes: Union[Polygon, list],
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
@@ -1993,7 +2001,8 @@ def crop(
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
-        shapes (Union[Polygon, list]): Shapes
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -2115,7 +2124,7 @@ def read(
 </details>
 </dd>
 <dt id="sertit.rasters_rio.write"><code class="name flex">
-<p>def <span class="ident">write</span>(</p><p>raster, <br>path, <br>meta, <br>**kwargs)</p>
+<p>def <span class="ident">write</span>(</p><p>raster, <br>meta, <br>path, <br>**kwargs)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Write raster to disk (encapsulation of rasterio's function)</p>
@@ -2135,10 +2144,10 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <dl>
 <dt><strong><code>raster</code></strong> :&ensp;<code>Union[np.ma.masked_array, np.ndarray]</code></dt>
 <dd>Raster to save on disk</dd>
-<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path where to save it (directories should be existing)</dd>
 <dt><strong><code>meta</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Basic metadata that will be copied and updated with raster's information</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path where to save it (directories should be existing)</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
 <dd>Overloading metadata, ie <code>nodata=255</code></dd>
 </dl></div>
@@ -2147,7 +2156,7 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def write(
-    raster: Union[np.ma.masked_array, np.ndarray], path: str, meta: dict, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
 ) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk (encapsulation of rasterio&#39;s function)
@@ -2169,8 +2178,8 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
-        path (str): Path where to save it (directories should be existing)
         meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
+        path (str): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     &#34;&#34;&#34;
     # Manage raster type (impossible to write boolean arrays)
@@ -2741,7 +2750,7 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
 
     # Save merge datasets
     write(
-        merged_array, crs_merged_path, crs_datasets[0].meta, transform=merged_transform
+        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
     )</code></pre>
 </details>
 </dd>

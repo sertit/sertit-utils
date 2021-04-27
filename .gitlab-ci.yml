@@ -49,14 +49,14 @@ upload_wheel:linux:
   only:
     - tags
 
-pages:
+pages-gitlab:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
   stage: docs
   script:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
     - pdoc sertit -o docs -f --html --template-dir doc_template
-    - mv docs/ public/
+    - cp docs/ public/
   artifacts:
     paths:
       - public
@@ -64,3 +64,20 @@ pages:
     - linux
   only:
     - master
+
+pages-github:
+  image:
+    name: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
+    entrypoint: [ "" ]
+  stage: docs
+  script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pdoc sertit -o docs -f --html --template-dir doc_template
+    - tox -e docs
+    - git add *.html
+    - git diff-index --quiet HEAD || git commit -m "Updating documentation" --allow-empty  # ACHTUNG FOR NOW ALLOW-EMPTY IS SET BUT CREATES EMPTY COMMITS !!! WHY DOES IT FAILS NOW ? DONT KNOW
+    - git push
+
+  tags:
+    - linux
