@@ -72,10 +72,10 @@ pages-github:
   stage: docs
   script:
     - python -m pip install --upgrade pip
-    - pip install -r requirements.txt
+    - pip install pre-commit -r requirements.txt
     - pdoc sertit -o docs -f --html --template-dir doc_template
     - tox -e docs
-    - tox -e linters
+    - pre-commit run --all-files
     - git config user.email "remi.braun@unistra.fr"
     - git config user.name "CI"
     - git add .
