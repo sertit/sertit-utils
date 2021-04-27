@@ -2,7 +2,7 @@
 
 ## 1.3.2 (2021-04-27)
 - Allowing `gpd.GeoDataFrames` in `crop`/`mask`
-- **API break**: `rasters.write(array, path, meta)` becomes `rasters.write(array, meta, path)` !
+- **API break**: `rasters_rio.write(array, path, meta)` becomes `rasters_rio.write(array, meta, path)` !
 
 ## 1.3.1 (2021-04-27)
 - Do not lose attributes when using `rasters.set_nodata`
