@@ -636,7 +636,7 @@ INDEX=[
 {
 "ref":"sertit.rasters_rio.write",
 "url":8,
-"doc":"Write raster to disk (encapsulation of rasterio's function) Metadata will be copied and updated with raster's information (ie. width, height, count, type .) The driver is GTiff by default, and no nodata value is provided. The file will be compressed if the raster is a mask (saved as uint8)   >>> raster_path = \"path\\to\\raster.tif\" >>> raster_out = \"path\\to\\out.tif\" >>>  Read raster >>> raster, meta = read(raster_path) >>>  Rewrite it >>> write(raster, raster_out, meta)   Args: raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk meta (dict): Basic metadata that will be copied and updated with raster's information path (str): Path where to save it (directories should be existing)  kwargs: Overloading metadata, ie  nodata=255 ",
+"doc":"Write raster to disk (encapsulation of rasterio's function) Metadata will be copied and updated with raster's information (ie. width, height, count, type .) The driver is GTiff by default, and no nodata value is provided. The file will be compressed if the raster is a mask (saved as uint8)   >>> raster_path = \"path\\to\\raster.tif\" >>> raster_out = \"path\\to\\out.tif\" >>>  Read raster >>> raster, meta = read(raster_path) >>>  Rewrite it on disk >>> write(raster, meta, raster_out)   Args: raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk meta (dict): Basic metadata that will be copied and updated with raster's information path (str): Path where to save it (directories should be existing)  kwargs: Overloading metadata, ie  nodata=255 ",
 "func":1
 },
 {
