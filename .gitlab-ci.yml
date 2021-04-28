@@ -16,7 +16,7 @@ lint:
   except:
     changes:
       - "*.md"
-      - sertit/version.py
+      - "*.html"
       - doc_template/*
 
 pytest:
@@ -34,7 +34,7 @@ pytest:
   except:
     changes:
       - "*.md"
-      - sertit/version.py
+      - "*.html"
       - doc_template/*
 
 upload_wheel:linux:

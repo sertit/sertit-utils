@@ -102,9 +102,9 @@ def path_xarr_dst(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        if isinstance(path_or_ds, (xr.DataArray)):
+        if isinstance(path_or_ds, xr.DataArray):
             out = function(path_or_ds, *args, **kwargs)
-        elif isinstance(path_or_ds, (xr.Dataset)):
+        elif isinstance(path_or_ds, xr.Dataset):
             # Try on the whole dataset
             try:
                 out = function(path_or_ds, *args, **kwargs)
