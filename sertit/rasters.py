@@ -401,7 +401,7 @@ def mask(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -> XDS_TYPE:
     """
     Masking a dataset:
@@ -448,7 +448,7 @@ def crop(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
@@ -606,14 +606,22 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
         else:
             dtype = xds.dtype
 
+        # Convert to numpy dtype
+        if isinstance(dtype, str):
+            dtype = getattr(np, dtype)
+
         if dtype == np.uint8:
             xds.encoding["_FillValue"] = 255
         elif dtype == np.int8:
             xds.encoding["_FillValue"] = -128
-        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
             xds.encoding["_FillValue"] = 65535
         elif dtype in [np.int16, np.float32, np.float64, float]:
             xds.encoding["_FillValue"] = -9999
+        else:
+            raise ValueError(
+                f"Invalid dtype: {dtype}, should be convertible to numpy dtypes"
+            )
 
     xds.rio.to_raster(path, **kwargs)
 

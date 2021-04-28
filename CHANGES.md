@@ -1,5 +1,9 @@
 # Release History
 
+## 1.3.5 (YYYY-MM-DD)
+
+- Managing exotic dtypes in `rasters.write`
+
 ## 1.3.4 (2021-04-28)
 
 - Setting default nodata according to the dtype in `rasters.write`:
