@@ -1,5 +1,13 @@
 # Release History
 
+## 1.3.4 (2021-04-28)
+
+- Setting default nodata according to the dtype in `rasters.write`:
+    - uint8: 255
+    - int8: -128
+    - uint16, uint32, int32, int64, uint64: 65535
+    - int16, float32, float64, float128, float: -9999
+
 ## 1.3.3 (2021-04-27)
 
 - [`rasters.read`]
