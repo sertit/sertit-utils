@@ -488,7 +488,7 @@ INDEX=[
 {
 "ref":"sertit.rasters.write",
 "url":7,
-"doc":"Write raster to disk. (encapsulation of  rasterio 's function, because for now  rioxarray to_raster doesn't work as expected) Metadata will be created with the  xarray metadata (ie. width, height, count, type .) The driver is  GTiff by default, and no nodata value is provided. The file will be compressed if the raster is a mask (saved as uint8).   >>> raster_path = \"path\\to\\raster.tif\" >>> raster_out = \"path\\to\\out.tif\" >>>  Read raster >>> xds = read(raster_path) >>>  Rewrite it >>> write(xds, raster_out)   Args: xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray path (str): Path where to save it (directories should be existing)  kwargs: Overloading metadata, ie  nodata=255 ",
+"doc":"Write raster to disk. (encapsulation of  rasterio 's function, because for now  rioxarray to_raster doesn't work as expected) Metadata will be created with the  xarray metadata (ie. width, height, count, type .) The driver is  GTiff by default, and no nodata value is provided. The file will be compressed if the raster is a mask (saved as uint8). If not overwritten, sets the nodata according to  dtype : - uint8: 255 - int8: -128 - uint16, uint32, int32, int64, uint64: 65535 - int16, float32, float64, float128, float: -9999   >>> raster_path = \"path\\to\\raster.tif\" >>> raster_out = \"path\\to\\out.tif\" >>>  Read raster >>> xds = read(raster_path) >>>  Rewrite it >>> write(xds, raster_out)   Args: xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray path (str): Path where to save it (directories should be existing)  kwargs: Overloading metadata, ie  nodata=255 or  dtype=np.uint8 ",
 "func":1
 },
 {

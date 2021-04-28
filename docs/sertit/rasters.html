@@ -141,9 +141,9 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
         Returns:
             Any: regular output
         &#34;&#34;&#34;
-        if isinstance(path_or_ds, (xr.DataArray)):
+        if isinstance(path_or_ds, xr.DataArray):
             out = function(path_or_ds, *args, **kwargs)
-        elif isinstance(path_or_ds, (xr.Dataset)):
+        elif isinstance(path_or_ds, xr.Dataset):
             # Try on the whole dataset
             try:
                 out = function(path_or_ds, *args, **kwargs)
@@ -613,6 +613,13 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     The driver is `GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
+    If not overwritten, sets the nodata according to `dtype`:
+
+    - uint8: 255
+    - int8: -128
+    - uint16, uint32, int32, int64, uint64: 65535
+    - int16, float32, float64, float128, float: -9999
+
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; raster_out = &#34;path\\to\\out.tif&#34;
@@ -627,8 +634,26 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
         path (str): Path where to save it (directories should be existing)
-        **kwargs: Overloading metadata, ie `nodata=255`
+        **kwargs: Overloading metadata, ie `nodata=255` or `dtype=np.uint8`
     &#34;&#34;&#34;
+    if &#34;nodata&#34; in kwargs:
+        xds.encoding[&#34;_FillValue&#34;] = kwargs.pop(&#34;nodata&#34;)
+    else:
+        # Manage default nodata in function of dtype (default, for float = -9999)
+        if &#34;dtype&#34; in kwargs:
+            dtype = kwargs[&#34;dtype&#34;]
+        else:
+            dtype = xds.dtype
+
+        if dtype == np.uint8:
+            xds.encoding[&#34;_FillValue&#34;] = 255
+        elif dtype == np.int8:
+            xds.encoding[&#34;_FillValue&#34;] = -128
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
+            xds.encoding[&#34;_FillValue&#34;] = 65535
+        elif dtype in [np.int16, np.float32, np.float64, float]:
+            xds.encoding[&#34;_FillValue&#34;] = -9999
+
     xds.rio.to_raster(path, **kwargs)
 
 
@@ -1151,9 +1176,9 @@ True
         Returns:
             Any: regular output
         &#34;&#34;&#34;
-        if isinstance(path_or_ds, (xr.DataArray)):
+        if isinstance(path_or_ds, xr.DataArray):
             out = function(path_or_ds, *args, **kwargs)
-        elif isinstance(path_or_ds, (xr.Dataset)):
+        elif isinstance(path_or_ds, xr.Dataset):
             # Try on the whole dataset
             try:
                 out = function(path_or_ds, *args, **kwargs)
@@ -1841,6 +1866,13 @@ def read(
 <p>Metadata will be created with the <code>xarray</code> metadata (ie. width, height, count, type&hellip;)
 The driver is <code>GTiff</code> by default, and no nodata value is provided.
 The file will be compressed if the raster is a mask (saved as uint8).</p>
+<p>If not overwritten, sets the nodata according to <code>dtype</code>:</p>
+<ul>
+<li>uint8: 255</li>
+<li>int8: -128</li>
+<li>uint16, uint32, int32, int64, uint64: 65535</li>
+<li>int16, float32, float64, float128, float: -9999</li>
+</ul>
 <pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
 &gt;&gt;&gt; raster_out = &quot;path\to\out.tif&quot;
 
@@ -1857,7 +1889,7 @@ The file will be compressed if the raster is a mask (saved as uint8).</p>
 <dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
 <dd>Path where to save it (directories should be existing)</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
-<dd>Overloading metadata, ie <code>nodata=255</code></dd>
+<dd>Overloading metadata, ie <code>nodata=255</code> or <code>dtype=np.uint8</code></dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1873,6 +1905,13 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     The driver is `GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
+    If not overwritten, sets the nodata according to `dtype`:
+
+    - uint8: 255
+    - int8: -128
+    - uint16, uint32, int32, int64, uint64: 65535
+    - int16, float32, float64, float128, float: -9999
+
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; raster_out = &#34;path\\to\\out.tif&#34;
@@ -1887,8 +1926,26 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
         path (str): Path where to save it (directories should be existing)
-        **kwargs: Overloading metadata, ie `nodata=255`
+        **kwargs: Overloading metadata, ie `nodata=255` or `dtype=np.uint8`
     &#34;&#34;&#34;
+    if &#34;nodata&#34; in kwargs:
+        xds.encoding[&#34;_FillValue&#34;] = kwargs.pop(&#34;nodata&#34;)
+    else:
+        # Manage default nodata in function of dtype (default, for float = -9999)
+        if &#34;dtype&#34; in kwargs:
+            dtype = kwargs[&#34;dtype&#34;]
+        else:
+            dtype = xds.dtype
+
+        if dtype == np.uint8:
+            xds.encoding[&#34;_FillValue&#34;] = 255
+        elif dtype == np.int8:
+            xds.encoding[&#34;_FillValue&#34;] = -128
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
+            xds.encoding[&#34;_FillValue&#34;] = 65535
+        elif dtype in [np.int16, np.float32, np.float64, float]:
+            xds.encoding[&#34;_FillValue&#34;] = -9999
+
     xds.rio.to_raster(path, **kwargs)</code></pre>
 </details>
 </dd>
