@@ -3,6 +3,8 @@
 ## 1.3.5 (YYYY-MM-DD)
 
 - Managing exotic dtypes in `rasters.write`
+- Adding a `rasters.where` function preserving metadata and nodata
+- Fixing the case with `rasters.set_metadata` with `xarray` without CRS
 
 ## 1.3.4 (2021-04-28)
 
