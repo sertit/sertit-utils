@@ -184,6 +184,32 @@ def test_vrt():
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
+def test_write():
+    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    raster_xds = rasters.read(raster_path)
+
+    nodata = {
+        np.uint8: 255,
+        np.int8: -128,
+        np.uint16: 65535,
+        np.int16: -9999,
+        np.uint32: 65535,
+        np.int32: 65535,
+        np.float32: -9999,
+        np.float64: -9999,
+    }
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        test_path = os.path.join(tmp_dir, "test_nodata.tif")
+
+        for dtype, nodata_val in nodata.items():
+            print(dtype.__name__)
+            rasters.write(raster_xds, test_path, dtype=dtype)
+            with rasterio.open(test_path) as ds:
+                assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
+                assert ds.meta["nodata"] == nodata_val
+
+
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = os.path.join(RASTER_DATA, "DIM.dim")
