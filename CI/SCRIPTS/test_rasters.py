@@ -246,6 +246,7 @@ def test_bit():
 
 
 def test_xarray_fct():
+    """ Test xarray functions """
     # Set nodata
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 0], [0, 0, 0]])
     nodata = xr.DataArray(
@@ -271,3 +272,15 @@ def test_xarray_fct():
     assert xda_sum.rio.height == xda.rio.height
     assert xda_sum.rio.count == xda.rio.count
     assert xda_sum.name == "sum"
+
+
+def test_where():
+    """ Test overloading of xr.where function """
+    A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
+    mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
+
+    np.testing.assert_equal(np.isnan(A.data), np.isnan(mask_A.data))
+    assert A.attrs == mask_A.attrs
+    np.testing.assert_equal(
+        mask_A.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
+    )

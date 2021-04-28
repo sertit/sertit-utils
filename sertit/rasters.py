@@ -25,6 +25,7 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray
+from rioxarray.exceptions import MissingCRS
 
 from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
 
@@ -992,7 +993,11 @@ def set_metadata(
     Returns:
         xr.DataArray: Complete DataArray
     """
-    naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    try:
+        naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    except MissingCRS:
+        pass
+
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
     naked_xda.encoding = mtd_xda.encoding
@@ -1040,3 +1045,40 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     xda_nodata.encoding = xda.encoding
     xda_nodata.encoding["_FillValue"] = nodata_val
     return xda_nodata
+
+
+def where(
+    cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
+) -> xr.DataArray:
+    """
+    Overloads `xr.where` with:
+    - setting metadata of `master_xda`
+    - preserving the nodata pixels of the `master_xda`
+
+    If `master_xda` is None, use it like `xr.where`
+
+    ```python
+    >>> A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
+    >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
+    <xarray.DataArray 'mask_A' (x: 2, y: 3)>
+    array([[ 1.,  1.,  0.],
+           [nan,  1.,  1.]])
+    Dimensions without coordinates: x, y
+    ```
+    Args:
+        cond (scalar, array, Variable, DataArray or Dataset): Conditional array
+        if_true (scalar, array, Variable, DataArray or Dataset): What to do if `cond` is True
+        if_false (scalar, array, Variable, DataArray or Dataset):  What to do if `cond` is False
+        master_xda: Master `xr.DataArray` used to set the metadata and the nodata
+        new_name (str): New name of the array
+
+    Returns:
+        xr.DataArray: Where array with correct mtd and nodata pixels
+    """
+    where_xda = xr.where(cond, if_true, if_false)
+    if master_xda is not None:
+        where_xda = where_xda.astype(master_xda.dtype)
+        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
+
+    return where_xda
