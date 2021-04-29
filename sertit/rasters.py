@@ -146,32 +146,6 @@ def path_xarr_dst(function: Callable) -> Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def _get_nodata_pos(xds: XDS_TYPE) -> np.ndarray:
-    """
-    Get nodata positions in the xarray as a `np.ndarray` with `True` where nodata values are.
-
-    Args:
-        xds (XDS_TYPE): Xarray
-
-    Returns:
-        np.ndarray: Boolean array with True w
-
-    """
-    nodata = xds.rio.nodata
-
-    try:
-        is_nan = np.isnan(nodata)
-    except TypeError:
-        is_nan = False
-
-    if is_nan:
-        nodata_pos = np.isnan(xds.data)
-    else:
-        nodata_pos = xds.data == nodata
-
-    return nodata_pos
-
-
 def to_np(xds: xarray.DataArray, dtype: str = None) -> np.ndarray:
     """
     Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
@@ -209,7 +183,7 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -> np.ndarray:
     """
     if not dtype:
         dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
-    arr = np.where(_get_nodata_pos(xds), xds.rio.encoded_nodata, xds.data).astype(dtype)
+    arr = xds.fillna(xds.rio.encoded_nodata).data.astype(dtype)
 
     return arr
 
@@ -241,7 +215,20 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
         np.ndarray: Pixelwise nodata array
 
     """
-    return np.where(_get_nodata_pos(xds), 0, 1).astype(np.uint8)
+
+    nodata = xds.rio.nodata
+
+    try:
+        is_nan = np.isnan(nodata)
+    except TypeError:
+        is_nan = False
+
+    if is_nan:
+        nodata_pos = np.isnan(xds.data)
+    else:
+        nodata_pos = xds.data == nodata
+
+    return np.where(nodata_pos, 0, 1).astype(np.uint8)
 
 
 @path_xarr_dst
@@ -1073,7 +1060,8 @@ def where(
     """
     where_xda = xr.where(cond, if_true, if_false)
     if master_xda is not None:
-        where_xda = where_xda.astype(master_xda.dtype)
+        if where_xda.dtype != master_xda.dtype:
+            where_xda = where_xda.astype(master_xda.dtype)
         where_xda[np.where(np.isnan(master_xda))] = np.nan
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 

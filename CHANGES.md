@@ -6,6 +6,7 @@
 
 - Optimizing `rasters.read` (very slow function, maybe we need to take a look at that)
 - Optimizing `rasters.set_nodata` and in `rasters_rio.unpackbits`
+- Other minor optimizations
 
 ## 1.3.5 (2021-04-29)
 
