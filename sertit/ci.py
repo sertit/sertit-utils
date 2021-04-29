@@ -149,7 +149,7 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -> None:
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
 
-    Accepts an offset of `1E{decimal}` on the array and the transform
+    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
 
     -> Useful for pytests.
 
@@ -174,7 +174,7 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -> None:
             assert dst_1.meta["count"] == dst_2.meta["count"]
             assert dst_1.meta["crs"] == dst_2.meta["crs"]
             assert dst_1.meta["transform"].almost_equals(
-                dst_2.meta["transform"], precision=float(f"1E-{decimal}")
+                dst_2.meta["transform"], precision=1e-9
             )
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 

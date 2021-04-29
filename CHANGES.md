@@ -5,6 +5,7 @@
 ## 1.3.7 (2021-04-29)
 
 - Fixing regression in `rasters_rio.unpackbits`
+- Fixing regression in `ci.assert_raster_almost_equal` and always checking transform to 10-9
 
 ## 1.3.6 (2021-04-29)
 
