@@ -1,6 +1,6 @@
 # Release History
 
-## 1.3.5 (YYYY-MM-DD)
+## 1.3.5 (2021-04-29)
 
 - Managing exotic dtypes in `rasters.write`
 - Adding a `rasters.where` function preserving metadata and nodata
