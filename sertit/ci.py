@@ -174,7 +174,7 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -> None:
             assert dst_1.meta["count"] == dst_2.meta["count"]
             assert dst_1.meta["crs"] == dst_2.meta["crs"]
             dst_1.meta["transform"].almost_equals(
-                dst_1.meta["transform"], precision=float(f"1E-{decimal}")
+                dst_2.meta["transform"], precision=float(f"1E-{decimal}")
             )
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
