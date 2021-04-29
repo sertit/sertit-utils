@@ -64,6 +64,7 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray
+from rioxarray.exceptions import MissingCRS
 
 from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
 
@@ -440,7 +441,7 @@ def mask(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Masking a dataset:
@@ -487,7 +488,7 @@ def crop(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Cropping a dataset:
@@ -645,14 +646,22 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
         else:
             dtype = xds.dtype
 
+        # Convert to numpy dtype
+        if isinstance(dtype, str):
+            dtype = getattr(np, dtype)
+
         if dtype == np.uint8:
             xds.encoding[&#34;_FillValue&#34;] = 255
         elif dtype == np.int8:
             xds.encoding[&#34;_FillValue&#34;] = -128
-        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
             xds.encoding[&#34;_FillValue&#34;] = 65535
         elif dtype in [np.int16, np.float32, np.float64, float]:
             xds.encoding[&#34;_FillValue&#34;] = -9999
+        else:
+            raise ValueError(
+                f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
+            )
 
     xds.rio.to_raster(path, **kwargs)
 
@@ -1023,7 +1032,11 @@ def set_metadata(
     Returns:
         xr.DataArray: Complete DataArray
     &#34;&#34;&#34;
-    naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    try:
+        naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    except MissingCRS:
+        pass
+
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
     naked_xda.encoding = mtd_xda.encoding
@@ -1070,7 +1083,44 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -&gt; xr.DataAr
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.encoding = xda.encoding
     xda_nodata.encoding[&#34;_FillValue&#34;] = nodata_val
-    return xda_nodata</code></pre>
+    return xda_nodata
+
+
+def where(
+    cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = &#34;&#34;
+) -&gt; xr.DataArray:
+    &#34;&#34;&#34;
+    Overloads `xr.where` with:
+    - setting metadata of `master_xda`
+    - preserving the nodata pixels of the `master_xda`
+
+    If `master_xda` is None, use it like `xr.where`
+
+    ```python
+    &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
+    &gt;&gt;&gt; mask_A = rasters.where(A &gt; 3, 0, 1, A, new_name=&#34;mask_A&#34;)
+    &lt;xarray.DataArray &#39;mask_A&#39; (x: 2, y: 3)&gt;
+    array([[ 1.,  1.,  0.],
+           [nan,  1.,  1.]])
+    Dimensions without coordinates: x, y
+    ```
+    Args:
+        cond (scalar, array, Variable, DataArray or Dataset): Conditional array
+        if_true (scalar, array, Variable, DataArray or Dataset): What to do if `cond` is True
+        if_false (scalar, array, Variable, DataArray or Dataset):  What to do if `cond` is False
+        master_xda: Master `xr.DataArray` used to set the metadata and the nodata
+        new_name (str): New name of the array
+
+    Returns:
+        xr.DataArray: Where array with correct mtd and nodata pixels
+    &#34;&#34;&#34;
+    where_xda = xr.where(cond, if_true, if_false)
+    if master_xda is not None:
+        where_xda = where_xda.astype(master_xda.dtype)
+        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
+
+    return where_xda</code></pre>
 </details>
 </section>
 <section>
@@ -1607,7 +1657,7 @@ def mask(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Masking a dataset:
@@ -1694,7 +1744,7 @@ def crop(
     xds: PATH_XARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Cropping a dataset:
@@ -1937,14 +1987,22 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
         else:
             dtype = xds.dtype
 
+        # Convert to numpy dtype
+        if isinstance(dtype, str):
+            dtype = getattr(np, dtype)
+
         if dtype == np.uint8:
             xds.encoding[&#34;_FillValue&#34;] = 255
         elif dtype == np.int8:
             xds.encoding[&#34;_FillValue&#34;] = -128
-        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
             xds.encoding[&#34;_FillValue&#34;] = 65535
         elif dtype in [np.int16, np.float32, np.float64, float]:
             xds.encoding[&#34;_FillValue&#34;] = -9999
+        else:
+            raise ValueError(
+                f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
+            )
 
     xds.rio.to_raster(path, **kwargs)</code></pre>
 </details>
@@ -2699,7 +2757,11 @@ Attributes: (12/13)
     Returns:
         xr.DataArray: Complete DataArray
     &#34;&#34;&#34;
-    naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    try:
+        naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+    except MissingCRS:
+        pass
+
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
     naked_xda.encoding = mtd_xda.encoding
@@ -2785,6 +2847,80 @@ Dimensions without coordinates: x, y
     xda_nodata.encoding = xda.encoding
     xda_nodata.encoding[&#34;_FillValue&#34;] = nodata_val
     return xda_nodata</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters.where"><code class="name flex">
+<p>def <span class="ident">where</span>(</p><p>cond, <br>if_true, <br>if_false, <br>master_xda=None, <br>new_name='')</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Overloads <code>xr.where</code> with:
+- setting metadata of <code>master_xda</code>
+- preserving the nodata pixels of the <code>master_xda</code></p>
+<p>If <code>master_xda</code> is None, use it like <code>xr.where</code></p>
+<pre><code class="language-python">&gt;&gt;&gt; A = xr.DataArray(dims=(&quot;x&quot;, &quot;y&quot;), data=[[1, 0, 5], [np.nan, 0, 0]])
+&gt;&gt;&gt; mask_A = rasters.where(A &gt; 3, 0, 1, A, new_name=&quot;mask_A&quot;)
+&lt;xarray.DataArray 'mask_A' (x: 2, y: 3)&gt;
+array([[ 1.,  1.,  0.],
+       [nan,  1.,  1.]])
+Dimensions without coordinates: x, y
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>cond</code></strong> :&ensp;<code>scalar, array, Variable, DataArray</code> or <code>Dataset</code></dt>
+<dd>Conditional array</dd>
+<dt><strong><code>if_true</code></strong> :&ensp;<code>scalar, array, Variable, DataArray</code> or <code>Dataset</code></dt>
+<dd>What to do if <code>cond</code> is True</dd>
+<dt><strong><code>if_false</code></strong> :&ensp;<code>scalar, array, Variable, DataArray</code> or <code>Dataset</code></dt>
+<dd>What to do if <code>cond</code> is False</dd>
+<dt><strong><code>master_xda</code></strong></dt>
+<dd>Master <code>xr.DataArray</code> used to set the metadata and the nodata</dd>
+<dt><strong><code>new_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>New name of the array</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>xr.DataArray</code></dt>
+<dd>Where array with correct mtd and nodata pixels</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def where(
+    cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = &#34;&#34;
+) -&gt; xr.DataArray:
+    &#34;&#34;&#34;
+    Overloads `xr.where` with:
+    - setting metadata of `master_xda`
+    - preserving the nodata pixels of the `master_xda`
+
+    If `master_xda` is None, use it like `xr.where`
+
+    ```python
+    &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
+    &gt;&gt;&gt; mask_A = rasters.where(A &gt; 3, 0, 1, A, new_name=&#34;mask_A&#34;)
+    &lt;xarray.DataArray &#39;mask_A&#39; (x: 2, y: 3)&gt;
+    array([[ 1.,  1.,  0.],
+           [nan,  1.,  1.]])
+    Dimensions without coordinates: x, y
+    ```
+    Args:
+        cond (scalar, array, Variable, DataArray or Dataset): Conditional array
+        if_true (scalar, array, Variable, DataArray or Dataset): What to do if `cond` is True
+        if_false (scalar, array, Variable, DataArray or Dataset):  What to do if `cond` is False
+        master_xda: Master `xr.DataArray` used to set the metadata and the nodata
+        new_name (str): New name of the array
+
+    Returns:
+        xr.DataArray: Where array with correct mtd and nodata pixels
+    &#34;&#34;&#34;
+    where_xda = xr.where(cond, if_true, if_false)
+    if master_xda is not None:
+        where_xda = where_xda.astype(master_xda.dtype)
+        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
+
+    return where_xda</code></pre>
 </details>
 </dd>
 </dl>
@@ -2886,6 +3022,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="sertit.rasters.read_uint8_array" href="#sertit.rasters.read_uint8_array">read_uint8_array</a></code></li>
 <li><code><a title="sertit.rasters.set_metadata" href="#sertit.rasters.set_metadata">set_metadata</a></code></li>
 <li><code><a title="sertit.rasters.set_nodata" href="#sertit.rasters.set_nodata">set_nodata</a></code></li>
+<li><code><a title="sertit.rasters.where" href="#sertit.rasters.where">where</a></code></li>
 </ul>
 </li>
 </ul>

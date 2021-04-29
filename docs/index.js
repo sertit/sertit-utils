@@ -564,6 +564,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"sertit.rasters.where",
+"url":7,
+"doc":"Overloads  xr.where with: - setting metadata of  master_xda - preserving the nodata pixels of the  master_xda If  master_xda is None, use it like  xr.where   >>> A = xr.DataArray(dims=(\"x\", \"y\"), data= 1, 0, 5], [np.nan, 0, 0 ) >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name=\"mask_A\")  array( 1., 1., 0.], [nan, 1., 1. ) Dimensions without coordinates: x, y   Args: cond (scalar, array, Variable, DataArray or Dataset): Conditional array if_true (scalar, array, Variable, DataArray or Dataset): What to do if  cond is True if_false (scalar, array, Variable, DataArray or Dataset): What to do if  cond is False master_xda: Master  xr.DataArray used to set the metadata and the nodata new_name (str): New name of the array Returns: xr.DataArray: Where array with correct mtd and nodata pixels",
+"func":1
+},
+{
 "ref":"sertit.rasters_rio",
 "url":8,
 "doc":"Raster tools You can use this only if you have installed sertit[full] or sertit[rasters_rio]"
