@@ -1135,7 +1135,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -&gt; np.ndarray:
     xshape = list(array.shape)
     array = array.reshape([-1, 1])
     msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+    return (array &amp; msk).astype(np.uint8).reshape(xshape + [nof_bits])
 
 
 def read_bit_array(
@@ -2828,7 +2828,7 @@ array([[[1, 0, 0, 0, 0, 0, 0, 0],
     xshape = list(array.shape)
     array = array.reshape([-1, 1])
     msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])</code></pre>
+    return (array &amp; msk).astype(np.uint8).reshape(xshape + [nof_bits])</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters_rio.read_bit_array"><code class="name flex">
