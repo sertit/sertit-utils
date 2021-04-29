@@ -1096,7 +1096,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     xshape = list(array.shape)
     array = array.reshape([-1, 1])
     msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+    return (array & msk).astype(np.uint8).reshape(xshape + [nof_bits])
 
 
 def read_bit_array(
