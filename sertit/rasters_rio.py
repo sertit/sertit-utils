@@ -1094,9 +1094,19 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
         np.ndarray: Unpacked array
     """
     xshape = list(array.shape)
-    array = array.reshape([-1, 1])
-    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+    dtype = array.dtype
+    if dtype == np.uint8:
+        unpacked = np.unpackbits(
+            np.expand_dims(array, axis=-1), axis=-1, count=nof_bits, bitorder="little"
+        )
+    else:
+        array = array.reshape([-1, 1])
+        msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+        unpacked = (
+            (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+        )
+
+    return unpacked
 
 
 def read_bit_array(
