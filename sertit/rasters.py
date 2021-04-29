@@ -539,30 +539,26 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(
-        dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    ) as xds:
+    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
+        # Manage resampling
+        if new_height != dst.height or new_width != dst.width:
+            factor_h = dst.height / new_height
+            factor_w = dst.width / new_width
+            if factor_h.is_integer() and factor_w.is_integer():
+                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+            else:
+                xda = xda.rio.reproject(
+                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
+                )
+
+        # Set original dtype (to write it back)
+        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
         if masked:
-            # Save as float32 and load
-            xds = set_metadata(xds.astype(np.float32, casting="same_kind"), xds)
+            # Set nodata not in opening due to some performance issues
+            xda = set_nodata(xda, dst.meta["nodata"])
 
-        xds.load()
-
-    # Manage resampling
-    if new_height != dst.height or new_width != dst.width:
-        factor_h = dst.height / new_height
-        factor_w = dst.width / new_width
-        if factor_h.is_integer() and factor_w.is_integer():
-            xds = xds.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-        else:
-            xds = xds.rio.reproject(
-                xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-            )
-
-    # Set original dtype (to write it back)
-    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
-
-    return xds
+    return xda
 
 
 @path_xarr_dst

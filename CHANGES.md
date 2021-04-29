@@ -1,5 +1,11 @@
 # Release History
 
+## X.Y.Z (YYYY-MM-DD)
+
+## 1.3.6 (YYYY-MM-DD)
+
+- Optimizing `rasters.read` (very slow function, maybe we need to take a look at that)
+
 ## 1.3.5 (2021-04-29)
 
 - Managing exotic dtypes in `rasters.write`
