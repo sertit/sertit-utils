@@ -185,32 +185,6 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def _get_nodata_pos(xds: XDS_TYPE) -&gt; np.ndarray:
-    &#34;&#34;&#34;
-    Get nodata positions in the xarray as a `np.ndarray` with `True` where nodata values are.
-
-    Args:
-        xds (XDS_TYPE): Xarray
-
-    Returns:
-        np.ndarray: Boolean array with True w
-
-    &#34;&#34;&#34;
-    nodata = xds.rio.nodata
-
-    try:
-        is_nan = np.isnan(nodata)
-    except TypeError:
-        is_nan = False
-
-    if is_nan:
-        nodata_pos = np.isnan(xds.data)
-    else:
-        nodata_pos = xds.data == nodata
-
-    return nodata_pos
-
-
 def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
     &#34;&#34;&#34;
     Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
@@ -248,7 +222,7 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
     &#34;&#34;&#34;
     if not dtype:
         dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
-    arr = np.where(_get_nodata_pos(xds), xds.rio.encoded_nodata, xds.data).astype(dtype)
+    arr = xds.fillna(xds.rio.encoded_nodata).data.astype(dtype)
 
     return arr
 
@@ -280,7 +254,20 @@ def get_nodata_mask(xds: XDS_TYPE) -&gt; np.ndarray:
         np.ndarray: Pixelwise nodata array
 
     &#34;&#34;&#34;
-    return np.where(_get_nodata_pos(xds), 0, 1).astype(np.uint8)
+
+    nodata = xds.rio.nodata
+
+    try:
+        is_nan = np.isnan(nodata)
+    except TypeError:
+        is_nan = False
+
+    if is_nan:
+        nodata_pos = np.isnan(xds.data)
+    else:
+        nodata_pos = xds.data == nodata
+
+    return np.where(nodata_pos, 0, 1).astype(np.uint8)
 
 
 @path_xarr_dst
@@ -578,30 +565,26 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(
-        dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    ) as xds:
+    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
+        # Manage resampling
+        if new_height != dst.height or new_width != dst.width:
+            factor_h = dst.height / new_height
+            factor_w = dst.width / new_width
+            if factor_h.is_integer() and factor_w.is_integer():
+                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+            else:
+                xda = xda.rio.reproject(
+                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
+                )
+
+        # Set original dtype (to write it back)
+        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
         if masked:
-            # Save as float32 and load
-            xds = set_metadata(xds.astype(np.float32, casting=&#34;same_kind&#34;), xds)
+            # Set nodata not in opening due to some performance issues
+            xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
 
-        xds.load()
-
-    # Manage resampling
-    if new_height != dst.height or new_width != dst.width:
-        factor_h = dst.height / new_height
-        factor_w = dst.width / new_width
-        if factor_h.is_integer() and factor_w.is_integer():
-            xds = xds.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-        else:
-            xds = xds.rio.reproject(
-                xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-            )
-
-    # Set original dtype (to write it back)
-    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
-
-    return xds
+    return xda
 
 
 @path_xarr_dst
@@ -1078,7 +1061,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -&gt; xr.DataAr
     Returns:
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
-    xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
+    xda_nodata = xda.where(xda.data != nodata_val, np.nan)
     xda_nodata.rio.write_nodata(np.nan)
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.encoding = xda.encoding
@@ -1116,7 +1099,8 @@ def where(
     &#34;&#34;&#34;
     where_xda = xr.where(cond, if_true, if_false)
     if master_xda is not None:
-        where_xda = where_xda.astype(master_xda.dtype)
+        if where_xda.dtype != master_xda.dtype:
+            where_xda = where_xda.astype(master_xda.dtype)
         where_xda[np.where(np.isnan(master_xda))] = np.nan
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
@@ -1345,7 +1329,7 @@ True
     &#34;&#34;&#34;
     if not dtype:
         dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
-    arr = np.where(_get_nodata_pos(xds), xds.rio.encoded_nodata, xds.data).astype(dtype)
+    arr = xds.fillna(xds.rio.encoded_nodata).data.astype(dtype)
 
     return arr</code></pre>
 </details>
@@ -1410,7 +1394,20 @@ array([[1, 0, 0],
         np.ndarray: Pixelwise nodata array
 
     &#34;&#34;&#34;
-    return np.where(_get_nodata_pos(xds), 0, 1).astype(np.uint8)</code></pre>
+
+    nodata = xds.rio.nodata
+
+    try:
+        is_nan = np.isnan(nodata)
+    except TypeError:
+        is_nan = False
+
+    if is_nan:
+        nodata_pos = np.isnan(xds.data)
+    else:
+        nodata_pos = xds.data == nodata
+
+    return np.where(nodata_pos, 0, 1).astype(np.uint8)</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.vectorize"><code class="name flex">
@@ -1881,30 +1878,26 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(
-        dst, mask_and_scale=masked, default_name=files.get_filename(dst.name)
-    ) as xds:
+    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
+        # Manage resampling
+        if new_height != dst.height or new_width != dst.width:
+            factor_h = dst.height / new_height
+            factor_w = dst.width / new_width
+            if factor_h.is_integer() and factor_w.is_integer():
+                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+            else:
+                xda = xda.rio.reproject(
+                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
+                )
+
+        # Set original dtype (to write it back)
+        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+
         if masked:
-            # Save as float32 and load
-            xds = set_metadata(xds.astype(np.float32, casting=&#34;same_kind&#34;), xds)
+            # Set nodata not in opening due to some performance issues
+            xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
 
-        xds.load()
-
-    # Manage resampling
-    if new_height != dst.height or new_width != dst.width:
-        factor_h = dst.height / new_height
-        factor_w = dst.width / new_width
-        if factor_h.is_integer() and factor_w.is_integer():
-            xds = xds.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-        else:
-            xds = xds.rio.reproject(
-                xds.rio.crs, shape=(new_height, new_width), resampling=resampling
-            )
-
-    # Set original dtype (to write it back)
-    xds.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
-
-    return xds</code></pre>
+    return xda</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.write"><code class="name flex">
@@ -2841,7 +2834,7 @@ Dimensions without coordinates: x, y
     Returns:
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
-    xda_nodata = xr.where(xda.data == nodata_val, np.nan, xda)
+    xda_nodata = xda.where(xda.data != nodata_val, np.nan)
     xda_nodata.rio.write_nodata(np.nan)
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.encoding = xda.encoding
@@ -2916,7 +2909,8 @@ Dimensions without coordinates: x, y
     &#34;&#34;&#34;
     where_xda = xr.where(cond, if_true, if_false)
     if master_xda is not None:
-        where_xda = where_xda.astype(master_xda.dtype)
+        if where_xda.dtype != master_xda.dtype:
+            where_xda = where_xda.astype(master_xda.dtype)
         where_xda[np.where(np.isnan(master_xda))] = np.nan
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
