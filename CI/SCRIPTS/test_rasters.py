@@ -227,6 +227,13 @@ def test_bit():
     assert (np_ones.data == ones).all()
     for arr in zeros:
         assert (np_ones.data == 1 + arr).all()
+    # Bit
+    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint8))
+    ones = rasters.read_bit_array(np_ones, bit_id=0)
+    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 7)))
+    assert (np_ones.data == ones).all()
+    for arr in zeros:
+        assert (np_ones.data == 1 + arr).all()
 
     # uint8
     np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint8))
