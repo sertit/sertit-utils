@@ -737,7 +737,7 @@ INDEX=[
 {
 "ref":"sertit.ci.assert_raster_almost_equal",
 "url":9,
-"doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
+"doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and a precision of 10^-9 on the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
 "func":1
 },
 {

@@ -1132,10 +1132,20 @@ def unpackbits(array: np.ndarray, nof_bits: int) -&gt; np.ndarray:
     Returns:
         np.ndarray: Unpacked array
     &#34;&#34;&#34;
-    xshape = list(array.shape)
-    array = array.reshape([-1, 1])
-    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array &amp; msk).astype(np.uint8).reshape(xshape + [nof_bits])
+    dtype = array.dtype
+    if dtype == np.uint8:
+        unpacked = np.unpackbits(
+            np.expand_dims(array, axis=-1), axis=-1, count=nof_bits, bitorder=&#34;little&#34;
+        )
+    else:
+        xshape = list(array.shape)
+        array = array.reshape([-1, 1])
+        msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+        unpacked = (
+            (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+        )
+
+    return unpacked
 
 
 def read_bit_array(
@@ -2825,10 +2835,20 @@ array([[[1, 0, 0, 0, 0, 0, 0, 0],
     Returns:
         np.ndarray: Unpacked array
     &#34;&#34;&#34;
-    xshape = list(array.shape)
-    array = array.reshape([-1, 1])
-    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-    return (array &amp; msk).astype(np.uint8).reshape(xshape + [nof_bits])</code></pre>
+    dtype = array.dtype
+    if dtype == np.uint8:
+        unpacked = np.unpackbits(
+            np.expand_dims(array, axis=-1), axis=-1, count=nof_bits, bitorder=&#34;little&#34;
+        )
+    else:
+        xshape = list(array.shape)
+        array = array.reshape([-1, 1])
+        msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+        unpacked = (
+            (array &amp; msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
+        )
+
+    return unpacked</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters_rio.read_bit_array"><code class="name flex">
