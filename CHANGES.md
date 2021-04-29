@@ -2,6 +2,10 @@
 
 ## X.Y.Z (YYYY-MM-DD)
 
+## 1.3.7 (2021-04-29)
+
+- Fixing regression in `rasters_rio.unpackbits`
+
 ## 1.3.6 (2021-04-29)
 
 - Optimizing `rasters.read` (very slow function, maybe we need to take a look at that)
