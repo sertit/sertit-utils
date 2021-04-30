@@ -434,7 +434,7 @@ def mask(
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
-    Overload of rasterio mask function in order to create a masked_array.
+    Overload of rasterio mask function in order to create a `xarray`.
 
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
@@ -443,13 +443,11 @@ def mask(
     >>> raster_path = "path\\to\\raster.tif"
     >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
     >>> shapes = gpd.read_file(shape_path)
-    >>> masked_raster1, meta1 = mask(raster_path, shapes)
+    >>> mask1 = mask(raster_path, shapes)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
-    >>>     masked_raster2, meta2 = mask(dst, shapes)
-    >>> masked_raster1 == masked_raster2
-    True
-    >>> meta1 == meta2
+    >>>     mask2 = mask(dst, shapes)
+    >>> mask1 == mask2
     True
     ```
 
@@ -461,7 +459,7 @@ def mask(
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
+         XDS_TYPE: Masked array as a xarray
     """
     # Use classic option
     arr, _ = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)

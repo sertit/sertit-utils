@@ -40,6 +40,7 @@ def test_rasters_rio():
     extent_path = os.path.join(RASTER_DATA, "extent.geojson")
     footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
     vect_truth_path = os.path.join(RASTER_DATA, "vector.geojson")
+    diss_truth_path = os.path.join(RASTER_DATA, "dissolved.geojson")
     nodata_truth_path = os.path.join(RASTER_DATA, "nodata.geojson")
     valid_truth_path = os.path.join(RASTER_DATA, "valid.geojson")
 
@@ -120,14 +121,10 @@ def test_rasters_rio():
             )
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
-            diss_true = (
-                vect_truth.loc[vect_truth.raster_val == val]
-                .dissolve()
-                .drop(columns=["raster_val"])
-            )
+            diss_truth = gpd.read_file(diss_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
-            ci.assert_geom_equal(vect_val_diss, diss_true)
+            ci.assert_geom_equal(vect_val_diss, diss_truth)
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
             )
