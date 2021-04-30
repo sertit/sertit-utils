@@ -1,8 +1,8 @@
 # Release History
 
-## X.Y.Z (YYYY-MM-DD)
+## 1.3.Z (2021-MM-DD)
 
-## 1.3.8 (2021-05-DD)
+## 1.3.8 (2021-04-30)
 
 - JSON Encoder converts int32 to int for some system that needs it
 - `rasters.where`: convert type only if needed and output a xarray.DataArray if master_xda is passed
