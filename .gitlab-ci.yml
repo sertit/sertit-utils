@@ -15,7 +15,6 @@ lint:
     - linux
   except:
     changes:
-      - "*.md"
       - "*.html"
       - doc_template/*
 
@@ -33,7 +32,6 @@ pytest:
     - linux
   except:
     changes:
-      - "*.md"
       - "*.html"
       - doc_template/*
 
