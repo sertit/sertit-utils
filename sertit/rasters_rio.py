@@ -335,6 +335,7 @@ def get_nodata_mask(
 def _vectorize(
     dst: PATH_ARR_DS,
     values: Union[None, int, list] = None,
+    keep_values: bool = True,
     get_nodata: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
@@ -352,6 +353,7 @@ def _vectorize(
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -368,7 +370,15 @@ def _vectorize(
     if values is not None:
         if not isinstance(values, list):
             values = [values]
-        data = np.where(np.isin(array, values), array, nodata).astype(array.dtype)
+
+        if keep_values:
+            true = array
+            false = nodata
+        else:
+            true = nodata
+            false = array
+
+        data = np.where(np.isin(array, values), true, false).astype(array.dtype)
     else:
         data = array.data
 
@@ -387,7 +397,10 @@ def _vectorize(
 
 @path_arr_dst
 def vectorize(
-    dst: PATH_ARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+    dst: PATH_ARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a raster to get the class vectors.
@@ -410,12 +423,17 @@ def vectorize(
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
     """
     return _vectorize(
-        dst, values=values, get_nodata=False, default_nodata=default_nodata
+        dst,
+        values=values,
+        get_nodata=False,
+        keep_values=keep_values,
+        default_nodata=default_nodata,
     )
 
 

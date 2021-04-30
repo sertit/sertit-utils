@@ -235,6 +235,7 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
 def _vectorize(
     xds: PATH_XARR_DS,
     values: Union[None, int, list] = None,
+    keep_values: bool = True,
     get_nodata: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
@@ -252,6 +253,7 @@ def _vectorize(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -270,7 +272,15 @@ def _vectorize(
         if values is not None:
             if not isinstance(values, list):
                 values = [values]
-            data = np.where(np.isin(data, values), data, nodata).astype(np.uint8)
+
+            if keep_values:
+                true = data
+                false = nodata
+            else:
+                true = nodata
+                false = data
+
+            data = np.where(np.isin(data, values), true, false).astype(np.uint8)
 
         if data.dtype != np.uint8:
             raise TypeError("Your data should be classified (np.uint8).")
@@ -287,7 +297,10 @@ def _vectorize(
 
 @path_xarr_dst
 def vectorize(
-    xds: PATH_XARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a `xarray` to get the class vectors.
@@ -311,12 +324,17 @@ def vectorize(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
     """
     return _vectorize(
-        xds, values=values, get_nodata=False, default_nodata=default_nodata
+        xds,
+        values=values,
+        keep_values=keep_values,
+        get_nodata=False,
+        default_nodata=default_nodata,
     )
 
 

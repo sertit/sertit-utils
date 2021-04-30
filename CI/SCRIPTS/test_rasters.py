@@ -135,11 +135,17 @@ def test_rasters():
             vect = rasters.vectorize(raster_path)
             vect_xds = rasters.vectorize(xds)
             vect_val = rasters.vectorize(raster_path, values=val)
+            vect_val_disc = rasters.vectorize(
+                raster_path, values=[1, 255], keep_values=False
+            )
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
             vect_truth = gpd.read_file(vect_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_xds[name], vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
+            ci.assert_geom_equal(
+                vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
+            )
 
             # Get valid vec
             valid_vec = rasters.get_valid_vector(raster_path)

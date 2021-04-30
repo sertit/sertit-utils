@@ -6,6 +6,7 @@
 
 - JSON Encoder converts int32 to int for some system that needs it
 - `rasters.where`: convert type only if needed and output a xarray.DataArray if master_xda is passed
+- Adding a parameter `keep_values` to `vectorize`, allowing the user to discard the specified values
 
 ## 1.3.7 (2021-04-29)
 
