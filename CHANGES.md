@@ -2,7 +2,7 @@
 
 ## 1.3.Z (2021-MM-DD)
 
-## 1.3.10 (2021-MM-DD)
+## 1.3.10 (2021-04-30)
 
 - Fixing the parameter `dissolve` in `vectorize` function (invalid geometries...)
 
