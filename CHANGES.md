@@ -5,6 +5,7 @@
 ## 1.3.8 (2021-05-DD)
 
 - JSON Encoder converts int32 to int for some system that needs it
+- `rasters.where`: convert type only if needed and output a xarray.DataArray if master_xda is passed
 
 ## 1.3.7 (2021-04-29)
 

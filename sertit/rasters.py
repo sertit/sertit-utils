@@ -1038,7 +1038,8 @@ def where(
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
-    If `master_xda` is None, use it like `xr.where`
+    If `master_xda` is None, use it like `xr.where`.
+    Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
 
     ```python
     >>> A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
@@ -1058,11 +1059,22 @@ def where(
     Returns:
         xr.DataArray: Where array with correct mtd and nodata pixels
     """
+    # Enforce condition
     where_xda = xr.where(cond, if_true, if_false)
+
     if master_xda is not None:
+        # Convert to master dtype
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
+
+        # Set nodata to nan
         where_xda[np.where(np.isnan(master_xda))] = np.nan
+
+        # Convert to datarray if needed
+        if not isinstance(where_xda, xr.DataArray):
+            where_xda = master_xda.copy(data=where_xda)
+
+        # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
     return where_xda
