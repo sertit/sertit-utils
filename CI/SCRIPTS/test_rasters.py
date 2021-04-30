@@ -135,6 +135,7 @@ def test_rasters():
             vect = rasters.vectorize(raster_path)
             vect_xds = rasters.vectorize(xds)
             vect_val = rasters.vectorize(raster_path, values=val)
+            vect_val_diss = rasters.vectorize(raster_path, values=val, dissolve=True)
             vect_val_disc = rasters.vectorize(
                 raster_path, values=[1, 255], keep_values=False
             )
@@ -143,6 +144,9 @@ def test_rasters():
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_xds[name], vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
+            ci.assert_geom_equal(
+                vect_val_diss, vect_truth.loc[vect_truth.raster_val == val]
+            )
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
             )

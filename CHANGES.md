@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.9 (2021-04-30)
+
+- Adding a parameter `dissolve` to `vectorize`, allowing the user to retrieve a unique polygon
+
 ## 1.3.8 (2021-04-30)
 
 - JSON Encoder converts int32 to int for some system that needs it

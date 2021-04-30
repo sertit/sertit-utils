@@ -336,24 +336,29 @@ def _vectorize(
     dst: PATH_ARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
+    dissolve: bool = False,
     get_nodata: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a raster, both to get classes or nodata.
 
+    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
+    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
+
     .. WARNING::
         If `get_nodata` is set to False:
             - Please only use this function on a classified raster.
             - This could take a while as the computing time directly depends on the number of polygons to vectorize.
                 Please be careful.
-    Else:
-        - You will get a classified polygon with data (value=0)/nodata pixels. To
+        Else:
+            - You will get a classified polygon with data (value=0)/nodata pixels.
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -371,12 +376,14 @@ def _vectorize(
         if not isinstance(values, list):
             values = [values]
 
+        # If we want a dissolved vector, just set 1instead of real values
+        arr_vals = 1 if dissolve else array
         if keep_values:
-            true = array
+            true = arr_vals
             false = nodata
         else:
             true = nodata
-            false = array
+            false = arr_vals
 
         data = np.where(np.isin(array, values), true, false).astype(array.dtype)
     else:
@@ -400,10 +407,14 @@ def vectorize(
     dst: PATH_ARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
+    dissolve: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a raster to get the class vectors.
+
+    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
+    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
 
     .. WARNING::
         - Please only use this function on a classified raster.
@@ -424,6 +435,7 @@ def vectorize(
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
@@ -433,6 +445,7 @@ def vectorize(
         values=values,
         get_nodata=False,
         keep_values=keep_values,
+        dissolve=dissolve,
         default_nodata=default_nodata,
     )
 

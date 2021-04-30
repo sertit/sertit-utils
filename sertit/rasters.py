@@ -236,11 +236,15 @@ def _vectorize(
     xds: PATH_XARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
+    dissolve: bool = False,
     get_nodata: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a xarray, both to get classes or nodata.
+
+    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
+    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
 
     .. WARNING::
         - If `get_nodata` is set to False:
@@ -254,10 +258,11 @@ def _vectorize(
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
-        gpd.GeoDataFrame: Vector
+        gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
     """
     # Manage nodata value
     has_nodata = xds.rio.encoded_nodata is not None
@@ -273,12 +278,14 @@ def _vectorize(
             if not isinstance(values, list):
                 values = [values]
 
+            # If we want a dissolved vector, just set 1instead of real values
+            arr_vals = 1 if dissolve else data
             if keep_values:
-                true = data
+                true = arr_vals
                 false = nodata
             else:
                 true = nodata
-                false = data
+                false = arr_vals
 
             data = np.where(np.isin(data, values), true, false).astype(np.uint8)
 
@@ -300,11 +307,14 @@ def vectorize(
     xds: PATH_XARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
+    dissolve: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a `xarray` to get the class vectors.
 
+    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
+    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
 
     .. WARNING::
         - Your data is casted by force into np.uint8, so be sure that your data is classified.
@@ -325,6 +335,7 @@ def vectorize(
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
@@ -333,6 +344,7 @@ def vectorize(
         xds,
         values=values,
         keep_values=keep_values,
+        dissolve=dissolve,
         get_nodata=False,
         default_nodata=default_nodata,
     )
