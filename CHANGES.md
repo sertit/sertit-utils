@@ -2,6 +2,10 @@
 
 ## X.Y.Z (YYYY-MM-DD)
 
+## 1.3.8 (2021-05-DD)
+
+- JSON Encoder converts int32 to int for some system that needs it
+
 ## 1.3.7 (2021-04-29)
 
 - Fixing regression in `rasters_rio.unpackbits`

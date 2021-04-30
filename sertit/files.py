@@ -816,7 +816,7 @@ class CustomEncoder(JSONEncoder):
         """Overload of the default method"""
         if isinstance(obj, (date, datetime)):
             out = obj.isoformat()
-        elif isinstance(obj, np.int64):
+        elif isinstance(obj, (np.int64, np.int32)):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
