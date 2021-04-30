@@ -1072,6 +1072,7 @@ def where(
 ) -> xr.DataArray:
     """
     Overloads `xr.where` with:
+
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
