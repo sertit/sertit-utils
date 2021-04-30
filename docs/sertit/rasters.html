@@ -338,7 +338,16 @@ def _vectorize(
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
 
-    return vectors.shapes_to_gdf(shapes, xds.rio.crs)
+    # Convert to geodataframe
+    gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
+
+    # Dissolve if needed
+    if dissolve:
+        # Discard self-intersection and null geometries
+        gdf = gdf.buffer(0)
+        gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
+
+    return gdf
 
 
 @path_xarr_dst
@@ -464,7 +473,7 @@ def mask(
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
-    Overload of rasterio mask function in order to create a masked_array.
+    Overload of rasterio mask function in order to create a `xarray`.
 
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
@@ -473,13 +482,11 @@ def mask(
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
     &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-    &gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
     &gt;&gt;&gt; # or
     &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-    &gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
-    &gt;&gt;&gt; masked_raster1 == masked_raster2
-    True
-    &gt;&gt;&gt; meta1 == meta2
+    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
+    &gt;&gt;&gt; mask1 == mask2
     True
     ```
 
@@ -491,7 +498,7 @@ def mask(
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
+         XDS_TYPE: Masked array as a xarray
     &#34;&#34;&#34;
     # Use classic option
     arr, _ = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
@@ -1104,6 +1111,7 @@ def where(
 ) -&gt; xr.DataArray:
     &#34;&#34;&#34;
     Overloads `xr.where` with:
+
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
@@ -1677,19 +1685,17 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -&gt; gpd.GeoDa
 <dd>
 <div class="desc"><p>Masking a dataset:
 setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.</p>
-<p>Overload of rasterio mask function in order to create a masked_array.</p>
+<p>Overload of rasterio mask function in order to create a <code>xarray</code>.</p>
 <p>The <code><a title="sertit.rasters.mask" href="#sertit.rasters.mask">mask()</a></code> function docs can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.
 It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.</p>
 <pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
 &gt;&gt;&gt; shape_path = &quot;path\to\shapes.geojson&quot;  # Any vector that geopandas can read
 &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-&gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+&gt;&gt;&gt; mask1 = mask(raster_path, shapes)
 &gt;&gt;&gt; # or
 &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-&gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
-&gt;&gt;&gt; masked_raster1 == masked_raster2
-True
-&gt;&gt;&gt; meta1 == meta2
+&gt;&gt;&gt;     mask2 = mask(dst, shapes)
+&gt;&gt;&gt; mask1 == mask2
 True
 </code></pre>
 <h2 id="args">Args</h2>
@@ -1705,7 +1711,10 @@ True
 <dd>Other rasterio.mask options</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p>(np.ma.masked_array, dict): Masked array as a masked array and its metadata</p></div>
+<dl>
+<dt><code><a title="sertit.rasters.XDS_TYPE" href="#sertit.rasters.XDS_TYPE">XDS_TYPE</a></code></dt>
+<dd>Masked array as a xarray</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1721,7 +1730,7 @@ def mask(
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
-    Overload of rasterio mask function in order to create a masked_array.
+    Overload of rasterio mask function in order to create a `xarray`.
 
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector&#39;s extent.
@@ -1730,13 +1739,11 @@ def mask(
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
     &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-    &gt;&gt;&gt; masked_raster1, meta1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
     &gt;&gt;&gt; # or
     &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-    &gt;&gt;&gt;     masked_raster2, meta2 = mask(dst, shapes)
-    &gt;&gt;&gt; masked_raster1 == masked_raster2
-    True
-    &gt;&gt;&gt; meta1 == meta2
+    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
+    &gt;&gt;&gt; mask1 == mask2
     True
     ```
 
@@ -1748,7 +1755,7 @@ def mask(
         **kwargs: Other rasterio.mask options
 
     Returns:
-         (np.ma.masked_array, dict): Masked array as a masked array and its metadata
+         XDS_TYPE: Masked array as a xarray
     &#34;&#34;&#34;
     # Use classic option
     arr, _ = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
@@ -2907,9 +2914,11 @@ Dimensions without coordinates: x, y
 <p>def <span class="ident">where</span>(</p><p>cond, <br>if_true, <br>if_false, <br>master_xda=None, <br>new_name='')</p>
 </code></dt>
 <dd>
-<div class="desc"><p>Overloads <code>xr.where</code> with:
-- setting metadata of <code>master_xda</code>
-- preserving the nodata pixels of the <code>master_xda</code></p>
+<div class="desc"><p>Overloads <code>xr.where</code> with:</p>
+<ul>
+<li>setting metadata of <code>master_xda</code></li>
+<li>preserving the nodata pixels of the <code>master_xda</code></li>
+</ul>
 <p>If <code>master_xda</code> is None, use it like <code>xr.where</code>.
 Else, it outputs a <code>xarray.DataArray</code> with the same dtype than <code>master_xda</code>.</p>
 <pre><code class="language-python">&gt;&gt;&gt; A = xr.DataArray(dims=(&quot;x&quot;, &quot;y&quot;), data=[[1, 0, 5], [np.nan, 0, 0]])
@@ -2946,6 +2955,7 @@ Dimensions without coordinates: x, y
 ) -&gt; xr.DataArray:
     &#34;&#34;&#34;
     Overloads `xr.where` with:
+
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
