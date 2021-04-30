@@ -452,7 +452,7 @@ INDEX=[
 {
 "ref":"sertit.rasters.vectorize",
 "url":7,
-"doc":"Vectorize a  xarray to get the class vectors.  WARNING - Your data is casted by force into np.uint8, so be sure that your data is classified. - This could take a while as the computing time directly depends on the number of polygons to vectorize. Please be careful.   >>> raster_path = \"path\\to\\raster.tif\" >>> vec1 = vectorize(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> vec2 = vectorize(dst) >>> vec1  vec2 True   Args: xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray values (Union[None, int, list]): Get only the polygons concerning this/these particular values default_nodata (int): Default values for nodata in case of non existing in file Returns: gpd.GeoDataFrame: Classes Vector",
+"doc":"Vectorize a  xarray to get the class vectors.  WARNING - Your data is casted by force into np.uint8, so be sure that your data is classified. - This could take a while as the computing time directly depends on the number of polygons to vectorize. Please be careful.   >>> raster_path = \"path\\to\\raster.tif\" >>> vec1 = vectorize(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> vec2 = vectorize(dst) >>> vec1  vec2 True   Args: xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray values (Union[None, int, list]): Get only the polygons concerning this/these particular values keep_values (bool): Keep the passed values. If False, discard them and keep the others. default_nodata (int): Default values for nodata in case of non existing in file Returns: gpd.GeoDataFrame: Classes Vector",
 "func":1
 },
 {
@@ -566,7 +566,7 @@ INDEX=[
 {
 "ref":"sertit.rasters.where",
 "url":7,
-"doc":"Overloads  xr.where with: - setting metadata of  master_xda - preserving the nodata pixels of the  master_xda If  master_xda is None, use it like  xr.where   >>> A = xr.DataArray(dims=(\"x\", \"y\"), data= 1, 0, 5], [np.nan, 0, 0 ) >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name=\"mask_A\")  array( 1., 1., 0.], [nan, 1., 1. ) Dimensions without coordinates: x, y   Args: cond (scalar, array, Variable, DataArray or Dataset): Conditional array if_true (scalar, array, Variable, DataArray or Dataset): What to do if  cond is True if_false (scalar, array, Variable, DataArray or Dataset): What to do if  cond is False master_xda: Master  xr.DataArray used to set the metadata and the nodata new_name (str): New name of the array Returns: xr.DataArray: Where array with correct mtd and nodata pixels",
+"doc":"Overloads  xr.where with: - setting metadata of  master_xda - preserving the nodata pixels of the  master_xda If  master_xda is None, use it like  xr.where . Else, it outputs a  xarray.DataArray with the same dtype than  master_xda .   >>> A = xr.DataArray(dims=(\"x\", \"y\"), data= 1, 0, 5], [np.nan, 0, 0 ) >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name=\"mask_A\")  array( 1., 1., 0.], [nan, 1., 1. ) Dimensions without coordinates: x, y   Args: cond (scalar, array, Variable, DataArray or Dataset): Conditional array if_true (scalar, array, Variable, DataArray or Dataset): What to do if  cond is True if_false (scalar, array, Variable, DataArray or Dataset): What to do if  cond is False master_xda: Master  xr.DataArray used to set the metadata and the nodata new_name (str): New name of the array Returns: xr.DataArray: Where array with correct mtd and nodata pixels",
 "func":1
 },
 {
@@ -606,7 +606,7 @@ INDEX=[
 {
 "ref":"sertit.rasters_rio.vectorize",
 "url":8,
-"doc":"Vectorize a raster to get the class vectors.  WARNING - Please only use this function on a classified raster. - This could take a while as the computing time directly depends on the number of polygons to vectorize. Please be careful.   >>> raster_path = \"path\\to\\raster.tif\"  Classified raster, with no data set to 255 >>> vec1 = vectorize(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> vec2 = vectorize(dst) >>> vec1  vec2 True   Args: dst (PATH_ARR_DS): Path to the raster, its dataset, its  xarray or a tuple containing its array and metadata values (Union[None, int, list]): Get only the polygons concerning this/these particular values default_nodata (int): Default values for nodata in case of non existing in file Returns: gpd.GeoDataFrame: Classes Vector",
+"doc":"Vectorize a raster to get the class vectors.  WARNING - Please only use this function on a classified raster. - This could take a while as the computing time directly depends on the number of polygons to vectorize. Please be careful.   >>> raster_path = \"path\\to\\raster.tif\"  Classified raster, with no data set to 255 >>> vec1 = vectorize(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> vec2 = vectorize(dst) >>> vec1  vec2 True   Args: dst (PATH_ARR_DS): Path to the raster, its dataset, its  xarray or a tuple containing its array and metadata values (Union[None, int, list]): Get only the polygons concerning this/these particular values keep_values (bool): Keep the passed values. If False, discard them and keep the others. default_nodata (int): Default values for nodata in case of non existing in file Returns: gpd.GeoDataFrame: Classes Vector",
 "func":1
 },
 {

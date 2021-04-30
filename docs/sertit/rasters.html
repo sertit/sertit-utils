@@ -274,6 +274,7 @@ def get_nodata_mask(xds: XDS_TYPE) -&gt; np.ndarray:
 def _vectorize(
     xds: PATH_XARR_DS,
     values: Union[None, int, list] = None,
+    keep_values: bool = True,
     get_nodata: bool = False,
     default_nodata: int = 0,
 ) -&gt; gpd.GeoDataFrame:
@@ -291,6 +292,7 @@ def _vectorize(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
@@ -309,7 +311,15 @@ def _vectorize(
         if values is not None:
             if not isinstance(values, list):
                 values = [values]
-            data = np.where(np.isin(data, values), data, nodata).astype(np.uint8)
+
+            if keep_values:
+                true = data
+                false = nodata
+            else:
+                true = nodata
+                false = data
+
+            data = np.where(np.isin(data, values), true, false).astype(np.uint8)
 
         if data.dtype != np.uint8:
             raise TypeError(&#34;Your data should be classified (np.uint8).&#34;)
@@ -326,7 +336,10 @@ def _vectorize(
 
 @path_xarr_dst
 def vectorize(
-    xds: PATH_XARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    default_nodata: int = 0,
 ) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
     Vectorize a `xarray` to get the class vectors.
@@ -350,12 +363,17 @@ def vectorize(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
     &#34;&#34;&#34;
     return _vectorize(
-        xds, values=values, get_nodata=False, default_nodata=default_nodata
+        xds,
+        values=values,
+        keep_values=keep_values,
+        get_nodata=False,
+        default_nodata=default_nodata,
     )
 
 
@@ -1077,7 +1095,8 @@ def where(
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
-    If `master_xda` is None, use it like `xr.where`
+    If `master_xda` is None, use it like `xr.where`.
+    Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
 
     ```python
     &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
@@ -1097,11 +1116,22 @@ def where(
     Returns:
         xr.DataArray: Where array with correct mtd and nodata pixels
     &#34;&#34;&#34;
+    # Enforce condition
     where_xda = xr.where(cond, if_true, if_false)
+
     if master_xda is not None:
+        # Convert to master dtype
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
+
+        # Set nodata to nan
         where_xda[np.where(np.isnan(master_xda))] = np.nan
+
+        # Convert to datarray if needed
+        if not isinstance(where_xda, xr.DataArray):
+            where_xda = master_xda.copy(data=where_xda)
+
+        # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
     return where_xda</code></pre>
@@ -1411,7 +1441,7 @@ array([[1, 0, 0],
 </details>
 </dd>
 <dt id="sertit.rasters.vectorize"><code class="name flex">
-<p>def <span class="ident">vectorize</span>(</p><p>xds, <br>values=None, <br>default_nodata=0)</p>
+<p>def <span class="ident">vectorize</span>(</p><p>xds, <br>values=None, <br>keep_values=True, <br>default_nodata=0)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Vectorize a <code>xarray</code> to get the class vectors.</p>
@@ -1437,6 +1467,8 @@ True
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>values</code></strong> :&ensp;<code>Union[None, int, list]</code></dt>
 <dd>Get only the polygons concerning this/these particular values</dd>
+<dt><strong><code>keep_values</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Keep the passed values. If False, discard them and keep the others.</dd>
 <dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Default values for nodata in case of non existing in file</dd>
 </dl>
@@ -1451,7 +1483,10 @@ True
 </summary>
 <pre><code class="python">@path_xarr_dst
 def vectorize(
-    xds: PATH_XARR_DS, values: Union[None, int, list] = None, default_nodata: int = 0
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    default_nodata: int = 0,
 ) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
     Vectorize a `xarray` to get the class vectors.
@@ -1475,12 +1510,17 @@ def vectorize(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Classes Vector
     &#34;&#34;&#34;
     return _vectorize(
-        xds, values=values, get_nodata=False, default_nodata=default_nodata
+        xds,
+        values=values,
+        keep_values=keep_values,
+        get_nodata=False,
+        default_nodata=default_nodata,
     )</code></pre>
 </details>
 </dd>
@@ -2849,7 +2889,8 @@ Dimensions without coordinates: x, y
 <div class="desc"><p>Overloads <code>xr.where</code> with:
 - setting metadata of <code>master_xda</code>
 - preserving the nodata pixels of the <code>master_xda</code></p>
-<p>If <code>master_xda</code> is None, use it like <code>xr.where</code></p>
+<p>If <code>master_xda</code> is None, use it like <code>xr.where</code>.
+Else, it outputs a <code>xarray.DataArray</code> with the same dtype than <code>master_xda</code>.</p>
 <pre><code class="language-python">&gt;&gt;&gt; A = xr.DataArray(dims=(&quot;x&quot;, &quot;y&quot;), data=[[1, 0, 5], [np.nan, 0, 0]])
 &gt;&gt;&gt; mask_A = rasters.where(A &gt; 3, 0, 1, A, new_name=&quot;mask_A&quot;)
 &lt;xarray.DataArray 'mask_A' (x: 2, y: 3)&gt;
@@ -2887,7 +2928,8 @@ Dimensions without coordinates: x, y
     - setting metadata of `master_xda`
     - preserving the nodata pixels of the `master_xda`
 
-    If `master_xda` is None, use it like `xr.where`
+    If `master_xda` is None, use it like `xr.where`.
+    Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
 
     ```python
     &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
@@ -2907,11 +2949,22 @@ Dimensions without coordinates: x, y
     Returns:
         xr.DataArray: Where array with correct mtd and nodata pixels
     &#34;&#34;&#34;
+    # Enforce condition
     where_xda = xr.where(cond, if_true, if_false)
+
     if master_xda is not None:
+        # Convert to master dtype
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
+
+        # Set nodata to nan
         where_xda[np.where(np.isnan(master_xda))] = np.nan
+
+        # Convert to datarray if needed
+        if not isinstance(where_xda, xr.DataArray):
+            where_xda = master_xda.copy(data=where_xda)
+
+        # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
     return where_xda</code></pre>

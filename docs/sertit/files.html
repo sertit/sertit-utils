@@ -854,7 +854,7 @@ class CustomEncoder(JSONEncoder):
         &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
             out = obj.isoformat()
-        elif isinstance(obj, np.int64):
+        elif isinstance(obj, (np.int64, np.int32)):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
@@ -2815,7 +2815,7 @@ version of the object or raise a <code>TypeError</code>.</p></div>
         &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
         if isinstance(obj, (date, datetime)):
             out = obj.isoformat()
-        elif isinstance(obj, np.int64):
+        elif isinstance(obj, (np.int64, np.int32)):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
@@ -2843,7 +2843,7 @@ version of the object or raise a <code>TypeError</code>.</p></div>
     &#34;&#34;&#34;Overload of the default method&#34;&#34;&#34;
     if isinstance(obj, (date, datetime)):
         out = obj.isoformat()
-    elif isinstance(obj, np.int64):
+    elif isinstance(obj, (np.int64, np.int32)):
         out = int(obj)
     elif isinstance(obj, Enum):
         out = obj.value
