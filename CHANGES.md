@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.10 (2021-MM-DD)
+
+- Fixing the parameter `dissolve` in `vectorize` function (invalid geometries...)
+
 ## 1.3.9 (2021-04-30)
 
 - Adding a parameter `dissolve` to `vectorize`, allowing the user to retrieve a unique polygon

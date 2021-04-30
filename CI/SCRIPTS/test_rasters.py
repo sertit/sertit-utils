@@ -145,7 +145,7 @@ def test_rasters():
             ci.assert_geom_equal(vect_xds[name], vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
             ci.assert_geom_equal(
-                vect_val_diss, vect_truth.loc[vect_truth.raster_val == val]
+                vect_val_diss, vect_truth.loc[vect_truth.raster_val == val].dissolve()
             )
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]

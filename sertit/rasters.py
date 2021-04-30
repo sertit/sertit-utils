@@ -299,7 +299,16 @@ def _vectorize(
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
 
-    return vectors.shapes_to_gdf(shapes, xds.rio.crs)
+    # Convert to geodataframe
+    gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
+
+    # Dissolve if needed
+    if dissolve:
+        # Discard self-intersection and null geometries
+        gdf = gdf.buffer(0)
+        gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
+
+    return gdf
 
 
 @path_xarr_dst

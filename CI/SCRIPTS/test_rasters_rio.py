@@ -123,7 +123,7 @@ def test_rasters_rio():
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
             ci.assert_geom_equal(
-                vect_val_diss, vect_truth.loc[vect_truth.raster_val == val]
+                vect_val_diss, vect_truth.loc[vect_truth.raster_val == val].dissolve()
             )
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
