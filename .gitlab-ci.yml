@@ -2,7 +2,7 @@ stages:
   - build
   - test
   - publish
-  - docs
+  - doc
 
 lint:
   image: python:3.7-buster
@@ -47,9 +47,9 @@ upload_wheel:linux:
   only:
     - tags
 
-pages-gitlab:
+pages:
   image: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
-  stage: docs
+  stage: doc
   script:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
@@ -67,7 +67,7 @@ pages-github:
   image:
     name: docker.sertit.unistra.fr/sertit/eo-containers/python:3.7
     entrypoint: [ "" ]
-  stage: docs
+  stage: doc
   script:
     - python -m pip install --upgrade pip
     - pip install pre-commit -r requirements.txt
