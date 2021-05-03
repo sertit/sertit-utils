@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.10.post3 (2021-05-03)
+
+- Setting `from_disk=True` by default in `rasters.crop`
+
 ## 1.3.10.post2 (2021-04-30)
 
 - Fixing the original dtype management in the `rasters` decorator and in the `rasters.vectorize`

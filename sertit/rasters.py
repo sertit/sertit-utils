@@ -512,6 +512,9 @@ def crop(
     if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
         shapes = shapes.to_crs(xds.rio.crs).geometry
 
+    if "from_disk" not in kwargs:
+        kwargs["from_disk"] = True  # WAY FASTER
+
     return xds_new.rio.clip(shapes, **kwargs)
 
 
