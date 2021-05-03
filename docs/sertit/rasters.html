@@ -176,10 +176,9 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
             with rioxarray.open_rasterio(
                 path_or_ds, masked=True, default_name=name
             ) as xds:
-                xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(
-                    path_or_ds
-                ).dtype  # TODO
-                out = function(xds, *args, **kwargs)
+                with rioxarray.open_rasterio(path_or_ds) as xds_dtype:
+                    xds.attrs[ORIGIN_DTYPE] = xds_dtype.dtype  # TODO
+                    out = function(xds, *args, **kwargs)
         return out
 
     return path_or_xarr_or_dst_wrapper
@@ -311,7 +310,7 @@ def _vectorize(
         data = get_nodata_mask(xds)
         nodata_arr = None
     else:
-        data = to_np(xds)
+        data = to_np(xds, dtype=np.uint8)
         # Manage values
         if values is not None:
             if not isinstance(values, list):
@@ -1294,10 +1293,9 @@ True
             with rioxarray.open_rasterio(
                 path_or_ds, masked=True, default_name=name
             ) as xds:
-                xds.attrs[ORIGIN_DTYPE] = rioxarray.open_rasterio(
-                    path_or_ds
-                ).dtype  # TODO
-                out = function(xds, *args, **kwargs)
+                with rioxarray.open_rasterio(path_or_ds) as xds_dtype:
+                    xds.attrs[ORIGIN_DTYPE] = xds_dtype.dtype  # TODO
+                    out = function(xds, *args, **kwargs)
         return out
 
     return path_or_xarr_or_dst_wrapper</code></pre>
