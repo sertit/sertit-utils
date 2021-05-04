@@ -506,7 +506,7 @@ INDEX=[
 {
 "ref":"sertit.rasters.sieve",
 "url":7,
-"doc":"Sieving, overloads rasterio function with raster shaped like (1, h, w).  WARNING Your data is casted by force into  np.uint8 , so be sure that your data is classified.   >>> raster_path = \"path\\to\\raster.tif\"  classified raster >>>  Rewrite it >>> sieved_xds = sieve(raster_path, sieve_thresh=20) >>>  Write it >>> raster_out = \"path\\to\\raster_sieved.tif\" >>> write(sieved_xds, raster_out)   Args: xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray sieve_thresh (int): Sieving threshold in pixels connectivity (int): Connectivity, either 4 or 8 Returns: (XDS_TYPE): Sieved xarray",
+"doc":"Sieving, overloads rasterio function with raster shaped like (1, h, w).  WARNING Your data is casted by force into  np.uint8 , so be sure that your data is classified.   >>> raster_path = \"path\\to\\raster.tif\"  classified raster >>>  Rewrite it >>> sieved_xds = sieve(raster_path, sieve_thresh=20) >>>  Write it >>> raster_out = \"path\\to\\raster_sieved.tif\" >>> write(sieved_xds, raster_out)   Args: xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray sieve_thresh (int): Sieving threshold in pixels connectivity (int): Connectivity, either 4 or 8 dtype: Dtype of the xarray (if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8) Returns: (XDS_TYPE): Sieved xarray",
 "func":1
 },
 {

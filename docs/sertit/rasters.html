@@ -805,7 +805,9 @@ def collocate(
 
 
 @path_xarr_dst
-def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -&gt; XDS_TYPE:
+def sieve(
+    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
+) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -827,18 +829,33 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -&gt; XDS
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
+        dtype: Dtype of the xarray
+            (if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8)
 
     Returns:
         (XDS_TYPE): Sieved xarray
     &#34;&#34;&#34;
     assert connectivity in [4, 8]
 
+    # Manage nodata
+    if xds.rio.encoded_nodata is not None:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    else:
+        xds_fill = xds
+
     # Sieve
-    data = np.squeeze(to_np(xds))  # Use this trick to make the sieve work
-    sieved_data = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
-    sieved_xds = xds.copy(
-        data=np.expand_dims(sieved_data.astype(xds.dtype), axis=0), deep=True
-    )
+    data = np.squeeze(
+        to_np(xds_fill, dtype=dtype)
+    )  # Use this trick to make the sieve work
+    sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+
+    # Create back the xarray
+    sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
+    sieved_xds = xds.copy(data=sieved_arr)
+
+    # Set back nodata
+    if xds.rio.encoded_nodata is not None:
+        sieved_xds = set_nodata(sieved_xds, xds.rio.encoded_nodata)
 
     return sieved_xds
 
@@ -1220,12 +1237,12 @@ def where(
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
 
-        # Set nodata to nan
-        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
-
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):
             where_xda = master_xda.copy(data=where_xda)
+
+        # Set nodata to nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
@@ -2343,7 +2360,7 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
 </details>
 </dd>
 <dt id="sertit.rasters.sieve"><code class="name flex">
-<p>def <span class="ident">sieve</span>(</p><p>xds, <br>sieve_thresh, <br>connectivity=4)</p>
+<p>def <span class="ident">sieve</span>(</p><p>xds, <br>sieve_thresh, <br>connectivity=4, <br>dtype=numpy.uint8)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Sieving, overloads rasterio function with raster shaped like (1, h, w).</p>
@@ -2368,6 +2385,9 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
 <dd>Sieving threshold in pixels</dd>
 <dt><strong><code>connectivity</code></strong> :&ensp;<code>int</code></dt>
 <dd>Connectivity, either 4 or 8</dd>
+<dt><strong><code>dtype</code></strong></dt>
+<dd>Dtype of the xarray
+(if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8)</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>(XDS_TYPE): Sieved xarray</p></div>
@@ -2376,7 +2396,9 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@path_xarr_dst
-def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -&gt; XDS_TYPE:
+def sieve(
+    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
+) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -2398,18 +2420,33 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -&gt; XDS
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
+        dtype: Dtype of the xarray
+            (if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8)
 
     Returns:
         (XDS_TYPE): Sieved xarray
     &#34;&#34;&#34;
     assert connectivity in [4, 8]
 
+    # Manage nodata
+    if xds.rio.encoded_nodata is not None:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    else:
+        xds_fill = xds
+
     # Sieve
-    data = np.squeeze(to_np(xds))  # Use this trick to make the sieve work
-    sieved_data = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
-    sieved_xds = xds.copy(
-        data=np.expand_dims(sieved_data.astype(xds.dtype), axis=0), deep=True
-    )
+    data = np.squeeze(
+        to_np(xds_fill, dtype=dtype)
+    )  # Use this trick to make the sieve work
+    sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+
+    # Create back the xarray
+    sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
+    sieved_xds = xds.copy(data=sieved_arr)
+
+    # Set back nodata
+    if xds.rio.encoded_nodata is not None:
+        sieved_xds = set_nodata(sieved_xds, xds.rio.encoded_nodata)
 
     return sieved_xds</code></pre>
 </details>
@@ -3185,12 +3222,12 @@ Dimensions without coordinates: x, y
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
 
-        # Set nodata to nan
-        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
-
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):
             where_xda = master_xda.copy(data=where_xda)
+
+        # Set nodata to nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
