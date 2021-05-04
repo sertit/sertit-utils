@@ -101,6 +101,21 @@ def test_rasters():
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
             rasters.write(mask_xds, xds_masked, dtype=np.uint8)
 
+            # Paint
+            xda_paint_true = os.path.join(tmp_dir, "test_paint_true_xda.tif")
+            xda_paint_false = os.path.join(tmp_dir, "test_paint_false_xda.tif")
+            xds_paint_true = os.path.join(tmp_dir, "test_paint_true_xds.tif")
+            xds_paint_false = os.path.join(tmp_dir, "test_paint_false_xds.tif")
+            mask = gpd.read_file(mask_path)
+            paint_true_xda = rasters.paint(xda, mask.geometry, value=600, invert=True)
+            paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
+            paint_true_xds = rasters.paint(xda, mask, value=600, invert=True)
+            paint_false_xds = rasters.paint(xda, mask, value=600, invert=False)
+            rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
+            rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
+            rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
+            rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
+
             # Crop
             xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
             xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")

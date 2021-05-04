@@ -2,6 +2,11 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.11 (2021-05-04)
+
+- Adding a function `rasters.paint` to fill a value where stands a polygon
+- Set the nodata after `rasters.mask`
+
 ## 1.3.10.post3 (2021-05-03)
 
 - Setting `from_disk=True` by default in `rasters.crop`
