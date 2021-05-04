@@ -517,9 +517,9 @@ def paint(
          XDS_TYPE: Painted array as a xarray
     """
     # Fill na values in order to not interfere with the mask function
-    if xds.rio.encoded_nodata:
+    if xds.rio.encoded_nodata is not None:
         xds_fill = xds.fillna(xds.rio.encoded_nodata)
-    elif xds.rio.nodata:
+    elif xds.rio.nodata is not None:
         xds_fill = xds.fillna(xds.rio.nodata)
     else:
         xds_fill = xds
@@ -534,7 +534,7 @@ def paint(
     painted_xds = painted_xds.fillna(value)
 
     # Set back nodata to keep the original nodata
-    if xds.rio.encoded_nodata:
+    if xds.rio.encoded_nodata is not None:
         painted_xds = set_nodata(painted_xds, xds.rio.encoded_nodata)
 
     # Convert back to xarray
