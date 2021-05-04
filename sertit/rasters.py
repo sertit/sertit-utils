@@ -180,9 +180,18 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -> np.ndarray:
     Returns:
 
     """
+    # Manage dtype
     if not dtype:
         dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
-    arr = xds.fillna(xds.rio.encoded_nodata).data.astype(dtype)
+
+    # Manage nodata
+    if xds.rio.encoded_nodata is not None:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    else:
+        xds_fill = xds
+
+    # Cast to wanted dtype
+    arr = xds_fill.data.astype(dtype)
 
     return arr
 
@@ -798,16 +807,10 @@ def sieve(
     """
     assert connectivity in [4, 8]
 
-    # Manage nodata
-    if xds.rio.encoded_nodata is not None:
-        xds_fill = xds.fillna(xds.rio.encoded_nodata)
-    else:
-        xds_fill = xds
+    # Use this trick to make the sieve work
+    data = np.squeeze(to_np(xds, dtype))
 
     # Sieve
-    data = np.squeeze(
-        to_np(xds_fill, dtype=dtype)
-    )  # Use this trick to make the sieve work
     sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
 
     # Create back the xarray
@@ -1152,8 +1155,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     Returns:
         xr.DataArray: DataArray with nodata set
     """
-    xda_nodata = xda.where(xda.data != nodata_val, np.nan)
-    xda_nodata.rio.write_nodata(np.nan)
+    xda_nodata = xda.where(xda.data != nodata_val)
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.encoding = xda.encoding
     xda_nodata.encoding["_FillValue"] = nodata_val
@@ -1203,7 +1205,7 @@ def where(
             where_xda = master_xda.copy(data=where_xda)
 
         # Set nodata to nan
-        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
+        where_xda = where_xda.where(~np.isnan(master_xda))
 
         # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)

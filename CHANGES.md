@@ -2,6 +2,11 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.11-4 (2021-05-04)
+
+- Fixing bug when array has no nodata in `rasters.to_np`
+- No need to set np.nan in xarray.where (default value)
+
 ## 1.3.11-3 (2021-05-04)
 
 - Missing `psutil` in setup.py and setting minimum versions
