@@ -766,7 +766,9 @@ def collocate(
 
 
 @path_xarr_dst
-def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TYPE:
+def sieve(
+    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
+) -> XDS_TYPE:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -788,18 +790,33 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TY
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
+        dtype: Dtype of the xarray
+            (if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8)
 
     Returns:
         (XDS_TYPE): Sieved xarray
     """
     assert connectivity in [4, 8]
 
+    # Manage nodata
+    if xds.rio.encoded_nodata is not None:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    else:
+        xds_fill = xds
+
     # Sieve
-    data = np.squeeze(to_np(xds))  # Use this trick to make the sieve work
-    sieved_data = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
-    sieved_xds = xds.copy(
-        data=np.expand_dims(sieved_data.astype(xds.dtype), axis=0), deep=True
-    )
+    data = np.squeeze(
+        to_np(xds_fill, dtype=dtype)
+    )  # Use this trick to make the sieve work
+    sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+
+    # Create back the xarray
+    sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
+    sieved_xds = xds.copy(data=sieved_arr)
+
+    # Set back nodata
+    if xds.rio.encoded_nodata is not None:
+        sieved_xds = set_nodata(sieved_xds, xds.rio.encoded_nodata)
 
     return sieved_xds
 

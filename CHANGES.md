@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.11-2 (2021-05-04)
+
+- Correctly manage nodata in `rasters.sieve`
+
 ## 1.3.11-1 (2021-05-04)
 
 - Bad nodata setting in `rasters.paint`
