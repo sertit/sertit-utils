@@ -1198,12 +1198,12 @@ def where(
         if where_xda.dtype != master_xda.dtype:
             where_xda = where_xda.astype(master_xda.dtype)
 
-        # Set nodata to nan
-        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
-
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):
             where_xda = master_xda.copy(data=where_xda)
+
+        # Set nodata to nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Set mtd
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)

@@ -5,6 +5,7 @@
 ## 1.3.11-2 (2021-05-04)
 
 - Correctly manage nodata in `rasters.sieve`
+- Bug correction in `rasters.where`
 
 ## 1.3.11-1 (2021-05-04)
 
