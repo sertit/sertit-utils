@@ -472,6 +472,8 @@ def mask(
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
+    The original nodata is kept and completed with the nodata provided by the shapes.
+
     Overload of rasterio mask function in order to create a `xarray`.
 
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
@@ -500,10 +502,82 @@ def mask(
          XDS_TYPE: Masked array as a xarray
     &#34;&#34;&#34;
     # Use classic option
-    arr, _ = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+    arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+
+    masked_xds = xds.copy(data=arr)
+
+    if nodata:
+        masked_xds = set_nodata(masked_xds, nodata)
 
     # Convert back to xarray
-    return xds.copy(data=arr, deep=True)
+    return masked_xds
+
+
+@path_xarr_dst
+def paint(
+    xds: PATH_XARR_DS,
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    value: int,
+    invert: bool = False,
+    **kwargs,
+) -&gt; XDS_TYPE:
+    &#34;&#34;&#34;
+    Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
+    Pay attention that this behavior is the opposite of the `rasterio.mask` function.
+
+    The original nodata is kept.
+    This means if your shapes intersects the original nodata,
+    the value of the pixel will be set to nodata rather than to the wanted value.
+
+    Overload of rasterio mask function in order to create a `xarray`.
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
+    &gt;&gt;&gt; mask1 == mask2
+    True
+    ```
+
+    Args:
+        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+        value (int): Value to set on the shapes.
+        invert (bool): If invert is True, set value outside the shapes.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         XDS_TYPE: Painted array as a xarray
+    &#34;&#34;&#34;
+    # Fill na values in order to not interfere with the mask function
+    if xds.rio.encoded_nodata:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    elif xds.rio.nodata:
+        xds_fill = xds.fillna(xds.rio.nodata)
+    else:
+        xds_fill = xds
+
+    # Use classic option
+    arr, meta = rasters_rio.mask(
+        xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs
+    )
+
+    # Create and fill na values created by the mask to the wanted value
+    painted_xds = xds.copy(data=arr)
+    painted_xds = painted_xds.fillna(value)
+
+    # Set back nodata to keep the original nodata
+    if xds.rio.encoded_nodata:
+        painted_xds = set_nodata(painted_xds, xds.rio.encoded_nodata)
+
+    # Convert back to xarray
+    return painted_xds
 
 
 @path_xarr_dst
@@ -550,6 +624,9 @@ def crop(
 
     if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
         shapes = shapes.to_crs(xds.rio.crs).geometry
+
+    if &#34;from_disk&#34; not in kwargs:
+        kwargs[&#34;from_disk&#34;] = True  # WAY FASTER
 
     return xds_new.rio.clip(shapes, **kwargs)
 
@@ -1144,7 +1221,7 @@ def where(
             where_xda = where_xda.astype(master_xda.dtype)
 
         # Set nodata to nan
-        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):
@@ -1683,6 +1760,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -&gt; gpd.GeoDa
 <dd>
 <div class="desc"><p>Masking a dataset:
 setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.</p>
+<p>The original nodata is kept and completed with the nodata provided by the shapes.</p>
 <p>Overload of rasterio mask function in order to create a <code>xarray</code>.</p>
 <p>The <code><a title="sertit.rasters.mask" href="#sertit.rasters.mask">mask()</a></code> function docs can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.
 It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.</p>
@@ -1728,6 +1806,8 @@ def mask(
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
 
+    The original nodata is kept and completed with the nodata provided by the shapes.
+
     Overload of rasterio mask function in order to create a `xarray`.
 
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
@@ -1756,10 +1836,126 @@ def mask(
          XDS_TYPE: Masked array as a xarray
     &#34;&#34;&#34;
     # Use classic option
-    arr, _ = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+    arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+
+    masked_xds = xds.copy(data=arr)
+
+    if nodata:
+        masked_xds = set_nodata(masked_xds, nodata)
 
     # Convert back to xarray
-    return xds.copy(data=arr, deep=True)</code></pre>
+    return masked_xds</code></pre>
+</details>
+</dd>
+<dt id="sertit.rasters.paint"><code class="name flex">
+<p>def <span class="ident">paint</span>(</p><p>xds, <br>shapes, <br>value, <br>invert=False, <br>**kwargs)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
+Pay attention that this behavior is the opposite of the <code>rasterio.mask</code> function.</p>
+<p>The original nodata is kept.
+This means if your shapes intersects the original nodata,
+the value of the pixel will be set to nodata rather than to the wanted value.</p>
+<p>Overload of rasterio mask function in order to create a <code>xarray</code>.
+The <code><a title="sertit.rasters.mask" href="#sertit.rasters.mask">mask()</a></code> function docs can be seen <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html">here</a>.</p>
+<pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
+&gt;&gt;&gt; shape_path = &quot;path\to\shapes.geojson&quot;  # Any vector that geopandas can read
+&gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+&gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+&gt;&gt;&gt; # or
+&gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+&gt;&gt;&gt;     mask2 = mask(dst, shapes)
+&gt;&gt;&gt; mask1 == mask2
+True
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dd>Path to the raster or a rasterio dataset or a xarray</dd>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
+<dd>Shapes with the same CRS as the dataset
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
+<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
+<dd>Value to set on the shapes.</dd>
+<dt><strong><code>invert</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If invert is True, set value outside the shapes.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Other rasterio.mask options</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="sertit.rasters.XDS_TYPE" href="#sertit.rasters.XDS_TYPE">XDS_TYPE</a></code></dt>
+<dd>Painted array as a xarray</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@path_xarr_dst
+def paint(
+    xds: PATH_XARR_DS,
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    value: int,
+    invert: bool = False,
+    **kwargs,
+) -&gt; XDS_TYPE:
+    &#34;&#34;&#34;
+    Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
+    Pay attention that this behavior is the opposite of the `rasterio.mask` function.
+
+    The original nodata is kept.
+    This means if your shapes intersects the original nodata,
+    the value of the pixel will be set to nodata rather than to the wanted value.
+
+    Overload of rasterio mask function in order to create a `xarray`.
+    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+
+    ```python
+    &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
+    &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
+    &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
+    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; # or
+    &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
+    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
+    &gt;&gt;&gt; mask1 == mask2
+    True
+    ```
+
+    Args:
+        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+        value (int): Value to set on the shapes.
+        invert (bool): If invert is True, set value outside the shapes.
+        **kwargs: Other rasterio.mask options
+
+    Returns:
+         XDS_TYPE: Painted array as a xarray
+    &#34;&#34;&#34;
+    # Fill na values in order to not interfere with the mask function
+    if xds.rio.encoded_nodata:
+        xds_fill = xds.fillna(xds.rio.encoded_nodata)
+    elif xds.rio.nodata:
+        xds_fill = xds.fillna(xds.rio.nodata)
+    else:
+        xds_fill = xds
+
+    # Use classic option
+    arr, meta = rasters_rio.mask(
+        xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs
+    )
+
+    # Create and fill na values created by the mask to the wanted value
+    painted_xds = xds.copy(data=arr)
+    painted_xds = painted_xds.fillna(value)
+
+    # Set back nodata to keep the original nodata
+    if xds.rio.encoded_nodata:
+        painted_xds = set_nodata(painted_xds, xds.rio.encoded_nodata)
+
+    # Convert back to xarray
+    return painted_xds</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.crop"><code class="name flex">
@@ -1846,6 +2042,9 @@ def crop(
 
     if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
         shapes = shapes.to_crs(xds.rio.crs).geometry
+
+    if &#34;from_disk&#34; not in kwargs:
+        kwargs[&#34;from_disk&#34;] = True  # WAY FASTER
 
     return xds_new.rio.clip(shapes, **kwargs)</code></pre>
 </details>
@@ -2987,7 +3186,7 @@ Dimensions without coordinates: x, y
             where_xda = where_xda.astype(master_xda.dtype)
 
         # Set nodata to nan
-        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):
@@ -3083,6 +3282,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="sertit.rasters.get_valid_vector" href="#sertit.rasters.get_valid_vector">get_valid_vector</a></code></li>
 <li><code><a title="sertit.rasters.get_nodata_vector" href="#sertit.rasters.get_nodata_vector">get_nodata_vector</a></code></li>
 <li><code><a title="sertit.rasters.mask" href="#sertit.rasters.mask">mask</a></code></li>
+<li><code><a title="sertit.rasters.paint" href="#sertit.rasters.paint">paint</a></code></li>
 <li><code><a title="sertit.rasters.crop" href="#sertit.rasters.crop">crop</a></code></li>
 <li><code><a title="sertit.rasters.read" href="#sertit.rasters.read">read</a></code></li>
 <li><code><a title="sertit.rasters.write" href="#sertit.rasters.write">write</a></code></li>
