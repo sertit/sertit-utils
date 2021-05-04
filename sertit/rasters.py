@@ -464,7 +464,7 @@ def mask(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -506,18 +506,18 @@ def paint(
     >>> raster_path = "path\\to\\raster.tif"
     >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
     >>> shapes = gpd.read_file(shape_path)
-    >>> mask1 = mask(raster_path, shapes)
+    >>> paint1 = paint(raster_path, shapes, value=100)
     >>> # or
     >>> with rasterio.open(raster_path) as dst:
-    >>>     mask2 = mask(dst, shapes)
-    >>> mask1 == mask2
+    >>>     paint2 = paint(dst, shapes, value=100)
+    >>> paint1 == paint2
     True
     ```
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
         **kwargs: Other rasterio.mask options
@@ -580,7 +580,7 @@ def crop(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
