@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.11-3 (2021-05-04)
+
+- Missing `psutil` in setup.py and setting minimum versions
+
 ## 1.3.11-2 (2021-05-04)
 
 - Correctly manage nodata in `rasters.sieve`

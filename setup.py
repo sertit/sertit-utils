@@ -14,17 +14,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=[
-        "tqdm",
-        "numpy",
-        "lxml",
-    ],
+    install_requires=["tqdm", "lxml", "psutil", "geopandas>=0.9.0"],
     extras_require={
         "colorlog": ["colorlog"],
-        "full": ["geopandas", "rioxarray", "colorlog"],
-        "rasters_rio": ["geopandas", "rasterio"],
-        "rasters": ["geopandas", "rioxarray"],
-        "vectors": ["geopandas"],
+        "full": ["rioxarray>=0.3.1", "colorlog"],
+        "rasters_rio": ["rasterio>=1.2.2"],
+        "rasters": ["rioxarray>=0.3.1"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",
