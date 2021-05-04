@@ -1182,7 +1182,7 @@ def where(
             where_xda = where_xda.astype(master_xda.dtype)
 
         # Set nodata to nan
-        where_xda[np.where(np.isnan(master_xda))] = np.nan
+        where_xda = where_xda.where(~np.isnan(master_xda), np.nan)
 
         # Convert to datarray if needed
         if not isinstance(where_xda, xr.DataArray):

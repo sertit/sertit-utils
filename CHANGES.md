@@ -6,10 +6,8 @@
 
 - Adding a function `rasters.paint` to fill a value where stands a polygon
 - Set the nodata after `rasters.mask`
-
-## 1.3.10.post3 (2021-05-03)
-
 - Setting `from_disk=True` by default in `rasters.crop`
+- Bug correction in `rasters.where` when setting nodata
 
 ## 1.3.10.post2 (2021-04-30)
 
