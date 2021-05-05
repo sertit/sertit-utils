@@ -30,6 +30,7 @@ However, if you do not need everything, you can type instead:
 You can install it via conda (but you will automatically have the full version):
 
 `conda config --env --set channel_priority strict`
+
 `conda install -c conda-forge sertit`
 
 # What is in it ?
