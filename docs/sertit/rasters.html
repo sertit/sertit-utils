@@ -503,7 +503,7 @@ def mask(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -545,18 +545,18 @@ def paint(
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
     &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; paint1 = paint(raster_path, shapes, value=100)
     &gt;&gt;&gt; # or
     &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
-    &gt;&gt;&gt; mask1 == mask2
+    &gt;&gt;&gt;     paint2 = paint(dst, shapes, value=100)
+    &gt;&gt;&gt; paint1 == paint2
     True
     ```
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
         **kwargs: Other rasterio.mask options
@@ -619,7 +619,7 @@ def crop(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
@@ -1808,7 +1808,7 @@ True
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
-(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted)</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -1856,7 +1856,7 @@ def mask(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -1889,11 +1889,11 @@ The <code><a title="sertit.rasters.mask" href="#sertit.rasters.mask">mask()</a><
 <pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
 &gt;&gt;&gt; shape_path = &quot;path\to\shapes.geojson&quot;  # Any vector that geopandas can read
 &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-&gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+&gt;&gt;&gt; paint1 = paint(raster_path, shapes, value=100)
 &gt;&gt;&gt; # or
 &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-&gt;&gt;&gt;     mask2 = mask(dst, shapes)
-&gt;&gt;&gt; mask1 == mask2
+&gt;&gt;&gt;     paint2 = paint(dst, shapes, value=100)
+&gt;&gt;&gt; paint1 == paint2
 True
 </code></pre>
 <h2 id="args">Args</h2>
@@ -1902,7 +1902,7 @@ True
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
-(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted)</dd>
 <dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
 <dd>Value to set on the shapes.</dd>
 <dt><strong><code>invert</code></strong> :&ensp;<code>bool</code></dt>
@@ -1942,18 +1942,18 @@ def paint(
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; shape_path = &#34;path\\to\\shapes.geojson&#34;  # Any vector that geopandas can read
     &gt;&gt;&gt; shapes = gpd.read_file(shape_path)
-    &gt;&gt;&gt; mask1 = mask(raster_path, shapes)
+    &gt;&gt;&gt; paint1 = paint(raster_path, shapes, value=100)
     &gt;&gt;&gt; # or
     &gt;&gt;&gt; with rasterio.open(raster_path) as dst:
-    &gt;&gt;&gt;     mask2 = mask(dst, shapes)
-    &gt;&gt;&gt; mask1 == mask2
+    &gt;&gt;&gt;     paint2 = paint(dst, shapes, value=100)
+    &gt;&gt;&gt; paint1 == paint2
     True
     ```
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
         **kwargs: Other rasterio.mask options
@@ -2011,7 +2011,7 @@ True
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
-(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted.</dd>
+(except if a <code>GeoDataFrame</code> is passed, in which case it will automatically be converted)</dd>
 <dt><strong><code>nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
@@ -2056,7 +2056,7 @@ def crop(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted.
+            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
