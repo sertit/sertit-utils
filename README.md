@@ -11,9 +11,8 @@ Find the API documentation [**here**](https://sertit.github.io/sertit-utils/).
 
 # Installing
 
-For installing this library to your environment, please type this:
-
-- in your console: `pip install sertit[full]`
+## Pip
+For installing this library to your environment, please type this: `pip install sertit[full]`
 
 `[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas`
 (with GDAL installation issues on Windows, so please install them from wheels that you can
@@ -21,11 +20,17 @@ find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)).
 
 However, if you do not need everything, you can type instead:
 
-- *nothing*, and you won't need `rasterio`, `rioxarray` or `geopandas`: `pip install sertit --extra-index-url ...`
-- `[vectors]`, and you won't need `rasterio` or `rioxarray`: `pip install sertit[vectors] --extra-index-url ...`
+- *nothing*, and you won't need `rasterio`, `rioxarray`: `pip install sertit --extra-index-url ...`
 - `[rasters]`, and you won't need `rioxarray`: `pip install sertit[rasters] --extra-index-url ...`
 - `[rasters_rio]`: `pip install sertit[rasters_rio] --extra-index-url ...`
 - `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
+
+## Conda
+
+You can install it via conda (but you will automatically have the full version):
+
+`conda config --env --set channel_priority strict`
+`conda install -c conda-forge sertit`
 
 # What is in it ?
 ## Files

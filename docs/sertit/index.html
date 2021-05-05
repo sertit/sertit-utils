@@ -41,21 +41,22 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 <p>Library gathering functions for all SERTIT's projects.</p>
 <p>Find the API documentation <a href="https://sertit.github.io/sertit-utils/"><strong>here</strong></a>.</p>
 <h1 id="installing">Installing</h1>
-<p>For installing this library to your environment, please type this:</p>
-<ul>
-<li>in your console: <code>pip install <a title="sertit" href="#sertit">sertit</a>[full]</code></li>
-</ul>
+<h2 id="pip">Pip</h2>
+<p>For installing this library to your environment, please type this: <code>pip install <a title="sertit" href="#sertit">sertit</a>[full]</code></p>
 <p><code>[full]</code> will allow you to use the whole library, but you will need to install also<code>rioxarray</code> and <code>geopandas</code>
 (with GDAL installation issues on Windows, so please install them from wheels that you can
 find <a href="https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio">here</a>).</p>
 <p>However, if you do not need everything, you can type instead:</p>
 <ul>
-<li><em>nothing</em>, and you won't need <code>rasterio</code>, <code>rioxarray</code> or <code>geopandas</code>: <code>pip install sertit --extra-index-url ...</code></li>
-<li><code>[<a title="sertit.vectors" href="vectors.html">sertit.vectors</a>]</code>, and you won't need <code>rasterio</code> or <code>rioxarray</code>: <code>pip install sertit[vectors] --extra-index-url ...</code></li>
+<li><em>nothing</em>, and you won't need <code>rasterio</code>, <code>rioxarray</code>: <code>pip install sertit --extra-index-url ...</code></li>
 <li><code>[<a title="sertit.rasters" href="rasters.html">sertit.rasters</a>]</code>, and you won't need <code>rioxarray</code>: <code>pip install sertit[rasters] --extra-index-url ...</code></li>
 <li><code>[<a title="sertit.rasters_rio" href="rasters_rio.html">sertit.rasters_rio</a>]</code>: <code>pip install sertit[rasters_rio] --extra-index-url ...</code></li>
 <li><code>[colorlog]</code>: <code>pip install sertit[colorlog] --extra-index-url ...</code> to have <code>colorlog</code> installed</li>
 </ul>
+<h2 id="conda">Conda</h2>
+<p>You can install it via conda (but you will automatically have the full version):</p>
+<p><code>conda config --env --set channel_priority strict</code>
+<code>conda install -c conda-forge sertit</code></p>
 <h1 id="what-is-in-it">What is in it ?</h1>
 <h2 id="files">Files</h2>
 <p>File gathering file-related functions:</p>
@@ -269,7 +270,11 @@ setTimeout(() => input.focus(), 100);
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#installing">Installing</a></li>
+<li><a href="#installing">Installing</a><ul>
+<li><a href="#pip">Pip</a></li>
+<li><a href="#conda">Conda</a></li>
+</ul>
+</li>
 <li><a href="#what-is-in-it">What is in it ?</a><ul>
 <li><a href="#files">Files</a></li>
 <li><a href="#logs">Logs</a></li>
