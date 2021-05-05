@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-**Source Code**: https://code.sertit.unistra.fr/SERTIT/sertit-utils
+**Source Code**: https://github.com/sertit/sertit-utils
 
 .. include:: ../README.md
 """
