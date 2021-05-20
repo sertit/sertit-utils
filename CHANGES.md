@@ -2,6 +2,9 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.12 (2021-05-20)
+- Using xarray 0.18+ and rioxarray 0.4+
+
 ## 1.3.11-4 (2021-05-04)
 
 - Fixing bug when array has no nodata in `rasters.to_np`
