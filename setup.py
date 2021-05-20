@@ -17,9 +17,9 @@ setuptools.setup(
     install_requires=["tqdm", "lxml", "psutil", "geopandas>=0.9.0"],
     extras_require={
         "colorlog": ["colorlog"],
-        "full": ["rioxarray>=0.3.1", "colorlog"],
+        "full": ["xarray>=0.18.0", "rioxarray>=0.4.0", "colorlog"],
         "rasters_rio": ["rasterio>=1.2.2"],
-        "rasters": ["rioxarray>=0.3.1"],
+        "rasters": ["xarray>=0.18.0", "rioxarray>=0.4.0"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",

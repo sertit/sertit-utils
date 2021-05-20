@@ -19,6 +19,7 @@ tqdm
 psutil
 lxml
 colorlog
-rasterio
-rioxarray
-geopandas
+rasterio>=1.2.2
+xarray>=0.18.0
+rioxarray>=0.4.0
+geopandas>=0.9.0
