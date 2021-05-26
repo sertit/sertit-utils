@@ -61,8 +61,8 @@ pages:
       - public
   tags:
     - linux
-  only:
-    - master
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE != "schedule"'
 
 pages-github:
   image:
