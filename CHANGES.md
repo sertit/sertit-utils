@@ -6,6 +6,7 @@
 
 - [rasters] Adding the possibility to specify an index
 - [rasters_rio] Adding the possibility to use all `rio.read()` function arguments
+- [CI] Adding weekly tests with tox for py3.7, py3.8, py3.9 on Linux and Windows
 
 ## 1.3.12 (2021-05-20)
 - Using xarray 0.18+ and rioxarray 0.4+
