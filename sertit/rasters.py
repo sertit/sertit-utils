@@ -45,7 +45,6 @@ except ModuleNotFoundError as ex:
 from sertit import files, rasters_rio, vectors
 
 MAX_CORES = os.cpu_count() - 2
-ORIGIN_DTYPE = "original_dtype"
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
 """
 Types:
@@ -137,9 +136,7 @@ def path_xarr_dst(function: Callable) -> Callable:
             with rioxarray.open_rasterio(
                 path_or_ds, masked=True, default_name=name
             ) as xds:
-                with rioxarray.open_rasterio(path_or_ds) as xds_dtype:
-                    xds.attrs[ORIGIN_DTYPE] = xds_dtype.dtype  # TODO
-                    out = function(xds, *args, **kwargs)
+                out = function(xds, *args, **kwargs)
         return out
 
     return path_or_xarr_or_dst_wrapper
@@ -182,7 +179,7 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -> np.ndarray:
     """
     # Manage dtype
     if not dtype:
-        dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
+        dtype = xds.encoding.get("dtype", xds.dtype)
 
     # Manage nodata
     if xds.rio.encoded_nodata is not None:
@@ -608,6 +605,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    indexes: Union[int, list] = None,
 ) -> XDS_TYPE:
     """
     Read a raster dataset from a :
@@ -639,6 +637,7 @@ def read(
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
+        indexes (Union[int, list]): Indexes to load. Load the whole array if None.
 
     Returns:
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
@@ -649,6 +648,21 @@ def read(
 
     # Read data (and load it to discard lock)
     with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
+        if indexes:
+            if not isinstance(indexes, list):
+                indexes = [indexes]
+
+            # Open only wanted bands
+            xda = xda[np.isin(xda.band, indexes)]
+
+            try:
+                # Set new long name: Bands nb are idx + 1
+                xda.long_name = tuple(
+                    name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+                )
+            except AttributeError:
+                pass
+
         # Manage resampling
         if new_height != dst.height or new_width != dst.width:
             factor_h = dst.height / new_height
@@ -659,9 +673,6 @@ def read(
                 xda = xda.rio.reproject(
                     xda.rio.crs, shape=(new_height, new_width), resampling=resampling
                 )
-
-        # Set original dtype (to write it back)
-        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
 
         if masked:
             # Set nodata not in opening due to some performance issues

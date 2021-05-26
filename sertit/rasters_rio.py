@@ -672,6 +672,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
     Read a raster dataset from a `rasterio.Dataset` or a path.
@@ -681,6 +682,9 @@ def read(
     - a tuple or a list of (X, Y) resolutions
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
+
+    Tip:
+    Use index with a list of one element to keep a 3D array
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"
@@ -698,8 +702,9 @@ def read(
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
-        resampling (Resampling): Resampling method
-        masked (bool): Get a masked array
+        resampling (Resampling): Resampling method (nearest by default)
+        masked (bool): Get a masked array, `True` by default (whereas it is False by default in rasterio)
+        **kwargs: Other dst.read() arguments such as indexes.
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -708,11 +713,21 @@ def read(
     # Get new height and width
     new_height, new_width = get_new_shape(dst, resolution, size)
 
+    # Manage out_shape
+    if "indexes" in kwargs:
+        if isinstance(kwargs["indexes"], int):
+            out_shape = (new_height, new_width)
+        else:
+            out_shape = (len(kwargs["indexes"]), new_height, new_width)
+    else:
+        out_shape = (dst.count, new_height, new_width)
+
     # Read data
     array = dst.read(
-        out_shape=(dst.count, new_height, new_width),
+        out_shape=out_shape,
         resampling=resampling,
         masked=masked,
+        **kwargs,
     )
 
     # Update meta

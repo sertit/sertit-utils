@@ -2,6 +2,11 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.13 (2021-05-26)
+
+- [rasters] Adding the possibility to specify an index
+- [rasters_rio] Adding the possibility to use all `rio.read()` function arguments
+
 ## 1.3.12 (2021-05-20)
 - Using xarray 0.18+ and rioxarray 0.4+
 

@@ -63,6 +63,7 @@ def test_rasters_rio():
             raster_1, meta1 = rasters_rio.read(dst, resolution=20)
             raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
             raster_3, _ = rasters_rio.read(dst, size=(meta1["width"], meta1["height"]))
+            raster_4, _ = rasters_rio.read(raster_path, indexes=[1])
             with pytest.raises(ValueError):
                 rasters_rio.read(dst, resolution=[20, 20, 20])
 
@@ -71,6 +72,7 @@ def test_rasters_rio():
             assert meta["transform"] == dst.transform
             np.testing.assert_array_equal(raster_1, raster_2)
             np.testing.assert_array_equal(raster_1, raster_3)
+            np.testing.assert_array_equal(raster, raster_4)  # 2D array
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
