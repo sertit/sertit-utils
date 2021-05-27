@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.13.post1 (2021-05-27)
+
+- Copy the `encoding` dict before setting the nodata
+
 ## 1.3.13.post0 (2021-05-27)
 
 - Correct the original dtype in `rasters.read()`

@@ -1132,12 +1132,12 @@ def set_metadata(
     except MissingCRS:
         pass
 
-    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
-    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
-    naked_xda.encoding = mtd_xda.encoding
-
     if new_name:
         naked_xda = naked_xda.rename(new_name)
+    naked_xda.encoding = mtd_xda.encoding
+
+    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
+    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
 
     return naked_xda
 
@@ -1174,9 +1174,9 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
         xr.DataArray: DataArray with nodata set
     """
     xda_nodata = xda.where(xda.data != nodata_val)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.rio.write_nodata(nodata_val, encoded=True, inplace=True)
-    xda_nodata.encoding = xda.encoding
     return xda_nodata
 
 

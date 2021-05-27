@@ -80,6 +80,7 @@ def test_rasters():
             xds = xr.Dataset({name: xda})
 
             assert xda.shape == (dst.count, dst.height, dst.width)
+            assert xda.encoding["dtype"] == dst_dtype
             assert xds[name].shape == xda.shape
             assert xda_1.rio.crs == dst.crs
             assert xda_1.rio.transform() == dst.transform
