@@ -647,36 +647,43 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
-        if indexes:
-            if not isinstance(indexes, list):
-                indexes = [indexes]
+    with xarray.set_options(keep_attrs=True):
+        with rioxarray.open_rasterio(
+            dst, default_name=files.get_filename(dst.name)
+        ) as xda:
+            if indexes:
+                if not isinstance(indexes, list):
+                    indexes = [indexes]
 
-            # Open only wanted bands
-            xda = xda[np.isin(xda.band, indexes)]
+                # Open only wanted bands
+                xda = xda[np.isin(xda.band, indexes)]
 
-            try:
-                # Set new long name: Bands nb are idx + 1
-                xda.long_name = tuple(
-                    name for i, name in enumerate(xda.long_name) if i + 1 in indexes
-                )
-            except AttributeError:
-                pass
+                try:
+                    # Set new long name: Bands nb are idx + 1
+                    xda.long_name = tuple(
+                        name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+                    )
+                except AttributeError:
+                    pass
 
-        # Manage resampling
-        if new_height != dst.height or new_width != dst.width:
-            factor_h = dst.height / new_height
-            factor_w = dst.width / new_width
-            if factor_h.is_integer() and factor_w.is_integer():
-                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-            else:
-                xda = xda.rio.reproject(
-                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
-                )
+            # Manage resampling
+            if new_height != dst.height or new_width != dst.width:
+                factor_h = dst.height / new_height
+                factor_w = dst.width / new_width
+                if factor_h.is_integer() and factor_w.is_integer():
+                    xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+                else:
+                    xda = xda.rio.reproject(
+                        xda.rio.crs,
+                        shape=(new_height, new_width),
+                        resampling=resampling,
+                    )
 
-        if masked:
-            # Set nodata not in opening due to some performance issues
-            xda = set_nodata(xda, dst.meta["nodata"])
+            if masked:
+                # Set nodata not in opening due to some performance issues
+                orig_dtype = xda.dtype
+                xda = set_nodata(xda, dst.meta["nodata"])
+                xda.encoding["dtype"] = orig_dtype
 
     return xda
 
@@ -1169,6 +1176,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     xda_nodata = xda.where(xda.data != nodata_val)
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.rio.write_nodata(nodata_val, encoded=True, inplace=True)
+    xda_nodata.encoding = xda.encoding
     return xda_nodata
 
 

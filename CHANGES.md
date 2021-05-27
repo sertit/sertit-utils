@@ -2,6 +2,12 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.13.post0 (2021-05-27)
+
+- Correct the original dtype in `rasters.read()`
+- Keep xarray attributes in `rasters.read()`
+- Pass the `encoding` dict in `rasters.set_nodata()`
+
 ## 1.3.13 (2021-05-26)
 
 - [rasters] Adding the possibility to specify an index
@@ -11,21 +17,21 @@
 ## 1.3.12 (2021-05-20)
 - Using xarray 0.18+ and rioxarray 0.4+
 
-## 1.3.11-4 (2021-05-04)
+## 1.3.11.post4 (2021-05-04)
 
 - Fixing bug when array has no nodata in `rasters.to_np`
 - No need to set np.nan in xarray.where (default value)
 
-## 1.3.11-3 (2021-05-04)
+## 1.3.11.post3 (2021-05-04)
 
 - Missing `psutil` in setup.py and setting minimum versions
 
-## 1.3.11-2 (2021-05-04)
+## 1.3.11.post2 (2021-05-04)
 
 - Correctly manage nodata in `rasters.sieve`
 - Bug correction in `rasters.where`
 
-## 1.3.11-1 (2021-05-04)
+## 1.3.11.post1 (2021-05-04)
 
 - Bad nodata setting in `rasters.paint`
 
