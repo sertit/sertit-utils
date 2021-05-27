@@ -711,6 +711,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset from a `rasterio.Dataset` or a path.
@@ -720,6 +721,9 @@ def read(
     - a tuple or a list of (X, Y) resolutions
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
+
+    Tip:
+    Use index with a list of one element to keep a 3D array
 
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
@@ -737,8 +741,9 @@ def read(
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
-        resampling (Resampling): Resampling method
-        masked (bool): Get a masked array
+        resampling (Resampling): Resampling method (nearest by default)
+        masked (bool): Get a masked array, `True` by default (whereas it is False by default in rasterio)
+        **kwargs: Other dst.read() arguments such as indexes.
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -747,11 +752,21 @@ def read(
     # Get new height and width
     new_height, new_width = get_new_shape(dst, resolution, size)
 
+    # Manage out_shape
+    if &#34;indexes&#34; in kwargs:
+        if isinstance(kwargs[&#34;indexes&#34;], int):
+            out_shape = (new_height, new_width)
+        else:
+            out_shape = (len(kwargs[&#34;indexes&#34;]), new_height, new_width)
+    else:
+        out_shape = (dst.count, new_height, new_width)
+
     # Read data
     array = dst.read(
-        out_shape=(dst.count, new_height, new_width),
+        out_shape=out_shape,
         resampling=resampling,
         masked=masked,
+        **kwargs,
     )
 
     # Update meta
@@ -2083,7 +2098,7 @@ def crop(
 </details>
 </dd>
 <dt id="sertit.rasters_rio.read"><code class="name flex">
-<p>def <span class="ident">read</span>(</p><p>dst, <br>resolution=None, <br>size=None, <br>resampling=Resampling.nearest, <br>masked=True)</p>
+<p>def <span class="ident">read</span>(</p><p>dst, <br>resolution=None, <br>size=None, <br>resampling=Resampling.nearest, <br>masked=True, <br>**kwargs)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Read a raster dataset from a <code>rasterio.Dataset</code> or a path.</p>
@@ -2093,6 +2108,8 @@ def crop(
 <li>a float, in which case X resolution = Y resolution</li>
 <li>None, in which case the dataset resolution will be used</li>
 </ul>
+<p>Tip:
+Use index with a list of one element to keep a 3D array</p>
 <pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
 &gt;&gt;&gt; raster1, meta1 = read(raster_path)
 &gt;&gt;&gt; # or
@@ -2112,9 +2129,11 @@ True
 <dt><strong><code>size</code></strong> :&ensp;<code>Union[tuple, list]</code></dt>
 <dd>Size of the array (width, height). Not used if resolution is provided.</dd>
 <dt><strong><code>resampling</code></strong> :&ensp;<code>Resampling</code></dt>
-<dd>Resampling method</dd>
+<dd>Resampling method (nearest by default)</dd>
 <dt><strong><code>masked</code></strong> :&ensp;<code>bool</code></dt>
-<dd>Get a masked array</dd>
+<dd>Get a masked array, <code>True</code> by default (whereas it is False by default in rasterio)</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Other dst.read() arguments such as indexes.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -2132,6 +2151,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    **kwargs,
 ) -&gt; (np.ma.masked_array, dict):
     &#34;&#34;&#34;
     Read a raster dataset from a `rasterio.Dataset` or a path.
@@ -2141,6 +2161,9 @@ def read(
     - a tuple or a list of (X, Y) resolutions
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
+
+    Tip:
+    Use index with a list of one element to keep a 3D array
 
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
@@ -2158,8 +2181,9 @@ def read(
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
-        resampling (Resampling): Resampling method
-        masked (bool): Get a masked array
+        resampling (Resampling): Resampling method (nearest by default)
+        masked (bool): Get a masked array, `True` by default (whereas it is False by default in rasterio)
+        **kwargs: Other dst.read() arguments such as indexes.
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
@@ -2168,11 +2192,21 @@ def read(
     # Get new height and width
     new_height, new_width = get_new_shape(dst, resolution, size)
 
+    # Manage out_shape
+    if &#34;indexes&#34; in kwargs:
+        if isinstance(kwargs[&#34;indexes&#34;], int):
+            out_shape = (new_height, new_width)
+        else:
+            out_shape = (len(kwargs[&#34;indexes&#34;]), new_height, new_width)
+    else:
+        out_shape = (dst.count, new_height, new_width)
+
     # Read data
     array = dst.read(
-        out_shape=(dst.count, new_height, new_width),
+        out_shape=out_shape,
         resampling=resampling,
         masked=masked,
+        **kwargs,
     )
 
     # Update meta

@@ -84,7 +84,6 @@ except ModuleNotFoundError as ex:
 from sertit import files, rasters_rio, vectors
 
 MAX_CORES = os.cpu_count() - 2
-ORIGIN_DTYPE = &#34;original_dtype&#34;
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
 &#34;&#34;&#34;
 Types:
@@ -176,9 +175,7 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
             with rioxarray.open_rasterio(
                 path_or_ds, masked=True, default_name=name
             ) as xds:
-                with rioxarray.open_rasterio(path_or_ds) as xds_dtype:
-                    xds.attrs[ORIGIN_DTYPE] = xds_dtype.dtype  # TODO
-                    out = function(xds, *args, **kwargs)
+                out = function(xds, *args, **kwargs)
         return out
 
     return path_or_xarr_or_dst_wrapper
@@ -221,7 +218,7 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
     &#34;&#34;&#34;
     # Manage dtype
     if not dtype:
-        dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
+        dtype = xds.encoding.get(&#34;dtype&#34;, xds.dtype)
 
     # Manage nodata
     if xds.rio.encoded_nodata is not None:
@@ -647,6 +644,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    indexes: Union[int, list] = None,
 ) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Read a raster dataset from a :
@@ -678,6 +676,7 @@ def read(
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
+        indexes (Union[int, list]): Indexes to load. Load the whole array if None.
 
     Returns:
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
@@ -687,24 +686,43 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
-        # Manage resampling
-        if new_height != dst.height or new_width != dst.width:
-            factor_h = dst.height / new_height
-            factor_w = dst.width / new_width
-            if factor_h.is_integer() and factor_w.is_integer():
-                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-            else:
-                xda = xda.rio.reproject(
-                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
-                )
+    with xarray.set_options(keep_attrs=True):
+        with rioxarray.open_rasterio(
+            dst, default_name=files.get_filename(dst.name)
+        ) as xda:
+            if indexes:
+                if not isinstance(indexes, list):
+                    indexes = [indexes]
 
-        # Set original dtype (to write it back)
-        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+                # Open only wanted bands
+                xda = xda[np.isin(xda.band, indexes)]
 
-        if masked:
-            # Set nodata not in opening due to some performance issues
-            xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
+                try:
+                    # Set new long name: Bands nb are idx + 1
+                    xda.long_name = tuple(
+                        name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+                    )
+                except AttributeError:
+                    pass
+
+            # Manage resampling
+            if new_height != dst.height or new_width != dst.width:
+                factor_h = dst.height / new_height
+                factor_w = dst.width / new_width
+                if factor_h.is_integer() and factor_w.is_integer():
+                    xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+                else:
+                    xda = xda.rio.reproject(
+                        xda.rio.crs,
+                        shape=(new_height, new_width),
+                        resampling=resampling,
+                    )
+
+            if masked:
+                # Set nodata not in opening due to some performance issues
+                orig_dtype = xda.dtype
+                xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
+                xda.encoding[&#34;dtype&#34;] = orig_dtype
 
     return xda
 
@@ -1153,12 +1171,12 @@ def set_metadata(
     except MissingCRS:
         pass
 
-    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
-    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
-    naked_xda.encoding = mtd_xda.encoding
-
     if new_name:
         naked_xda = naked_xda.rename(new_name)
+    naked_xda.encoding = mtd_xda.encoding
+
+    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
+    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
 
     return naked_xda
 
@@ -1195,6 +1213,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -&gt; xr.DataAr
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
     xda_nodata = xda.where(xda.data != nodata_val)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.rio.write_nodata(nodata_val, encoded=True, inplace=True)
     return xda_nodata
@@ -1388,9 +1407,7 @@ True
             with rioxarray.open_rasterio(
                 path_or_ds, masked=True, default_name=name
             ) as xds:
-                with rioxarray.open_rasterio(path_or_ds) as xds_dtype:
-                    xds.attrs[ORIGIN_DTYPE] = xds_dtype.dtype  # TODO
-                    out = function(xds, *args, **kwargs)
+                out = function(xds, *args, **kwargs)
         return out
 
     return path_or_xarr_or_dst_wrapper</code></pre>
@@ -1472,7 +1489,7 @@ True
     &#34;&#34;&#34;
     # Manage dtype
     if not dtype:
-        dtype = xds.attrs.get(ORIGIN_DTYPE, xds.dtype)
+        dtype = xds.encoding.get(&#34;dtype&#34;, xds.dtype)
 
     # Manage nodata
     if xds.rio.encoded_nodata is not None:
@@ -2077,7 +2094,7 @@ def crop(
 </details>
 </dd>
 <dt id="sertit.rasters.read"><code class="name flex">
-<p>def <span class="ident">read</span>(</p><p>dst, <br>resolution=None, <br>size=None, <br>resampling=Resampling.nearest, <br>masked=True)</p>
+<p>def <span class="ident">read</span>(</p><p>dst, <br>resolution=None, <br>size=None, <br>resampling=Resampling.nearest, <br>masked=True, <br>indexes=None)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Read a raster dataset from a :</p>
@@ -2113,6 +2130,8 @@ True
 <dd>Resampling method</dd>
 <dt><strong><code>masked</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Get a masked array</dd>
+<dt><strong><code>indexes</code></strong> :&ensp;<code>Union[int, list]</code></dt>
+<dd>Indexes to load. Load the whole array if None.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -2130,6 +2149,7 @@ def read(
     size: Union[tuple, list] = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
+    indexes: Union[int, list] = None,
 ) -&gt; XDS_TYPE:
     &#34;&#34;&#34;
     Read a raster dataset from a :
@@ -2161,6 +2181,7 @@ def read(
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
+        indexes (Union[int, list]): Indexes to load. Load the whole array if None.
 
     Returns:
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
@@ -2170,24 +2191,43 @@ def read(
     new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
 
     # Read data (and load it to discard lock)
-    with rioxarray.open_rasterio(dst, default_name=files.get_filename(dst.name)) as xda:
-        # Manage resampling
-        if new_height != dst.height or new_width != dst.width:
-            factor_h = dst.height / new_height
-            factor_w = dst.width / new_width
-            if factor_h.is_integer() and factor_w.is_integer():
-                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-            else:
-                xda = xda.rio.reproject(
-                    xda.rio.crs, shape=(new_height, new_width), resampling=resampling
-                )
+    with xarray.set_options(keep_attrs=True):
+        with rioxarray.open_rasterio(
+            dst, default_name=files.get_filename(dst.name)
+        ) as xda:
+            if indexes:
+                if not isinstance(indexes, list):
+                    indexes = [indexes]
 
-        # Set original dtype (to write it back)
-        xda.attrs[ORIGIN_DTYPE] = dst.dtypes[0]
+                # Open only wanted bands
+                xda = xda[np.isin(xda.band, indexes)]
 
-        if masked:
-            # Set nodata not in opening due to some performance issues
-            xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
+                try:
+                    # Set new long name: Bands nb are idx + 1
+                    xda.long_name = tuple(
+                        name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+                    )
+                except AttributeError:
+                    pass
+
+            # Manage resampling
+            if new_height != dst.height or new_width != dst.width:
+                factor_h = dst.height / new_height
+                factor_w = dst.width / new_width
+                if factor_h.is_integer() and factor_w.is_integer():
+                    xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+                else:
+                    xda = xda.rio.reproject(
+                        xda.rio.crs,
+                        shape=(new_height, new_width),
+                        resampling=resampling,
+                    )
+
+            if masked:
+                # Set nodata not in opening due to some performance issues
+                orig_dtype = xda.dtype
+                xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
+                xda.encoding[&#34;dtype&#34;] = orig_dtype
 
     return xda</code></pre>
 </details>
@@ -3061,12 +3101,12 @@ Attributes: (12/13)
     except MissingCRS:
         pass
 
-    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
-    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
-    naked_xda.encoding = mtd_xda.encoding
-
     if new_name:
         naked_xda = naked_xda.rename(new_name)
+    naked_xda.encoding = mtd_xda.encoding
+
+    naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
+    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
 
     return naked_xda</code></pre>
 </details>
@@ -3141,6 +3181,7 @@ Dimensions without coordinates: x, y
         xr.DataArray: DataArray with nodata set
     &#34;&#34;&#34;
     xda_nodata = xda.where(xda.data != nodata_val)
+    xda_nodata.encoding = xda.encoding
     xda_nodata.rio.update_attrs(xda.attrs, inplace=True)
     xda_nodata.rio.write_nodata(nodata_val, encoded=True, inplace=True)
     return xda_nodata</code></pre>
