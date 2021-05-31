@@ -2,7 +2,7 @@
 
 ## 1.3.Z (2021-MM-DD)
 
-## 1.3.14 (2021-06-DD)
+## 1.3.14 (2021-05-31)
 - Add a `as_list` keyword to `files.get_archived_rio_path()`
 - Add a `vectors.open_gml` overloading `gpd.read_file` for GML vectors in order to avoid exceptions for empty geometries
 
