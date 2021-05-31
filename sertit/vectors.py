@@ -25,6 +25,7 @@ from typing import Any, Generator, Union
 
 import numpy as np
 import pandas as pd
+from fiona.errors import UnsupportedGeometryTypeError
 
 try:
     import geopandas as gpd
@@ -306,3 +307,31 @@ def shapes_to_gdf(shapes: Generator, crs: str):
 
     # Convert to geodataframe with correct geometry
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
+
+
+def open_gml(gml_path: str, crs: str = WGS84) -> gpd.GeoDataFrame:
+    """
+    Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
+
+    Args:
+        gml_path (str): GML path
+        crs (str): Default CRS (in case of empty geometry)
+
+    Returns:
+        gpd.GeoDataFrame: GML vector or empty geometry
+    """
+    # Read the GML file
+    try:
+        # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
+        fiona_logger = logging.getLogger("fiona._env")
+        fiona_logger.setLevel(logging.CRITICAL)
+
+        # Read mask
+        mask = gpd.read_file(gml_path)
+
+        # Set fiona logger back to what it was
+        fiona_logger.setLevel(logging.INFO)
+    except (ValueError, UnsupportedGeometryTypeError):
+        mask = gpd.GeoDataFrame(geometry=[], crs=crs)
+
+    return mask
