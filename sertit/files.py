@@ -318,7 +318,9 @@ def get_archived_file_list(archive_path) -> list:
     return file_list
 
 
-def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
+def get_archived_rio_path(
+    archive_path: str, file_regex: str, as_list: bool = False
+) -> Union[list, str]:
     """
     Get archived file path from inside the archive, to be read with rasterio:
 
@@ -330,6 +332,9 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
 
     .. WARNING::
         It wont be readable by pandas, geopandas or xmltree !
+
+    .. WARNING::
+        If `as_list` is `False`, it will only return the first file matched !
 
     You can use this [site](https://regexr.com/) to build your regex.
 
@@ -345,9 +350,10 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     Args:
         archive_path (str): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
+        as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
 
     Returns:
-        str: Band path that can be read by rasterio
+        Union[list, str]: Band path that can be read by rasterio
     """
     # Get file list
     file_list = get_archived_file_list(archive_path)
@@ -361,14 +367,22 @@ def get_archived_rio_path(archive_path: str, file_regex: str) -> str:
     else:
         raise TypeError("Only .zip and .tar files can be read from inside its archive.")
 
-    try:
-        regex = re.compile(file_regex)
-        archived_band_path = list(filter(regex.match, file_list))[0]
-        archived_band_path = f"{prefix}+file://{archive_path}!{archived_band_path}"
-    except IndexError:
+    # Search for file
+    regex = re.compile(file_regex)
+    archived_band_path = list(filter(regex.match, file_list))
+    if not archived_band_path:
         raise FileNotFoundError(
             f"Impossible to find file {file_regex} in {get_filename(archive_path)}"
         )
+
+    # Convert to rio path
+    archived_band_path = [
+        f"{prefix}+file://{archive_path}!{path}" for path in archived_band_path
+    ]
+
+    # Convert to str if needed
+    if not as_list:
+        archived_band_path = archived_band_path[0]
 
     return archived_band_path
 

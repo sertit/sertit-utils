@@ -124,9 +124,11 @@ def test_archived_files():
     tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
     tif_regex = f".*{tif_name}"
     tif_zip = files.get_archived_rio_path(zip_file, tif_regex)
+    tif_list = files.get_archived_rio_path(zip_file, tif_regex, as_list=True)
     tif_tar = files.get_archived_rio_path(tar_file, ".*RADSAT")
     tif_ok = os.path.join(ok_folder, tif_name)
     ci.assert_raster_equal(tif_ok, tif_zip)
+    ci.assert_raster_equal(tif_ok, tif_list[0])
     ci.assert_raster_equal(tif_ok, tif_tar)
 
     # XML

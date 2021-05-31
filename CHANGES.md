@@ -2,6 +2,9 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.14 (2021-06-DD)
+- Add a `as_list` keyword to `files.get_archived_rio_path()`
+
 ## 1.3.13.post1 (2021-05-27)
 
 - Copy the `encoding` dict before setting the nodata
