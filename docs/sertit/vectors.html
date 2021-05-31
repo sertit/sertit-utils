@@ -64,6 +64,7 @@ from typing import Any, Generator, Union
 
 import numpy as np
 import pandas as pd
+from fiona.errors import UnsupportedGeometryTypeError
 
 try:
     import geopandas as gpd
@@ -344,7 +345,35 @@ def shapes_to_gdf(shapes: Generator, crs: str):
         pd_results.geometry = pd_results.geometry.apply(_to_polygons)
 
     # Convert to geodataframe with correct geometry
-    return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)</code></pre>
+    return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
+
+
+def open_gml(gml_path: str, crs: str = WGS84) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
+
+    Args:
+        gml_path (str): GML path
+        crs (str): Default CRS (in case of empty geometry)
+
+    Returns:
+        gpd.GeoDataFrame: GML vector or empty geometry
+    &#34;&#34;&#34;
+    # Read the GML file
+    try:
+        # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
+        fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
+        fiona_logger.setLevel(logging.CRITICAL)
+
+        # Read mask
+        mask = gpd.read_file(gml_path)
+
+        # Set fiona logger back to what it was
+        fiona_logger.setLevel(logging.INFO)
+    except (ValueError, UnsupportedGeometryTypeError):
+        mask = gpd.GeoDataFrame(geometry=[], crs=crs)
+
+    return mask</code></pre>
 </details>
 </section>
 <section>
@@ -769,6 +798,55 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)</code></pre>
 </details>
 </dd>
+<dt id="sertit.vectors.open_gml"><code class="name flex">
+<p>def <span class="ident">open_gml</span>(</p><p>gml_path, <br>crs='EPSG:4326')</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Overload to <code>gpd.read_file</code> managing empty GML files that usually throws an exception.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>gml_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>GML path</dd>
+<dt><strong><code>crs</code></strong> :&ensp;<code>str</code></dt>
+<dd>Default CRS (in case of empty geometry)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>GML vector or empty geometry</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def open_gml(gml_path: str, crs: str = WGS84) -&gt; gpd.GeoDataFrame:
+    &#34;&#34;&#34;
+    Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
+
+    Args:
+        gml_path (str): GML path
+        crs (str): Default CRS (in case of empty geometry)
+
+    Returns:
+        gpd.GeoDataFrame: GML vector or empty geometry
+    &#34;&#34;&#34;
+    # Read the GML file
+    try:
+        # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
+        fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
+        fiona_logger.setLevel(logging.CRITICAL)
+
+        # Read mask
+        mask = gpd.read_file(gml_path)
+
+        # Set fiona logger back to what it was
+        fiona_logger.setLevel(logging.INFO)
+    except (ValueError, UnsupportedGeometryTypeError):
+        mask = gpd.GeoDataFrame(geometry=[], crs=crs)
+
+    return mask</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -848,6 +926,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="sertit.vectors.get_aoi_wkt" href="#sertit.vectors.get_aoi_wkt">get_aoi_wkt</a></code></li>
 <li><code><a title="sertit.vectors.get_wider_exterior" href="#sertit.vectors.get_wider_exterior">get_wider_exterior</a></code></li>
 <li><code><a title="sertit.vectors.shapes_to_gdf" href="#sertit.vectors.shapes_to_gdf">shapes_to_gdf</a></code></li>
+<li><code><a title="sertit.vectors.open_gml" href="#sertit.vectors.open_gml">open_gml</a></code></li>
 </ul>
 </li>
 </ul>

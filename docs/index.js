@@ -135,6 +135,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"sertit.vectors.open_gml",
+"url":3,
+"doc":"Overload to  gpd.read_file managing empty GML files that usually throws an exception. Args: gml_path (str): GML path crs (str): Default CRS (in case of empty geometry) Returns: gpd.GeoDataFrame: GML vector or empty geometry",
+"func":1
+},
+{
 "ref":"sertit.files",
 "url":4,
 "doc":"Tools for paths and files"
@@ -184,7 +190,7 @@ INDEX=[
 {
 "ref":"sertit.files.get_archived_rio_path",
 "url":4,
-"doc":"Get archived file path from inside the archive, to be read with rasterio: -  zip+file: {zip_path}!{file_name} -  tar+file: {tar_path}!{file_name} See [here](https: rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip dataset-identifiers) for more information.  WARNING It wont be readable by pandas, geopandas or xmltree ! You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> path = get_archived_tif_path(arch_path, file_regex) 'zip+file: D:\\path\\to\\output\\zip!dir/filename.tif' >>> rasterio.open(path)    Args: archive_path (str): Archive path file_regex (str): File regex (used by re) as it can be found in the getmembers() list Returns: str: Band path that can be read by rasterio",
+"doc":"Get archived file path from inside the archive, to be read with rasterio: -  zip+file: {zip_path}!{file_name} -  tar+file: {tar_path}!{file_name} See [here](https: rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip dataset-identifiers) for more information.  WARNING It wont be readable by pandas, geopandas or xmltree !  WARNING If  as_list is  False , it will only return the first file matched ! You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> path = get_archived_tif_path(arch_path, file_regex) 'zip+file: D:\\path\\to\\output\\zip!dir/filename.tif' >>> rasterio.open(path)    Args: archive_path (str): Archive path file_regex (str): File regex (used by re) as it can be found in the getmembers() list as_list (bool): If true, returns a list (including all found files). If false, returns only the first match Returns: Union[list, str]: Band path that can be read by rasterio",
 "func":1
 },
 {
