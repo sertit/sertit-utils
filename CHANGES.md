@@ -2,7 +2,12 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.14.post0 (2021-06-02)
+
+- Setting original dtype all the time in `rasters.read`
+
 ## 1.3.14 (2021-05-31)
+
 - Add a `as_list` keyword to `files.get_archived_rio_path()`
 - Add a `vectors.open_gml` overloading `gpd.read_file` for GML vectors in order to avoid exceptions for empty geometries
 
@@ -23,6 +28,7 @@
 - [CI] Adding weekly tests with tox for py3.7, py3.8, py3.9 on Linux and Windows
 
 ## 1.3.12 (2021-05-20)
+
 - Using xarray 0.18+ and rioxarray 0.4+
 
 ## 1.3.11.post4 (2021-05-04)
