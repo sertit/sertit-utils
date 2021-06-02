@@ -690,6 +690,7 @@ def read(
         with rioxarray.open_rasterio(
             dst, default_name=files.get_filename(dst.name)
         ) as xda:
+            orig_dtype = xda.dtype
             if indexes:
                 if not isinstance(indexes, list):
                     indexes = [indexes]
@@ -720,9 +721,10 @@ def read(
 
             if masked:
                 # Set nodata not in opening due to some performance issues
-                orig_dtype = xda.dtype
                 xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
-                xda.encoding[&#34;dtype&#34;] = orig_dtype
+
+            # Set original dtype
+            xda.encoding[&#34;dtype&#34;] = orig_dtype
 
     return xda
 
@@ -2195,6 +2197,7 @@ def read(
         with rioxarray.open_rasterio(
             dst, default_name=files.get_filename(dst.name)
         ) as xda:
+            orig_dtype = xda.dtype
             if indexes:
                 if not isinstance(indexes, list):
                     indexes = [indexes]
@@ -2225,9 +2228,10 @@ def read(
 
             if masked:
                 # Set nodata not in opening due to some performance issues
-                orig_dtype = xda.dtype
                 xda = set_nodata(xda, dst.meta[&#34;nodata&#34;])
-                xda.encoding[&#34;dtype&#34;] = orig_dtype
+
+            # Set original dtype
+            xda.encoding[&#34;dtype&#34;] = orig_dtype
 
     return xda</code></pre>
 </details>
