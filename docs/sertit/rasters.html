@@ -746,6 +746,8 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     - uint16, uint32, int32, int64, uint64: 65535
     - int16, float32, float64, float128, float: -9999
 
+    Compress with `LZW` option by default. To disable it, add the `compress=None` parameter.
+
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
     &gt;&gt;&gt; raster_out = &#34;path\\to\\out.tif&#34;
@@ -787,6 +789,9 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
             raise ValueError(
                 f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
             )
+
+    if &#34;compress&#34; not in kwargs:
+        kwargs[&#34;compress&#34;] = &#34;lzw&#34;
 
     xds.rio.to_raster(path, **kwargs)
 
@@ -1232,6 +1237,12 @@ def where(
 
     If `master_xda` is None, use it like `xr.where`.
     Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
+
+    .. WARNING::
+        If you don&#39;t give a `master_xda`,
+        it is better to pass numpy arrays to `if_false` and `if_true` keywords
+        as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
+        Just pass `if_true=true_xda.data` inplace of `if_true=true_xda` and the same for `if_false`
 
     ```python
     &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
@@ -2252,6 +2263,7 @@ The file will be compressed if the raster is a mask (saved as uint8).</p>
 <li>uint16, uint32, int32, int64, uint64: 65535</li>
 <li>int16, float32, float64, float128, float: -9999</li>
 </ul>
+<p>Compress with <code>LZW</code> option by default. To disable it, add the <code>compress=None</code> parameter.</p>
 <pre><code class="language-python">&gt;&gt;&gt; raster_path = &quot;path\to\raster.tif&quot;
 &gt;&gt;&gt; raster_out = &quot;path\to\out.tif&quot;
 
@@ -2290,6 +2302,8 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     - int8: -128
     - uint16, uint32, int32, int64, uint64: 65535
     - int16, float32, float64, float128, float: -9999
+
+    Compress with `LZW` option by default. To disable it, add the `compress=None` parameter.
 
     ```python
     &gt;&gt;&gt; raster_path = &#34;path\\to\\raster.tif&#34;
@@ -2332,6 +2346,9 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
             raise ValueError(
                 f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
             )
+
+    if &#34;compress&#34; not in kwargs:
+        kwargs[&#34;compress&#34;] = &#34;lzw&#34;
 
     xds.rio.to_raster(path, **kwargs)</code></pre>
 </details>
@@ -3202,6 +3219,13 @@ Dimensions without coordinates: x, y
 </ul>
 <p>If <code>master_xda</code> is None, use it like <code>xr.where</code>.
 Else, it outputs a <code>xarray.DataArray</code> with the same dtype than <code>master_xda</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you don't give a <code>master_xda</code>,
+it is better to pass numpy arrays to <code>if_false</code> and <code>if_true</code> keywords
+as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
+Just pass <code>if_true=true_xda.data</code> inplace of <code>if_true=true_xda</code> and the same for <code>if_false</code></p>
+</div>
 <pre><code class="language-python">&gt;&gt;&gt; A = xr.DataArray(dims=(&quot;x&quot;, &quot;y&quot;), data=[[1, 0, 5], [np.nan, 0, 0]])
 &gt;&gt;&gt; mask_A = rasters.where(A &gt; 3, 0, 1, A, new_name=&quot;mask_A&quot;)
 &lt;xarray.DataArray 'mask_A' (x: 2, y: 3)&gt;
@@ -3242,6 +3266,12 @@ Dimensions without coordinates: x, y
 
     If `master_xda` is None, use it like `xr.where`.
     Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
+
+    .. WARNING::
+        If you don&#39;t give a `master_xda`,
+        it is better to pass numpy arrays to `if_false` and `if_true` keywords
+        as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
+        Just pass `if_true=true_xda.data` inplace of `if_true=true_xda` and the same for `if_false`
 
     ```python
     &gt;&gt;&gt; A = xr.DataArray(dims=(&#34;x&#34;, &#34;y&#34;), data=[[1, 0, 5], [np.nan, 0, 0]])
