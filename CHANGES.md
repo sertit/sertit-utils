@@ -2,9 +2,9 @@
 
 ## 1.3.Z (2021-MM-DD)
 
-## 1.3.14.post1 (2021-06-02)
+## 1.3.14.post1 (2021-06-03)
 
-- Compressing to `LZW` by default in `rasters.write`
+- Compressing to `LZW` by default in `rasters.write` and `rasters_rio.write`
 
 ## 1.3.14.post0 (2021-06-02)
 
