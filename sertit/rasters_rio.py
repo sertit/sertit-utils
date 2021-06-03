@@ -789,9 +789,8 @@ def write(
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta["driver"] = "GTiff"
 
-    # Compress only if uint8 data
-    if raster.dtype == np.uint8:
-        out_meta["compress"] = "lzw"
+    # Compress to LZW by default
+    out_meta["compress"] = kwargs.get("compress", "lzw")
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)

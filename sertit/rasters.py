@@ -707,6 +707,8 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
     - uint16, uint32, int32, int64, uint64: 65535
     - int16, float32, float64, float128, float: -9999
 
+    Compress with `LZW` option by default. To disable it, add the `compress=None` parameter.
+
     ```python
     >>> raster_path = "path\\to\\raster.tif"
     >>> raster_out = "path\\to\\out.tif"
@@ -748,6 +750,9 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
             raise ValueError(
                 f"Invalid dtype: {dtype}, should be convertible to numpy dtypes"
             )
+
+    if "compress" not in kwargs:
+        kwargs["compress"] = "lzw"
 
     xds.rio.to_raster(path, **kwargs)
 
@@ -1193,6 +1198,12 @@ def where(
 
     If `master_xda` is None, use it like `xr.where`.
     Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
+
+    .. WARNING::
+        If you don't give a `master_xda`,
+        it is better to pass numpy arrays to `if_false` and `if_true` keywords
+        as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
+        Just pass `if_true=true_xda.data` inplace of `if_true=true_xda` and the same for `if_false`
 
     ```python
     >>> A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])

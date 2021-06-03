@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.14.post1 (2021-06-02)
+
+- Compressing to `LZW` by default in `rasters.write`
+
 ## 1.3.14.post0 (2021-06-02)
 
 - Setting original dtype all the time in `rasters.read`
