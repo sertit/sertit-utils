@@ -137,7 +137,7 @@ INDEX=[
 {
 "ref":"sertit.vectors.open_gml",
 "url":3,
-"doc":"Overload to  gpd.read_file managing empty GML files that usually throws an exception. Args: gml_path (str): GML path crs (str): Default CRS (in case of empty geometry) Returns: gpd.GeoDataFrame: GML vector or empty geometry",
+"doc":"Overload to  gpd.read_file managing empty GML files that usually throws an exception. Use crs=None to open naive geometries. Args: gml_path (str): GML path crs (Union[str, CRS, None]): Default CRS Returns: gpd.GeoDataFrame: GML vector or empty geometry",
 "func":1
 },
 {
