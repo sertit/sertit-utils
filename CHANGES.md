@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.14.post4 (2021-06-07)
+
+- Managing naive geometries in `vectors.open_gml`
+
 ## 1.3.14.post3 (2021-06-07)
 
 - Converting GML GeoDataFrame to the wanted CRS in `vectors.open_gml`

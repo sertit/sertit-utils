@@ -309,13 +309,15 @@ def shapes_to_gdf(shapes: Generator, crs: str):
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
 
-def open_gml(gml_path: str, crs: str = WGS84) -> gpd.GeoDataFrame:
+def open_gml(gml_path: str, crs: Any = WGS84) -> gpd.GeoDataFrame:
     """
     Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
 
+    Use crs=None to open naive geometries.
+
     Args:
         gml_path (str): GML path
-        crs (str): Default CRS (in case of empty geometry)
+        crs (Union[str, CRS, None]): Default CRS
 
     Returns:
         gpd.GeoDataFrame: GML vector or empty geometry
@@ -327,7 +329,11 @@ def open_gml(gml_path: str, crs: str = WGS84) -> gpd.GeoDataFrame:
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
-        mask = gpd.read_file(gml_path).to_crs(crs)
+        mask = gpd.read_file(gml_path)
+
+        # Manage naive geometries
+        if mask.crs and crs:
+            mask = mask.to_crs(crs)
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
