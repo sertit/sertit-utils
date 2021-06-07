@@ -87,7 +87,7 @@ def test_gml():
     """Test GML functions"""
     empty_gml = os.path.join(GEO_DATA, "empty.GML")
     not_empty_gml = os.path.join(GEO_DATA, "not_empty.GML")
-    not_empty_true = os.path.join(GEO_DATA, "not_empty_true.geojson")
+    not_empty_true_path = os.path.join(GEO_DATA, "not_empty_true.geojson")
 
     # Empty
     empty_gdf = gpd.GeoDataFrame(geometry=[], crs=WGS84)
@@ -95,5 +95,6 @@ def test_gml():
     ci.assert_geom_equal(empty, empty_gdf)
 
     # Not empty
-    not_empty = vectors.open_gml(not_empty_gml)
-    ci.assert_geom_equal(not_empty, gpd.read_file(not_empty_true))
+    not_empty_true = gpd.read_file(not_empty_true_path)
+    not_empty = vectors.open_gml(not_empty_gml, crs=not_empty_true.crs)
+    ci.assert_geom_equal(not_empty, not_empty_true)

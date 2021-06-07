@@ -327,7 +327,7 @@ def open_gml(gml_path: str, crs: str = WGS84) -> gpd.GeoDataFrame:
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
-        mask = gpd.read_file(gml_path)
+        mask = gpd.read_file(gml_path).to_crs(crs)
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
