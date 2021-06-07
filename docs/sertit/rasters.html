@@ -244,7 +244,6 @@ def get_nodata_mask(xds: XDS_TYPE) -&gt; np.ndarray:
            [0, 2, 0],
            [0, 0, 3]])
     Dimensions without coordinates: dim_0, dim_1
-    Attributes: _FillValue:  0
 
     &gt;&gt;&gt; get_nodata_mask(diag_arr)
     array([[1, 0, 0],
@@ -790,8 +789,13 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
                 f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
             )
 
+    # Default compression to LZW
     if &#34;compress&#34; not in kwargs:
         kwargs[&#34;compress&#34;] = &#34;lzw&#34;
+
+    # WORKAROUND: Pop _FillValue attribute
+    if &#34;_FillValue&#34; in xds.attrs:
+        xds.attrs.pop(&#34;_FillValue&#34;)
 
     xds.rio.to_raster(path, **kwargs)
 
@@ -1162,7 +1166,6 @@ def set_metadata(
         STATISTICS_STDDEV:         0.48560665546817
         STATISTICS_VALID_PERCENT:  80.07
         original_dtype:            uint8
-        _FillValue:                nan
     ```
 
     Args:
@@ -1528,7 +1531,6 @@ array([[1, 0, 0],
        [0, 2, 0],
        [0, 0, 3]])
 Dimensions without coordinates: dim_0, dim_1
-Attributes: _FillValue:  0
 
 &gt;&gt;&gt; get_nodata_mask(diag_arr)
 array([[1, 0, 0],
@@ -1561,7 +1563,6 @@ array([[1, 0, 0],
            [0, 2, 0],
            [0, 0, 3]])
     Dimensions without coordinates: dim_0, dim_1
-    Attributes: _FillValue:  0
 
     &gt;&gt;&gt; get_nodata_mask(diag_arr)
     array([[1, 0, 0],
@@ -2347,8 +2348,13 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
                 f&#34;Invalid dtype: {dtype}, should be convertible to numpy dtypes&#34;
             )
 
+    # Default compression to LZW
     if &#34;compress&#34; not in kwargs:
         kwargs[&#34;compress&#34;] = &#34;lzw&#34;
+
+    # WORKAROUND: Pop _FillValue attribute
+    if &#34;_FillValue&#34; in xds.attrs:
+        xds.attrs.pop(&#34;_FillValue&#34;)
 
     xds.rio.to_raster(path, **kwargs)</code></pre>
 </details>
@@ -3034,7 +3040,6 @@ Attributes: (12/13)
     STATISTICS_STDDEV:         0.48560665546817
     STATISTICS_VALID_PERCENT:  80.07
     original_dtype:            uint8
-    _FillValue:                nan
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
@@ -3106,7 +3111,6 @@ Attributes: (12/13)
         STATISTICS_STDDEV:         0.48560665546817
         STATISTICS_VALID_PERCENT:  80.07
         original_dtype:            uint8
-        _FillValue:                nan
     ```
 
     Args:
