@@ -205,7 +205,6 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
            [0, 2, 0],
            [0, 0, 3]])
     Dimensions without coordinates: dim_0, dim_1
-    Attributes: _FillValue:  0
 
     >>> get_nodata_mask(diag_arr)
     array([[1, 0, 0],
@@ -751,8 +750,13 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
                 f"Invalid dtype: {dtype}, should be convertible to numpy dtypes"
             )
 
+    # Default compression to LZW
     if "compress" not in kwargs:
         kwargs["compress"] = "lzw"
+
+    # WORKAROUND: Pop _FillValue attribute
+    if "_FillValue" in xds.attrs:
+        xds.attrs.pop("_FillValue")
 
     xds.rio.to_raster(path, **kwargs)
 
@@ -1123,7 +1127,6 @@ def set_metadata(
         STATISTICS_STDDEV:         0.48560665546817
         STATISTICS_VALID_PERCENT:  80.07
         original_dtype:            uint8
-        _FillValue:                nan
     ```
 
     Args:

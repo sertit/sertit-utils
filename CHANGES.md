@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.14.post2 (2021-06-07)
+
+- Popping `_FillValue` from xarray attribute (wrongly set there by sth) in `rasters_rio.write`
+
 ## 1.3.14.post1 (2021-06-03)
 
 - Compressing to `LZW` by default in `rasters.write` and `rasters_rio.write`
