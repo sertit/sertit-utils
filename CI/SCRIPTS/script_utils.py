@@ -43,3 +43,4 @@ def get_ci_data_path():
 RASTER_DATA = os.path.join(get_ci_data_path(), "rasters")
 GEO_DATA = os.path.join(get_ci_data_path(), "vectors")
 FILE_DATA = os.path.join(get_ci_data_path(), "files")
+DISPLAY_DATA = os.path.join(get_ci_data_path(), "display")

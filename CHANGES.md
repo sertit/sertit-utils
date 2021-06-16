@@ -2,6 +2,10 @@
 
 ## 1.3.Z (2021-MM-DD)
 
+## 1.3.15 (2021-06-16)
+- Adding a `display` file
+- Adding a scaling function in `display`
+
 ## 1.3.14.post4 (2021-06-07)
 
 - Managing naive geometries in `vectors.open_gml`
