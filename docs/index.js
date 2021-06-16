@@ -8,6 +8,7 @@ URLS=[
 "sertit/logs.html",
 "sertit/rasters.html",
 "sertit/rasters_rio.html",
+"sertit/display.html",
 "sertit/ci.html",
 "sertit/snap.html"
 ];
@@ -712,78 +713,89 @@ INDEX=[
 "func":1
 },
 {
-"ref":"sertit.ci",
+"ref":"sertit.display",
 "url":9,
+"doc":"Display tools"
+},
+{
+"ref":"sertit.display.scale",
+"url":9,
+"doc":"Scale a raster given as a np.ndarray between 0 and 1. The min max are computed with percentiles (2 by default), but can be true min/max if  perc=0 .  WARNING If 3D, the raster should be in rasterio's convention:  (count, height, width) Args: array (Union[np.ndarray, numpy.ma.masked_array]): Matrix to be scaled perc (int): Percentile to cut. 0 = min/max, 2 by default Returns: numpy array: Scaled matrix",
+"func":1
+},
+{
+"ref":"sertit.ci",
+"url":10,
 "doc":"CI tools You can use  assert_raster_equal only if you have installed sertit[full] or sertit[rasters]"
 },
 {
 "ref":"sertit.ci.get_mnt_path",
-"url":9,
+"url":10,
 "doc":"Return mounting directory  /mnt .  WARNING This won't work on Windows !   >>> get_mnt_path() '/mnt'   Returns: str: Mounting directory",
 "func":1
 },
 {
 "ref":"sertit.ci.get_db2_path",
-"url":9,
+"url":10,
 "doc":"Return mounted directory  /mnt/ds2_db2 which corresponds to  \\ds2\\database02 .  WARNING Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !   >>> get_db2_path() '/mnt/ds2_db2'   Returns: str: Mounted directory",
 "func":1
 },
 {
 "ref":"sertit.ci.get_db3_path",
-"url":9,
+"url":10,
 "doc":"Return mounted directory  /mnt/ds2_db3 which corresponds to  \\ds2\\database03 .  WARNING Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !   >>> get_db3_path() '/mnt/ds2_db3'   Returns: str: Mounted directory",
 "func":1
 },
 {
 "ref":"sertit.ci.get_db4_path",
-"url":9,
+"url":10,
 "doc":"Return mounted directory  /mnt/ds2_db4 which corresponds to  \\ds2\\database04 .  WARNING Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !   >>> get_db4_path() '/mnt/ds2_db4'   Returns: str: Mounted directory",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_raster_equal",
-"url":9,
+"url":10,
 "doc":"Assert that two rasters are equal. -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> assert_raster_equal(path, path) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_raster_almost_equal",
-"url":9,
+"url":10,
 "doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and a precision of 10^-9 on the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_dir_equal",
-"url":9,
+"url":10,
 "doc":"Assert that two directories are equal.  Useful for pytests.   >>> path = r\"CI\\DATA asters\" >>> assert_dir_equal(path, path) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Directory 1 path_2 (str): Directory 2",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_geom_equal",
-"url":9,
+"url":10,
 "doc":"Assert that two geometries are equal (do not check equality between geodataframe as they may differ on other fields). -> Useful for pytests.   >>> path = r\"CI\\DATA ectors\u0007oi.geojson\" >>> assert_geom_equal(path, path) >>>  Raises AssertionError if sth goes wrong    WARNING Only checks: - valid geometries - length of GeoDataFrame - CRS Args: geom_1 (gpd.GeoDataFrame): Geometry 1 geom_2 (gpd.GeoDataFrame): Geometry 2",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_xml_equal",
-"url":9,
+"url":10,
 "doc":"Assert that 2 XML (as etree Elements) are equal. -> Useful for pytests. Args: xml_elem_1 (etree._Element): 1st Element xml_elem_2 (etree._Element): 2nd Element",
 "func":1
 },
 {
 "ref":"sertit.snap",
-"url":10,
+"url":11,
 "doc":"SNAP tools"
 },
 {
 "ref":"sertit.snap.bytes2snap",
-"url":10,
+"url":11,
 "doc":"Convert nof bytes into snap-compatible Java options.   >>> bytes2snap(32000) '31K'   Args: nof_bytes (int): Byte nb Returns: str: Human-readable in bits",
 "func":1
 },
 {
 "ref":"sertit.snap.get_gpt_cli",
-"url":10,
+"url":11,
 "doc":"Get GPT command line with system OK optimizations. To see options, type this command line with  diag (but it won't run the graph)   >>> get_gpt_cli(\"graph_path\", other_args=[], display_snap_opt=True) SNAP Release version 8.0 SNAP home: C:\\Program Files\\snap\bin\\/ SNAP debug: null SNAP log level: WARNING Java home: c:\\program files\\snap\\jre\\jre Java version: 1.8.0_242 Processors: 16 Max memory: 53.3 GB Cache size: 30.0 GB Tile parallelism: 14 Tile size: 2048 x 2048 pixels To configure your gpt memory usage: Edit snap/bin/gpt.vmoptions To configure your gpt cache size and parallelism: Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism} ['gpt', '\"graph_path\"', '-q', 14, '-J-Xms2G -J-Xmx60G', '-J-Dsnap.log.level=WARNING', '-J-Dsnap.jai.defaultTileSize=2048', '-J-Dsnap.dataio.reader.tileWidth=2048', '-J-Dsnap.dataio.reader.tileHeigh=2048', '-J-Dsnap.jai.prefetchTiles=true', '-c 30G']   Args: graph_path (str): Graph path other_args (list): Other args as a list such as  ['-Pfile=\"in_file.zip\", '-Pout=\"out_file.dim\"'] display_snap_opt (bool): Display SNAP options via  diag Returns: list: GPT command line as a list",
 "func":1
 }
