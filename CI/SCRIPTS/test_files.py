@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing the files """
 import os
+import shutil
 import tempfile
 from datetime import date, datetime
 
@@ -138,20 +139,21 @@ def test_archived_files():
     vec_ok_path = ok_folder.joinpath(vect_name)
 
     # VECTORS
-    vect_regex = f".*{vect_name}"
-    vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
-    vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
-    vect_ok = vectors.read(vec_ok_path)
-    assert not vect_ok.empty
-    ci.assert_geom_equal(vect_ok, vect_zip)
-    ci.assert_geom_equal(vect_ok, vect_tar)
+    if shutil.which("ogr2ogr"):  # Only works if ogr2ogr can be found.
+        vect_regex = f".*{vect_name}"
+        vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
+        vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
+        vect_ok = vectors.read(vec_ok_path)
+        assert not vect_ok.empty
+        ci.assert_geom_equal(vect_ok, vect_zip)
+        ci.assert_geom_equal(vect_ok, vect_tar)
 
+    # XML
     if isinstance(FILE_DATA, CloudPath):
         zip_file = zip_file.fspath
         tar_file = tar_file.fspath
         xml_ok_path = xml_ok_path.fspath
 
-    # XML
     xml_regex = f".*{xml_name}"
     xml_zip = files.read_archived_xml(zip_file, xml_regex)
     xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
@@ -253,7 +255,7 @@ def test_json():
         obj = files.read_json(json_file)
 
         assert (
-            obj.pop("F") == test_dict.pop("F").value
+                obj.pop("F") == test_dict.pop("F").value
         )  # Enum are stored following their value
         assert obj == test_dict
 

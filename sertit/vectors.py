@@ -22,6 +22,7 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 import logging
 import os
 import re
+import shutil
 import tarfile
 import tempfile
 import zipfile
@@ -325,7 +326,7 @@ def read(
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
-    - if KML: sets correctly the drivers
+    - if KML: sets correctly the drivers and open layered KML (you may need `ogr2ogr` to make it work !)
     - if archive (only zip or tar), use a regex to look for the vector inside the archive.
         You can use this [site](https://regexr.com/) to build your regex.
     - if GML: manages the empty errors
@@ -409,7 +410,7 @@ def read(
 
             # Workaround for archived KML -> they may be empty
             # Convert KML to GeoJSON
-            if vect.empty:
+            if vect.empty and shutil.which("ogr2ogr"):  # Needs ogr2ogr here
                 tmp_dir = tempfile.TemporaryDirectory()
                 if path.suffix == ".zip":
                     with zipfile.ZipFile(path, "r") as zip_ds:

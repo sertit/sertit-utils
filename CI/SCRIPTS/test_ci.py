@@ -16,7 +16,6 @@
 # limitations under the License.
 """ Script testing the CI """
 import os
-import shutil
 import tempfile
 
 import pytest
@@ -38,10 +37,6 @@ def test_assert_dir():
         ci.assert_dir_equal(FILE_DATA, dir2)
 
 
-@s3_env
-@pytest.mark.skipif(
-    shutil.which("ogr2ogr") is None, reason="Only works if ogr2ogr can be found."
-)
 def test_assert_vect():
     """Test CI functions"""
     # Vector
