@@ -432,7 +432,7 @@ def read(
                 try:
                     misc.run_cli(cmd_line)
                 except RuntimeError as ex:
-                    raise RuntimeError("Something went wrong with ogr2ogr!") from ex
+                    raise RuntimeError(f"Something went wrong with ogr2ogr: {ex}") from ex
 
                 # Open the geojson
                 vect = gpd.read_file(vect_path_gj)
