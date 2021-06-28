@@ -85,10 +85,10 @@ def s3_env(function: Callable):
             os.environ[CI_SERTIT_S3] = "1"
             print("Using S3 files")
             with rasterio.Env(
-                    CPL_CURL_VERBOSE=True,
-                    AWS_VIRTUAL_HOSTING=False,
-                    AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-                    GDAL_DISABLE_READDIR_ON_OPEN=False,
+                CPL_CURL_VERBOSE=True,
+                AWS_VIRTUAL_HOSTING=False,
+                AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
+                GDAL_DISABLE_READDIR_ON_OPEN=False,
             ):
                 function()
 

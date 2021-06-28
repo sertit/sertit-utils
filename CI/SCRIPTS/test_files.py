@@ -255,7 +255,7 @@ def test_json():
         obj = files.read_json(json_file)
 
         assert (
-                obj.pop("F") == test_dict.pop("F").value
+            obj.pop("F") == test_dict.pop("F").value
         )  # Enum are stored following their value
         assert obj == test_dict
 
