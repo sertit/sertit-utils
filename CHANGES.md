@@ -5,6 +5,11 @@
 ## 1.4.0 (2021-06-21)
 
 - Handling S3 compatible storage data
+- [vectors] Adding a read function handling KML, GML, archived vectors...
+- [API break] `files.read_archived_vector` is removed (ise `vectors.read` instead)
+- [API break] Using pathlib objects instead of str
+- CI: Updates
+
 
 ## 1.3.15 (2021-06-16)
 

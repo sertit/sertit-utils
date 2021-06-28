@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing the CI """
 import os
+import shutil
 import tempfile
 
 import pytest
@@ -27,7 +28,7 @@ from sertit import ci, misc, rasters_rio, vectors
 
 
 @s3_env
-def test_assert():
+def test_assert_dir():
     """Test CI functions"""
     # Dirs
     dir2 = FILE_DATA.joinpath("core")
@@ -36,6 +37,12 @@ def test_assert():
     with pytest.raises(AssertionError):
         ci.assert_dir_equal(FILE_DATA, dir2)
 
+@s3_env
+@pytest.mark.skipif(
+    shutil.which("ogr2ogr") is None, reason="Only works if ogr2ogr can be found."
+)
+def test_assert_vect():
+    """Test CI functions"""
     # Vector
     vector_path = str(GEO_DATA.joinpath("aoi.geojson"))
     vector2_path = str(GEO_DATA.joinpath("aoi2.geojson"))
@@ -48,6 +55,8 @@ def test_assert():
     with pytest.raises(AssertionError):
         ci.assert_geom_equal(vec_df, vec2_df)
 
+@s3_env
+def test_assert_raster():
     # Rasters
     raster_path = RASTER_DATA.joinpath("raster.tif")
     raster2_path = RASTER_DATA.joinpath("raster_masked.tif")
@@ -85,6 +94,8 @@ def test_assert():
             rasters_rio.write(arr, meta, raster_too_much_path)
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
 
+@s3_env
+def test_assert_xml():
     # XML
     xml_folder = FILE_DATA.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
     xml_path = xml_folder.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
