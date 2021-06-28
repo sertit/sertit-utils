@@ -61,10 +61,13 @@ You can use `assert_raster_equal` only if you have installed sertit[full] or ser
 import filecmp
 import os
 from doctest import Example
+from pathlib import Path
+from typing import Union
 
 import geopandas as gpd
 import numpy as np
 import rasterio
+from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 from lxml.doctestcompare import LXMLOutputChecker
 
@@ -161,7 +164,9 @@ def get_db4_path() -&gt; str:
     return _get_db_path(4)
 
 
-def assert_raster_equal(path_1: str, path_2: str) -&gt; None:
+def assert_raster_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two rasters are equal.
 
@@ -174,16 +179,18 @@ def assert_raster_equal(path_1: str, path_2: str) -&gt; None:
     ```
 
     Args:
-        path_1 (str): Raster 1
-        path_2 (str): Raster 2
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
     &#34;&#34;&#34;
-    with rasterio.open(path_1) as dst_1:
-        with rasterio.open(path_2) as dst_2:
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
             assert dst_1.meta == dst_2.meta
             np.testing.assert_array_equal(dst_1.read(), dst_2.read())
 
 
-def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -&gt; None:
+def assert_raster_almost_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=7
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
@@ -200,11 +207,12 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -&gt; None:
     ```
 
     Args:
-        path_1 (str): Raster 1
-        path_2 (str): Raster 2
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
     &#34;&#34;&#34;
-    with rasterio.open(path_1) as dst_1:
-        with rasterio.open(path_2) as dst_2:
+
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
             assert dst_1.meta[&#34;driver&#34;] == dst_2.meta[&#34;driver&#34;]
             assert dst_1.meta[&#34;dtype&#34;] == dst_2.meta[&#34;dtype&#34;]
             assert dst_1.meta[&#34;nodata&#34;] == dst_2.meta[&#34;nodata&#34;]
@@ -218,7 +226,9 @@ def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -&gt; None:
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
-def assert_dir_equal(path_1: str, path_2: str) -&gt; None:
+def assert_dir_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two directories are equal.
 
@@ -234,11 +244,19 @@ def assert_dir_equal(path_1: str, path_2: str) -&gt; None:
         path_1 (str): Directory 1
         path_2 (str): Directory 2
     &#34;&#34;&#34;
+    path_1 = AnyPath(path_1)
+    path_2 = AnyPath(path_2)
+    assert path_1.is_dir()
+    assert path_2.is_dir()
+
     dcmp = filecmp.dircmp(path_1, path_2)
-    assert os.path.isdir(path_1)
-    assert os.path.isdir(path_2)
-    assert dcmp.left_only == []
-    assert dcmp.right_only == []
+    try:
+        assert dcmp.left_only == []
+        assert dcmp.right_only == []
+    except FileNotFoundError:
+        assert [AnyPath(path.fspath).name for path in AnyPath(path_1).iterdir()] == [
+            AnyPath(path.fspath).name for path in AnyPath(path_2).iterdir()
+        ]
 
 
 # def assert_archive_equal(path_1: str, path_2: str) -&gt; None:
@@ -482,16 +500,18 @@ aster.tif&quot;
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>path_1</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path_1</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Raster 1</dd>
-<dt><strong><code>path_2</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path_2</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Raster 2</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assert_raster_equal(path_1: str, path_2: str) -&gt; None:
+<pre><code class="python">def assert_raster_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two rasters are equal.
 
@@ -504,11 +524,11 @@ aster.tif&quot;
     ```
 
     Args:
-        path_1 (str): Raster 1
-        path_2 (str): Raster 2
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
     &#34;&#34;&#34;
-    with rasterio.open(path_1) as dst_1:
-        with rasterio.open(path_2) as dst_2:
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
             assert dst_1.meta == dst_2.meta
             np.testing.assert_array_equal(dst_1.read(), dst_2.read())</code></pre>
 </details>
@@ -532,16 +552,18 @@ aster_almost.tif&quot;
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>path_1</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path_1</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Raster 1</dd>
-<dt><strong><code>path_2</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path_2</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Raster 2</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assert_raster_almost_equal(path_1: str, path_2: str, decimal=7) -&gt; None:
+<pre><code class="python">def assert_raster_almost_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=7
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
@@ -558,11 +580,12 @@ aster_almost.tif&quot;
     ```
 
     Args:
-        path_1 (str): Raster 1
-        path_2 (str): Raster 2
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
     &#34;&#34;&#34;
-    with rasterio.open(path_1) as dst_1:
-        with rasterio.open(path_2) as dst_2:
+
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
             assert dst_1.meta[&#34;driver&#34;] == dst_2.meta[&#34;driver&#34;]
             assert dst_1.meta[&#34;dtype&#34;] == dst_2.meta[&#34;dtype&#34;]
             assert dst_1.meta[&#34;nodata&#34;] == dst_2.meta[&#34;nodata&#34;]
@@ -598,7 +621,9 @@ asters&quot;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assert_dir_equal(path_1: str, path_2: str) -&gt; None:
+<pre><code class="python">def assert_dir_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two directories are equal.
 
@@ -614,11 +639,19 @@ asters&quot;
         path_1 (str): Directory 1
         path_2 (str): Directory 2
     &#34;&#34;&#34;
+    path_1 = AnyPath(path_1)
+    path_2 = AnyPath(path_2)
+    assert path_1.is_dir()
+    assert path_2.is_dir()
+
     dcmp = filecmp.dircmp(path_1, path_2)
-    assert os.path.isdir(path_1)
-    assert os.path.isdir(path_2)
-    assert dcmp.left_only == []
-    assert dcmp.right_only == []</code></pre>
+    try:
+        assert dcmp.left_only == []
+        assert dcmp.right_only == []
+    except FileNotFoundError:
+        assert [AnyPath(path.fspath).name for path in AnyPath(path_1).iterdir()] == [
+            AnyPath(path.fspath).name for path in AnyPath(path_2).iterdir()
+        ]</code></pre>
 </details>
 </dd>
 <dt id="sertit.ci.assert_geom_equal"><code class="name flex">

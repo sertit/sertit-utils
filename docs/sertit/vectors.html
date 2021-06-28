@@ -60,11 +60,20 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 &#34;&#34;&#34;
 import logging
 import os
+import re
+import shutil
+import tarfile
+import tempfile
+import zipfile
+from pathlib import Path
 from typing import Any, Generator, Union
 
 import numpy as np
 import pandas as pd
+from cloudpathlib import AnyPath, CloudPath
 from fiona.errors import UnsupportedGeometryTypeError
+
+from sertit import files, misc, strings
 
 try:
     import geopandas as gpd
@@ -225,7 +234,9 @@ def set_kml_driver() -&gt; None:
         drivers[&#34;KML&#34;] = &#34;rw&#34;
 
 
-def get_aoi_wkt(aoi_path: str, as_str: bool = True) -&gt; Union[str, Polygon]:
+def get_aoi_wkt(
+    aoi_path: Union[str, CloudPath, Path], as_str: bool = True
+) -&gt; Union[str, Polygon]:
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -245,17 +256,18 @@ def get_aoi_wkt(aoi_path: str, as_str: bool = True) -&gt; Union[str, Polygon]:
     ```
 
     Args:
-        aoi_path (str): Absolute or relative path to an AOI.
+        aoi_path (Union[str, CloudPath, Path]): Absolute or relative path to an AOI.
             Its format should be WKT or any format read by Fiona, like shapefiles.
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
         Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
     &#34;&#34;&#34;
-    if not os.path.isfile(aoi_path):
+    aoi_path = AnyPath(aoi_path)
+    if not aoi_path.is_file():
         raise FileNotFoundError(f&#34;AOI file {aoi_path} does not exist.&#34;)
 
-    if aoi_path.endswith(&#34;.wkt&#34;):
+    if aoi_path.suffix == &#34;.wkt&#34;:
         try:
             with open(aoi_path, &#34;r&#34;) as aoi_f:
                 aoi = wkt.load(aoi_f)
@@ -263,15 +275,8 @@ def get_aoi_wkt(aoi_path: str, as_str: bool = True) -&gt; Union[str, Polygon]:
             raise ValueError(&#34;AOI WKT cannot be read&#34;) from ex
     else:
         try:
-            if aoi_path.endswith(&#34;.kml&#34;):
-                set_kml_driver()
-
             # Open file
-            aoi_file = gpd.read_file(aoi_path)
-
-            # Check if a conversion to lon/lat is needed
-            if aoi_file.crs.srs != WGS84:
-                aoi_file = aoi_file.to_crs(WGS84)
+            aoi_file = read(aoi_path, crs=WGS84)
 
             # Get envelope polygon
             geom = aoi_file[&#34;geometry&#34;]
@@ -296,7 +301,14 @@ def get_aoi_wkt(aoi_path: str, as_str: bool = True) -&gt; Union[str, Polygon]:
 
 
 def get_wider_exterior(vector: gpd.GeoDataFrame) -&gt; gpd.GeoDataFrame:
-    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Get the wider exterior of a MultiPolygon as a Polygon
+    Args:
+        vector (vector: gpd.GeoDataFrame): Polygon to simplify
+
+    Returns:
+        vector: gpd.GeoDataFrame: Wider exterior
+    &#34;&#34;&#34;
 
     # Get the footprint max (discard small holes stored in other polygons)
     wider = vector[vector.area == np.max(vector.area)]
@@ -348,38 +360,142 @@ def shapes_to_gdf(shapes: Generator, crs: str):
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
 
-def open_gml(gml_path: str, crs: Any = WGS84) -&gt; gpd.GeoDataFrame:
+def read(
+    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
+    Read any vector:
+    - if KML: sets correctly the drivers and open layered KML (you may need `ogr2ogr` to make it work !)
+    - if archive (only zip or tar), use a regex to look for the vector inside the archive.
+        You can use this [site](https://regexr.com/) to build your regex.
+    - if GML: manages the empty errors
 
-    Use crs=None to open naive geometries.
+    ```python
+    &gt;&gt;&gt; # Usual
+    &gt;&gt;&gt; path = &#39;D:\\path\\to\\vector.geojson&#39;
+    &gt;&gt;&gt; vectors.read(path, crs=WGS84)
+                           Name  ...                                           geometry
+    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+
+    &gt;&gt;&gt; # Archive
+    &gt;&gt;&gt; arch_path = &#39;D:\\path\\to\\zip.zip&#39;
+    &gt;&gt;&gt; vectors.read(arch_path, archive_regex=&#34;.*map-overlay\.kml&#34;)
+                           Name  ...                                           geometry
+    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+    ```
 
     Args:
-        gml_path (str): GML path
-        crs (Union[str, CRS, None]): Default CRS
+        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
 
     Returns:
-        gpd.GeoDataFrame: GML vector or empty geometry
+        gpd.GeoDataFrame: Read vector as a GeoDataFrame
     &#34;&#34;&#34;
-    # Read the GML file
+    tmp_dir = None
+    arch_vect_path = None
+    path = AnyPath(path)
+
+    # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
+    if isinstance(path, CloudPath):
+        path = AnyPath(path.fspath)
+
+    # Manage archive case
+    if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
+        prefix = path.suffix[-3:]
+        file_list = files.get_archived_file_list(path)
+
+        try:
+            regex = re.compile(archive_regex)
+            arch_vect_path = list(filter(regex.match, file_list))[0]
+
+            if isinstance(path, CloudPath):
+                vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
+            else:
+                vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
+        except IndexError:
+            raise FileNotFoundError(
+                f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+            )
+    elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
+    else:
+        vect_path = path
+
+    # Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
         fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
-        mask = gpd.read_file(gml_path)
+
+        # Manage KML driver
+        if str(vect_path).endswith(&#34;.kml&#34;):
+            set_kml_driver()
+            vect = gpd.GeoDataFrame()
+
+            # Document tags in KML file are separate layers for GeoPandas.
+            # When you try to get the KML content, you actually get the first layer.
+            # So you need for loop for iterating over layers.
+            # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
+            import fiona
+
+            for layer in fiona.listlayers(vect_path):
+                vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
+                vect = vect.append(vect_layer, ignore_index=True)
+
+            # Workaround for archived KML -&gt; they may be empty
+            # Convert KML to GeoJSON
+            if vect.empty and shutil.which(&#34;ogr2ogr&#34;):  # Needs ogr2ogr here
+                tmp_dir = tempfile.TemporaryDirectory()
+                if path.suffix == &#34;.zip&#34;:
+                    with zipfile.ZipFile(path, &#34;r&#34;) as zip_ds:
+                        vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
+                elif path.suffix == &#34;.tar&#34;:
+                    with tarfile.open(path, &#34;r&#34;) as tar_ds:
+                        tar_ds.extract(arch_vect_path, tmp_dir.name)
+                        vect_path = os.path.join(tmp_dir.name, arch_vect_path)
+
+                vect_path_gj = os.path.join(
+                    tmp_dir.name, os.path.basename(vect_path).replace(&#34;kml&#34;, &#34;geojson&#34;)
+                )
+                cmd_line = [
+                    &#34;ogr2ogr&#34;,
+                    &#34;-fieldTypeToString DateTime&#34;,  # Disable warning
+                    &#34;-f GeoJSON&#34;,
+                    strings.to_cmd_string(vect_path_gj),  # dst
+                    strings.to_cmd_string(vect_path),  # src
+                ]
+                try:
+                    misc.run_cli(cmd_line)
+                except RuntimeError as ex:
+                    raise RuntimeError(
+                        f&#34;Something went wrong with ogr2ogr: {ex}&#34;
+                    ) from ex
+
+                # Open the geojson
+                vect = gpd.read_file(vect_path_gj)
+        else:
+            vect = gpd.read_file(vect_path)
 
         # Manage naive geometries
-        if mask.crs and crs:
-            mask = mask.to_crs(crs)
+        if vect.crs and crs:
+            vect = vect.to_crs(crs)
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
-    except (ValueError, UnsupportedGeometryTypeError):
-        mask = gpd.GeoDataFrame(geometry=[], crs=crs)
+    except (ValueError, UnsupportedGeometryTypeError) as ex:
+        LOGGER.warning(ex)
+        vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
-    return mask</code></pre>
+    # Clean
+    if tmp_dir:
+        tmp_dir.cleanup()
+
+    return vect</code></pre>
 </details>
 </section>
 <section>
@@ -671,7 +787,7 @@ or directly from a WKT file. The use of KML has been forced (use it at your own 
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>aoi_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>aoi_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Absolute or relative path to an AOI.
 Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <dt><strong><code>as_str</code></strong> :&ensp;<code>bool</code></dt>
@@ -686,7 +802,9 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_aoi_wkt(aoi_path: str, as_str: bool = True) -&gt; Union[str, Polygon]:
+<pre><code class="python">def get_aoi_wkt(
+    aoi_path: Union[str, CloudPath, Path], as_str: bool = True
+) -&gt; Union[str, Polygon]:
     &#34;&#34;&#34;
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -706,17 +824,18 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
     ```
 
     Args:
-        aoi_path (str): Absolute or relative path to an AOI.
+        aoi_path (Union[str, CloudPath, Path]): Absolute or relative path to an AOI.
             Its format should be WKT or any format read by Fiona, like shapefiles.
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
         Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
     &#34;&#34;&#34;
-    if not os.path.isfile(aoi_path):
+    aoi_path = AnyPath(aoi_path)
+    if not aoi_path.is_file():
         raise FileNotFoundError(f&#34;AOI file {aoi_path} does not exist.&#34;)
 
-    if aoi_path.endswith(&#34;.wkt&#34;):
+    if aoi_path.suffix == &#34;.wkt&#34;:
         try:
             with open(aoi_path, &#34;r&#34;) as aoi_f:
                 aoi = wkt.load(aoi_f)
@@ -724,15 +843,8 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
             raise ValueError(&#34;AOI WKT cannot be read&#34;) from ex
     else:
         try:
-            if aoi_path.endswith(&#34;.kml&#34;):
-                set_kml_driver()
-
             # Open file
-            aoi_file = gpd.read_file(aoi_path)
-
-            # Check if a conversion to lon/lat is needed
-            if aoi_file.crs.srs != WGS84:
-                aoi_file = aoi_file.to_crs(WGS84)
+            aoi_file = read(aoi_path, crs=WGS84)
 
             # Get envelope polygon
             geom = aoi_file[&#34;geometry&#34;]
@@ -760,13 +872,27 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <p>def <span class="ident">get_wider_exterior</span>(</p><p>vector)</p>
 </code></dt>
 <dd>
-<div class="desc"><p>TODO</p></div>
+<div class="desc"><p>Get the wider exterior of a MultiPolygon as a Polygon</p>
+<h2 id="args">Args</h2>
+<p>vector (vector: gpd.GeoDataFrame): Polygon to simplify</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>vector</code></dt>
+<dd>gpd.GeoDataFrame: Wider exterior</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def get_wider_exterior(vector: gpd.GeoDataFrame) -&gt; gpd.GeoDataFrame:
-    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Get the wider exterior of a MultiPolygon as a Polygon
+    Args:
+        vector (vector: gpd.GeoDataFrame): Polygon to simplify
+
+    Returns:
+        vector: gpd.GeoDataFrame: Wider exterior
+    &#34;&#34;&#34;
 
     # Get the footprint max (discard small holes stored in other polygons)
     wider = vector[vector.area == np.max(vector.area)]
@@ -804,60 +930,181 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)</code></pre>
 </details>
 </dd>
-<dt id="sertit.vectors.open_gml"><code class="name flex">
-<p>def <span class="ident">open_gml</span>(</p><p>gml_path, <br>crs='EPSG:4326')</p>
+<dt id="sertit.vectors.read"><code class="name flex">
+<p>def <span class="ident">read</span>(</p><p>path, <br>crs=None, <br>archive_regex=None)</p>
 </code></dt>
 <dd>
-<div class="desc"><p>Overload to <code>gpd.read_file</code> managing empty GML files that usually throws an exception.</p>
-<p>Use crs=None to open naive geometries.</p>
+<div class="desc"><p>Read any vector:
+- if KML: sets correctly the drivers and open layered KML (you may need <code>ogr2ogr</code> to make it work !)
+- if archive (only zip or tar), use a regex to look for the vector inside the archive.
+You can use this <a href="https://regexr.com/">site</a> to build your regex.
+- if GML: manages the empty errors</p>
+<pre><code class="language-python">&gt;&gt;&gt; # Usual
+&gt;&gt;&gt; path = 'D:\path\to\vector.geojson'
+&gt;&gt;&gt; vectors.read(path, crs=WGS84)
+                       Name  ...                                           geometry
+0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+
+&gt;&gt;&gt; # Archive
+&gt;&gt;&gt; arch_path = 'D:\path\to\zip.zip'
+&gt;&gt;&gt; vectors.read(arch_path, archive_regex=&quot;.*map-overlay\.kml&quot;)
+                       Name  ...                                           geometry
+0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+</code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>gml_path</code></strong> :&ensp;<code>str</code></dt>
-<dd>GML path</dd>
-<dt><strong><code>crs</code></strong> :&ensp;<code>Union[str, CRS, None]</code></dt>
-<dd>Default CRS</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
+<dd>Path to vector to read. In case of archive, path to the archive.</dd>
+<dt><strong><code>crs</code></strong></dt>
+<dd>Wanted CRS of the vector. If None, using naive or origin CRS.</dd>
+<dt><strong><code>archive_regex</code></strong> :&ensp;<code>str</code></dt>
+<dd>[Archive only] Regex for the wanted vector inside the archive</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>gpd.GeoDataFrame</code></dt>
-<dd>GML vector or empty geometry</dd>
+<dd>Read vector as a GeoDataFrame</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def open_gml(gml_path: str, crs: Any = WGS84) -&gt; gpd.GeoDataFrame:
+<pre><code class="python">def read(
+    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
-    Overload to `gpd.read_file` managing empty GML files that usually throws an exception.
+    Read any vector:
+    - if KML: sets correctly the drivers and open layered KML (you may need `ogr2ogr` to make it work !)
+    - if archive (only zip or tar), use a regex to look for the vector inside the archive.
+        You can use this [site](https://regexr.com/) to build your regex.
+    - if GML: manages the empty errors
 
-    Use crs=None to open naive geometries.
+    ```python
+    &gt;&gt;&gt; # Usual
+    &gt;&gt;&gt; path = &#39;D:\\path\\to\\vector.geojson&#39;
+    &gt;&gt;&gt; vectors.read(path, crs=WGS84)
+                           Name  ...                                           geometry
+    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+
+    &gt;&gt;&gt; # Archive
+    &gt;&gt;&gt; arch_path = &#39;D:\\path\\to\\zip.zip&#39;
+    &gt;&gt;&gt; vectors.read(arch_path, archive_regex=&#34;.*map-overlay\.kml&#34;)
+                           Name  ...                                           geometry
+    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+    ```
 
     Args:
-        gml_path (str): GML path
-        crs (Union[str, CRS, None]): Default CRS
+        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
 
     Returns:
-        gpd.GeoDataFrame: GML vector or empty geometry
+        gpd.GeoDataFrame: Read vector as a GeoDataFrame
     &#34;&#34;&#34;
-    # Read the GML file
+    tmp_dir = None
+    arch_vect_path = None
+    path = AnyPath(path)
+
+    # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
+    if isinstance(path, CloudPath):
+        path = AnyPath(path.fspath)
+
+    # Manage archive case
+    if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
+        prefix = path.suffix[-3:]
+        file_list = files.get_archived_file_list(path)
+
+        try:
+            regex = re.compile(archive_regex)
+            arch_vect_path = list(filter(regex.match, file_list))[0]
+
+            if isinstance(path, CloudPath):
+                vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
+            else:
+                vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
+        except IndexError:
+            raise FileNotFoundError(
+                f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+            )
+    elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
+        raise TypeError(
+            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
+        )
+    else:
+        vect_path = path
+
+    # Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
         fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
-        mask = gpd.read_file(gml_path)
+
+        # Manage KML driver
+        if str(vect_path).endswith(&#34;.kml&#34;):
+            set_kml_driver()
+            vect = gpd.GeoDataFrame()
+
+            # Document tags in KML file are separate layers for GeoPandas.
+            # When you try to get the KML content, you actually get the first layer.
+            # So you need for loop for iterating over layers.
+            # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
+            import fiona
+
+            for layer in fiona.listlayers(vect_path):
+                vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
+                vect = vect.append(vect_layer, ignore_index=True)
+
+            # Workaround for archived KML -&gt; they may be empty
+            # Convert KML to GeoJSON
+            if vect.empty and shutil.which(&#34;ogr2ogr&#34;):  # Needs ogr2ogr here
+                tmp_dir = tempfile.TemporaryDirectory()
+                if path.suffix == &#34;.zip&#34;:
+                    with zipfile.ZipFile(path, &#34;r&#34;) as zip_ds:
+                        vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
+                elif path.suffix == &#34;.tar&#34;:
+                    with tarfile.open(path, &#34;r&#34;) as tar_ds:
+                        tar_ds.extract(arch_vect_path, tmp_dir.name)
+                        vect_path = os.path.join(tmp_dir.name, arch_vect_path)
+
+                vect_path_gj = os.path.join(
+                    tmp_dir.name, os.path.basename(vect_path).replace(&#34;kml&#34;, &#34;geojson&#34;)
+                )
+                cmd_line = [
+                    &#34;ogr2ogr&#34;,
+                    &#34;-fieldTypeToString DateTime&#34;,  # Disable warning
+                    &#34;-f GeoJSON&#34;,
+                    strings.to_cmd_string(vect_path_gj),  # dst
+                    strings.to_cmd_string(vect_path),  # src
+                ]
+                try:
+                    misc.run_cli(cmd_line)
+                except RuntimeError as ex:
+                    raise RuntimeError(
+                        f&#34;Something went wrong with ogr2ogr: {ex}&#34;
+                    ) from ex
+
+                # Open the geojson
+                vect = gpd.read_file(vect_path_gj)
+        else:
+            vect = gpd.read_file(vect_path)
 
         # Manage naive geometries
-        if mask.crs and crs:
-            mask = mask.to_crs(crs)
+        if vect.crs and crs:
+            vect = vect.to_crs(crs)
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
-    except (ValueError, UnsupportedGeometryTypeError):
-        mask = gpd.GeoDataFrame(geometry=[], crs=crs)
+    except (ValueError, UnsupportedGeometryTypeError) as ex:
+        LOGGER.warning(ex)
+        vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
-    return mask</code></pre>
+    # Clean
+    if tmp_dir:
+        tmp_dir.cleanup()
+
+    return vect</code></pre>
 </details>
 </dd>
 </dl>
@@ -939,7 +1186,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="sertit.vectors.get_aoi_wkt" href="#sertit.vectors.get_aoi_wkt">get_aoi_wkt</a></code></li>
 <li><code><a title="sertit.vectors.get_wider_exterior" href="#sertit.vectors.get_wider_exterior">get_wider_exterior</a></code></li>
 <li><code><a title="sertit.vectors.shapes_to_gdf" href="#sertit.vectors.shapes_to_gdf">shapes_to_gdf</a></code></li>
-<li><code><a title="sertit.vectors.open_gml" href="#sertit.vectors.open_gml">open_gml</a></code></li>
+<li><code><a title="sertit.vectors.read" href="#sertit.vectors.read">read</a></code></li>
 </ul>
 </li>
 </ul>

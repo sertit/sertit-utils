@@ -120,13 +120,13 @@ INDEX=[
 {
 "ref":"sertit.vectors.get_aoi_wkt",
 "url":3,
-"doc":"Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles,  .) or directly from a WKT file. The use of KML has been forced (use it at your own risks !). See: https: fiona.readthedocs.io/en/latest/fiona.html fiona.open It is assessed that: - only  one polygon composes the AOI (as only the first one is read) - it should be specified in lat/lon (WGS84) if a WKT file is provided   >>> path = \"path\\to\\vec.geojson\"  OK with ESRI Shapefile, geojson, WKT, KML . >>> get_aoi_wkt(path) 'POLYGON Z  46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974 0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089 34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000 '   Args: aoi_path (str): Absolute or relative path to an AOI. Its format should be WKT or any format read by Fiona, like shapefiles. as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry Returns: Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon",
+"doc":"Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles,  .) or directly from a WKT file. The use of KML has been forced (use it at your own risks !). See: https: fiona.readthedocs.io/en/latest/fiona.html fiona.open It is assessed that: - only  one polygon composes the AOI (as only the first one is read) - it should be specified in lat/lon (WGS84) if a WKT file is provided   >>> path = \"path\\to\\vec.geojson\"  OK with ESRI Shapefile, geojson, WKT, KML . >>> get_aoi_wkt(path) 'POLYGON Z  46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974 0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089 34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000 '   Args: aoi_path (Union[str, CloudPath, Path]): Absolute or relative path to an AOI. Its format should be WKT or any format read by Fiona, like shapefiles. as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry Returns: Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon",
 "func":1
 },
 {
 "ref":"sertit.vectors.get_wider_exterior",
 "url":3,
-"doc":"TODO",
+"doc":"Get the wider exterior of a MultiPolygon as a Polygon Args: vector (vector: gpd.GeoDataFrame): Polygon to simplify Returns: vector: gpd.GeoDataFrame: Wider exterior",
 "func":1
 },
 {
@@ -136,9 +136,9 @@ INDEX=[
 "func":1
 },
 {
-"ref":"sertit.vectors.open_gml",
+"ref":"sertit.vectors.read",
 "url":3,
-"doc":"Overload to  gpd.read_file managing empty GML files that usually throws an exception. Use crs=None to open naive geometries. Args: gml_path (str): GML path crs (Union[str, CRS, None]): Default CRS Returns: gpd.GeoDataFrame: GML vector or empty geometry",
+"doc":"Read any vector: - if KML: sets correctly the drivers and open layered KML (you may need  ogr2ogr to make it work !) - if archive (only zip or tar), use a regex to look for the vector inside the archive. You can use this [site](https: regexr.com/) to build your regex. - if GML: manages the empty errors   >>>  Usual >>> path = 'D:\\path\\to\\vector.geojson' >>> vectors.read(path, crs=WGS84) Name  . geometry 0 Sentinel-1 Image Overlay  . POLYGON  0.85336 42.24660, -2.32032 42.65493, . >>>  Archive >>> arch_path = 'D:\\path\\to\\zip.zip' >>> vectors.read(arch_path, archive_regex=\". map-overlay\\.kml\") Name  . geometry 0 Sentinel-1 Image Overlay  . POLYGON  0.85336 42.24660, -2.32032 42.65493, .   Args: path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive. crs: Wanted CRS of the vector. If None, using naive or origin CRS. archive_regex (str): [Archive only] Regex for the wanted vector inside the archive Returns: gpd.GeoDataFrame: Read vector as a GeoDataFrame",
 "func":1
 },
 {
@@ -155,25 +155,25 @@ INDEX=[
 {
 "ref":"sertit.files.listdir_abspath",
 "url":4,
-"doc":"Get absolute path of all files in the given directory. It is the same function than  os.listdir but returning absolute paths.   >>> folder = \".\" >>> listdir_abspath(folder) ['D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\files.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters_rio.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\__init__.py']   Args: directory (str): Relative or absolute path to the directory to be scanned Returns: str: Absolute path of all files in the given directory",
+"doc":"Get absolute path of all files in the given directory. It is the same function than  os.listdir but returning absolute paths.   >>> folder = \".\" >>> listdir_abspath(folder) ['D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\files.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters_rio.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py', 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\__init__.py']   Args: directory (Union[str, CloudPath, Path]): Relative or absolute path to the directory to be scanned Returns: str: Absolute path of all files in the given directory",
 "func":1
 },
 {
 "ref":"sertit.files.to_abspath",
 "url":4,
-"doc":"Return the absolute path of the specified path and check if it exists If not: - If it is a file (aka has an extension), it raises an exception - If it is a folder, it creates it To be used with argparse to retrieve the absolute path of a file, like:   >>> parser = argparse.ArgumentParser() >>>  Add config file path key >>> parser.add_argument(\" config\", help=\"Config file path (absolute or relative)\", type=to_abspath)   Args: path_str (str): Path as a string (relative or absolute) create (bool): Create directory if not existing Returns: str: Absolute path",
+"doc":"Return the absolute path of the specified path and check if it exists If not: - If it is a file (aka has an extension), it raises an exception - If it is a folder, it creates it To be used with argparse to retrieve the absolute path of a file, like:   >>> parser = argparse.ArgumentParser() >>>  Add config file path key >>> parser.add_argument(\" config\", help=\"Config file path (absolute or relative)\", type=to_abspath)   Args: path (Union[str, CloudPath, Path]): Path as a string (relative or absolute) create (bool): Create directory if not existing Returns: Union[CloudPath, Path]: Absolute path",
 "func":1
 },
 {
 "ref":"sertit.files.real_rel_path",
 "url":4,
-"doc":"Gives the real relative path from a starting folder. (and not just adding   \\  between the start and the target)   >>> path = 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit' >>> start = os.path.join(\" \", \" \") >>> real_rel_path(path, start) 'sertit-utils\\sertit'   Args: path (str): Path to make relative start (str): Start, the path being relative from this folder. Returns: Relative path",
+"doc":"Gives the real relative path from a starting folder. (and not just adding   \\  between the start and the target)   >>> path = r'D:\\_SERTIT_UTILS\\sertit-utils\\sertit' >>> start = os.path.join(\".\", \" \", \" \") >>> real_rel_path(path, start) 'sertit-utils\\sertit'   Args: path (Union[str, CloudPath, Path]): Path to make relative start (Union[str, CloudPath, Path]): Start, the path being relative from this folder. Returns: Relative path",
 "func":1
 },
 {
 "ref":"sertit.files.extract_file",
 "url":4,
-"doc":"Extract an archived file (zip or others). Overwrites if specified. For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.   >>> file_path = 'D:\\path\\to\\zip.zip' >>> output = 'D:\\path\\to\\output' >>> extract_file(file_path, output, overwrite=True) D:\\path\\to\\output\\zip'   Args: file_path (str): Archive file path output (str): Output where to put the extracted file overwrite (bool): Overwrite found extracted files Returns: Union[list, str]: Extracted file paths (as str if only one)",
+"doc":"Extract an archived file (zip or others). Overwrites if specified. For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.   >>> file_path = 'D:\\path\\to\\zip.zip' >>> output = 'D:\\path\\to\\output' >>> extract_file(file_path, output, overwrite=True) D:\\path\\to\\output\\zip'   Args: file_path (str): Archive file path output (str): Output where to put the extracted file overwrite (bool): Overwrite found extracted files Returns: Union[list, CloudPath, Path]: Extracted file paths (as str if only one)",
 "func":1
 },
 {
@@ -185,67 +185,61 @@ INDEX=[
 {
 "ref":"sertit.files.get_archived_file_list",
 "url":4,
-"doc":"Get the list of all the files contained in an archive.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> get_archived_file_list(arch_path, file_regex) ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']   Args: archive_path (str): Archive path Returns: list: All files contained in the given archive",
+"doc":"Get the list of all the files contained in an archive.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> get_archived_file_list(arch_path, file_regex) ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']   Args: archive_path (Union[str, CloudPath, Path]): Archive path Returns: list: All files contained in the given archive",
 "func":1
 },
 {
 "ref":"sertit.files.get_archived_rio_path",
 "url":4,
-"doc":"Get archived file path from inside the archive, to be read with rasterio: -  zip+file: {zip_path}!{file_name} -  tar+file: {tar_path}!{file_name} See [here](https: rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip dataset-identifiers) for more information.  WARNING It wont be readable by pandas, geopandas or xmltree !  WARNING If  as_list is  False , it will only return the first file matched ! You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> path = get_archived_tif_path(arch_path, file_regex) 'zip+file: D:\\path\\to\\output\\zip!dir/filename.tif' >>> rasterio.open(path)    Args: archive_path (str): Archive path file_regex (str): File regex (used by re) as it can be found in the getmembers() list as_list (bool): If true, returns a list (including all found files). If false, returns only the first match Returns: Union[list, str]: Band path that can be read by rasterio",
+"doc":"Get archived file path from inside the archive, to be read with rasterio: -  zip+file: {zip_path}!{file_name} -  tar+file: {tar_path}!{file_name} See [here](https: rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip dataset-identifiers) for more information.  WARNING It wont be readable by pandas, geopandas or xmltree !  WARNING If  as_list is  False , it will only return the first file matched ! You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> path = get_archived_tif_path(arch_path, file_regex) 'zip+file: D:\\path\\to\\output\\zip!dir/filename.tif' >>> rasterio.open(path)    Args: archive_path (Union[str, CloudPath, Path]): Archive path file_regex (str): File regex (used by re) as it can be found in the getmembers() list as_list (bool): If true, returns a list (including all found files). If false, returns only the first match Returns: Union[list, str]: Band path that can be read by rasterio",
 "func":1
 },
 {
 "ref":"sertit.files.read_archived_xml",
 "url":4,
-"doc":"Read archived XML from  zip or  tar archives. You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> read_archived_xml(arch_path, file_regex)    Args: archive_path (str): Archive path xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list Returns: etree._Element: XML file",
-"func":1
-},
-{
-"ref":"sertit.files.read_archived_vector",
-"url":4,
-"doc":"Read archived vector from  zip or  tar archives. You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> files.read_archived_vector(arch_path, \". map-overlay\\.kml\") Name  . geometry 0 Sentinel-1 Image Overlay  . POLYGON  0.85336 42.24660, -2.32032 42.65493, .   Args: archive_path (str): Archive path vector_regex (str): Vector regex (used by re) as it can be found in the getmembers() list Returns: gpd.GeoDataFrame: Vector",
+"doc":"Read archived XML from  zip or  tar archives. You can use this [site](https: regexr.com/) to build your regex.   >>> arch_path = 'D:\\path\\to\\zip.zip' >>> file_regex = '. dir. file_name'  Use . for any character >>> read_archived_xml(arch_path, file_regex)    Args: archive_path (Union[str, CloudPath, Path]): Archive path xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list Returns: etree._Element: XML file",
 "func":1
 },
 {
 "ref":"sertit.files.archive",
 "url":4,
-"doc":"Archives a folder recursively.   >>> folder_path = 'D:\\path\\to\\folder_to_archive' >>> archive_path = 'D:\\path\\to\\output' >>> archive = archive(folder_path, archive_path, fmt=\"gztar\") 'D:\\path\\to\\output\\folder_to_archive.tar.gz'   Args: folder_path (str): Folder to archive archive_path (str): Archive path, with or without extension fmt (str): Format of the archive, used by  shutil.make_archive . Choose between [zip, tar, gztar, bztar, xztar] Returns: str: Archive filename",
+"doc":"Archives a folder recursively.   >>> folder_path = 'D:\\path\\to\\folder_to_archive' >>> archive_path = 'D:\\path\\to\\output' >>> archive = archive(folder_path, archive_path, fmt=\"gztar\") 'D:\\path\\to\\output\\folder_to_archive.tar.gz'   Args: folder_path (Union[str, CloudPath, Path]): Folder to archive archive_path (Union[str, CloudPath, Path]): Archive path, with or without extension fmt (str): Format of the archive, used by  shutil.make_archive . Choose between [zip, tar, gztar, bztar, xztar] Returns: str: Archive filename",
 "func":1
 },
 {
 "ref":"sertit.files.add_to_zip",
 "url":4,
-"doc":"Add folders to an already existing zip file (recursively).   >>> zip_path = 'D:\\path\\to\\zip.zip' >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2'] >>> add_to_zip(zip_path, dirs_to_add) >>>  zip.zip contains 2 more folders, dir1 and dir2   Args: zip_path (str): Already existing zip file dirs_to_add (Union[list, str]): Directories to add",
+"doc":"Add folders to an already existing zip file (recursively).   >>> zip_path = 'D:\\path\\to\\zip.zip' >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2'] >>> add_to_zip(zip_path, dirs_to_add) >>>  zip.zip contains 2 more folders, dir1 and dir2   Args: zip_path (Union[str, CloudPath, Path]): Already existing zip file dirs_to_add (Union[list, str]): Directories to add",
 "func":1
 },
 {
 "ref":"sertit.files.get_filename",
 "url":4,
-"doc":"Get file name (without extension) from file path, ie:   >>> file_path = 'D:\\path\\to\\filename.zip' >>> get_file_name(file_path) 'filename'   Args: file_path (str): Absolute or relative file path (the file doesn't need to exist) Returns: str: File name (without extension)",
+"doc":"Get file name (without extension) from file path, ie:   >>> file_path = 'D:\\path\\to\\filename.zip' >>> get_file_name(file_path) 'filename'   Args: file_path (Union[str, CloudPath, Path]): Absolute or relative file path (the file doesn't need to exist) Returns: str: File name (without extension)",
 "func":1
 },
 {
 "ref":"sertit.files.remove",
 "url":4,
-"doc":"Deletes a file or a directory (recursively) using  shutil.rmtree or  os.remove .   >>> path_to_remove = 'D:\\path\\to\\remove'  Could also be a file >>> remove(path_to_remove) path_to_remove deleted   Args: path (str): Path to be removed",
+"doc":"Deletes a file or a directory (recursively) using  shutil.rmtree or  os.remove .   >>> path_to_remove = 'D:\\path\\to\\remove'  Could also be a file >>> remove(path_to_remove) path_to_remove deleted   Args: path (Union[str, CloudPath, Path]): Path to be removed",
 "func":1
 },
 {
 "ref":"sertit.files.remove_by_pattern",
 "url":4,
-"doc":"Remove files corresponding to a pattern from a directory.   >>> directory = 'D:\\path\\to\\folder' >>> os.listdir(directory) [\"huhu.exe\", \"blabla.geojson\", \"haha.txt\", \"blabla\"] >>> remove(directory, \"blabla \") >>> os.listdir(directory) [\"huhu.exe\", \"haha.txt\"]  Removes also directories >>> remove(directory, \" \", extension=\"txt\") >>> os.listdir(directory) [\"huhu.exe\"]   Args: directory (str): Directory where to find the files name_with_wildcard (str): Filename (wildcards accepted) extension (str): Extension wanted, optional. With or without point. (yaml or .yaml accepted)",
+"doc":"Remove files corresponding to a pattern from a directory.   >>> directory = 'D:\\path\\to\\folder' >>> os.listdir(directory) [\"huhu.exe\", \"blabla.geojson\", \"haha.txt\", \"blabla\"] >>> remove(directory, \"blabla \") >>> os.listdir(directory) [\"huhu.exe\", \"haha.txt\"]  Removes also directories >>> remove(directory, \" \", extension=\"txt\") >>> os.listdir(directory) [\"huhu.exe\"]   Args: directory (Union[str, CloudPath, Path]): Directory where to find the files name_with_wildcard (str): Filename (wildcards accepted) extension (str): Extension wanted, optional. With or without point. (yaml or .yaml accepted)",
 "func":1
 },
 {
 "ref":"sertit.files.copy",
 "url":4,
-"doc":"Copy a file or a directory (recursively) with  copytree or  copy2 .   >>> src = 'D:\\path\\to\\copy' >>> dst = 'D:\\path\\to\\output' >>> copy(src, dst) copydir 'D:\\path\\to\\output\\copy' >>> src = 'D:\\path\\to\\copy.txt' >>> dst = 'D:\\path\\to\\output\\huhu.txt' >>> copyfile = copy(src, dst) 'D:\\path\\to\\output\\huhu.txt' but with the content of copy.txt   Args: src (str): Source Path dst (str): Destination Path (file or folder) Returns: str: New path",
+"doc":"Copy a file or a directory (recursively) with  copytree or  copy2 .   >>> src = 'D:\\path\\to\\copy' >>> dst = 'D:\\path\\to\\output' >>> copy(src, dst) copydir 'D:\\path\\to\\output\\copy' >>> src = 'D:\\path\\to\\copy.txt' >>> dst = 'D:\\path\\to\\output\\huhu.txt' >>> copyfile = copy(src, dst) 'D:\\path\\to\\output\\huhu.txt' but with the content of copy.txt   Args: src (Union[str, CloudPath, Path]): Source Path dst (Union[str, CloudPath, Path]): Destination Path (file or folder) Returns: Union[CloudPath, Path]: New path",
 "func":1
 },
 {
 "ref":"sertit.files.find_files",
 "url":4,
-"doc":"Returns matching files recursively from a list of root paths. Regex are not allowed, only exact matches are looking for (using  os.walk() )   >>> root_path = 'D:\\root' >>> dir1_path = 'D:\\root\\dir1' >>> dir2_path = 'D:\\root\\dir2' >>> os.listdir(dir1_path) [\"haha.txt\", \"huhu.txt\", \"hoho.txt\"] >>> os.listdir(dir2_path) [\"huhu.txt\", \"hehe.txt\"] >>> find_files(\"huhu.txt\", root_path) ['D:\\root\\dir1\\huhu.txt', 'D:\\root\\dir2\\huhu.txt'] >>> find_files(\"huhu.txt\", root_path, max_nof_files=1) ['D:\\root\\dir1\\huhu.txt'] >>> find_files(\"huhu.txt\", root_path, max_nof_files=1, get_as_str=True) found = 'D:\\root\\dir1\\huhu.txt'   Args: names (Union[list, str]): File names. root_paths (Union[list, str]): Root paths max_nof_files (int): Maximum number of files (set to -1 for unlimited) get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list Returns: list: File name",
+"doc":"Returns matching files recursively from a list of root paths. Regex are allowed (using glob)   >>> root_path = 'D:\\root' >>> dir1_path = 'D:\\root\\dir1' >>> dir2_path = 'D:\\root\\dir2' >>> os.listdir(dir1_path) [\"haha.txt\", \"huhu.txt\", \"hoho.txt\"] >>> os.listdir(dir2_path) [\"huhu.txt\", \"hehe.txt\"] >>> find_files(\"huhu.txt\", root_path) ['D:\\root\\dir1\\huhu.txt', 'D:\\root\\dir2\\huhu.txt'] >>> find_files(\"huhu.txt\", root_path, max_nof_files=1) ['D:\\root\\dir1\\huhu.txt'] >>> find_files(\"huhu.txt\", root_path, max_nof_files=1, get_as_str=True) found = 'D:\\root\\dir1\\huhu.txt'   Args: names (Union[list, str]): File names. root_paths (Union[list, str]): Root paths max_nof_files (int): Maximum number of files (set to -1 for unlimited) get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list Returns: list: File name",
 "func":1
 },
 {
@@ -273,25 +267,25 @@ INDEX=[
 {
 "ref":"sertit.files.read_json",
 "url":4,
-"doc":"Read a JSON file   >>> json_path = 'D:\\path\\to\\json.json' >>> read_json(json_path, print_file=False) {\"A\": 1, \"B\": 2}   Args: json_file (str): Path to JSON file print_file (bool): Print the configuration file Returns: dict: JSON data",
+"doc":"Read a JSON file   >>> json_path = 'D:\\path\\to\\json.json' >>> read_json(json_path, print_file=False) {\"A\": 1, \"B\": 2}   Args: json_file (Union[str, CloudPath, Path]): Path to JSON file print_file (bool): Print the configuration file Returns: dict: JSON data",
 "func":1
 },
 {
 "ref":"sertit.files.save_json",
 "url":4,
-"doc":"Save a JSON file, with datetime, numpy types and Enum management.   >>> output_json = 'D:\\path\\to\\json.json' >>> json_dict = {\"A\": np.int64(1), \"B\": datetime.today(), \"C\": SomeEnum.some_name} >>> save_json(output_json, json_dict)   Args: output_json (str): Output file json_dict (dict): Json dictionary",
+"doc":"Save a JSON file, with datetime, numpy types and Enum management.   >>> output_json = 'D:\\path\\to\\json.json' >>> json_dict = {\"A\": np.int64(1), \"B\": datetime.today(), \"C\": SomeEnum.some_name} >>> save_json(output_json, json_dict)   Args: output_json (Union[str, CloudPath, Path]): Output file json_dict (dict): Json dictionary",
 "func":1
 },
 {
 "ref":"sertit.files.save_obj",
 "url":4,
-"doc":"Save an object as a pickle (can save any Python objects).   >>> output_pkl = 'D:\\path\\to\\pickle.pkl' >>> pkl_dict = {\"A\": np.ones([3, 3]), \"B\": datetime.today(), \"C\": SomeEnum.some_name} >>> save_json(output_pkl, pkl_dict)   Args: obj (Any): Any object serializable path (str): Path where to write the pickle",
+"doc":"Save an object as a pickle (can save any Python objects).   >>> output_pkl = 'D:\\path\\to\\pickle.pkl' >>> pkl_dict = {\"A\": np.ones([3, 3]), \"B\": datetime.today(), \"C\": SomeEnum.some_name} >>> save_json(output_pkl, pkl_dict)   Args: obj (Any): Any object serializable path (Union[str, CloudPath, Path]): Path where to write the pickle",
 "func":1
 },
 {
 "ref":"sertit.files.load_obj",
 "url":4,
-"doc":"Load a pickled object.   >>> output_pkl = 'D:\\path\\to\\pickle.pkl' >>> load_obj(output_pkl) {\"A\": np.ones([3, 3]), \"B\": datetime.today(), \"C\": SomeEnum.some_name}   Args: path (str): Path of the pickle Returns: object (Any): Pickled object",
+"doc":"Load a pickled object.   >>> output_pkl = 'D:\\path\\to\\pickle.pkl' >>> load_obj(output_pkl) {\"A\": np.ones([3, 3]), \"B\": datetime.today(), \"C\": SomeEnum.some_name}   Args: path (Union[str, CloudPath, Path]): Path of the pickle Returns: object (Any): Pickled object",
 "func":1
 },
 {
@@ -673,7 +667,7 @@ INDEX=[
 {
 "ref":"sertit.rasters_rio.get_dim_img_path",
 "url":8,
-"doc":"Get the image path from a  BEAM-DIMAP data. A  BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.   >>> dim_path = \"path\\to\\dimap.dim\"  BEAM-DIMAP image >>> img_path = get_dim_img_path(dim_path) >>>  Read raster >>> raster, meta = read(img_path)   Args: dim_path (str): DIM path (.dim or .data) img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data) Returns: str: .img file",
+"doc":"Get the image path from a  BEAM-DIMAP data. A  BEAM-DIMAP file cannot be opened by rasterio, although its .img file can.   >>> dim_path = \"path\\to\\dimap.dim\"  BEAM-DIMAP image >>> img_path = get_dim_img_path(dim_path) >>>  Read raster >>> raster, meta = read(img_path)   Args: dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data) img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data) Returns: str: .img file",
 "func":1
 },
 {
@@ -755,13 +749,13 @@ INDEX=[
 {
 "ref":"sertit.ci.assert_raster_equal",
 "url":10,
-"doc":"Assert that two rasters are equal. -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> assert_raster_equal(path, path) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
+"doc":"Assert that two rasters are equal. -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> assert_raster_equal(path, path) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (Union[str, CloudPath, Path]): Raster 1 path_2 (Union[str, CloudPath, Path]): Raster 2",
 "func":1
 },
 {
 "ref":"sertit.ci.assert_raster_almost_equal",
 "url":10,
-"doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and a precision of 10^-9 on the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Raster 1 path_2 (str): Raster 2",
+"doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and a precision of 10^-9 on the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (Union[str, CloudPath, Path]): Raster 1 path_2 (Union[str, CloudPath, Path]): Raster 2",
 "func":1
 },
 {

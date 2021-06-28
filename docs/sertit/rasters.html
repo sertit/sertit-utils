@@ -60,10 +60,12 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 &#34;&#34;&#34;
 import os
 from functools import wraps
+from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray
+from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
 from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
@@ -167,13 +169,13 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
                     raise TypeError(&#34;Function not available for xarray.Dataset&#34;) from ex
         else:
             # Get name
-            if isinstance(path_or_ds, str):
-                name = path_or_ds
+            if isinstance(path_or_ds, (str, Path, CloudPath)):
+                name = str(path_or_ds)
             else:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                path_or_ds, masked=True, default_name=name
+                str(path_or_ds), masked=True, default_name=name
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
@@ -1415,13 +1417,13 @@ True
                     raise TypeError(&#34;Function not available for xarray.Dataset&#34;) from ex
         else:
             # Get name
-            if isinstance(path_or_ds, str):
-                name = path_or_ds
+            if isinstance(path_or_ds, (str, Path, CloudPath)):
+                name = str(path_or_ds)
             else:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                path_or_ds, masked=True, default_name=name
+                str(path_or_ds), masked=True, default_name=name
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out

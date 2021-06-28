@@ -327,6 +327,9 @@ def to_cmd_string(unquoted_str: str) -&gt; str:
     Returns:
         str: Quoted string
     &#34;&#34;&#34;
+    if not isinstance(unquoted_str, str):
+        unquoted_str = str(unquoted_str)
+
     cmd_str = unquoted_str
     if not unquoted_str.startswith(&#39;&#34;&#39;):
         cmd_str = &#39;&#34;&#39; + cmd_str
@@ -836,6 +839,9 @@ datetime(2020, 9, 9, 10, 50, 55)
     Returns:
         str: Quoted string
     &#34;&#34;&#34;
+    if not isinstance(unquoted_str, str):
+        unquoted_str = str(unquoted_str)
+
     cmd_str = unquoted_str
     if not unquoted_str.startswith(&#39;&#34;&#39;):
         cmd_str = &#39;&#34;&#39; + cmd_str

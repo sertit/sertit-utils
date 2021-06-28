@@ -61,7 +61,10 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from enum import Enum, unique
+from pathlib import Path
 from typing import Any, Union
+
+from cloudpathlib import AnyPath, CloudPath
 
 from sertit.logs import SU_NAME
 
@@ -434,7 +437,7 @@ def in_docker() -&gt; bool:
 
 
 @contextmanager
-def chdir(newdir: str) -&gt; None:
+def chdir(newdir: Union[str, CloudPath, Path]) -&gt; None:
     &#34;&#34;&#34;
     Change current directory, used as a context manager, ie:
 
@@ -448,8 +451,8 @@ def chdir(newdir: str) -&gt; None:
     Args:
         newdir (str): New directory
     &#34;&#34;&#34;
+    newdir = AnyPath(newdir)
     prevdir = os.getcwd()
-    newdir = newdir.replace(&#34;\\&#34;, &#34;/&#34;)
     os.chdir(os.path.expanduser(newdir))
     try:
         yield
@@ -960,7 +963,7 @@ else:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@contextmanager
-def chdir(newdir: str) -&gt; None:
+def chdir(newdir: Union[str, CloudPath, Path]) -&gt; None:
     &#34;&#34;&#34;
     Change current directory, used as a context manager, ie:
 
@@ -974,8 +977,8 @@ def chdir(newdir: str) -&gt; None:
     Args:
         newdir (str): New directory
     &#34;&#34;&#34;
+    newdir = AnyPath(newdir)
     prevdir = os.getcwd()
-    newdir = newdir.replace(&#34;\\&#34;, &#34;/&#34;)
     os.chdir(os.path.expanduser(newdir))
     try:
         yield
