@@ -29,10 +29,6 @@ AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
 AWS_S3_ENDPOINT = "s3.unistra.fr"
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
 
-# Set in
-os.environ[AWS_ACCESS_KEY_ID] = "G8YRL7SYIZJ6YN2Q787X"
-os.environ[AWS_SECRET_ACCESS_KEY] = "40yTOFoJFFy1R2mgE1GlAyp13Mquu8a4tJdKDpzL"
-
 
 @unique
 class Polarization(ListEnum):
@@ -85,17 +81,18 @@ def s3_env(function: Callable):
         print("Using on disk files")
         function()
 
-        os.environ[CI_SERTIT_S3] = "1"
-        print("Using S3 files")
-        with rasterio.Env(
-            CPL_CURL_VERBOSE=True,
-            AWS_VIRTUAL_HOSTING=False,
-            AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-            GDAL_DISABLE_READDIR_ON_OPEN=False,
-        ):
-            function()
+        if os.getenv(AWS_SECRET_ACCESS_KEY):
+            os.environ[CI_SERTIT_S3] = "1"
+            print("Using S3 files")
+            with rasterio.Env(
+                    CPL_CURL_VERBOSE=True,
+                    AWS_VIRTUAL_HOSTING=False,
+                    AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
+                    GDAL_DISABLE_READDIR_ON_OPEN=False,
+            ):
+                function()
 
-        os.environ[CI_SERTIT_S3] = "0"
+            os.environ[CI_SERTIT_S3] = "0"
 
     return s3_env_wrapper
 
