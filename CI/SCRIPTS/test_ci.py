@@ -37,6 +37,7 @@ def test_assert_dir():
     with pytest.raises(AssertionError):
         ci.assert_dir_equal(FILE_DATA, dir2)
 
+
 @s3_env
 @pytest.mark.skipif(
     shutil.which("ogr2ogr") is None, reason="Only works if ogr2ogr can be found."
@@ -54,6 +55,7 @@ def test_assert_vect():
     ci.assert_geom_equal(vec_df, vec_df)
     with pytest.raises(AssertionError):
         ci.assert_geom_equal(vec_df, vec2_df)
+
 
 @s3_env
 def test_assert_raster():
@@ -93,6 +95,7 @@ def test_assert_raster():
             raster_too_much_path = os.path.join(tmp, "raster_too_much.tif")
             rasters_rio.write(arr, meta, raster_too_much_path)
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
+
 
 @s3_env
 def test_assert_xml():
