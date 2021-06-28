@@ -16,7 +16,6 @@
 # limitations under the License.
 """ Tools for paths and files """
 
-import glob
 import hashlib
 import json
 import logging
@@ -93,7 +92,7 @@ def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
 
 
 def to_abspath(
-        path: Union[str, CloudPath, Path], create: bool = True
+    path: Union[str, CloudPath, Path], create: bool = True
 ) -> Union[CloudPath, Path]:
     """
     Return the absolute path of the specified path and check if it exists
@@ -135,7 +134,7 @@ def to_abspath(
 
 
 def real_rel_path(
-        path: Union[str, CloudPath, Path], start: Union[str, CloudPath, Path]
+    path: Union[str, CloudPath, Path], start: Union[str, CloudPath, Path]
 ) -> Union[CloudPath, Path]:
     """
     Gives the real relative path from a starting folder.
@@ -165,9 +164,9 @@ def real_rel_path(
 
 
 def extract_file(
-        file_path: Union[str, CloudPath, Path],
-        output: Union[str, CloudPath, Path],
-        overwrite: bool = False,
+    file_path: Union[str, CloudPath, Path],
+    output: Union[str, CloudPath, Path],
+    overwrite: bool = False,
 ) -> Union[list, CloudPath, Path]:
     """
     Extract an archived file (zip or others). Overwrites if specified.
@@ -276,7 +275,7 @@ def extract_file(
 
 
 def extract_files(
-        archives: list, output: Union[str, CloudPath, Path], overwrite: bool = False
+    archives: list, output: Union[str, CloudPath, Path], overwrite: bool = False
 ) -> list:
     """
     Extract all archived files. Overwrites if specified.
@@ -338,7 +337,7 @@ def get_archived_file_list(archive_path: Union[str, CloudPath, Path]) -> list:
 
 
 def get_archived_rio_path(
-        archive_path: Union[str, CloudPath, Path], file_regex: str, as_list: bool = False
+    archive_path: Union[str, CloudPath, Path], file_regex: str, as_list: bool = False
 ) -> Union[list, CloudPath, Path]:
     """
     Get archived file path from inside the archive, to be read with rasterio:
@@ -413,7 +412,7 @@ def get_archived_rio_path(
 
 
 def read_archived_xml(
-        archive_path: Union[str, CloudPath, Path], xml_regex: str
+    archive_path: Union[str, CloudPath, Path], xml_regex: str
 ) -> etree._Element:
     """
     Read archived XML from `zip` or `tar` archives.
@@ -471,9 +470,9 @@ def read_archived_xml(
 
 
 def archive(
-        folder_path: Union[str, CloudPath, Path],
-        archive_path: Union[str, CloudPath, Path],
-        fmt: str = "zip",
+    folder_path: Union[str, CloudPath, Path],
+    archive_path: Union[str, CloudPath, Path],
+    fmt: str = "zip",
 ) -> Union[CloudPath, Path]:
     """
     Archives a folder recursively.
@@ -510,8 +509,8 @@ def archive(
 
 
 def add_to_zip(
-        zip_path: Union[str, CloudPath, Path],
-        dirs_to_add: Union[list, str, CloudPath, Path],
+    zip_path: Union[str, CloudPath, Path],
+    dirs_to_add: Union[list, str, CloudPath, Path],
 ) -> None:
     """
     Add folders to an already existing zip file (recursively).
@@ -614,7 +613,9 @@ def remove(path: Union[str, CloudPath, Path]) -> None:
 
 
 def remove_by_pattern(
-        directory: Union[str, CloudPath, Path], name_with_wildcard: str = "*", extension: str = None
+    directory: Union[str, CloudPath, Path],
+    name_with_wildcard: str = "*",
+    extension: str = None,
 ) -> None:
     """
     Remove files corresponding to a pattern from a directory.
@@ -647,7 +648,9 @@ def remove_by_pattern(
         remove(file)
 
 
-def copy(src: Union[str, CloudPath, Path], dst: Union[str, CloudPath, Path]) -> Union[CloudPath, Path]:
+def copy(
+    src: Union[str, CloudPath, Path], dst: Union[str, CloudPath, Path]
+) -> Union[CloudPath, Path]:
     """
     Copy a file or a directory (recursively) with `copytree` or `copy2`.
 
@@ -688,10 +691,10 @@ def copy(src: Union[str, CloudPath, Path], dst: Union[str, CloudPath, Path]) -> 
 
 
 def find_files(
-        names: Union[list, str],
-        root_paths: Union[list, str, CloudPath, Path],
-        max_nof_files: int = -1,
-        get_as_str: bool = False,
+    names: Union[list, str],
+    root_paths: Union[list, str, CloudPath, Path],
+    max_nof_files: int = -1,
+    get_as_str: bool = False,
 ) -> Union[list, str]:
     """
     Returns matching files recursively from a list of root paths.
@@ -914,12 +917,12 @@ def load_obj(path: Union[str, CloudPath, Path]) -> Any:
 # too many arguments
 # pylint: disable=R0913
 def get_file_in_dir(
-        directory: Union[str, CloudPath, Path],
-        pattern_str: str,
-        extension: str = None,
-        filename_only: bool = False,
-        get_list: bool = False,
-        exact_name: bool = False,
+    directory: Union[str, CloudPath, Path],
+    pattern_str: str,
+    extension: str = None,
+    filename_only: bool = False,
+    get_list: bool = False,
+    exact_name: bool = False,
 ) -> Union[str, list]:
     """
     Get one or all matching files (pattern + extension) from inside a directory.

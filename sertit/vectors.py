@@ -30,10 +30,10 @@ from typing import Any, Generator, Union
 
 import numpy as np
 import pandas as pd
-from cloudpathlib import CloudPath, AnyPath
+from cloudpathlib import AnyPath, CloudPath
 from fiona.errors import UnsupportedGeometryTypeError
 
-from sertit import files, strings, misc
+from sertit import files, misc, strings
 
 try:
     import geopandas as gpd
@@ -76,7 +76,7 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
 
 
 def from_polygon_to_bounds(
-        polygon: Union[Polygon, MultiPolygon]
+    polygon: Union[Polygon, MultiPolygon]
 ) -> (float, float, float, float):
     """
     Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
@@ -105,7 +105,7 @@ def from_polygon_to_bounds(
 
 
 def from_bounds_to_polygon(
-        left: float, bottom: float, right: float, top: float
+    left: float, bottom: float, right: float, top: float
 ) -> Polygon:
     """
     Convert the bounds to a `shapely.polygon`.
@@ -130,7 +130,7 @@ def from_bounds_to_polygon(
 
 
 def get_geodf(
-        geometry: Union[Polygon, list, gpd.GeoSeries], crs: str
+    geometry: Union[Polygon, list, gpd.GeoSeries], crs: str
 ) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
@@ -194,7 +194,9 @@ def set_kml_driver() -> None:
         drivers["KML"] = "rw"
 
 
-def get_aoi_wkt(aoi_path: Union[str, CloudPath, Path], as_str: bool = True) -> Union[str, Polygon]:
+def get_aoi_wkt(
+    aoi_path: Union[str, CloudPath, Path], as_str: bool = True
+) -> Union[str, Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -318,7 +320,9 @@ def shapes_to_gdf(shapes: Generator, crs: str):
     return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
 
-def read(path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None) -> gpd.GeoDataFrame:
+def read(
+    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+) -> gpd.GeoDataFrame:
     """
     Read any vector:
     - if KML: sets correctly the drivers
@@ -398,8 +402,9 @@ def read(path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str 
             # So you need for loop for iterating over layers.
             # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
             import fiona
+
             for layer in fiona.listlayers(vect_path):
-                vect_layer = gpd.read_file(vect_path, driver='KML', layer=layer)
+                vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
                 vect = vect.append(vect_layer, ignore_index=True)
 
             # Workaround for archived KML -> they may be empty
@@ -414,7 +419,9 @@ def read(path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str 
                         tar_ds.extract(arch_vect_path, tmp_dir.name)
                         vect_path = os.path.join(tmp_dir.name, arch_vect_path)
 
-                vect_path_gj = os.path.join(tmp_dir.name, os.path.basename(vect_path).replace("kml", "geojson"))
+                vect_path_gj = os.path.join(
+                    tmp_dir.name, os.path.basename(vect_path).replace("kml", "geojson")
+                )
                 cmd_line = [
                     "ogr2ogr",
                     "-fieldTypeToString DateTime",  # Disable warning

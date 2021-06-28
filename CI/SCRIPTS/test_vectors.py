@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing vector functions """
-import geopandas as gpd
 import pytest
 from shapely import wkt
 

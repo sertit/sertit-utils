@@ -125,7 +125,9 @@ def get_db4_path() -> str:
     return _get_db_path(4)
 
 
-def assert_raster_equal(path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]) -> None:
+def assert_raster_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -> None:
     """
     Assert that two rasters are equal.
 
@@ -147,7 +149,9 @@ def assert_raster_equal(path_1: Union[str, CloudPath, Path], path_2: Union[str, 
             np.testing.assert_array_equal(dst_1.read(), dst_2.read())
 
 
-def assert_raster_almost_equal(path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=7) -> None:
+def assert_raster_almost_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=7
+) -> None:
     """
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
@@ -183,7 +187,9 @@ def assert_raster_almost_equal(path_1: Union[str, CloudPath, Path], path_2: Unio
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
-def assert_dir_equal(path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]) -> None:
+def assert_dir_equal(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
+) -> None:
     """
     Assert that two directories are equal.
 
@@ -209,8 +215,9 @@ def assert_dir_equal(path_1: Union[str, CloudPath, Path], path_2: Union[str, Clo
         assert dcmp.left_only == []
         assert dcmp.right_only == []
     except FileNotFoundError:
-        assert [AnyPath(path.fspath).name for path in AnyPath(path_1).iterdir()] == [AnyPath(path.fspath).name for path in AnyPath(path_2).iterdir()]
-
+        assert [AnyPath(path.fspath).name for path in AnyPath(path_1).iterdir()] == [
+            AnyPath(path.fspath).name for path in AnyPath(path_2).iterdir()
+        ]
 
 
 # def assert_archive_equal(path_1: str, path_2: str) -> None:

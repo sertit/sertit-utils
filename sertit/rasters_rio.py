@@ -1071,9 +1071,12 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     vrt_root = os.path.dirname(crs_merged_path)
     try:
         rel_paths = [
-            strings.to_cmd_string(str(files.real_rel_path(path, vrt_root))) for path in crs_paths
+            strings.to_cmd_string(str(files.real_rel_path(path, vrt_root)))
+            for path in crs_paths
         ]
-        rel_vrt = strings.to_cmd_string(str(files.real_rel_path(crs_merged_path, vrt_root)))
+        rel_vrt = strings.to_cmd_string(
+            str(files.real_rel_path(crs_merged_path, vrt_root))
+        )
     except ValueError:
         rel_paths = crs_paths
         rel_vrt = crs_merged_path

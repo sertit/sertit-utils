@@ -26,7 +26,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Any, Union
 
-from cloudpathlib import CloudPath, AnyPath
+from cloudpathlib import AnyPath, CloudPath
 
 from sertit.logs import SU_NAME
 

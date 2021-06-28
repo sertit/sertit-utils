@@ -174,7 +174,9 @@ def test_vrt():
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = RASTER_DATA.joinpath("DIM.dim")
-    assert rasters_rio.get_dim_img_path(dim_path) == RASTER_DATA.joinpath("DIM.data", "dim.img")
+    assert rasters_rio.get_dim_img_path(dim_path) == RASTER_DATA.joinpath(
+        "DIM.data", "dim.img"
+    )
 
 
 def test_bit():

@@ -26,7 +26,7 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray
-from cloudpathlib import AnyPath, CloudPath
+from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
 from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
@@ -136,7 +136,7 @@ def path_xarr_dst(function: Callable) -> Callable:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                    str(path_or_ds), masked=True, default_name=name
+                str(path_or_ds), masked=True, default_name=name
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
@@ -239,12 +239,12 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
 
 @path_xarr_dst
 def _vectorize(
-        xds: PATH_XARR_DS,
-        values: Union[None, int, list] = None,
-        keep_values: bool = True,
-        dissolve: bool = False,
-        get_nodata: bool = False,
-        default_nodata: int = 0,
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    dissolve: bool = False,
+    get_nodata: bool = False,
+    default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a xarray, both to get classes or nodata.
@@ -319,11 +319,11 @@ def _vectorize(
 
 @path_xarr_dst
 def vectorize(
-        xds: PATH_XARR_DS,
-        values: Union[None, int, list] = None,
-        keep_values: bool = True,
-        dissolve: bool = False,
-        default_nodata: int = 0,
+    xds: PATH_XARR_DS,
+    values: Union[None, int, list] = None,
+    keep_values: bool = True,
+    dissolve: bool = False,
+    default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
     Vectorize a `xarray` to get the class vectors.
@@ -395,7 +395,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     )
     return nodata[
         nodata.raster_val != 0
-        ]  # 0 is the values of not nodata put there by rasterio
+    ]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_xarr_dst
@@ -431,10 +431,10 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 
 @path_xarr_dst
 def mask(
-        xds: PATH_XARR_DS,
-        shapes: Union[gpd.GeoDataFrame, Polygon, list],
-        nodata: Optional[int] = None,
-        **kwargs,
+    xds: PATH_XARR_DS,
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs,
 ) -> XDS_TYPE:
     """
     Masking a dataset:
@@ -483,11 +483,11 @@ def mask(
 
 @path_xarr_dst
 def paint(
-        xds: PATH_XARR_DS,
-        shapes: Union[gpd.GeoDataFrame, Polygon, list],
-        value: int,
-        invert: bool = False,
-        **kwargs,
+    xds: PATH_XARR_DS,
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    value: int,
+    invert: bool = False,
+    **kwargs,
 ) -> XDS_TYPE:
     """
     Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
@@ -550,10 +550,10 @@ def paint(
 
 @path_xarr_dst
 def crop(
-        xds: PATH_XARR_DS,
-        shapes: Union[gpd.GeoDataFrame, Polygon, list],
-        nodata: Optional[int] = None,
-        **kwargs,
+    xds: PATH_XARR_DS,
+    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    nodata: Optional[int] = None,
+    **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
@@ -601,12 +601,12 @@ def crop(
 
 @path_arr_dst
 def read(
-        dst: PATH_ARR_DS,
-        resolution: Union[tuple, list, float] = None,
-        size: Union[tuple, list] = None,
-        resampling: Resampling = Resampling.nearest,
-        masked: bool = True,
-        indexes: Union[int, list] = None,
+    dst: PATH_ARR_DS,
+    resolution: Union[tuple, list, float] = None,
+    size: Union[tuple, list] = None,
+    resampling: Resampling = Resampling.nearest,
+    masked: bool = True,
+    indexes: Union[int, list] = None,
 ) -> XDS_TYPE:
     """
     Read a raster dataset from a :
@@ -650,7 +650,7 @@ def read(
     # Read data (and load it to discard lock)
     with xarray.set_options(keep_attrs=True):
         with rioxarray.open_rasterio(
-                dst, default_name=files.get_filename(dst.name)
+            dst, default_name=files.get_filename(dst.name)
         ) as xda:
             orig_dtype = xda.dtype
             if indexes:
@@ -764,9 +764,9 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -> None:
 
 
 def collocate(
-        master_xds: XDS_TYPE,
-        slave_xds: XDS_TYPE,
-        resampling: Resampling = Resampling.nearest,
+    master_xds: XDS_TYPE,
+    slave_xds: XDS_TYPE,
+    resampling: Resampling = Resampling.nearest,
 ) -> XDS_TYPE:
     """
     Collocate two georeferenced arrays:
@@ -807,7 +807,7 @@ def collocate(
 
 @path_xarr_dst
 def sieve(
-        xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
+    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
 ) -> XDS_TYPE:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
@@ -1024,7 +1024,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
 
 
 def read_bit_array(
-        bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
+    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
 ) -> Union[np.ndarray, list]:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
@@ -1057,7 +1057,7 @@ def read_bit_array(
 
 
 def read_uint8_array(
-        bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
+    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
 ) -> Union[np.ndarray, list]:
     """
     Read 8 bit arrays as a succession of binary masks.
@@ -1078,7 +1078,7 @@ def read_uint8_array(
 
 
 def set_metadata(
-        naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
+    naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
 ) -> xr.DataArray:
     """
     Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs).
@@ -1193,7 +1193,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
 
 
 def where(
-        cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
+    cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
 ) -> xr.DataArray:
     """
     Overloads `xr.where` with:

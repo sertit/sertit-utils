@@ -27,6 +27,7 @@ import xarray as xr
 from CI.SCRIPTS.script_utils import RASTER_DATA, s3_env
 from sertit import ci, files, rasters, vectors
 
+
 @s3_env
 def test_rasters():
     """Test raster functions"""
@@ -246,7 +247,9 @@ def test_write():
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = RASTER_DATA.joinpath("DIM.dim")
-    assert rasters.get_dim_img_path(dim_path) == RASTER_DATA.joinpath("DIM.data", "dim.img")
+    assert rasters.get_dim_img_path(dim_path) == RASTER_DATA.joinpath(
+        "DIM.data", "dim.img"
+    )
 
 
 def test_bit():

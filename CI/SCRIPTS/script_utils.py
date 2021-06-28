@@ -20,7 +20,7 @@ from enum import unique
 from functools import wraps
 
 import rasterio
-from cloudpathlib import S3Client, AnyPath
+from cloudpathlib import AnyPath, S3Client
 
 from sertit.misc import ListEnum
 
@@ -48,9 +48,11 @@ def get_proj_path():
     """Get project path"""
     if int(os.getenv(CI_SERTIT_S3, 0)):
         # ON S3
-        client = S3Client(endpoint_url=f"https://{AWS_S3_ENDPOINT}",
-                          aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-                          aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY))
+        client = S3Client(
+            endpoint_url=f"https://{AWS_S3_ENDPOINT}",
+            aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
+            aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+        )
         client.set_as_default_client()
         return AnyPath("s3://sertit-sertit-utils-ci")
     else:
@@ -85,11 +87,12 @@ def s3_env(function: Callable):
 
         os.environ[CI_SERTIT_S3] = "1"
         print("Using S3 files")
-        with rasterio.Env(CPL_CURL_VERBOSE=True,
-                          AWS_VIRTUAL_HOSTING=False,
-                          AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-                          GDAL_DISABLE_READDIR_ON_OPEN=False,
-                          ):
+        with rasterio.Env(
+            CPL_CURL_VERBOSE=True,
+            AWS_VIRTUAL_HOSTING=False,
+            AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
+            GDAL_DISABLE_READDIR_ON_OPEN=False,
+        ):
             function()
 
         os.environ[CI_SERTIT_S3] = "0"

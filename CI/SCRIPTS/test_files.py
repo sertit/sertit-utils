@@ -24,7 +24,6 @@ import pytest
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 
-from CI.SCRIPTS import script_utils
 from CI.SCRIPTS.script_utils import FILE_DATA, Polarization, s3_env
 from sertit import ci, files, misc, vectors
 
