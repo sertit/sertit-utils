@@ -23,7 +23,10 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from enum import Enum, unique
+from pathlib import Path
 from typing import Any, Union
+
+from cloudpathlib import CloudPath, AnyPath
 
 from sertit.logs import SU_NAME
 
@@ -396,7 +399,7 @@ def in_docker() -> bool:
 
 
 @contextmanager
-def chdir(newdir: str) -> None:
+def chdir(newdir: Union[str, CloudPath, Path]) -> None:
     """
     Change current directory, used as a context manager, ie:
 
@@ -410,8 +413,8 @@ def chdir(newdir: str) -> None:
     Args:
         newdir (str): New directory
     """
+    newdir = AnyPath(newdir)
     prevdir = os.getcwd()
-    newdir = newdir.replace("\\", "/")
     os.chdir(os.path.expanduser(newdir))
     try:
         yield

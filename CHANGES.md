@@ -1,8 +1,13 @@
 # Release History
 
-## 1.3.Z (2021-MM-DD)
+## 1.4.Z (2021-MM-DD)
+
+## 1.4.0 (2021-06-21)
+
+- Handling S3 compatible storage data
 
 ## 1.3.15 (2021-06-16)
+
 - Adding a `display` file
 - Adding a scaling function in `display`
 

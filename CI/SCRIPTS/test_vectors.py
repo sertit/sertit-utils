@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing vector functions """
-import os
-
 import geopandas as gpd
 import pytest
 from shapely import wkt
@@ -28,9 +26,9 @@ from sertit.vectors import WGS84
 
 def test_vectors():
     """Test geo functions"""
-    kml_path = os.path.join(GEO_DATA, "aoi.kml")
-    wkt_path = os.path.join(GEO_DATA, "aoi.wkt")
-    utm_path = os.path.join(GEO_DATA, "aoi.geojson")
+    kml_path = GEO_DATA.joinpath("aoi.kml")
+    wkt_path = GEO_DATA.joinpath("aoi.wkt")
+    utm_path = GEO_DATA.joinpath("aoi.geojson")
 
     # KML
     vectors.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)
@@ -59,7 +57,7 @@ def test_vectors():
     assert wkt.dumps(aoi) == aoi_str
 
     # UTM and bounds
-    aoi = gpd.read_file(kml_path)
+    aoi = vectors.read(kml_path)
     assert "EPSG:32638" == vectors.corresponding_utm_projection(
         aoi.centroid.x, aoi.centroid.y
     )
@@ -85,21 +83,21 @@ def test_vectors():
 
 def test_gml():
     """Test GML functions"""
-    empty_gml = os.path.join(GEO_DATA, "empty.GML")
-    not_empty_gml = os.path.join(GEO_DATA, "not_empty.GML")
-    naive_gml = os.path.join(GEO_DATA, "naive.GML")
-    not_empty_true_path = os.path.join(GEO_DATA, "not_empty_true.geojson")
+    empty_gml = GEO_DATA.joinpath("empty.GML")
+    not_empty_gml = GEO_DATA.joinpath("not_empty.GML")
+    naive_gml = GEO_DATA.joinpath("naive.GML")
+    not_empty_true_path = GEO_DATA.joinpath("not_empty_true.geojson")
 
     # Empty
-    empty_gdf = gpd.GeoDataFrame(geometry=[], crs=WGS84)
-    empty = vectors.open_gml(empty_gml)
-    ci.assert_geom_equal(empty, empty_gdf)
+    empty_gdf = vectors.read(empty_gml, crs=WGS84)
+    assert empty_gdf.empty
+    assert empty_gdf.crs == WGS84
 
     # Not empty
-    not_empty_true = gpd.read_file(not_empty_true_path)
-    not_empty = vectors.open_gml(not_empty_gml, crs=not_empty_true.crs)
+    not_empty_true = vectors.read(not_empty_true_path)
+    not_empty = vectors.read(not_empty_gml, crs=not_empty_true.crs)
     ci.assert_geom_equal(not_empty, not_empty_true)
 
     # Naive
-    naive = vectors.open_gml(naive_gml, crs=None)
+    naive = vectors.read(naive_gml, crs=None)
     assert naive.crs is None

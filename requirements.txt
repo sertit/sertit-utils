@@ -15,11 +15,12 @@ twine
 pdoc3
 
 # Libs for all platforms
+cloudpathlib[all]
 tqdm
 psutil
 lxml
 colorlog
-rasterio>=1.2.2
+rasterio[s3]>=1.2.2
 xarray>=0.18.0
 rioxarray>=0.4.0
 geopandas>=0.9.0

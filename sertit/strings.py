@@ -289,6 +289,9 @@ def to_cmd_string(unquoted_str: str) -> str:
     Returns:
         str: Quoted string
     """
+    if not isinstance(unquoted_str, str):
+        unquoted_str = str(unquoted_str)
+
     cmd_str = unquoted_str
     if not unquoted_str.startswith('"'):
         cmd_str = '"' + cmd_str

@@ -21,9 +21,11 @@ You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 import os
 from functools import wraps
+from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
+from cloudpathlib import AnyPath, CloudPath
 
 try:
     import geopandas as gpd
@@ -98,8 +100,8 @@ def path_arr_dst(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        if isinstance(path_or_arr_or_ds, str):
-            with rasterio.open(path_or_arr_or_ds) as dst:
+        if isinstance(path_or_arr_or_ds, (str, Path, CloudPath)):
+            with rasterio.open(str(path_or_arr_or_ds)) as dst:
                 out = function(dst, *args, **kwargs)
         elif isinstance(path_or_arr_or_ds, tuple):
             arr, meta = path_or_arr_or_ds
@@ -804,7 +806,7 @@ def write(
         raster = np.expand_dims(raster, axis=0)
 
     # Write product
-    with rasterio.open(path, "w", **out_meta) as dst:
+    with rasterio.open(str(path), "w", **out_meta) as dst:
         dst.write(raster)
 
 
@@ -941,7 +943,7 @@ def sieve(
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: str, img_name: str = "*") -> str:
+def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = "*") -> str:
     """
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -956,18 +958,19 @@ def get_dim_img_path(dim_path: str, img_name: str = "*") -> str:
     ```
 
     Args:
-        dim_path (str): DIM path (.dim or .data)
+        dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
         str: .img file
     """
-    if dim_path.endswith(".dim"):
-        dim_path = dim_path.replace(".dim", ".data")
+    dim_path = AnyPath(dim_path)
+    if dim_path.suffix == ".dim":
+        dim_path = dim_path.with_suffix(".data")
 
-    assert dim_path.endswith(".data") and os.path.isdir(dim_path)
+    assert dim_path.suffix == ".data" and dim_path.is_dir()
 
-    return files.get_file_in_dir(dim_path, img_name, extension="img")
+    return files.get_file_in_dir(dim_path, img_name, extension="img", exact_name=True)
 
 
 @path_arr_dst
@@ -1049,12 +1052,31 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
         crs_merged_path (str): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     """
+
+    for id, path in enumerate(crs_paths):
+        crs_paths[id] = path
+
+    # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
+    crs_merged_path = AnyPath(crs_merged_path)
+    if isinstance(crs_merged_path, CloudPath):
+        crs_merged_path = AnyPath(crs_merged_path.fspath)
+
+    for i, crs_path in enumerate(crs_paths):
+        path = AnyPath(crs_path)
+        if isinstance(path, CloudPath):
+            path = AnyPath(path.fspath)
+        crs_paths[i] = path
+
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
-    rel_paths = [
-        strings.to_cmd_string(files.real_rel_path(path, vrt_root)) for path in crs_paths
-    ]
-    rel_vrt = strings.to_cmd_string(files.real_rel_path(crs_merged_path, vrt_root))
+    try:
+        rel_paths = [
+            strings.to_cmd_string(str(files.real_rel_path(path, vrt_root))) for path in crs_paths
+        ]
+        rel_vrt = strings.to_cmd_string(str(files.real_rel_path(crs_merged_path, vrt_root)))
+    except ValueError:
+        rel_paths = crs_paths
+        rel_vrt = crs_merged_path
 
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
@@ -1091,7 +1113,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     crs_datasets = []
     try:
         for path in crs_paths:
-            crs_datasets.append(rasterio.open(path))
+            crs_datasets.append(rasterio.open(str(path)))
 
         # Merge all datasets
         merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)

@@ -14,12 +14,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=["tqdm", "lxml", "psutil", "geopandas>=0.9.0"],
+    install_requires=["tqdm", "lxml", "psutil", "geopandas>=0.9.0", "cloudpathlib[all]"],
     extras_require={
         "colorlog": ["colorlog"],
-        "full": ["xarray>=0.18.0", "rioxarray>=0.4.0", "colorlog"],
-        "rasters_rio": ["rasterio>=1.2.2"],
-        "rasters": ["xarray>=0.18.0", "rioxarray>=0.4.0"],
+        "full": ["xarray>=0.18.0", "rasterio[s3]>=1.2.2", "rioxarray>=0.4.0", "colorlog"],
+        "rasters_rio": ["rasterio[s3]>=1.2.2"],
+        "rasters": ["xarray>=0.18.0", "rasterio[s3]>=1.2.2", "rioxarray>=0.4.0"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",

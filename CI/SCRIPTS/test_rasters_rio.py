@@ -19,45 +19,48 @@ import os
 import shutil
 import tempfile
 
-import geopandas as gpd
 import numpy as np
 import pytest
 import rasterio
 
-from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import ci, rasters_rio
+from CI.SCRIPTS.script_utils import RASTER_DATA, s3_env
+from sertit import ci, rasters_rio, vectors
 
 
+@s3_env
 def test_rasters_rio():
     """Test raster functions"""
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
-    raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
-    raster_cropped_path = os.path.join(RASTER_DATA, "raster_cropped.tif")
-    raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
-    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
-    raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
-    mask_path = os.path.join(RASTER_DATA, "raster_mask.geojson")
-    extent_path = os.path.join(RASTER_DATA, "extent.geojson")
-    footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
-    vect_truth_path = os.path.join(RASTER_DATA, "vector.geojson")
-    diss_truth_path = os.path.join(RASTER_DATA, "dissolved.geojson")
-    nodata_truth_path = os.path.join(RASTER_DATA, "nodata.geojson")
-    valid_truth_path = os.path.join(RASTER_DATA, "valid.geojson")
+    # Rasters
+    raster_path = RASTER_DATA.joinpath("raster.tif")
+    raster_masked_path = RASTER_DATA.joinpath("raster_masked.tif")
+    raster_cropped_path = RASTER_DATA.joinpath("raster_cropped.tif")
+    raster_sieved_path = RASTER_DATA.joinpath("raster_sieved.tif")
+    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
+    raster_merged_gtiff_path = RASTER_DATA.joinpath("raster_merged.tif")
+
+    # Vectors
+    mask_path = RASTER_DATA.joinpath("raster_mask.geojson")
+    extent_path = RASTER_DATA.joinpath("extent.geojson")
+    footprint_path = RASTER_DATA.joinpath("footprint.geojson")
+    vect_truth_path = RASTER_DATA.joinpath("vector.geojson")
+    diss_truth_path = RASTER_DATA.joinpath("dissolved.geojson")
+    nodata_truth_path = RASTER_DATA.joinpath("nodata.geojson")
+    valid_truth_path = RASTER_DATA.joinpath("valid.geojson")
 
     # Create tmp file
     # VRT needs to be build on te same disk
-    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         # Get Extent
         extent = rasters_rio.get_extent(raster_path)
-        truth_extent = gpd.read_file(extent_path)
+        truth_extent = vectors.read(extent_path)
         ci.assert_geom_equal(extent, truth_extent)
 
         # Get Footprint
         footprint = rasters_rio.get_footprint(raster_path)
-        truth_footprint = gpd.read_file(footprint_path)
+        truth_footprint = vectors.read(footprint_path)
         ci.assert_geom_equal(footprint, truth_footprint)
 
-        with rasterio.open(raster_path) as dst:
+        with rasterio.open(str(raster_path)) as dst:
             # Read
             raster, meta = rasters_rio.read(dst)
             raster_1, meta1 = rasters_rio.read(dst, resolution=20)
@@ -81,7 +84,7 @@ def test_rasters_rio():
 
             # Mask
             raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
-            mask = gpd.read_file(mask_path)
+            mask = vectors.read(mask_path)
             mask_arr, mask_meta = rasters_rio.mask(dst, mask.geometry)
             rasters_rio.write(mask_arr, mask_meta, raster_masked_out)
 
@@ -122,8 +125,8 @@ def test_rasters_rio():
                 raster_path, values=[1, 255], keep_values=False
             )
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
-            vect_truth = gpd.read_file(vect_truth_path)
-            diss_truth = gpd.read_file(diss_truth_path)
+            vect_truth = vectors.read(vect_truth_path)
+            diss_truth = vectors.read(diss_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
             ci.assert_geom_equal(vect_val_diss, diss_truth)
@@ -133,12 +136,12 @@ def test_rasters_rio():
 
             # Get valid vec
             valid_vec = rasters_rio.get_valid_vector(raster_path)
-            valid_truth = gpd.read_file(valid_truth_path)
+            valid_truth = vectors.read(valid_truth_path)
             ci.assert_geom_equal(valid_vec, valid_truth)
 
             # Get nodata vec
             nodata_vec = rasters_rio.get_nodata_vector(raster_path)
-            nodata_truth = gpd.read_file(nodata_truth_path)
+            nodata_truth = vectors.read(nodata_truth_path)
             ci.assert_geom_equal(nodata_vec, nodata_truth)
 
         # Tests
@@ -149,16 +152,17 @@ def test_rasters_rio():
         ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
 
 
+@s3_env
 @pytest.mark.skipif(
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():
-    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
-    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    raster_merged_vrt_path = RASTER_DATA.joinpath("raster_merged.vrt")
+    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
+    raster_path = RASTER_DATA.joinpath("raster.tif")
 
-    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         # Merge VRT
         raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
         rasters_rio.merge_vrt(
@@ -169,10 +173,8 @@ def test_vrt():
 
 def test_dim():
     """Test on BEAM-DIMAP function"""
-    dim_path = os.path.join(RASTER_DATA, "DIM.dim")
-    assert rasters_rio.get_dim_img_path(dim_path) == os.path.join(
-        RASTER_DATA, "DIM.data", "dim.img"
-    )
+    dim_path = RASTER_DATA.joinpath("DIM.dim")
+    assert rasters_rio.get_dim_img_path(dim_path) == RASTER_DATA.joinpath("DIM.data", "dim.img")
 
 
 def test_bit():

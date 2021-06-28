@@ -19,49 +19,52 @@ import os
 import shutil
 import tempfile
 
-import geopandas as gpd
 import numpy as np
 import pytest
 import rasterio
 import xarray as xr
 
-from CI.SCRIPTS.script_utils import RASTER_DATA, get_ci_data_path
-from sertit import ci, files, rasters
+from CI.SCRIPTS.script_utils import RASTER_DATA, s3_env
+from sertit import ci, files, rasters, vectors
 
-
+@s3_env
 def test_rasters():
     """Test raster functions"""
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
-    raster_masked_path = os.path.join(RASTER_DATA, "raster_masked.tif")
-    raster_cropped_xarray_path = os.path.join(RASTER_DATA, "raster_cropped_xarray.tif")
-    raster_sieved_path = os.path.join(RASTER_DATA, "raster_sieved.tif")
-    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
-    raster_merged_gtiff_path = os.path.join(RASTER_DATA, "raster_merged.tif")
-    mask_path = os.path.join(RASTER_DATA, "raster_mask.geojson")
-    extent_path = os.path.join(RASTER_DATA, "extent.geojson")
-    footprint_path = os.path.join(RASTER_DATA, "footprint.geojson")
-    vect_truth_path = os.path.join(RASTER_DATA, "vector.geojson")
-    diss_truth_path = os.path.join(RASTER_DATA, "dissolved.geojson")
-    nodata_truth_path = os.path.join(RASTER_DATA, "nodata.geojson")
-    valid_truth_path = os.path.join(RASTER_DATA, "valid.geojson")
+
+    # Rasters
+    raster_path = RASTER_DATA.joinpath("raster.tif")
+    raster_masked_path = RASTER_DATA.joinpath("raster_masked.tif")
+    raster_cropped_xarray_path = RASTER_DATA.joinpath("raster_cropped_xarray.tif")
+    raster_sieved_path = RASTER_DATA.joinpath("raster_sieved.tif")
+    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
+    raster_merged_gtiff_path = RASTER_DATA.joinpath("raster_merged.tif")
+
+    # Vectors
+    mask_path = RASTER_DATA.joinpath("raster_mask.geojson")
+    extent_path = RASTER_DATA.joinpath("extent.geojson")
+    footprint_path = RASTER_DATA.joinpath("footprint.geojson")
+    vect_truth_path = RASTER_DATA.joinpath("vector.geojson")
+    diss_truth_path = RASTER_DATA.joinpath("dissolved.geojson")
+    nodata_truth_path = RASTER_DATA.joinpath("nodata.geojson")
+    valid_truth_path = RASTER_DATA.joinpath("valid.geojson")
 
     # Create tmp file
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # tmp_dir = os.path.join(RASTER_DATA, "OUTPUT_XARRAY")
+        # tmp_dir = RASTER_DATA.joinpath("OUTPUT_XARRAY")
         # os.makedirs(tmp_dir, exist_ok=True)
 
         # Get Extent
         extent = rasters.get_extent(raster_path)
-        truth_extent = gpd.read_file(extent_path)
+        truth_extent = vectors.read(extent_path)
         ci.assert_geom_equal(extent, truth_extent)
 
         # Get Footprint
         footprint = rasters.get_footprint(raster_path)
-        truth_footprint = gpd.read_file(footprint_path)
+        truth_footprint = vectors.read(footprint_path)
         ci.assert_geom_equal(footprint, truth_footprint)
 
-        with rasterio.open(raster_path) as dst:
+        with rasterio.open(str(raster_path)) as dst:
             dst_dtype = dst.meta["dtype"]
             # Read
             xda = rasters.read(raster_path)
@@ -98,7 +101,7 @@ def test_rasters():
             # Mask
             xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
             xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
-            mask = gpd.read_file(mask_path)
+            mask = vectors.read(mask_path)
             mask_xda = rasters.mask(xda, mask.geometry)
             mask_xds = rasters.mask(xda, mask)
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
@@ -109,7 +112,7 @@ def test_rasters():
             xda_paint_false = os.path.join(tmp_dir, "test_paint_false_xda.tif")
             xds_paint_true = os.path.join(tmp_dir, "test_paint_true_xds.tif")
             xds_paint_false = os.path.join(tmp_dir, "test_paint_false_xds.tif")
-            mask = gpd.read_file(mask_path)
+            mask = vectors.read(mask_path)
             paint_true_xda = rasters.paint(xda, mask.geometry, value=600, invert=True)
             paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
             paint_true_xds = rasters.paint(xda, mask, value=600, invert=True)
@@ -159,8 +162,8 @@ def test_rasters():
                 raster_path, values=[1, 255], keep_values=False
             )
             vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
-            vect_truth = gpd.read_file(vect_truth_path)
-            diss_truth = gpd.read_file(diss_truth_path)
+            vect_truth = vectors.read(vect_truth_path)
+            diss_truth = vectors.read(diss_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
             ci.assert_geom_equal(vect_xds[name], vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
@@ -172,14 +175,14 @@ def test_rasters():
             # Get valid vec
             valid_vec = rasters.get_valid_vector(raster_path)
             valid_vec_xds = rasters.get_valid_vector(xds)
-            valid_truth = gpd.read_file(valid_truth_path)
+            valid_truth = vectors.read(valid_truth_path)
             ci.assert_geom_equal(valid_vec, valid_truth)
             ci.assert_geom_equal(valid_vec_xds[name], valid_truth)
 
             # Get nodata vec
             nodata_vec = rasters.get_nodata_vector(raster_path)
             nodata_vec_xds = rasters.get_nodata_vector(xds)
-            nodata_truth = gpd.read_file(nodata_truth_path)
+            nodata_truth = vectors.read(nodata_truth_path)
             ci.assert_geom_equal(nodata_vec, nodata_truth)
             ci.assert_geom_equal(nodata_vec_xds[name], nodata_truth)
 
@@ -196,24 +199,26 @@ def test_rasters():
         ci.assert_raster_equal(xds_sieved, raster_sieved_path)
 
 
+@s3_env
 @pytest.mark.skipif(
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():
-    raster_merged_vrt_path = os.path.join(RASTER_DATA, "raster_merged.vrt")
-    raster_to_merge_path = os.path.join(RASTER_DATA, "raster_to_merge.tif")
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    raster_merged_vrt_path = RASTER_DATA.joinpath("raster_merged.vrt")
+    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
+    raster_path = RASTER_DATA.joinpath("raster.tif")
 
-    with tempfile.TemporaryDirectory(prefix=get_ci_data_path()) as tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
         # Merge VRT
         raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
         rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
+@s3_env
 def test_write():
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    raster_path = RASTER_DATA.joinpath("raster.tif")
     raster_xds = rasters.read(raster_path)
 
     nodata = {
@@ -240,10 +245,8 @@ def test_write():
 
 def test_dim():
     """Test on BEAM-DIMAP function"""
-    dim_path = os.path.join(RASTER_DATA, "DIM.dim")
-    assert rasters.get_dim_img_path(dim_path) == os.path.join(
-        RASTER_DATA, "DIM.data", "dim.img"
-    )
+    dim_path = RASTER_DATA.joinpath("DIM.dim")
+    assert rasters.get_dim_img_path(dim_path) == RASTER_DATA.joinpath("DIM.data", "dim.img")
 
 
 def test_bit():
@@ -289,6 +292,7 @@ def test_bit():
         assert (np_ones.data == 1 + arr).all()
 
 
+@s3_env
 def test_xarray_fct():
     """ Test xarray functions """
     # Set nodata
@@ -301,7 +305,7 @@ def test_xarray_fct():
     xr.testing.assert_equal(A_nodata, nodata)
 
     # Mtd
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
+    raster_path = RASTER_DATA.joinpath("raster.tif")
     xda = rasters.read(raster_path)
     xda_sum = xda + xda
     xda_sum = rasters.set_metadata(xda_sum, xda, "sum")

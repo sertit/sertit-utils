@@ -15,9 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+from collections import Callable
 from enum import unique
+from functools import wraps
+
+import rasterio
+from cloudpathlib import S3Client, AnyPath
 
 from sertit.misc import ListEnum
+
+AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
+AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+AWS_S3_ENDPOINT = "s3.unistra.fr"
+CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
+
+# Set in
+os.environ[AWS_ACCESS_KEY_ID] = "G8YRL7SYIZJ6YN2Q787X"
+os.environ[AWS_SECRET_ACCESS_KEY] = "40yTOFoJFFy1R2mgE1GlAyp13Mquu8a4tJdKDpzL"
 
 
 @unique
@@ -32,15 +46,58 @@ class Polarization(ListEnum):
 
 def get_proj_path():
     """Get project path"""
-    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    if int(os.getenv(CI_SERTIT_S3, 0)):
+        # ON S3
+        client = S3Client(endpoint_url=f"https://{AWS_S3_ENDPOINT}",
+                          aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
+                          aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY))
+        client.set_as_default_client()
+        return AnyPath("s3://sertit-sertit-utils-ci")
+    else:
+        # ON DISK
+        return AnyPath(__file__).parent.parent.parent
 
 
 def get_ci_data_path():
     """Get CI DATA path"""
-    return os.path.join(get_proj_path(), "CI", "DATA")
+    if int(os.getenv(CI_SERTIT_S3, 0)):
+        return get_proj_path().joinpath("DATA")
+    else:
+        return get_proj_path().joinpath("CI", "DATA")
 
 
-RASTER_DATA = os.path.join(get_ci_data_path(), "rasters")
-GEO_DATA = os.path.join(get_ci_data_path(), "vectors")
-FILE_DATA = os.path.join(get_ci_data_path(), "files")
-DISPLAY_DATA = os.path.join(get_ci_data_path(), "display")
+def s3_env(function: Callable):
+    """
+    Create S3 compatible storage environment
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    """
+
+    @wraps(function)
+    def s3_env_wrapper():
+        """ S3 environment wrapper """
+        os.environ[CI_SERTIT_S3] = "0"
+        print("Using on disk files")
+        function()
+
+        os.environ[CI_SERTIT_S3] = "1"
+        print("Using S3 files")
+        with rasterio.Env(CPL_CURL_VERBOSE=True,
+                          AWS_VIRTUAL_HOSTING=False,
+                          AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
+                          GDAL_DISABLE_READDIR_ON_OPEN=False,
+                          ):
+            function()
+
+        os.environ[CI_SERTIT_S3] = "0"
+
+    return s3_env_wrapper
+
+
+RASTER_DATA = get_ci_data_path().joinpath("rasters")
+GEO_DATA = get_ci_data_path().joinpath("vectors")
+FILE_DATA = get_ci_data_path().joinpath("files")
+DISPLAY_DATA = get_ci_data_path().joinpath("display")

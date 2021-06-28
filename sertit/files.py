@@ -31,9 +31,11 @@ import zipfile
 from datetime import date, datetime
 from enum import Enum
 from json import JSONDecoder, JSONEncoder
+from pathlib import Path
 from typing import Any, Union
 
 import numpy as np
+from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 from tqdm import tqdm
 
@@ -43,7 +45,7 @@ from sertit.logs import SU_NAME
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def get_root_path() -> str:
+def get_root_path() -> Union[CloudPath, Path]:
     """
     Get the root path of the current disk:
 
@@ -56,10 +58,10 @@ def get_root_path() -> str:
     "C:\\" on Windows (if you run this code from the C: drive)
     ```
     """
-    return os.path.abspath(os.sep)
+    return AnyPath(os.path.abspath(os.sep))
 
 
-def listdir_abspath(directory: str) -> list:
+def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
     """
     Get absolute path of all files in the given directory.
 
@@ -80,17 +82,19 @@ def listdir_abspath(directory: str) -> list:
     ```
 
     Args:
-        directory (str): Relative or absolute path to the directory to be scanned
+        directory (Union[str, CloudPath, Path]): Relative or absolute path to the directory to be scanned
 
     Returns:
         str: Absolute path of all files in the given directory
     """
-    return [
-        os.path.abspath(os.path.join(directory, file)) for file in os.listdir(directory)
-    ]
+    dirpath = AnyPath(directory)
+
+    return list(dirpath.iterdir())
 
 
-def to_abspath(path_str: str, create: bool = True) -> str:
+def to_abspath(
+        path: Union[str, CloudPath, Path], create: bool = True
+) -> Union[CloudPath, Path]:
     """
     Return the absolute path of the specified path and check if it exists
 
@@ -110,53 +114,61 @@ def to_abspath(path_str: str, create: bool = True) -> str:
     ```
 
     Args:
-        path_str (str): Path as a string (relative or absolute)
+        path (Union[str, CloudPath, Path]): Path as a string (relative or absolute)
         create (bool): Create directory if not existing
 
     Returns:
-        str: Absolute path
+        Union[CloudPath, Path]: Absolute path
     """
-    abs_path = os.path.abspath(path_str)
+    abs_path = AnyPath(path).resolve()
 
-    if not os.path.exists(abs_path):
-        if os.path.splitext(abs_path)[1]:
+    if not abs_path.exists():
+        if abs_path.suffix:
             # If the path specifies a file (with extension), it raises an exception
             raise FileNotFoundError(f"Non existing file: {abs_path}")
 
         # If the path specifies a folder, it creates it
         if create:
-            os.makedirs(abs_path)
+            abs_path.mkdir()
 
     return abs_path
 
 
-def real_rel_path(path: str, start: str) -> str:
+def real_rel_path(
+        path: Union[str, CloudPath, Path], start: Union[str, CloudPath, Path]
+) -> Union[CloudPath, Path]:
     """
     Gives the real relative path from a starting folder.
     (and not just adding `..\..` between the start and the target)
 
     ```python
-    >>> path = 'D:\\_SERTIT_UTILS\\sertit-utils\\sertit'
-    >>> start = os.path.join("..", "..")
+    >>> path = r'D:\_SERTIT_UTILS\sertit-utils\sertit'
+    >>> start = os.path.join(".", "..", "..")
     >>> real_rel_path(path, start)
     'sertit-utils\\sertit'
     ```
 
     Args:
-        path (str): Path to make relative
-        start (str): Start, the path being relative from this folder.
+        path (Union[str, CloudPath, Path]): Path to make relative
+        start (Union[str, CloudPath, Path]): Start, the path being relative from this folder.
 
     Returns:
         Relative path
     """
-    return os.path.join(
-        os.path.relpath(os.path.dirname(path), start), os.path.basename(path)
-    )
+    path = AnyPath(path)
+    start = AnyPath(start)
+    rel_path = path
+    if not isinstance(path, CloudPath) and not isinstance(start, CloudPath):
+        rel_path = path.resolve().relative_to(start.resolve())
+
+    return rel_path
 
 
 def extract_file(
-    file_path: str, output: str, overwrite: bool = False
-) -> Union[list, str]:
+        file_path: Union[str, CloudPath, Path],
+        output: Union[str, CloudPath, Path],
+        overwrite: bool = False,
+) -> Union[list, CloudPath, Path]:
     """
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
@@ -174,18 +186,22 @@ def extract_file(
         overwrite (bool): Overwrite found extracted files
 
     Returns:
-        Union[list, str]: Extracted file paths (as str if only one)
+        Union[list, CloudPath, Path]: Extracted file paths (as str if only one)
     """
+    # Convert to path
+    file_path = AnyPath(file_path)
+    output = AnyPath(output)
+
     # In case a folder is given, returns it (this means that the file is already extracted)
-    if os.path.isdir(file_path):
+    if file_path.is_dir():
         return file_path
 
     # Manage archive type
-    if file_path.endswith(".zip"):
+    if file_path.suffix == ".zip":
         # Manage the case with several directories inside one zipfile
         arch = zipfile.ZipFile(file_path, "r")
         extr_names = list({path.split("/")[0] for path in arch.namelist()})
-    elif file_path.endswith(".tar.gz") or file_path.endswith(".tar"):
+    elif file_path.suffix == ".tar" or file_path.suffixes == [".tar", ".gz"]:
         # Tar files have no subdirectories, so create one
         extr_names = [get_filename(file_path)]
         arch = tarfile.open(file_path, "r")
@@ -195,13 +211,13 @@ def extract_file(
         )
 
     # Get extracted list
-    extr_dirs = [os.path.join(output, extr_name) for extr_name in extr_names]
+    extr_dirs = [output.joinpath(extr_name) for extr_name in extr_names]
 
     # Loop over basedirs from inside the archive
     for extr_dir in extr_dirs:
-        extr_name = os.path.basename(extr_dir)
+        extr_name = extr_dir.name
         # Manage overwriting
-        if os.path.isdir(extr_dir):
+        if extr_dir.is_dir():
             if overwrite:
                 LOGGER.debug(
                     "Already existing extracted %s. It will be overwritten as asked.",
@@ -230,7 +246,7 @@ def extract_file(
                     tmp_extr_output = output
                     tmp_extr_dir = extr_dir
 
-                if file_path.endswith(".zip"):
+                if str(file_path).endswith(".zip"):
                     members = [name for name in arch.namelist() if extr_name in name]
                 else:
                     members = arch.getmembers()  # Always extract all files for TAR data
@@ -259,7 +275,9 @@ def extract_file(
     return extr_dirs
 
 
-def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
+def extract_files(
+        archives: list, output: Union[str, CloudPath, Path], overwrite: bool = False
+) -> list:
     """
     Extract all archived files. Overwrites if specified.
 
@@ -288,7 +306,7 @@ def extract_files(archives: list, output: str, overwrite: bool = False) -> list:
     return extracts
 
 
-def get_archived_file_list(archive_path) -> list:
+def get_archived_file_list(archive_path: Union[str, CloudPath, Path]) -> list:
     """
     Get the list of all the files contained in an archive.
 
@@ -299,12 +317,13 @@ def get_archived_file_list(archive_path) -> list:
     ```
 
     Args:
-        archive_path (str): Archive path
+        archive_path (Union[str, CloudPath, Path]): Archive path
 
     Returns:
         list: All files contained in the given archive
     """
-    if archive_path.endswith(".zip"):
+    archive_path = AnyPath(archive_path)
+    if archive_path.suffix == ".zip":
         with zipfile.ZipFile(archive_path) as zip_ds:
             file_list = [f.filename for f in zip_ds.filelist]
     else:
@@ -319,8 +338,8 @@ def get_archived_file_list(archive_path) -> list:
 
 
 def get_archived_rio_path(
-    archive_path: str, file_regex: str, as_list: bool = False
-) -> Union[list, str]:
+        archive_path: Union[str, CloudPath, Path], file_regex: str, as_list: bool = False
+) -> Union[list, CloudPath, Path]:
     """
     Get archived file path from inside the archive, to be read with rasterio:
 
@@ -348,7 +367,7 @@ def get_archived_rio_path(
     ```
 
     Args:
-        archive_path (str): Archive path
+        archive_path (Union[str, CloudPath, Path]): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
 
@@ -356,13 +375,14 @@ def get_archived_rio_path(
         Union[list, str]: Band path that can be read by rasterio
     """
     # Get file list
+    archive_path = AnyPath(archive_path)
     file_list = get_archived_file_list(archive_path)
 
-    if archive_path.endswith(".tar") or archive_path.endswith(".zip"):
-        prefix = archive_path[-3:]
-    elif archive_path.endswith(".tar.gz"):
+    if archive_path.suffix in [".tar", ".zip"]:
+        prefix = archive_path.suffix[-3:]
+    elif archive_path.suffix == ".tar.gz":
         raise TypeError(
-            ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
+            ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
         )
     else:
         raise TypeError("Only .zip and .tar files can be read from inside its archive.")
@@ -376,9 +396,14 @@ def get_archived_rio_path(
         )
 
     # Convert to rio path
-    archived_band_path = [
-        f"{prefix}+file://{archive_path}!{path}" for path in archived_band_path
-    ]
+    if isinstance(archive_path, CloudPath):
+        archived_band_path = [
+            f"{prefix}+file+{archive_path}!{path}" for path in archived_band_path
+        ]
+    else:
+        archived_band_path = [
+            f"{prefix}+file://{archive_path}!{path}" for path in archived_band_path
+        ]
 
     # Convert to str if needed
     if not as_list:
@@ -387,7 +412,9 @@ def get_archived_rio_path(
     return archived_band_path
 
 
-def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
+def read_archived_xml(
+        archive_path: Union[str, CloudPath, Path], xml_regex: str
+) -> etree._Element:
     """
     Read archived XML from `zip` or `tar` archives.
 
@@ -401,31 +428,33 @@ def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
     ```
 
     Args:
-        archive_path (str): Archive path
+        archive_path (Union[str, CloudPath, Path]): Archive path
         xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list
 
     Returns:
          etree._Element: XML file
     """
+    archive_path = AnyPath(archive_path)
+
     # Compile regex
     regex = re.compile(xml_regex)
 
     # Open tar and zip XML
     try:
-        if archive_path.endswith(".tar"):
+        if archive_path.suffix == ".tar":
             with tarfile.open(archive_path) as tar_ds:
                 tar_mb = tar_ds.getmembers()
                 name_list = [mb.name for mb in tar_mb]
                 band_name = list(filter(regex.match, name_list))[0]
                 tarinfo = [mb for mb in tar_mb if mb.name == band_name][0]
                 xml_str = tar_ds.extractfile(tarinfo).read()
-        elif archive_path.endswith(".zip"):
+        elif archive_path.suffix == ".zip":
             with zipfile.ZipFile(archive_path) as zip_ds:
                 name_list = [f.filename for f in zip_ds.filelist]
                 band_name = list(filter(regex.match, name_list))[0]
                 xml_str = zip_ds.read(band_name)
 
-        elif archive_path.endswith(".tar.gz"):
+        elif archive_path.suffix == ".tar.gz":
             raise TypeError(
                 ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )
@@ -441,60 +470,11 @@ def read_archived_xml(archive_path: str, xml_regex: str) -> etree._Element:
     return etree.fromstring(xml_str)
 
 
-def read_archived_vector(archive_path: str, vector_regex: str):
-    """
-    Read archived vector from `zip` or `tar` archives.
-
-    You can use this [site](https://regexr.com/) to build your regex.
-
-    ```python
-    >>> arch_path = 'D:\\path\\to\\zip.zip'
-    >>> files.read_archived_vector(arch_path, ".*map-overlay\.kml")
-                           Name  ...                                           geometry
-    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
-    ```
-
-    Args:
-        archive_path (str): Archive path
-        vector_regex (str): Vector regex (used by re) as it can be found in the getmembers() list
-
-    Returns:
-        gpd.GeoDataFrame: Vector
-    """
-    # Import here as we don't want geopandas to pollute this file import
-    import geopandas as gpd
-
-    # Get file list
-    file_list = get_archived_file_list(archive_path)
-    if archive_path.endswith(".tar") or archive_path.endswith(".zip"):
-        prefix = archive_path[-3:]
-    elif archive_path.endswith(".tar.gz"):
-        raise TypeError(
-            ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
-        )
-    else:
-        raise TypeError("Only .zip and .tar files can be read from inside its archive.")
-
-    # Open tar and zip vectors
-    try:
-        regex = re.compile(vector_regex)
-        archived_vect_path = list(filter(regex.match, file_list))[0]
-        archived_vect_path = f"{prefix}://{archive_path}!{archived_vect_path}"
-        if archived_vect_path.endswith("kml"):
-            from sertit import vectors
-
-            vectors.set_kml_driver()
-
-        vect = gpd.read_file(archived_vect_path)
-    except IndexError:
-        raise FileNotFoundError(
-            f"Impossible to find vector {vector_regex} in {get_filename(archive_path)}"
-        )
-
-    return vect
-
-
-def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
+def archive(
+        folder_path: Union[str, CloudPath, Path],
+        archive_path: Union[str, CloudPath, Path],
+        fmt: str = "zip",
+) -> Union[CloudPath, Path]:
     """
     Archives a folder recursively.
 
@@ -506,12 +486,15 @@ def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
     ```
 
     Args:
-        folder_path (str): Folder to archive
-        archive_path (str): Archive path, with or without extension
+        folder_path (Union[str, CloudPath, Path]): Folder to archive
+        archive_path (Union[str, CloudPath, Path]): Archive path, with or without extension
         fmt (str): Format of the archive, used by `shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
     Returns:
         str: Archive filename
     """
+    archive_path = AnyPath(archive_path)
+    folder_path = AnyPath(folder_path)
+
     # Shutil make_archive needs a path without extension
     archive_base = os.path.splitext(archive_path)[0]
 
@@ -519,14 +502,17 @@ def archive(folder_path: str, archive_path: str, fmt: str = "zip") -> str:
     archive_fn = shutil.make_archive(
         archive_base,
         format=fmt,
-        root_dir=os.path.dirname(folder_path),
-        base_dir=os.path.basename(folder_path),
+        root_dir=folder_path.parent,
+        base_dir=folder_path.name,
     )
 
-    return archive_fn
+    return AnyPath(archive_fn)
 
 
-def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
+def add_to_zip(
+        zip_path: Union[str, CloudPath, Path],
+        dirs_to_add: Union[list, str, CloudPath, Path],
+) -> None:
     """
     Add folders to an already existing zip file (recursively).
 
@@ -538,15 +524,17 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
     ```
 
     Args:
-        zip_path (str): Already existing zip file
+        zip_path (Union[str, CloudPath, Path]): Already existing zip file
         dirs_to_add (Union[list, str]): Directories to add
     """
+    zip_path = AnyPath(zip_path)
+
     # Check if existing zipfile
-    if not os.path.isfile(zip_path):
+    if not zip_path.is_file():
         raise FileNotFoundError(f"Non existing {zip_path}")
 
     # Convert to list if needed
-    if isinstance(dirs_to_add, str):
+    if not isinstance(dirs_to_add, list):
         dirs_to_add = [dirs_to_add]
 
     # Add all folders to the existing zip
@@ -573,7 +561,7 @@ def add_to_zip(zip_path: str, dirs_to_add: Union[list, str]) -> None:
                     )
 
 
-def get_filename(file_path: str) -> str:
+def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
     """
     Get file name (without extension) from file path, ie:
 
@@ -584,20 +572,18 @@ def get_filename(file_path: str) -> str:
     ```
 
     Args:
-        file_path (str): Absolute or relative file path (the file doesn't need to exist)
+        file_path (Union[str, CloudPath, Path]): Absolute or relative file path (the file doesn't need to exist)
 
     Returns:
         str: File name (without extension)
     """
-    if file_path.endswith("/") or file_path.endswith("\\"):
-        file_path = file_path[:-1]
+    file_path = AnyPath(file_path)
 
     # We need to avoid splitext because of nested extensions such as .tar.gz
-    basename = os.path.basename(file_path)
-    return basename.split(".")[0]
+    return file_path.name.split(".")[0]
 
 
-def remove(path: str) -> None:
+def remove(path: Union[str, CloudPath, Path]) -> None:
     """
     Deletes a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
 
@@ -608,26 +594,27 @@ def remove(path: str) -> None:
     ```
 
     Args:
-        path (str): Path to be removed
+        path (Union[str, CloudPath, Path]): Path to be removed
     """
-    if not os.path.exists(path):
+    path = AnyPath(path)
+    if not path.exists():
         LOGGER.debug("Non existing %s", path)
 
-    elif os.path.isdir(path):
+    elif path.is_dir():
         try:
             shutil.rmtree(path)
         except OSError:
             LOGGER.debug("Impossible to remove the directory %s", path, exc_info=True)
 
-    elif os.path.isfile(path):
+    elif path.is_file():
         try:
-            os.remove(path)
+            path.unlink()
         except OSError:
             LOGGER.debug("Impossible to remove the file %s", path, exc_info=True)
 
 
 def remove_by_pattern(
-    directory: str, name_with_wildcard: str = "*", extension: str = None
+        directory: Union[str, CloudPath, Path], name_with_wildcard: str = "*", extension: str = None
 ) -> None:
     """
     Remove files corresponding to a pattern from a directory.
@@ -647,21 +634,20 @@ def remove_by_pattern(
     ```
 
     Args:
-        directory (str): Directory where to find the files
+        directory (Union[str, CloudPath, Path]): Directory where to find the files
         name_with_wildcard (str): Filename (wildcards accepted)
         extension (str): Extension wanted, optional. With or without point. (yaml or .yaml accepted)
     """
-
+    directory = AnyPath(directory)
     if extension and not extension.startswith("."):
         extension = "." + extension
 
-    pattern_str = os.path.join(directory, name_with_wildcard + extension)
-    file_list = glob.glob(pattern_str, recursive=False)
+    file_list = directory.glob(name_with_wildcard + extension)
     for file in file_list:
         remove(file)
 
 
-def copy(src: str, dst: str) -> str:
+def copy(src: Union[str, CloudPath, Path], dst: Union[str, CloudPath, Path]) -> Union[CloudPath, Path]:
     """
     Copy a file or a directory (recursively) with `copytree` or `copy2`.
 
@@ -678,18 +664,19 @@ def copy(src: str, dst: str) -> str:
     ```
 
     Args:
-        src (str): Source Path
-        dst (str): Destination Path (file or folder)
+        src (Union[str, CloudPath, Path]): Source Path
+        dst (Union[str, CloudPath, Path]): Destination Path (file or folder)
 
     Returns:
-        str: New path
+        Union[CloudPath, Path]: New path
     """
+    src = AnyPath(src)
     out = None
     try:
-        if os.path.isdir(src):
-            out = shutil.copytree(src, dst)
+        if src.is_dir():
+            out = AnyPath(shutil.copytree(src, dst))
         elif os.path.isfile(src):
-            out = shutil.copy2(src, dst)
+            out = AnyPath(shutil.copy2(src, dst))
     except shutil.Error:
         LOGGER.debug(exc_info=True)
         out = src
@@ -701,15 +688,15 @@ def copy(src: str, dst: str) -> str:
 
 
 def find_files(
-    names: Union[list, str],
-    root_paths: Union[list, str],
-    max_nof_files: int = -1,
-    get_as_str: bool = False,
+        names: Union[list, str],
+        root_paths: Union[list, str, CloudPath, Path],
+        max_nof_files: int = -1,
+        get_as_str: bool = False,
 ) -> Union[list, str]:
     """
     Returns matching files recursively from a list of root paths.
 
-    Regex are not allowed, only exact matches are looking for (using `os.walk()`)
+    Regex are allowed (using glob)
 
     ```python
     >>> root_path = 'D:\\root'
@@ -749,18 +736,11 @@ def find_files(
     if not isinstance(root_paths, list):
         root_paths = [root_paths]
 
-    nof_found_file = 0
-
     try:
         for root_path in root_paths:
-            for root, _, files in os.walk(root_path):
-                for name in names:
-                    if name in files:
-                        paths.append(os.path.join(root, name))
-                        nof_found_file += 1
-
-                    if nof_found_file > 0 and nof_found_file == max_nof_files:
-                        raise StopIteration
+            root_path = AnyPath(root_path)
+            for name in names:
+                paths += list(root_path.glob(f"**/*{name}*"))
 
     except StopIteration:
         pass
@@ -768,6 +748,9 @@ def find_files(
     # Check if found
     if not paths:
         raise FileNotFoundError(f"Files {names} not found in {root_paths}")
+
+    if max_nof_files > 0:
+        paths = paths[:max_nof_files]
 
     LOGGER.debug(
         "Paths found in %s for filenames %s:\n%s",
@@ -840,7 +823,7 @@ class CustomEncoder(JSONEncoder):
         return out
 
 
-def read_json(json_file: str, print_file: bool = True) -> dict:
+def read_json(json_file: Union[str, CloudPath, Path], print_file: bool = True) -> dict:
     """
     Read a JSON file
 
@@ -851,7 +834,7 @@ def read_json(json_file: str, print_file: bool = True) -> dict:
     ```
 
     Args:
-        json_file (str): Path to JSON file
+        json_file (Union[str, CloudPath, Path]): Path to JSON file
         print_file (bool):  Print the configuration file
 
     Returns:
@@ -869,7 +852,7 @@ def read_json(json_file: str, print_file: bool = True) -> dict:
     return data
 
 
-def save_json(output_json: str, json_dict: dict) -> None:
+def save_json(output_json: Union[str, CloudPath, Path], json_dict: dict) -> None:
     """
     Save a JSON file, with datetime, numpy types and Enum management.
 
@@ -880,7 +863,7 @@ def save_json(output_json: str, json_dict: dict) -> None:
     ```
 
     Args:
-        output_json (str): Output file
+        output_json (Union[str, CloudPath, Path]): Output file
         json_dict (dict): Json dictionary
     """
 
@@ -888,7 +871,7 @@ def save_json(output_json: str, json_dict: dict) -> None:
         json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)
 
 
-def save_obj(obj: Any, path: str) -> None:
+def save_obj(obj: Any, path: Union[str, CloudPath, Path]) -> None:
     """
     Save an object as a pickle (can save any Python objects).
 
@@ -902,13 +885,13 @@ def save_obj(obj: Any, path: str) -> None:
 
     Args:
         obj (Any): Any object serializable
-        path (str): Path where to write the pickle
+        path (Union[str, CloudPath, Path]): Path where to write the pickle
     """
     with open(path, "wb+") as file:
         pickle.dump(obj, file)
 
 
-def load_obj(path: str) -> Any:
+def load_obj(path: Union[str, CloudPath, Path]) -> Any:
     """
     Load a pickled object.
 
@@ -919,7 +902,7 @@ def load_obj(path: str) -> Any:
     ```
 
     Args:
-        path (str): Path of the pickle
+        path (Union[str, CloudPath, Path]): Path of the pickle
     Returns:
         object (Any): Pickled object
 
@@ -931,12 +914,12 @@ def load_obj(path: str) -> Any:
 # too many arguments
 # pylint: disable=R0913
 def get_file_in_dir(
-    directory: str,
-    pattern_str: str,
-    extension: str = None,
-    filename_only: bool = False,
-    get_list: bool = False,
-    exact_name: bool = False,
+        directory: Union[str, CloudPath, Path],
+        pattern_str: str,
+        extension: str = None,
+        filename_only: bool = False,
+        get_list: bool = False,
+        exact_name: bool = False,
 ) -> Union[str, list]:
     """
     Get one or all matching files (pattern + extension) from inside a directory.
@@ -977,6 +960,8 @@ def get_file_in_dir(
     Returns:
         Union[str, list]: File
     """
+    directory = AnyPath(directory)
+
     # Glob pattern
     if exact_name:
         glob_pattern = pattern_str
@@ -988,7 +973,7 @@ def get_file_in_dir(
         glob_pattern += extension
 
     # Search for the pattern in the directory
-    file_list = glob.glob(os.path.join(directory, glob_pattern))
+    file_list = list(directory.glob(glob_pattern))
 
     if len(file_list) == 0:
         raise FileNotFoundError(
@@ -1008,7 +993,7 @@ def get_file_in_dir(
             )
         file = file_list[0]
         if filename_only:
-            file = os.path.basename(file)
+            file = file.name
 
     return file
 

@@ -18,37 +18,39 @@
 import os
 import tempfile
 
-import geopandas as gpd
 import pytest
+from cloudpathlib import CloudPath
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import FILE_DATA, GEO_DATA, RASTER_DATA
-from sertit import ci, misc, rasters_rio
+from CI.SCRIPTS.script_utils import FILE_DATA, GEO_DATA, RASTER_DATA, s3_env
+from sertit import ci, misc, rasters_rio, vectors
 
 
+@s3_env
 def test_assert():
     """Test CI functions"""
     # Dirs
-    dir2 = os.path.join(FILE_DATA, "core")
+    dir2 = FILE_DATA.joinpath("core")
 
     ci.assert_dir_equal(FILE_DATA, FILE_DATA)
     with pytest.raises(AssertionError):
         ci.assert_dir_equal(FILE_DATA, dir2)
 
     # Vector
-    vector_path = os.path.join(GEO_DATA, "aoi.geojson")
-    vector2_path = os.path.join(GEO_DATA, "aoi2.geojson")
+    vector_path = str(GEO_DATA.joinpath("aoi.geojson"))
+    vector2_path = str(GEO_DATA.joinpath("aoi2.geojson"))
 
-    vec_df = gpd.read_file(vector_path)
-    vec2_df = gpd.read_file(vector2_path)
+    vec_df = vectors.read(vector_path)
+    vec2_df = vectors.read(vector2_path)
 
+    assert not vec_df.empty
     ci.assert_geom_equal(vec_df, vec_df)
     with pytest.raises(AssertionError):
         ci.assert_geom_equal(vec_df, vec2_df)
 
     # Rasters
-    raster_path = os.path.join(RASTER_DATA, "raster.tif")
-    raster2_path = os.path.join(RASTER_DATA, "raster_masked.tif")
+    raster_path = RASTER_DATA.joinpath("raster.tif")
+    raster2_path = RASTER_DATA.joinpath("raster_masked.tif")
 
     ci.assert_raster_equal(raster_path, raster_path)
     with pytest.raises(AssertionError):
@@ -72,7 +74,7 @@ def test_assert():
 
         ci.assert_raster_almost_equal(raster_float_path, raster_almost_path)
         with pytest.raises(AssertionError):
-            raster2_path = os.path.join(RASTER_DATA, "raster_masked.tif")
+            raster2_path = RASTER_DATA.joinpath("raster_masked.tif")
             ci.assert_raster_almost_equal(raster_path, raster2_path)
 
         with pytest.raises(AssertionError):
@@ -84,13 +86,16 @@ def test_assert():
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
 
     # XML
-    xml_folder = os.path.join(FILE_DATA, "LM05_L1TP_200030_20121230_20200820_02_T2_CI")
-    xml_path = os.path.join(
-        xml_folder, "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
-    )
-    xml_bad_path = os.path.join(xml_folder, "false_xml.xml")
-    xml_ok = etree.parse(xml_path).getroot()
-    xml_nok = etree.parse(xml_bad_path).getroot()
+    xml_folder = FILE_DATA.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
+    xml_path = xml_folder.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
+    xml_bad_path = xml_folder.joinpath("false_xml.xml")
+
+    if isinstance(FILE_DATA, CloudPath):
+        xml_path = xml_path.fspath
+        xml_bad_path = xml_bad_path.fspath
+
+    xml_ok = etree.parse(str(xml_path)).getroot()
+    xml_nok = etree.parse(str(xml_bad_path)).getroot()
 
     ci.assert_xml_equal(xml_ok, xml_ok)
     with pytest.raises(AssertionError):

@@ -19,24 +19,24 @@ import os
 import tempfile
 from datetime import date, datetime
 
-import geopandas as gpd
 import numpy as np
 import pytest
+from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 
 from CI.SCRIPTS import script_utils
-from CI.SCRIPTS.script_utils import FILE_DATA, Polarization
-from sertit import ci, files, misc
+from CI.SCRIPTS.script_utils import FILE_DATA, Polarization, s3_env
+from sertit import ci, files, misc, vectors
 
 
 def test_paths():
     """Test path functions"""
-    curr_file = os.path.realpath(__file__)
-    curr_dir = os.path.dirname(curr_file)
+    curr_file = AnyPath(__file__).resolve()
+    curr_dir = curr_file.parent
     with misc.chdir(curr_dir):
         # Relative path
         curr_rel_path = files.real_rel_path(curr_file, curr_dir)
-        assert curr_rel_path == os.path.join(".", os.path.basename(__file__))
+        assert curr_rel_path == AnyPath(os.path.join(".", os.path.basename(__file__)))
 
         # Abspath
         abs_file = files.to_abspath(curr_rel_path)
@@ -54,21 +54,21 @@ def test_paths():
         assert curr_file in list_abs
 
         # Root path
-        assert abs_file.startswith(files.get_root_path())
+        assert str(abs_file).startswith(str(files.get_root_path()))
 
 
 def test_archive():
     """Test extracting functions"""
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Archives
-        zip_file = os.path.join(FILE_DATA, "test_zip.zip")
-        zip2_file = os.path.join(FILE_DATA, "test_zip.zip")  # For overwrite
-        tar_file = os.path.join(FILE_DATA, "test_tar.tar")
-        tar_gz_file = os.path.join(FILE_DATA, "test_targz.tar.gz")
+        zip_file = FILE_DATA.joinpath("test_zip.zip")
+        zip2_file = FILE_DATA.joinpath("test_zip.zip")  # For overwrite
+        tar_file = FILE_DATA.joinpath("test_tar.tar")
+        tar_gz_file = FILE_DATA.joinpath("test_targz.tar.gz")
 
         # Core dir
-        core_dir = os.path.join(FILE_DATA, "core")
-        folder = os.path.join(core_dir)
+        core_dir = FILE_DATA.joinpath("core")
+        folder = core_dir
         archives = [zip_file, tar_file, tar_gz_file, folder, zip2_file]
 
         # Extract
@@ -112,13 +112,14 @@ def test_archive():
         ci.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
 
 
+@s3_env
 def test_archived_files():
     landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = os.path.join(FILE_DATA, landsat_name)
-    zip_file = os.path.join(FILE_DATA, f"{landsat_name}.zip")
-    tar_file = os.path.join(FILE_DATA, f"{landsat_name}.tar")
-    targz_file = os.path.join(FILE_DATA, f"{landsat_name}.tar.gz")
-    sz_file = os.path.join(FILE_DATA, f"{landsat_name}.7z")
+    ok_folder = FILE_DATA.joinpath(landsat_name)
+    zip_file = FILE_DATA.joinpath(f"{landsat_name}.zip")
+    tar_file = FILE_DATA.joinpath(f"{landsat_name}.tar")
+    targz_file = FILE_DATA.joinpath(f"{landsat_name}.tar.gz")
+    sz_file = FILE_DATA.joinpath(f"{landsat_name}.7z")
 
     # RASTERIO
     tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
@@ -126,28 +127,38 @@ def test_archived_files():
     tif_zip = files.get_archived_rio_path(zip_file, tif_regex)
     tif_list = files.get_archived_rio_path(zip_file, tif_regex, as_list=True)
     tif_tar = files.get_archived_rio_path(tar_file, ".*RADSAT")
-    tif_ok = os.path.join(ok_folder, tif_name)
+    tif_ok = ok_folder.joinpath(tif_name)
     ci.assert_raster_equal(tif_ok, tif_zip)
     ci.assert_raster_equal(tif_ok, tif_list[0])
     ci.assert_raster_equal(tif_ok, tif_tar)
 
-    # XML
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_ok_path = ok_folder.joinpath(xml_name)
+
+    vect_name = "map-overlay.kml"
+    vec_ok_path = ok_folder.joinpath(vect_name)
+
+    # VECTORS
+    vect_regex = f".*{vect_name}"
+    vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
+    vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
+    vect_ok = vectors.read(vec_ok_path)
+    assert not vect_ok.empty
+    ci.assert_geom_equal(vect_ok, vect_zip)
+    ci.assert_geom_equal(vect_ok, vect_tar)
+
+    if isinstance(FILE_DATA, CloudPath):
+        zip_file = zip_file.fspath
+        tar_file = tar_file.fspath
+        xml_ok_path = xml_ok_path.fspath
+
+    # XML
     xml_regex = f".*{xml_name}"
     xml_zip = files.read_archived_xml(zip_file, xml_regex)
     xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
-    xml_ok = etree.parse(os.path.join(ok_folder, xml_name)).getroot()
+    xml_ok = etree.parse(str(xml_ok_path)).getroot()
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
-
-    # VECTORS
-    vect_name = "map-overlay.kml"
-    vect_regex = f".*{vect_name}"
-    vect_zip = files.read_archived_vector(zip_file, vect_regex)
-    vect_tar = files.read_archived_vector(tar_file, r".*overlay\.kml")
-    vect_ok = gpd.read_file(os.path.join(ok_folder, vect_name))
-    ci.assert_geom_equal(vect_ok, vect_zip)
-    ci.assert_geom_equal(vect_ok, vect_tar)
 
     # ERRORS
     with pytest.raises(TypeError):
@@ -207,18 +218,17 @@ def test_cp_rm():
         assert os.listdir(tmp_dir) == empty_tmp
 
 
-@pytest.mark.xfail
 def test_find_files():
     """Test find_files"""
     names = os.path.basename(__file__)
-    root_paths = script_utils.get_proj_path()
+    root_paths = AnyPath(__file__).parent
     max_nof_files = 1
     get_as_str = True
 
     # Test
     path = files.find_files(names, root_paths, max_nof_files, get_as_str)
 
-    assert path == os.path.realpath(__file__)
+    assert path == AnyPath(__file__)
 
 
 def test_json():
@@ -291,7 +301,7 @@ def test_get_file_in_dir():
         exact_name=True,
     )
 
-    assert file[0] == __file__
+    assert file[0] == AnyPath(__file__)
     assert filename == os.path.basename(__file__)
 
 
