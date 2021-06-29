@@ -215,12 +215,13 @@ def assert_dir_equal(
         assert dcmp.left_only == []
         assert dcmp.right_only == []
     except FileNotFoundError:
-        assert [AnyPath(path.fspath).name for path in AnyPath(path_1).iterdir()] == [
-            AnyPath(path.fspath).name for path in AnyPath(path_2).iterdir()
+        assert [AnyPath(path).name for path in AnyPath(path_1).iterdir()] == [
+            AnyPath(path).name for path in AnyPath(path_2).iterdir()
         ]
 
+    # def assert_archive_equal(path_1: str, path_2: str) -> None:
 
-# def assert_archive_equal(path_1: str, path_2: str) -> None:
+
 #     """
 #     Assert that two archives are equal, by creating hashes that should be equal
 #

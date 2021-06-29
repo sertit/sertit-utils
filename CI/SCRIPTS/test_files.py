@@ -150,14 +150,14 @@ def test_archived_files():
 
     # XML
     if isinstance(files_path(), CloudPath):
-        zip_file = zip_file.fspath
-        tar_file = tar_file.fspath
         xml_ok_path = xml_ok_path.fspath
+    else:
+        xml_ok_path = str(xml_ok_path)
 
     xml_regex = f".*{xml_name}"
     xml_zip = files.read_archived_xml(zip_file, xml_regex)
     xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
-    xml_ok = etree.parse(str(xml_ok_path)).getroot()
+    xml_ok = etree.parse(xml_ok_path).getroot()
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
 
