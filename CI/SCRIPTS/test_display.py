@@ -20,7 +20,7 @@ import logging
 
 import numpy as np
 
-from CI.SCRIPTS.script_utils import DISPLAY_DATA, s3_env
+from CI.SCRIPTS.script_utils import display_path, s3_env
 from sertit import display, rasters_rio
 
 LOGGER = logging.getLogger("Test_logger")
@@ -29,10 +29,10 @@ LOGGER = logging.getLogger("Test_logger")
 @s3_env
 def test_display():
     """Testing Display functions"""
-    path_2d = DISPLAY_DATA.joinpath("2d.tif")
-    path_3d = DISPLAY_DATA.joinpath("3d.tif")
-    path_3d_minmax = DISPLAY_DATA.joinpath("3d_minmax.tif")
-    path_stack = DISPLAY_DATA.joinpath("stack.tif")
+    path_2d = display_path().joinpath("2d.tif")
+    path_3d = display_path().joinpath("3d.tif")
+    path_3d_minmax = display_path().joinpath("3d_minmax.tif")
+    path_stack = display_path().joinpath("stack.tif")
 
     # Open data
     arr_2d, _ = rasters_rio.read(path_2d)

@@ -25,7 +25,7 @@ import pytest
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import FILE_DATA, Polarization, s3_env
+from CI.SCRIPTS.script_utils import Polarization, files_path, s3_env
 from sertit import ci, files, misc, vectors
 
 
@@ -61,13 +61,13 @@ def test_archive():
     """Test extracting functions"""
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Archives
-        zip_file = FILE_DATA.joinpath("test_zip.zip")
-        zip2_file = FILE_DATA.joinpath("test_zip.zip")  # For overwrite
-        tar_file = FILE_DATA.joinpath("test_tar.tar")
-        tar_gz_file = FILE_DATA.joinpath("test_targz.tar.gz")
+        zip_file = files_path().joinpath("test_zip.zip")
+        zip2_file = files_path().joinpath("test_zip.zip")  # For overwrite
+        tar_file = files_path().joinpath("test_tar.tar")
+        tar_gz_file = files_path().joinpath("test_targz.tar.gz")
 
         # Core dir
-        core_dir = FILE_DATA.joinpath("core")
+        core_dir = files_path().joinpath("core")
         folder = core_dir
         archives = [zip_file, tar_file, tar_gz_file, folder, zip2_file]
 
@@ -115,11 +115,11 @@ def test_archive():
 @s3_env
 def test_archived_files():
     landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = FILE_DATA.joinpath(landsat_name)
-    zip_file = FILE_DATA.joinpath(f"{landsat_name}.zip")
-    tar_file = FILE_DATA.joinpath(f"{landsat_name}.tar")
-    targz_file = FILE_DATA.joinpath(f"{landsat_name}.tar.gz")
-    sz_file = FILE_DATA.joinpath(f"{landsat_name}.7z")
+    ok_folder = files_path().joinpath(landsat_name)
+    zip_file = files_path().joinpath(f"{landsat_name}.zip")
+    tar_file = files_path().joinpath(f"{landsat_name}.tar")
+    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
+    sz_file = files_path().joinpath(f"{landsat_name}.7z")
 
     # RASTERIO
     tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
@@ -149,7 +149,7 @@ def test_archived_files():
         ci.assert_geom_equal(vect_ok, vect_tar)
 
     # XML
-    if isinstance(FILE_DATA, CloudPath):
+    if isinstance(files_path(), CloudPath):
         zip_file = zip_file.fspath
         tar_file = tar_file.fspath
         xml_ok_path = xml_ok_path.fspath

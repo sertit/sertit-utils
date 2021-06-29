@@ -18,16 +18,16 @@
 import pytest
 from shapely import wkt
 
-from CI.SCRIPTS.script_utils import GEO_DATA
+from CI.SCRIPTS.script_utils import vectors_path
 from sertit import ci, vectors
 from sertit.vectors import WGS84
 
 
 def test_vectors():
     """Test geo functions"""
-    kml_path = GEO_DATA.joinpath("aoi.kml")
-    wkt_path = GEO_DATA.joinpath("aoi.wkt")
-    utm_path = GEO_DATA.joinpath("aoi.geojson")
+    kml_path = vectors_path().joinpath("aoi.kml")
+    wkt_path = vectors_path().joinpath("aoi.wkt")
+    utm_path = vectors_path().joinpath("aoi.geojson")
 
     # KML
     vectors.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)
@@ -51,7 +51,7 @@ def test_vectors():
     # UTM to WKT
     aoi3 = vectors.get_aoi_wkt(utm_path, as_str=False)
 
-    assert aoi.equals(aoi2)  # No reprojection, shoul be equal
+    assert aoi.equals(aoi2)  # No reprojection, should be equal
     assert aoi.almost_equals(aoi3)  # Reprojection, so almost equal
     assert wkt.dumps(aoi) == aoi_str
 
@@ -82,10 +82,10 @@ def test_vectors():
 
 def test_gml():
     """Test GML functions"""
-    empty_gml = GEO_DATA.joinpath("empty.GML")
-    not_empty_gml = GEO_DATA.joinpath("not_empty.GML")
-    naive_gml = GEO_DATA.joinpath("naive.GML")
-    not_empty_true_path = GEO_DATA.joinpath("not_empty_true.geojson")
+    empty_gml = vectors_path().joinpath("empty.GML")
+    not_empty_gml = vectors_path().joinpath("not_empty.GML")
+    naive_gml = vectors_path().joinpath("naive.GML")
+    not_empty_true_path = vectors_path().joinpath("not_empty_true.geojson")
 
     # Empty
     empty_gdf = vectors.read(empty_gml, crs=WGS84)

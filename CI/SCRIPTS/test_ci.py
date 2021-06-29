@@ -22,7 +22,7 @@ import pytest
 from cloudpathlib import CloudPath
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import FILE_DATA, GEO_DATA, RASTER_DATA, s3_env
+from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
 from sertit import ci, misc, rasters_rio, vectors
 
 
@@ -30,18 +30,18 @@ from sertit import ci, misc, rasters_rio, vectors
 def test_assert_dir():
     """Test CI functions"""
     # Dirs
-    dir2 = FILE_DATA.joinpath("core")
+    dir2 = files_path().joinpath("core")
 
-    ci.assert_dir_equal(FILE_DATA, FILE_DATA)
+    ci.assert_dir_equal(files_path(), files_path())
     with pytest.raises(AssertionError):
-        ci.assert_dir_equal(FILE_DATA, dir2)
+        ci.assert_dir_equal(files_path(), dir2)
 
 
 def test_assert_vect():
     """Test CI functions"""
     # Vector
-    vector_path = str(GEO_DATA.joinpath("aoi.geojson"))
-    vector2_path = str(GEO_DATA.joinpath("aoi2.geojson"))
+    vector_path = str(vectors_path().joinpath("aoi.geojson"))
+    vector2_path = str(vectors_path().joinpath("aoi2.geojson"))
 
     vec_df = vectors.read(vector_path)
     vec2_df = vectors.read(vector2_path)
@@ -55,8 +55,8 @@ def test_assert_vect():
 @s3_env
 def test_assert_raster():
     # Rasters
-    raster_path = RASTER_DATA.joinpath("raster.tif")
-    raster2_path = RASTER_DATA.joinpath("raster_masked.tif")
+    raster_path = rasters_path().joinpath("raster.tif")
+    raster2_path = rasters_path().joinpath("raster_masked.tif")
 
     ci.assert_raster_equal(raster_path, raster_path)
     with pytest.raises(AssertionError):
@@ -80,7 +80,7 @@ def test_assert_raster():
 
         ci.assert_raster_almost_equal(raster_float_path, raster_almost_path)
         with pytest.raises(AssertionError):
-            raster2_path = RASTER_DATA.joinpath("raster_masked.tif")
+            raster2_path = rasters_path().joinpath("raster_masked.tif")
             ci.assert_raster_almost_equal(raster_path, raster2_path)
 
         with pytest.raises(AssertionError):
@@ -95,11 +95,11 @@ def test_assert_raster():
 @s3_env
 def test_assert_xml():
     # XML
-    xml_folder = FILE_DATA.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
+    xml_folder = files_path().joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
     xml_path = xml_folder.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
     xml_bad_path = xml_folder.joinpath("false_xml.xml")
 
-    if isinstance(FILE_DATA, CloudPath):
+    if isinstance(files_path(), CloudPath):
         xml_path = xml_path.fspath
         xml_bad_path = xml_bad_path.fspath
 

@@ -97,7 +97,17 @@ def s3_env(function: Callable):
     return s3_env_wrapper
 
 
-RASTER_DATA = get_ci_data_path().joinpath("rasters")
-GEO_DATA = get_ci_data_path().joinpath("vectors")
-FILE_DATA = get_ci_data_path().joinpath("files")
-DISPLAY_DATA = get_ci_data_path().joinpath("display")
+def rasters_path():
+    return get_ci_data_path().joinpath("rasters")
+
+
+def vectors_path():
+    return get_ci_data_path().joinpath("vectors")
+
+
+def files_path():
+    return get_ci_data_path().joinpath("files")
+
+
+def display_path():
+    return get_ci_data_path().joinpath("display")

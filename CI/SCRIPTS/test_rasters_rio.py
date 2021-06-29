@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 import rasterio
 
-from CI.SCRIPTS.script_utils import RASTER_DATA, s3_env
+from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
 
 
@@ -31,21 +31,21 @@ from sertit import ci, rasters_rio, vectors
 def test_rasters_rio():
     """Test raster functions"""
     # Rasters
-    raster_path = RASTER_DATA.joinpath("raster.tif")
-    raster_masked_path = RASTER_DATA.joinpath("raster_masked.tif")
-    raster_cropped_path = RASTER_DATA.joinpath("raster_cropped.tif")
-    raster_sieved_path = RASTER_DATA.joinpath("raster_sieved.tif")
-    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
-    raster_merged_gtiff_path = RASTER_DATA.joinpath("raster_merged.tif")
+    raster_path = rasters_path().joinpath("raster.tif")
+    raster_masked_path = rasters_path().joinpath("raster_masked.tif")
+    raster_cropped_path = rasters_path().joinpath("raster_cropped.tif")
+    raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
+    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
+    raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
 
     # Vectors
-    mask_path = RASTER_DATA.joinpath("raster_mask.geojson")
-    extent_path = RASTER_DATA.joinpath("extent.geojson")
-    footprint_path = RASTER_DATA.joinpath("footprint.geojson")
-    vect_truth_path = RASTER_DATA.joinpath("vector.geojson")
-    diss_truth_path = RASTER_DATA.joinpath("dissolved.geojson")
-    nodata_truth_path = RASTER_DATA.joinpath("nodata.geojson")
-    valid_truth_path = RASTER_DATA.joinpath("valid.geojson")
+    mask_path = rasters_path().joinpath("raster_mask.geojson")
+    extent_path = rasters_path().joinpath("extent.geojson")
+    footprint_path = rasters_path().joinpath("footprint.geojson")
+    vect_truth_path = rasters_path().joinpath("vector.geojson")
+    diss_truth_path = rasters_path().joinpath("dissolved.geojson")
+    nodata_truth_path = rasters_path().joinpath("nodata.geojson")
+    valid_truth_path = rasters_path().joinpath("valid.geojson")
 
     # Create tmp file
     # VRT needs to be build on te same disk
@@ -158,9 +158,9 @@ def test_rasters_rio():
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():
-    raster_merged_vrt_path = RASTER_DATA.joinpath("raster_merged.vrt")
-    raster_to_merge_path = RASTER_DATA.joinpath("raster_to_merge.tif")
-    raster_path = RASTER_DATA.joinpath("raster.tif")
+    raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
+    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
+    raster_path = rasters_path().joinpath("raster.tif")
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Merge VRT
@@ -173,8 +173,8 @@ def test_vrt():
 
 def test_dim():
     """Test on BEAM-DIMAP function"""
-    dim_path = RASTER_DATA.joinpath("DIM.dim")
-    assert rasters_rio.get_dim_img_path(dim_path) == RASTER_DATA.joinpath(
+    dim_path = rasters_path().joinpath("DIM.dim")
+    assert rasters_rio.get_dim_img_path(dim_path) == rasters_path().joinpath(
         "DIM.data", "dim.img"
     )
 
