@@ -32,6 +32,7 @@ from typing import Any, Generator, Union
 import numpy as np
 import pandas as pd
 from cloudpathlib import AnyPath, CloudPath
+from cloudpathlib.exceptions import AnyPathTypeError
 from fiona.errors import UnsupportedGeometryTypeError
 
 from sertit import files, misc, strings
@@ -355,34 +356,37 @@ def read(
     """
     tmp_dir = None
     arch_vect_path = None
-    path = AnyPath(path)
+    try:
+        path = AnyPath(path)
 
-    # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-    if isinstance(path, CloudPath):
-        path = AnyPath(path.fspath)
+        # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
+        if isinstance(path, CloudPath):
+            path = AnyPath(path.fspath)
 
-    # Manage archive case
-    if path.suffix in [".tar", ".zip"]:
-        prefix = path.suffix[-3:]
-        file_list = files.get_archived_file_list(path)
+        # Manage archive case
+        if path.suffix in [".tar", ".zip"]:
+            prefix = path.suffix[-3:]
+            file_list = files.get_archived_file_list(path)
 
-        try:
-            regex = re.compile(archive_regex)
-            arch_vect_path = list(filter(regex.match, file_list))[0]
+            try:
+                regex = re.compile(archive_regex)
+                arch_vect_path = list(filter(regex.match, file_list))[0]
 
-            if isinstance(path, CloudPath):
-                vect_path = f"{prefix}+{path}!{arch_vect_path}"
-            else:
-                vect_path = f"{prefix}://{path}!{arch_vect_path}"
-        except IndexError:
-            raise FileNotFoundError(
-                f"Impossible to find vector {archive_regex} in {files.get_filename(path)}"
+                if isinstance(path, CloudPath):
+                    vect_path = f"{prefix}+{path}!{arch_vect_path}"
+                else:
+                    vect_path = f"{prefix}://{path}!{arch_vect_path}"
+            except IndexError:
+                raise FileNotFoundError(
+                    f"Impossible to find vector {archive_regex} in {files.get_filename(path)}"
+                )
+        elif path.suffixes == [".tar", ".gz"]:
+            raise TypeError(
+                ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )
-    elif path.suffixes == [".tar", ".gz"]:
-        raise TypeError(
-            ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
-        )
-    else:
+        else:
+            vect_path = path
+    except AnyPathTypeError:
         vect_path = path
 
     # Open vector
@@ -396,7 +400,9 @@ def read(
         # Manage KML driver
         if str(vect_path).endswith(".kml"):
             set_kml_driver()
-            vect = gpd.GeoDataFrame()
+            vect = gpd.GeoDataFrame(
+                crs=WGS84
+            )  # KML files are always in WGS84 (and does not contain this information)
 
             # Document tags in KML file are separate layers for GeoPandas.
             # When you try to get the KML content, you actually get the first layer.
