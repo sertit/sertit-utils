@@ -323,7 +323,7 @@ def shapes_to_gdf(shapes: Generator, crs: str):
 
 
 def read(
-    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+    path: Union[str, CloudPath], crs: Any = None, archive_regex: str = None
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
@@ -392,7 +392,7 @@ def read(
     # Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
-        fiona_logger = logging.getLogger("fiona._env")
+        fiona_logger = logging.getLogger("fiona")
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
@@ -411,8 +411,13 @@ def read(
             import fiona
 
             for layer in fiona.listlayers(vect_path):
-                vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
-                vect = vect.append(vect_layer, ignore_index=True)
+                try:
+                    vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
+                    if not vect_layer.empty:
+                        vect_layer.crs = WGS84
+                        vect = vect.append(vect_layer, ignore_index=True)
+                except ValueError:
+                    pass  # Except Null Layer
 
             # Workaround for archived KML -> they may be empty
             # Convert KML to GeoJSON
@@ -455,7 +460,9 @@ def read(
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
     except (ValueError, UnsupportedGeometryTypeError) as ex:
-        LOGGER.warning(ex)
+        # Do not print warning for null layer
+        if "Null layer" not in str(ex):
+            LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
     # Clean
