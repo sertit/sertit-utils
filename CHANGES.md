@@ -2,7 +2,13 @@
 
 ## 1.4.Z (2021-MM-DD)
 
-## 1.4.0 (2021-06-21)
+## 1.4.1 (2021-06-29)
+- `vectors.read`:
+  - Manage IO[bytes] and other inputs instead of only path in vectors.read and set KML vectors to WGS84
+  - Manage Null Layer exception
+- [CI] Updating CI to really test S3 data
+
+## 1.4.0 (2021-06-28)
 
 - Handling S3 compatible storage data
 - [vectors] Adding a read function handling KML, GML, archived vectors...
