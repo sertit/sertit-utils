@@ -71,6 +71,7 @@ from typing import Any, Generator, Union
 import numpy as np
 import pandas as pd
 from cloudpathlib import AnyPath, CloudPath
+from cloudpathlib.exceptions import AnyPathTypeError
 from fiona.errors import UnsupportedGeometryTypeError
 
 from sertit import files, misc, strings
@@ -361,7 +362,7 @@ def shapes_to_gdf(shapes: Generator, crs: str):
 
 
 def read(
-    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+    path: Union[str, CloudPath], crs: Any = None, archive_regex: str = None
 ) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
     Read any vector:
@@ -394,40 +395,43 @@ def read(
     &#34;&#34;&#34;
     tmp_dir = None
     arch_vect_path = None
-    path = AnyPath(path)
+    try:
+        path = AnyPath(path)
 
-    # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-    if isinstance(path, CloudPath):
-        path = AnyPath(path.fspath)
+        # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
+        if isinstance(path, CloudPath):
+            path = AnyPath(path.fspath)
 
-    # Manage archive case
-    if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
-        prefix = path.suffix[-3:]
-        file_list = files.get_archived_file_list(path)
+        # Manage archive case
+        if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
+            prefix = path.suffix[-3:]
+            file_list = files.get_archived_file_list(path)
 
-        try:
-            regex = re.compile(archive_regex)
-            arch_vect_path = list(filter(regex.match, file_list))[0]
+            try:
+                regex = re.compile(archive_regex)
+                arch_vect_path = list(filter(regex.match, file_list))[0]
 
-            if isinstance(path, CloudPath):
-                vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
-            else:
-                vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
-        except IndexError:
-            raise FileNotFoundError(
-                f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+                if isinstance(path, CloudPath):
+                    vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
+                else:
+                    vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
+            except IndexError:
+                raise FileNotFoundError(
+                    f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+                )
+        elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
+            raise TypeError(
+                &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
             )
-    elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
-        raise TypeError(
-            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
-        )
-    else:
+        else:
+            vect_path = path
+    except AnyPathTypeError:
         vect_path = path
 
     # Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
-        fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
+        fiona_logger = logging.getLogger(&#34;fiona&#34;)
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
@@ -435,7 +439,9 @@ def read(
         # Manage KML driver
         if str(vect_path).endswith(&#34;.kml&#34;):
             set_kml_driver()
-            vect = gpd.GeoDataFrame()
+            vect = gpd.GeoDataFrame(
+                crs=WGS84
+            )  # KML files are always in WGS84 (and does not contain this information)
 
             # Document tags in KML file are separate layers for GeoPandas.
             # When you try to get the KML content, you actually get the first layer.
@@ -444,8 +450,13 @@ def read(
             import fiona
 
             for layer in fiona.listlayers(vect_path):
-                vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
-                vect = vect.append(vect_layer, ignore_index=True)
+                try:
+                    vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
+                    if not vect_layer.empty:
+                        vect_layer.crs = WGS84
+                        vect = vect.append(vect_layer, ignore_index=True)
+                except ValueError:
+                    pass  # Except Null Layer
 
             # Workaround for archived KML -&gt; they may be empty
             # Convert KML to GeoJSON
@@ -488,7 +499,9 @@ def read(
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
     except (ValueError, UnsupportedGeometryTypeError) as ex:
-        LOGGER.warning(ex)
+        # Do not print warning for null layer
+        if &#34;Null layer&#34; not in str(ex):
+            LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
     # Clean
@@ -970,7 +983,7 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def read(
-    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+    path: Union[str, CloudPath], crs: Any = None, archive_regex: str = None
 ) -&gt; gpd.GeoDataFrame:
     &#34;&#34;&#34;
     Read any vector:
@@ -1003,40 +1016,43 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
     &#34;&#34;&#34;
     tmp_dir = None
     arch_vect_path = None
-    path = AnyPath(path)
+    try:
+        path = AnyPath(path)
 
-    # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-    if isinstance(path, CloudPath):
-        path = AnyPath(path.fspath)
+        # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
+        if isinstance(path, CloudPath):
+            path = AnyPath(path.fspath)
 
-    # Manage archive case
-    if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
-        prefix = path.suffix[-3:]
-        file_list = files.get_archived_file_list(path)
+        # Manage archive case
+        if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
+            prefix = path.suffix[-3:]
+            file_list = files.get_archived_file_list(path)
 
-        try:
-            regex = re.compile(archive_regex)
-            arch_vect_path = list(filter(regex.match, file_list))[0]
+            try:
+                regex = re.compile(archive_regex)
+                arch_vect_path = list(filter(regex.match, file_list))[0]
 
-            if isinstance(path, CloudPath):
-                vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
-            else:
-                vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
-        except IndexError:
-            raise FileNotFoundError(
-                f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+                if isinstance(path, CloudPath):
+                    vect_path = f&#34;{prefix}+{path}!{arch_vect_path}&#34;
+                else:
+                    vect_path = f&#34;{prefix}://{path}!{arch_vect_path}&#34;
+            except IndexError:
+                raise FileNotFoundError(
+                    f&#34;Impossible to find vector {archive_regex} in {files.get_filename(path)}&#34;
+                )
+        elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
+            raise TypeError(
+                &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
             )
-    elif path.suffixes == [&#34;.tar&#34;, &#34;.gz&#34;]:
-        raise TypeError(
-            &#34;.tar.gz files are too slow to read from inside the archive. Please extract them instead.&#34;
-        )
-    else:
+        else:
+            vect_path = path
+    except AnyPathTypeError:
         vect_path = path
 
     # Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
-        fiona_logger = logging.getLogger(&#34;fiona._env&#34;)
+        fiona_logger = logging.getLogger(&#34;fiona&#34;)
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Read mask
@@ -1044,7 +1060,9 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
         # Manage KML driver
         if str(vect_path).endswith(&#34;.kml&#34;):
             set_kml_driver()
-            vect = gpd.GeoDataFrame()
+            vect = gpd.GeoDataFrame(
+                crs=WGS84
+            )  # KML files are always in WGS84 (and does not contain this information)
 
             # Document tags in KML file are separate layers for GeoPandas.
             # When you try to get the KML content, you actually get the first layer.
@@ -1053,8 +1071,13 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
             import fiona
 
             for layer in fiona.listlayers(vect_path):
-                vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
-                vect = vect.append(vect_layer, ignore_index=True)
+                try:
+                    vect_layer = gpd.read_file(vect_path, driver=&#34;KML&#34;, layer=layer)
+                    if not vect_layer.empty:
+                        vect_layer.crs = WGS84
+                        vect = vect.append(vect_layer, ignore_index=True)
+                except ValueError:
+                    pass  # Except Null Layer
 
             # Workaround for archived KML -&gt; they may be empty
             # Convert KML to GeoJSON
@@ -1097,7 +1120,9 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
     except (ValueError, UnsupportedGeometryTypeError) as ex:
-        LOGGER.warning(ex)
+        # Do not print warning for null layer
+        if &#34;Null layer&#34; not in str(ex):
+            LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
     # Clean
