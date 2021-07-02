@@ -2,6 +2,9 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.Z (2021-MM-DD)
+- Fix: JSON can serialize Pathlib objects
+
 ## 1.4.2 (2021-07-02)
 - By default, using `BIGTFF=IF_NEEDED` when writing files on disk
 - Bug resolution when passing a rasterio dataset info `rasters` functions

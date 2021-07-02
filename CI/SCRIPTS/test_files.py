@@ -243,6 +243,7 @@ def test_json():
         "E": np.int64(15),
         "F": Polarization.vv,
         "G": True,
+        "H": AnyPath("/home/data"),
     }
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -256,6 +257,10 @@ def test_json():
 
         assert (
             obj.pop("F") == test_dict.pop("F").value
+        )  # Enum are stored following their value
+
+        assert obj.pop("H") == str(
+            test_dict.pop("H")
         )  # Enum are stored following their value
         assert obj == test_dict
 

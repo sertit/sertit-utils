@@ -820,6 +820,8 @@ class CustomEncoder(JSONEncoder):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
+        elif isinstance(obj, (CloudPath, Path)):
+            out = str(obj)
         else:
             out = json.JSONEncoder.default(self, obj)
 
