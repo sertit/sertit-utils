@@ -171,11 +171,12 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
             # Get name
             if isinstance(path_or_ds, (str, Path, CloudPath)):
                 name = str(path_or_ds)
+                path_or_ds = str(path_or_ds)
             else:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                str(path_or_ds), masked=True, default_name=name
+                path_or_ds, masked=True, default_name=name
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
@@ -183,7 +184,7 @@ def path_xarr_dst(function: Callable) -&gt; Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
+def to_np(xds: xarray.DataArray, dtype: Any = None) -&gt; np.ndarray:
     &#34;&#34;&#34;
     Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
 
@@ -213,7 +214,7 @@ def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
     ```
     Args:
         xds (xarray.DataArray): `xarray.DataArray` to convert
-        dtype (str): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
+        dtype (Any): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
 
     Returns:
 
@@ -731,7 +732,7 @@ def read(
 
 
 @path_xarr_dst
-def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
+def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk.
     (encapsulation of `rasterio`&#39;s function, because for now `rioxarray` to_raster doesn&#39;t work as expected)
@@ -762,7 +763,7 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
 
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
-        path (str): Path where to save it (directories should be existing)
+        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255` or `dtype=np.uint8`
     &#34;&#34;&#34;
     if &#34;nodata&#34; in kwargs:
@@ -799,7 +800,7 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     if &#34;_FillValue&#34; in xds.attrs:
         xds.attrs.pop(&#34;_FillValue&#34;)
 
-    xds.rio.to_raster(path, **kwargs)
+    xds.rio.to_raster(str(path), BIGTIFF=&#34;IF_NEEDED&#34;, **kwargs)
 
 
 def collocate(
@@ -894,7 +895,9 @@ def sieve(
     return sieved_xds
 
 
-def get_dim_img_path(dim_path: str, img_name: str = &#34;*&#34;) -&gt; str:
+def get_dim_img_path(
+    dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -909,11 +912,11 @@ def get_dim_img_path(dim_path: str, img_name: str = &#34;*&#34;) -&gt; str:
     ```
 
     Args:
-        dim_path (str): DIM path (.dim or .data)
+        dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        str: .img file
+        Union[CloudPath, Path]: .img file
     &#34;&#34;&#34;
     return rasters_rio.get_dim_img_path(dim_path, img_name)
 
@@ -968,7 +971,9 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
     return vectors.get_wider_exterior(footprint)
 
 
-def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+def merge_vrt(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a VRT. Uses `gdalbuildvrt`.
 
@@ -993,13 +998,15 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, **kwargs)
 
 
-def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+def merge_gtiff(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a GeoTiff.
 
@@ -1020,7 +1027,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     &#34;&#34;&#34;
@@ -1419,11 +1426,12 @@ True
             # Get name
             if isinstance(path_or_ds, (str, Path, CloudPath)):
                 name = str(path_or_ds)
+                path_or_ds = str(path_or_ds)
             else:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                str(path_or_ds), masked=True, default_name=name
+                path_or_ds, masked=True, default_name=name
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
@@ -1462,7 +1470,7 @@ True
 <dl>
 <dt><strong><code>xds</code></strong> :&ensp;<code>xarray.DataArray</code></dt>
 <dd><code>xarray.DataArray</code> to convert</dd>
-<dt><strong><code>dtype</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>dtype</code></strong> :&ensp;<code>Any</code></dt>
 <dd>Dtype to convert to. If None, using the origin dtype if existing or its current dtype.</dd>
 </dl>
 <p>Returns:</p></div>
@@ -1470,7 +1478,7 @@ True
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_np(xds: xarray.DataArray, dtype: str = None) -&gt; np.ndarray:
+<pre><code class="python">def to_np(xds: xarray.DataArray, dtype: Any = None) -&gt; np.ndarray:
     &#34;&#34;&#34;
     Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
 
@@ -1500,7 +1508,7 @@ True
     ```
     Args:
         xds (xarray.DataArray): `xarray.DataArray` to convert
-        dtype (str): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
+        dtype (Any): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
 
     Returns:
 
@@ -2280,7 +2288,7 @@ The file will be compressed if the raster is a mask (saved as uint8).</p>
 <dl>
 <dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.XDS_TYPE" href="#sertit.rasters.XDS_TYPE">XDS_TYPE</a></code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
-<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path where to save it (directories should be existing)</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
 <dd>Overloading metadata, ie <code>nodata=255</code> or <code>dtype=np.uint8</code></dd>
@@ -2290,7 +2298,7 @@ The file will be compressed if the raster is a mask (saved as uint8).</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@path_xarr_dst
-def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
+def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk.
     (encapsulation of `rasterio`&#39;s function, because for now `rioxarray` to_raster doesn&#39;t work as expected)
@@ -2321,7 +2329,7 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
 
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
-        path (str): Path where to save it (directories should be existing)
+        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255` or `dtype=np.uint8`
     &#34;&#34;&#34;
     if &#34;nodata&#34; in kwargs:
@@ -2358,7 +2366,7 @@ def write(xds: XDS_TYPE, path: str, **kwargs) -&gt; None:
     if &#34;_FillValue&#34; in xds.attrs:
         xds.attrs.pop(&#34;_FillValue&#34;)
 
-    xds.rio.to_raster(path, **kwargs)</code></pre>
+    xds.rio.to_raster(str(path), BIGTIFF=&#34;IF_NEEDED&#34;, **kwargs)</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.collocate"><code class="name flex">
@@ -2538,21 +2546,23 @@ def sieve(
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dim_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>dim_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>DIM path (.dim or .data)</dd>
 <dt><strong><code>img_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>.img file name (or regex), in case there are multiple .img files (ie. for S3 data)</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>str</code></dt>
+<dt><code>Union[CloudPath, Path]</code></dt>
 <dd>.img file</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_dim_img_path(dim_path: str, img_name: str = &#34;*&#34;) -&gt; str:
+<pre><code class="python">def get_dim_img_path(
+    dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -2567,11 +2577,11 @@ def sieve(
     ```
 
     Args:
-        dim_path (str): DIM path (.dim or .data)
+        dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        str: .img file
+        Union[CloudPath, Path]: .img file
     &#34;&#34;&#34;
     return rasters_rio.get_dim_img_path(dim_path, img_name)</code></pre>
 </details>
@@ -2707,7 +2717,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
 <dd>Path of the rasters to be merged with the same CRS</dd>
-<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
 <dd>Other gdlabuildvrt arguments</dd>
@@ -2716,7 +2726,9 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+<pre><code class="python">def merge_vrt(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a VRT. Uses `gdalbuildvrt`.
 
@@ -2741,7 +2753,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, **kwargs)</code></pre>
@@ -2770,7 +2782,7 @@ def get_footprint(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
 <dd>Path of the rasters to be merged with the same CRS</dd>
-<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
 <dd>Other rasterio.merge arguments
@@ -2780,7 +2792,9 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+<pre><code class="python">def merge_gtiff(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a GeoTiff.
 
@@ -2801,7 +2815,7 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     &#34;&#34;&#34;

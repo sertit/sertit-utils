@@ -329,7 +329,7 @@ def get_nodata_mask(
     array: Union[np.ma.masked_array, np.ndarray],
     has_nodata: bool,
     default_nodata: int = 0,
-) -&gt; np.ma.masked_array:
+) -&gt; np.ndarray:
     &#34;&#34;&#34;
     Get nodata mask from a masked array.
 
@@ -358,7 +358,7 @@ def get_nodata_mask(
         default_nodata (int): Default nodata used if the array&#39;s nodata is not set
 
     Returns:
-        np.ma.masked_array: Pixelwise nodata array
+        np.ndarray: Pixelwise nodata array
 
     &#34;&#34;&#34;
     # Nodata mask
@@ -790,7 +790,10 @@ def read(
 
 
 def write(
-    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray],
+    meta: dict,
+    path: Union[str, CloudPath, Path],
+    **kwargs,
 ) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk (encapsulation of rasterio&#39;s function)
@@ -813,7 +816,7 @@ def write(
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
         meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
-        path (str): Path where to save it (directories should be existing)
+        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     &#34;&#34;&#34;
     # Manage raster type (impossible to write boolean arrays)
@@ -832,6 +835,9 @@ def write(
 
     # Compress to LZW by default
     out_meta[&#34;compress&#34;] = kwargs.get(&#34;compress&#34;, &#34;lzw&#34;)
+
+    # Bigtiff if needed
+    out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)
@@ -982,7 +988,9 @@ def sieve(
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;) -&gt; str:
+def get_dim_img_path(
+    dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -1001,7 +1009,7 @@ def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = &#34
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        str: .img file
+        Union[CloudPath, Path]: .img file
     &#34;&#34;&#34;
     dim_path = AnyPath(dim_path)
     if dim_path.suffix == &#34;.dim&#34;:
@@ -1063,7 +1071,9 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
     return vectors.get_wider_exterior(footprint)
 
 
-def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+def merge_vrt(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a VRT. Uses `gdalbuildvrt`.
 
@@ -1088,12 +1098,12 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
 
-    for id, path in enumerate(crs_paths):
-        crs_paths[id] = path
+    for idp, path in enumerate(crs_paths):
+        crs_paths[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
@@ -1126,7 +1136,9 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
     misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
-def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+def merge_gtiff(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a GeoTiff.
 
@@ -1147,7 +1159,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     &#34;&#34;&#34;
@@ -1679,7 +1691,7 @@ array([[0, 1, 1],
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>np.ma.masked_array</code></dt>
+<dt><code>np.ndarray</code></dt>
 <dd>Pixelwise nodata array</dd>
 </dl></div>
 <details class="source">
@@ -1690,7 +1702,7 @@ array([[0, 1, 1],
     array: Union[np.ma.masked_array, np.ndarray],
     has_nodata: bool,
     default_nodata: int = 0,
-) -&gt; np.ma.masked_array:
+) -&gt; np.ndarray:
     &#34;&#34;&#34;
     Get nodata mask from a masked array.
 
@@ -1719,7 +1731,7 @@ array([[0, 1, 1],
         default_nodata (int): Default nodata used if the array&#39;s nodata is not set
 
     Returns:
-        np.ma.masked_array: Pixelwise nodata array
+        np.ndarray: Pixelwise nodata array
 
     &#34;&#34;&#34;
     # Nodata mask
@@ -2274,7 +2286,7 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <dd>Raster to save on disk</dd>
 <dt><strong><code>meta</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Basic metadata that will be copied and updated with raster's information</dd>
-<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path where to save it (directories should be existing)</dd>
 <dt><strong><code>**kwargs</code></strong></dt>
 <dd>Overloading metadata, ie <code>nodata=255</code></dd>
@@ -2284,7 +2296,10 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def write(
-    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray],
+    meta: dict,
+    path: Union[str, CloudPath, Path],
+    **kwargs,
 ) -&gt; None:
     &#34;&#34;&#34;
     Write raster to disk (encapsulation of rasterio&#39;s function)
@@ -2307,7 +2322,7 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
         meta (dict): Basic metadata that will be copied and updated with raster&#39;s information
-        path (str): Path where to save it (directories should be existing)
+        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     &#34;&#34;&#34;
     # Manage raster type (impossible to write boolean arrays)
@@ -2326,6 +2341,9 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
 
     # Compress to LZW by default
     out_meta[&#34;compress&#34;] = kwargs.get(&#34;compress&#34;, &#34;lzw&#34;)
+
+    # Bigtiff if needed
+    out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)
@@ -2577,14 +2595,16 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>str</code></dt>
+<dt><code>Union[CloudPath, Path]</code></dt>
 <dd>.img file</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;) -&gt; str:
+<pre><code class="python">def get_dim_img_path(
+    dim_path: Union[str, CloudPath, Path], img_name: str = &#34;*&#34;
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -2603,7 +2623,7 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        str: .img file
+        Union[CloudPath, Path]: .img file
     &#34;&#34;&#34;
     dim_path = AnyPath(dim_path)
     if dim_path.suffix == &#34;.dim&#34;:
@@ -2746,7 +2766,7 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
 <dd>Path of the rasters to be merged with the same CRS)</dd>
-<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
 <dd>Other gdlabuildvrt arguments</dd>
@@ -2755,7 +2775,9 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+<pre><code class="python">def merge_vrt(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a VRT. Uses `gdalbuildvrt`.
 
@@ -2780,12 +2802,12 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
 
-    for id, path in enumerate(crs_paths):
-        crs_paths[id] = path
+    for idp, path in enumerate(crs_paths):
+        crs_paths[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
@@ -2841,7 +2863,7 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
 <dl>
 <dt><strong><code>crs_paths</code></strong> :&ensp;<code>list</code></dt>
 <dd>Path of the rasters to be merged with the same CRS)</dd>
-<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>str</code></dt>
+<dt><strong><code>crs_merged_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Path to the merged raster</dd>
 <dt><strong><code>kwargs</code></strong></dt>
 <dd>Other rasterio.merge arguments
@@ -2851,7 +2873,9 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -&gt; None:
+<pre><code class="python">def merge_gtiff(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -&gt; None:
     &#34;&#34;&#34;
     Merge rasters as a GeoTiff.
 
@@ -2872,7 +2896,7 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     &#34;&#34;&#34;

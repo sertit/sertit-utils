@@ -961,7 +961,7 @@ def get_file_in_dir(
     filename_only: bool = False,
     get_list: bool = False,
     exact_name: bool = False,
-) -&gt; Union[str, list]:
+) -&gt; Union[CloudPath, Path, list]:
     &#34;&#34;&#34;
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -999,7 +999,7 @@ def get_file_in_dir(
         exact_name (bool): Get the exact name (without adding `*` before and after the given pattern)
 
     Returns:
-        Union[str, list]: File
+        Union[CloudPath, Path, list]: File
     &#34;&#34;&#34;
     directory = AnyPath(directory)
 
@@ -2467,7 +2467,7 @@ found = 'D:\root\dir1\huhu.txt'
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>Union[str, list]</code></dt>
+<dt><code>Union[CloudPath, Path, list]</code></dt>
 <dd>File</dd>
 </dl></div>
 <details class="source">
@@ -2481,7 +2481,7 @@ found = 'D:\root\dir1\huhu.txt'
     filename_only: bool = False,
     get_list: bool = False,
     exact_name: bool = False,
-) -&gt; Union[str, list]:
+) -&gt; Union[CloudPath, Path, list]:
     &#34;&#34;&#34;
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -2519,7 +2519,7 @@ found = 'D:\root\dir1\huhu.txt'
         exact_name (bool): Get the exact name (without adding `*` before and after the given pattern)
 
     Returns:
-        Union[str, list]: File
+        Union[CloudPath, Path, list]: File
     &#34;&#34;&#34;
     directory = AnyPath(directory)
 
