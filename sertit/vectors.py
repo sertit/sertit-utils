@@ -323,7 +323,7 @@ def shapes_to_gdf(shapes: Generator, crs: str):
 
 
 def read(
-    path: Union[str, CloudPath], crs: Any = None, archive_regex: str = None
+    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
@@ -385,9 +385,9 @@ def read(
                 ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )
         else:
-            vect_path = path
+            vect_path = str(path)
     except AnyPathTypeError:
-        vect_path = path
+        vect_path = str(path)
 
     # Open vector
     try:
@@ -398,11 +398,9 @@ def read(
         # Read mask
 
         # Manage KML driver
-        if str(vect_path).endswith(".kml"):
+        if vect_path.endswith(".kml"):
             set_kml_driver()
-            vect = gpd.GeoDataFrame(
-                crs=WGS84
-            )  # KML files are always in WGS84 (and does not contain this information)
+            vect = gpd.GeoDataFrame()
 
             # Document tags in KML file are separate layers for GeoPandas.
             # When you try to get the KML content, you actually get the first layer.
@@ -414,6 +412,7 @@ def read(
                 try:
                     vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
                     if not vect_layer.empty:
+                        # KML files are always in WGS84 (and does not contain this information)
                         vect_layer.crs = WGS84
                         vect = vect.append(vect_layer, ignore_index=True)
                 except ValueError:

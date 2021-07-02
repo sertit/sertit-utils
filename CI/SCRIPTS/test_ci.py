@@ -37,11 +37,12 @@ def test_assert_dir():
         ci.assert_dir_equal(files_path(), dir2)
 
 
+@s3_env
 def test_assert_vect():
     """Test CI functions"""
     # Vector
-    vector_path = str(vectors_path().joinpath("aoi.geojson"))
-    vector2_path = str(vectors_path().joinpath("aoi2.geojson"))
+    vector_path = vectors_path().joinpath("aoi.geojson")
+    vector2_path = vectors_path().joinpath("aoi2.geojson")
 
     vec_df = vectors.read(vector_path)
     vec2_df = vectors.read(vector2_path)

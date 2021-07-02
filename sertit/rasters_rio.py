@@ -290,7 +290,7 @@ def get_nodata_mask(
     array: Union[np.ma.masked_array, np.ndarray],
     has_nodata: bool,
     default_nodata: int = 0,
-) -> np.ma.masked_array:
+) -> np.ndarray:
     """
     Get nodata mask from a masked array.
 
@@ -319,7 +319,7 @@ def get_nodata_mask(
         default_nodata (int): Default nodata used if the array's nodata is not set
 
     Returns:
-        np.ma.masked_array: Pixelwise nodata array
+        np.ndarray: Pixelwise nodata array
 
     """
     # Nodata mask
@@ -751,7 +751,10 @@ def read(
 
 
 def write(
-    raster: Union[np.ma.masked_array, np.ndarray], meta: dict, path: str, **kwargs
+    raster: Union[np.ma.masked_array, np.ndarray],
+    meta: dict,
+    path: Union[str, CloudPath, Path],
+    **kwargs,
 ) -> None:
     """
     Write raster to disk (encapsulation of rasterio's function)
@@ -774,7 +777,7 @@ def write(
     Args:
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
         meta (dict): Basic metadata that will be copied and updated with raster's information
-        path (str): Path where to save it (directories should be existing)
+        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     """
     # Manage raster type (impossible to write boolean arrays)
@@ -793,6 +796,9 @@ def write(
 
     # Compress to LZW by default
     out_meta["compress"] = kwargs.get("compress", "lzw")
+
+    # Bigtiff if needed
+    out_meta["BIGTIFF"] = "IF_NEEDED"
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)
@@ -943,7 +949,9 @@ def sieve(
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = "*") -> str:
+def get_dim_img_path(
+    dim_path: Union[str, CloudPath, Path], img_name: str = "*"
+) -> Union[CloudPath, Path]:
     """
     Get the image path from a *BEAM-DIMAP* data.
 
@@ -962,7 +970,7 @@ def get_dim_img_path(dim_path: Union[str, CloudPath, Path], img_name: str = "*")
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        str: .img file
+        Union[CloudPath, Path]: .img file
     """
     dim_path = AnyPath(dim_path)
     if dim_path.suffix == ".dim":
@@ -1024,7 +1032,9 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     return vectors.get_wider_exterior(footprint)
 
 
-def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
+def merge_vrt(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -> None:
     """
     Merge rasters as a VRT. Uses `gdalbuildvrt`.
 
@@ -1049,12 +1059,12 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     """
 
-    for id, path in enumerate(crs_paths):
-        crs_paths[id] = path
+    for idp, path in enumerate(crs_paths):
+        crs_paths[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
@@ -1087,7 +1097,9 @@ def merge_vrt(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
     misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
-def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
+def merge_gtiff(
+    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+) -> None:
     """
     Merge rasters as a GeoTiff.
 
@@ -1108,7 +1120,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: str, **kwargs) -> None:
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (str): Path to the merged raster
+        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
     """

@@ -18,11 +18,12 @@
 import pytest
 from shapely import wkt
 
-from CI.SCRIPTS.script_utils import vectors_path
+from CI.SCRIPTS.script_utils import s3_env, vectors_path
 from sertit import ci, vectors
 from sertit.vectors import WGS84
 
 
+@s3_env
 def test_vectors():
     """Test geo functions"""
     kml_path = vectors_path().joinpath("aoi.kml")
@@ -80,6 +81,7 @@ def test_vectors():
         vectors.get_geodf([1, 2], aoi.crs)
 
 
+@s3_env
 def test_gml():
     """Test GML functions"""
     empty_gml = vectors_path().joinpath("empty.GML")

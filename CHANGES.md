@@ -2,6 +2,13 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.2 (2021-07-02)
+- By default, using `BIGTFF=IF_NEEDED` when writing files on disk
+- Bug resolution when passing a rasterio dataset info `rasters` functions
+- Bug resolution for pathlib paths with `vectors.read`
+- Type hints updates
+
+
 ## 1.4.1 (2021-06-29)
 - `vectors.read`:
   - Manage IO[bytes] and other inputs instead of only path in vectors.read and set KML vectors to WGS84

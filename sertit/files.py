@@ -923,7 +923,7 @@ def get_file_in_dir(
     filename_only: bool = False,
     get_list: bool = False,
     exact_name: bool = False,
-) -> Union[str, list]:
+) -> Union[CloudPath, Path, list]:
     """
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -961,7 +961,7 @@ def get_file_in_dir(
         exact_name (bool): Get the exact name (without adding `*` before and after the given pattern)
 
     Returns:
-        Union[str, list]: File
+        Union[CloudPath, Path, list]: File
     """
     directory = AnyPath(directory)
 
