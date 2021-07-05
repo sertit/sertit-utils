@@ -449,6 +449,8 @@ def read(
 
                 # Open the geojson
                 vect = gpd.read_file(vect_path_gj)
+            else:
+                vect.crs = WGS84  # Force set CRS to whole vector
         else:
             vect = gpd.read_file(vect_path)
 

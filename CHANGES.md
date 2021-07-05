@@ -2,8 +2,9 @@
 
 ## 1.4.Z (2021-MM-DD)
 
-## 1.4.Z (2021-MM-DD)
+## 1.4.3 (2021-07-05)
 - Fix: JSON can serialize Pathlib objects
+- Fix: `vectors.read` forces CRS to WGS84 for KML
 
 ## 1.4.2 (2021-07-02)
 - By default, using `BIGTFF=IF_NEEDED` when writing files on disk
