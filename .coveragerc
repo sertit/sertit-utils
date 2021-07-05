@@ -1,10 +1,3 @@
-# .coveragerc to control coverage.py
-[report]
-exclude_lines =
-    pragma: no cover
-    raise Exception
-    raise FileNotFoundError
-    raise ValueError
-    raise TypeError
-    except shutil.Error
-    except OSError
+[run]
+omit =
+    */__init__.py
