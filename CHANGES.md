@@ -4,6 +4,7 @@
 
 ## 1.4.4 (2021-07-13)
 - Fix: Fixing a bug when using relative path with a start that is not an exact root
+- Adding a DOI and a .coveragerc
 
 ## 1.4.3 (2021-07-05)
 - Fix: JSON can serialize Pathlib objects
