@@ -156,9 +156,10 @@ def real_rel_path(
     """
     path = AnyPath(path)
     start = AnyPath(start)
-    rel_path = path
     if not isinstance(path, CloudPath) and not isinstance(start, CloudPath):
-        rel_path = path.resolve().relative_to(start.resolve())
+        rel_path = AnyPath(os.path.relpath(path.parent, start), path.name)
+    else:
+        rel_path = path
 
     return rel_path
 

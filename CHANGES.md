@@ -2,6 +2,9 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.4 (2021-07-13)
+- Fix: Fixing a bug when using relative path with a start that is not an exact root
+
 ## 1.4.3 (2021-07-05)
 - Fix: JSON can serialize Pathlib objects
 - Fix: `vectors.read` forces CRS to WGS84 for KML
