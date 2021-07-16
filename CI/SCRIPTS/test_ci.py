@@ -48,9 +48,9 @@ def test_assert_vect():
     vec2_df = vectors.read(vector2_path)
 
     assert not vec_df.empty
-    ci.assert_geom_equal(vec_df, vec_df)
+    ci.assert_geom_equal(vec_df, vector_path)
     with pytest.raises(AssertionError):
-        ci.assert_geom_equal(vec_df, vec2_df)
+        ci.assert_geom_equal(vector_path, vec2_df)
 
 
 @s3_env

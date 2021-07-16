@@ -2,6 +2,10 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.5 (2021-07-16)
+- Fix: clumsy metadata management in `rasters_rio.merge_gtiff`
+- ENH: We can use paths when testing with `ci.assert_geom_equal`
+
 ## 1.4.4 (2021-07-13)
 - Fix: Fixing a bug when using relative path with a start that is not an exact root
 - Adding a DOI and a .coveragerc

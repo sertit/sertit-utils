@@ -1147,9 +1147,7 @@ def merge_gtiff(
             dataset.close()
 
     # Save merge datasets
-    write(
-        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
-    )
+    write(merged_array, merged_meta, crs_merged_path)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:

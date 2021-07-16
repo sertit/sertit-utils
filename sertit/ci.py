@@ -32,6 +32,8 @@ from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 from lxml.doctestcompare import LXMLOutputChecker
 
+from sertit import vectors
+
 
 def get_mnt_path() -> str:
     """
@@ -236,7 +238,10 @@ def assert_dir_equal(
 #     assert file_1 == file_2
 
 
-def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> None:
+def assert_geom_equal(
+    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+) -> None:
     """
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
@@ -259,6 +264,11 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -> Non
         geom_1 (gpd.GeoDataFrame): Geometry 1
         geom_2 (gpd.GeoDataFrame): Geometry 2
     """
+    if not isinstance(geom_1, gpd.GeoDataFrame):
+        geom_1 = vectors.read(geom_1)
+    if not isinstance(geom_2, gpd.GeoDataFrame):
+        geom_2 = vectors.read(geom_2)
+
     assert len(geom_1) == len(geom_2)
     assert geom_1.crs == geom_2.crs
     for idx in range(len(geom_1)):
