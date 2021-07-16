@@ -71,6 +71,8 @@ from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 from lxml.doctestcompare import LXMLOutputChecker
 
+from sertit import vectors
+
 
 def get_mnt_path() -&gt; str:
     &#34;&#34;&#34;
@@ -275,7 +277,10 @@ def assert_dir_equal(
 #     assert file_1 == file_2
 
 
-def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -&gt; None:
+def assert_geom_equal(
+    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
@@ -298,6 +303,11 @@ def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -&gt; 
         geom_1 (gpd.GeoDataFrame): Geometry 1
         geom_2 (gpd.GeoDataFrame): Geometry 2
     &#34;&#34;&#34;
+    if not isinstance(geom_1, gpd.GeoDataFrame):
+        geom_1 = vectors.read(geom_1)
+    if not isinstance(geom_2, gpd.GeoDataFrame):
+        geom_2 = vectors.read(geom_2)
+
     assert len(geom_1) == len(geom_2)
     assert geom_1.crs == geom_2.crs
     for idx in range(len(geom_1)):
@@ -684,7 +694,10 @@ asters&quot;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assert_geom_equal(geom_1: gpd.GeoDataFrame, geom_2: gpd.GeoDataFrame) -&gt; None:
+<pre><code class="python">def assert_geom_equal(
+    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+) -&gt; None:
     &#34;&#34;&#34;
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
@@ -707,6 +720,11 @@ asters&quot;
         geom_1 (gpd.GeoDataFrame): Geometry 1
         geom_2 (gpd.GeoDataFrame): Geometry 2
     &#34;&#34;&#34;
+    if not isinstance(geom_1, gpd.GeoDataFrame):
+        geom_1 = vectors.read(geom_1)
+    if not isinstance(geom_2, gpd.GeoDataFrame):
+        geom_2 = vectors.read(geom_2)
+
     assert len(geom_1) == len(geom_2)
     assert geom_1.crs == geom_2.crs
     for idx in range(len(geom_1)):

@@ -1186,9 +1186,7 @@ def merge_gtiff(
             dataset.close()
 
     # Save merge datasets
-    write(
-        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
-    )
+    write(merged_array, merged_meta, crs_merged_path)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -&gt; np.ndarray:
@@ -2923,9 +2921,7 @@ More info <a href="https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.
             dataset.close()
 
     # Save merge datasets
-    write(
-        merged_array, crs_datasets[0].meta, crs_merged_path, transform=merged_transform
-    )</code></pre>
+    write(merged_array, merged_meta, crs_merged_path)</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters_rio.unpackbits"><code class="name flex">
