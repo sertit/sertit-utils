@@ -761,7 +761,14 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     if "_FillValue" in xds.attrs:
         xds.attrs.pop("_FillValue")
 
-    xds.rio.to_raster(str(path), BIGTIFF="IF_NEEDED", **kwargs)
+    # Bigtiff if needed
+    if xds.data.size * xds.data.itemsize / 1024 / 1024 / 1024 > 4:
+        bigtiff = "YES"
+    else:
+        bigtiff = "IF_NEEDED"
+
+    # Write on disk
+    xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
 
 
 def collocate(

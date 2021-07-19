@@ -797,8 +797,14 @@ def write(
     # Compress to LZW by default
     out_meta["compress"] = kwargs.get("compress", "lzw")
 
-    # Bigtiff if needed
-    out_meta["BIGTIFF"] = "IF_NEEDED"
+    # Bigtiff if needed (more than 4Go)
+    if raster.size * raster.itemsize / 1024 / 1024 / 1024 > 4:
+        out_meta["BIGTIFF"] = "YES"
+    else:
+        out_meta["BIGTIFF"] = "IF_NEEDED"  # Should be the default but just to be sure
+
+    # Set more threads
+    out_meta["NUM_THREADS"] = MAX_CORES
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)

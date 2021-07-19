@@ -2,29 +2,38 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.6 (2021-07-19)
+- `rasters.write` and `rasters_rio.write`:
+    - Manage correctly BigTiffs with LZW compression
+    - Use the maximum number of available threads to compress
+
 ## 1.4.5 (2021-07-16)
+
 - Fix: clumsy metadata management in `rasters_rio.merge_gtiff`
 - ENH: We can use paths when testing with `ci.assert_geom_equal`
 
 ## 1.4.4 (2021-07-13)
+
 - Fix: Fixing a bug when using relative path with a start that is not an exact root
 - Adding a DOI and a .coveragerc
 
 ## 1.4.3 (2021-07-05)
+
 - Fix: JSON can serialize Pathlib objects
 - Fix: `vectors.read` forces CRS to WGS84 for KML
 
 ## 1.4.2 (2021-07-02)
+
 - By default, using `BIGTFF=IF_NEEDED` when writing files on disk
 - Bug resolution when passing a rasterio dataset info `rasters` functions
 - Bug resolution for pathlib paths with `vectors.read`
 - Type hints updates
 
-
 ## 1.4.1 (2021-06-29)
+
 - `vectors.read`:
-  - Manage IO[bytes] and other inputs instead of only path in vectors.read and set KML vectors to WGS84
-  - Manage Null Layer exception
+    - Manage IO[bytes] and other inputs instead of only path in vectors.read and set KML vectors to WGS84
+    - Manage Null Layer exception
 - [CI] Updating CI to really test S3 data
 
 ## 1.4.0 (2021-06-28)
@@ -34,7 +43,6 @@
 - [API break] `files.read_archived_vector` is removed (ise `vectors.read` instead)
 - [API break] Using pathlib objects instead of str
 - CI: Updates
-
 
 ## 1.3.15 (2021-06-16)
 
