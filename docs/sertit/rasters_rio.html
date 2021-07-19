@@ -836,8 +836,14 @@ def write(
     # Compress to LZW by default
     out_meta[&#34;compress&#34;] = kwargs.get(&#34;compress&#34;, &#34;lzw&#34;)
 
-    # Bigtiff if needed
-    out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;
+    # Bigtiff if needed (more than 4Go)
+    if raster.size * raster.itemsize / 1024 / 1024 / 1024 &gt; 4:
+        out_meta[&#34;BIGTIFF&#34;] = &#34;YES&#34;
+    else:
+        out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;  # Should be the default but just to be sure
+
+    # Set more threads
+    out_meta[&#34;NUM_THREADS&#34;] = MAX_CORES
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)
@@ -2340,8 +2346,14 @@ The file will be compressed if the raster is a mask (saved as uint8)</p>
     # Compress to LZW by default
     out_meta[&#34;compress&#34;] = kwargs.get(&#34;compress&#34;, &#34;lzw&#34;)
 
-    # Bigtiff if needed
-    out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;
+    # Bigtiff if needed (more than 4Go)
+    if raster.size * raster.itemsize / 1024 / 1024 / 1024 &gt; 4:
+        out_meta[&#34;BIGTIFF&#34;] = &#34;YES&#34;
+    else:
+        out_meta[&#34;BIGTIFF&#34;] = &#34;IF_NEEDED&#34;  # Should be the default but just to be sure
+
+    # Set more threads
+    out_meta[&#34;NUM_THREADS&#34;] = MAX_CORES
 
     # Update metadata with array data
     out_meta = update_meta(raster, out_meta)

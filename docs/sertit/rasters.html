@@ -800,7 +800,14 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None
     if &#34;_FillValue&#34; in xds.attrs:
         xds.attrs.pop(&#34;_FillValue&#34;)
 
-    xds.rio.to_raster(str(path), BIGTIFF=&#34;IF_NEEDED&#34;, **kwargs)
+    # Bigtiff if needed
+    if xds.data.size * xds.data.itemsize / 1024 / 1024 / 1024 &gt; 4:
+        bigtiff = &#34;YES&#34;
+    else:
+        bigtiff = &#34;IF_NEEDED&#34;
+
+    # Write on disk
+    xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
 
 
 def collocate(
@@ -2366,7 +2373,14 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None
     if &#34;_FillValue&#34; in xds.attrs:
         xds.attrs.pop(&#34;_FillValue&#34;)
 
-    xds.rio.to_raster(str(path), BIGTIFF=&#34;IF_NEEDED&#34;, **kwargs)</code></pre>
+    # Bigtiff if needed
+    if xds.data.size * xds.data.itemsize / 1024 / 1024 / 1024 &gt; 4:
+        bigtiff = &#34;YES&#34;
+    else:
+        bigtiff = &#34;IF_NEEDED&#34;
+
+    # Write on disk
+    xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)</code></pre>
 </details>
 </dd>
 <dt id="sertit.rasters.collocate"><code class="name flex">
