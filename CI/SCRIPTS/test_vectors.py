@@ -26,9 +26,11 @@ from sertit.vectors import WGS84
 @s3_env
 def test_vectors():
     """Test geo functions"""
+    shp_path = vectors_path().joinpath("aoi.shp")
     kml_path = vectors_path().joinpath("aoi.kml")
     wkt_path = vectors_path().joinpath("aoi.wkt")
     utm_path = vectors_path().joinpath("aoi.geojson")
+    ci.assert_geom_equal(shp_path, utm_path)  # Test shp
 
     # KML
     vectors.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)

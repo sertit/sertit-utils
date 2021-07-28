@@ -2,6 +2,12 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.7 (2021-07-19)
+- FIX: Fixing the management of shapefiles on the cloud (caching the .shp and all other files)
+- FIX: `ci.assert_geom_equal` manages correctly GeoSeries
+- CI: renaming `build` step to `lint`
+- CI: Optimizing the lib installation
+
 ## 1.4.6 (2021-07-19)
 - `rasters.write` and `rasters_rio.write`:
     - Manage correctly BigTiffs with LZW compression

@@ -361,7 +361,13 @@ def read(
 
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
         if isinstance(path, CloudPath):
-            path = AnyPath(path.fspath)
+            tmp_dir = tempfile.TemporaryDirectory()
+            if path.suffix == ".shp":
+                # Download everything to disk
+                for shp_file in path.parent.glob(path.with_suffix(".*").name):
+                    shp_file.download_to(tmp_dir.name)
+                    if shp_file.suffix == ".shp":
+                        path = AnyPath(path.fspath)
 
         # Manage archive case
         if path.suffix in [".tar", ".zip"]:
@@ -421,7 +427,8 @@ def read(
             # Workaround for archived KML -> they may be empty
             # Convert KML to GeoJSON
             if vect.empty and shutil.which("ogr2ogr"):  # Needs ogr2ogr here
-                tmp_dir = tempfile.TemporaryDirectory()
+                if not tmp_dir:
+                    tmp_dir = tempfile.TemporaryDirectory()
                 if path.suffix == ".zip":
                     with zipfile.ZipFile(path, "r") as zip_ds:
                         vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
