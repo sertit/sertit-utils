@@ -365,9 +365,11 @@ def read(
             if path.suffix == ".shp":
                 # Download everything to disk
                 for shp_file in path.parent.glob(path.with_suffix(".*").name):
-                    shp_file.download_to(tmp_dir.name)
-                    if shp_file.suffix == ".shp":
-                        path = AnyPath(path.fspath)
+                    cached_path = shp_file.download_to(tmp_dir.name)
+                    if cached_path.suffix == ".shp":
+                        path = cached_path
+            else:
+                path = AnyPath(path.fspath)
 
         # Manage archive case
         if path.suffix in [".tar", ".zip"]:
