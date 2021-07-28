@@ -303,9 +303,9 @@ def assert_geom_equal(
         geom_1 (gpd.GeoDataFrame): Geometry 1
         geom_2 (gpd.GeoDataFrame): Geometry 2
     &#34;&#34;&#34;
-    if not isinstance(geom_1, gpd.GeoDataFrame):
+    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
-    if not isinstance(geom_2, gpd.GeoDataFrame):
+    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_2 = vectors.read(geom_2)
 
     assert len(geom_1) == len(geom_2)
@@ -720,9 +720,9 @@ asters&quot;
         geom_1 (gpd.GeoDataFrame): Geometry 1
         geom_2 (gpd.GeoDataFrame): Geometry 2
     &#34;&#34;&#34;
-    if not isinstance(geom_1, gpd.GeoDataFrame):
+    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
-    if not isinstance(geom_2, gpd.GeoDataFrame):
+    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_2 = vectors.read(geom_2)
 
     assert len(geom_1) == len(geom_2)

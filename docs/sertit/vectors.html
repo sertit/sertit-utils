@@ -400,7 +400,15 @@ def read(
 
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
         if isinstance(path, CloudPath):
-            path = AnyPath(path.fspath)
+            tmp_dir = tempfile.TemporaryDirectory()
+            if path.suffix == &#34;.shp&#34;:
+                # Download everything to disk
+                for shp_file in path.parent.glob(path.with_suffix(&#34;.*&#34;).name):
+                    cached_path = shp_file.download_to(tmp_dir.name)
+                    if cached_path.suffix == &#34;.shp&#34;:
+                        path = cached_path
+            else:
+                path = AnyPath(path.fspath)
 
         # Manage archive case
         if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
@@ -460,7 +468,8 @@ def read(
             # Workaround for archived KML -&gt; they may be empty
             # Convert KML to GeoJSON
             if vect.empty and shutil.which(&#34;ogr2ogr&#34;):  # Needs ogr2ogr here
-                tmp_dir = tempfile.TemporaryDirectory()
+                if not tmp_dir:
+                    tmp_dir = tempfile.TemporaryDirectory()
                 if path.suffix == &#34;.zip&#34;:
                     with zipfile.ZipFile(path, &#34;r&#34;) as zip_ds:
                         vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
@@ -1022,7 +1031,15 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
 
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
         if isinstance(path, CloudPath):
-            path = AnyPath(path.fspath)
+            tmp_dir = tempfile.TemporaryDirectory()
+            if path.suffix == &#34;.shp&#34;:
+                # Download everything to disk
+                for shp_file in path.parent.glob(path.with_suffix(&#34;.*&#34;).name):
+                    cached_path = shp_file.download_to(tmp_dir.name)
+                    if cached_path.suffix == &#34;.shp&#34;:
+                        path = cached_path
+            else:
+                path = AnyPath(path.fspath)
 
         # Manage archive case
         if path.suffix in [&#34;.tar&#34;, &#34;.zip&#34;]:
@@ -1082,7 +1099,8 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
             # Workaround for archived KML -&gt; they may be empty
             # Convert KML to GeoJSON
             if vect.empty and shutil.which(&#34;ogr2ogr&#34;):  # Needs ogr2ogr here
-                tmp_dir = tempfile.TemporaryDirectory()
+                if not tmp_dir:
+                    tmp_dir = tempfile.TemporaryDirectory()
                 if path.suffix == &#34;.zip&#34;:
                     with zipfile.ZipFile(path, &#34;r&#34;) as zip_ds:
                         vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
