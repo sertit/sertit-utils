@@ -2,7 +2,7 @@
 
 ## 1.4.Z (2021-MM-DD)
 
-## 1.4.7 (2021-07-19)
+## 1.4.7 (2021-07-28)
 - FIX: Fixing the management of shapefiles on the cloud (caching the .shp and all other files)
 - FIX: `ci.assert_geom_equal` manages correctly GeoSeries
 - CI: renaming `build` step to `lint`
