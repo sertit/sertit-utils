@@ -92,6 +92,11 @@ def test_assert_raster():
             rasters_rio.write(arr, meta, raster_too_much_path)
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
 
+        # Max mismatch
+        ci.assert_raster_max_mismatch(raster_path, raster_path, max_mismatch_pct=0.001)
+        with pytest.raises(AssertionError):
+            ci.assert_raster_max_mismatch(raster_float_path, raster_almost_path)
+
 
 @s3_env
 def test_assert_xml():

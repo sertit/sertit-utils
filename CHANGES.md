@@ -2,6 +2,9 @@
 
 ## 1.4.Z (2021-MM-DD)
 
+## 1.4.8 (2021-07-29)
+- ENH: Adding `ci.assert_raster_max_mismatch` allowing a mismatch between two rasters' pixels
+
 ## 1.4.7 (2021-07-28)
 - FIX: Fixing the management of shapefiles on the cloud (caching the .shp and all other files)
 - FIX: `ci.assert_geom_equal` manages correctly GeoSeries

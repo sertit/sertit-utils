@@ -189,6 +189,50 @@ def assert_raster_almost_equal(
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
+def assert_raster_max_mismatch(
+    path_1: Union[str, CloudPath, Path],
+    path_2: Union[str, CloudPath, Path],
+    max_mismatch_pct=0.5,
+) -> None:
+    """
+    Assert that two rasters are almost equal.
+    (everything is equal except the transform and the arrays that are almost equal)
+
+    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
+
+    -> Useful for pytests.
+
+    ```python
+    >>> path = r"CI\DATA\rasters\raster.tif"
+    >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+    >>> assert_raster_equal(path, path2)
+    >>> # Raises AssertionError if sth goes wrong
+    ```
+
+    Args:
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
+        max_mismatch_pct (float): Maximum of element mismatch in %
+    """
+
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
+            assert dst_1.meta["driver"] == dst_2.meta["driver"]
+            assert dst_1.meta["dtype"] == dst_2.meta["dtype"]
+            assert dst_1.meta["nodata"] == dst_2.meta["nodata"]
+            assert dst_1.meta["width"] == dst_2.meta["width"]
+            assert dst_1.meta["height"] == dst_2.meta["height"]
+            assert dst_1.meta["count"] == dst_2.meta["count"]
+            assert dst_1.meta["crs"] == dst_2.meta["crs"]
+            assert dst_1.meta["transform"].almost_equals(
+                dst_2.meta["transform"], precision=1e-9
+            )
+            nof_mismatch = np.count_nonzero(dst_1.read() != dst_2.read())
+            assert (
+                nof_mismatch / (dst_1.count * dst_1.width * dst_1.height)
+            ) * 100.0 < max_mismatch_pct
+
+
 def assert_dir_equal(
     path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
 ) -> None:
