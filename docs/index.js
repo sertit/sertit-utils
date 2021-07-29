@@ -759,6 +759,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"sertit.ci.assert_raster_max_mismatch",
+"url":10,
+"doc":"Assert that two rasters are almost equal. (everything is equal except the transform and the arrays that are almost equal) Accepts an offset of  1E{decimal} on the array and a precision of 10^-9 on the transform -> Useful for pytests.   >>> path = r\"CI\\DATA asters aster.tif\" >>> path2 = r\"CI\\DATA asters aster_almost.tif\" >>> assert_raster_equal(path, path2) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (Union[str, CloudPath, Path]): Raster 1 path_2 (Union[str, CloudPath, Path]): Raster 2 max_mismatch_pct (float): Maximum of element mismatch in %",
+"func":1
+},
+{
 "ref":"sertit.ci.assert_dir_equal",
 "url":10,
 "doc":"Assert that two directories are equal.  Useful for pytests.   >>> path = r\"CI\\DATA asters\" >>> assert_dir_equal(path, path) >>>  Raises AssertionError if sth goes wrong   Args: path_1 (str): Directory 1 path_2 (str): Directory 2",

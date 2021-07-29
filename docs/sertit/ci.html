@@ -228,6 +228,50 @@ def assert_raster_almost_equal(
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
 
 
+def assert_raster_max_mismatch(
+    path_1: Union[str, CloudPath, Path],
+    path_2: Union[str, CloudPath, Path],
+    max_mismatch_pct=0.5,
+) -&gt; None:
+    &#34;&#34;&#34;
+    Assert that two rasters are almost equal.
+    (everything is equal except the transform and the arrays that are almost equal)
+
+    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
+
+    -&gt; Useful for pytests.
+
+    ```python
+    &gt;&gt;&gt; path = r&#34;CI\DATA\rasters\raster.tif&#34;
+    &gt;&gt;&gt; path2 = r&#34;CI\DATA\rasters\raster_almost.tif&#34;
+    &gt;&gt;&gt; assert_raster_equal(path, path2)
+    &gt;&gt;&gt; # Raises AssertionError if sth goes wrong
+    ```
+
+    Args:
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
+        max_mismatch_pct (float): Maximum of element mismatch in %
+    &#34;&#34;&#34;
+
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
+            assert dst_1.meta[&#34;driver&#34;] == dst_2.meta[&#34;driver&#34;]
+            assert dst_1.meta[&#34;dtype&#34;] == dst_2.meta[&#34;dtype&#34;]
+            assert dst_1.meta[&#34;nodata&#34;] == dst_2.meta[&#34;nodata&#34;]
+            assert dst_1.meta[&#34;width&#34;] == dst_2.meta[&#34;width&#34;]
+            assert dst_1.meta[&#34;height&#34;] == dst_2.meta[&#34;height&#34;]
+            assert dst_1.meta[&#34;count&#34;] == dst_2.meta[&#34;count&#34;]
+            assert dst_1.meta[&#34;crs&#34;] == dst_2.meta[&#34;crs&#34;]
+            assert dst_1.meta[&#34;transform&#34;].almost_equals(
+                dst_2.meta[&#34;transform&#34;], precision=1e-9
+            )
+            nof_mismatch = np.count_nonzero(dst_1.read() != dst_2.read())
+            assert (
+                nof_mismatch / (dst_1.count * dst_1.width * dst_1.height)
+            ) * 100.0 &lt; max_mismatch_pct
+
+
 def assert_dir_equal(
     path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
 ) -&gt; None:
@@ -610,6 +654,80 @@ aster_almost.tif&quot;
             np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)</code></pre>
 </details>
 </dd>
+<dt id="sertit.ci.assert_raster_max_mismatch"><code class="name flex">
+<p>def <span class="ident">assert_raster_max_mismatch</span>(</p><p>path_1, <br>path_2, <br>max_mismatch_pct=0.5)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Assert that two rasters are almost equal.
+(everything is equal except the transform and the arrays that are almost equal)</p>
+<p>Accepts an offset of <code>1E{decimal}</code> on the array and a precision of 10^-9 on the transform</p>
+<p>-&gt; Useful for pytests.</p>
+<pre><code class="language-python">&gt;&gt;&gt; path = r&quot;CI\DATA
+asters
+aster.tif&quot;
+&gt;&gt;&gt; path2 = r&quot;CI\DATA
+asters
+aster_almost.tif&quot;
+&gt;&gt;&gt; assert_raster_equal(path, path2)
+&gt;&gt;&gt; # Raises AssertionError if sth goes wrong
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>path_1</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
+<dd>Raster 1</dd>
+<dt><strong><code>path_2</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
+<dd>Raster 2</dd>
+<dt><strong><code>max_mismatch_pct</code></strong> :&ensp;<code>float</code></dt>
+<dd>Maximum of element mismatch in %</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def assert_raster_max_mismatch(
+    path_1: Union[str, CloudPath, Path],
+    path_2: Union[str, CloudPath, Path],
+    max_mismatch_pct=0.5,
+) -&gt; None:
+    &#34;&#34;&#34;
+    Assert that two rasters are almost equal.
+    (everything is equal except the transform and the arrays that are almost equal)
+
+    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
+
+    -&gt; Useful for pytests.
+
+    ```python
+    &gt;&gt;&gt; path = r&#34;CI\DATA\rasters\raster.tif&#34;
+    &gt;&gt;&gt; path2 = r&#34;CI\DATA\rasters\raster_almost.tif&#34;
+    &gt;&gt;&gt; assert_raster_equal(path, path2)
+    &gt;&gt;&gt; # Raises AssertionError if sth goes wrong
+    ```
+
+    Args:
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
+        max_mismatch_pct (float): Maximum of element mismatch in %
+    &#34;&#34;&#34;
+
+    with rasterio.open(str(path_1)) as dst_1:
+        with rasterio.open(str(path_2)) as dst_2:
+            assert dst_1.meta[&#34;driver&#34;] == dst_2.meta[&#34;driver&#34;]
+            assert dst_1.meta[&#34;dtype&#34;] == dst_2.meta[&#34;dtype&#34;]
+            assert dst_1.meta[&#34;nodata&#34;] == dst_2.meta[&#34;nodata&#34;]
+            assert dst_1.meta[&#34;width&#34;] == dst_2.meta[&#34;width&#34;]
+            assert dst_1.meta[&#34;height&#34;] == dst_2.meta[&#34;height&#34;]
+            assert dst_1.meta[&#34;count&#34;] == dst_2.meta[&#34;count&#34;]
+            assert dst_1.meta[&#34;crs&#34;] == dst_2.meta[&#34;crs&#34;]
+            assert dst_1.meta[&#34;transform&#34;].almost_equals(
+                dst_2.meta[&#34;transform&#34;], precision=1e-9
+            )
+            nof_mismatch = np.count_nonzero(dst_1.read() != dst_2.read())
+            assert (
+                nof_mismatch / (dst_1.count * dst_1.width * dst_1.height)
+            ) * 100.0 &lt; max_mismatch_pct</code></pre>
+</details>
+</dd>
 <dt id="sertit.ci.assert_dir_equal"><code class="name flex">
 <p>def <span class="ident">assert_dir_equal</span>(</p><p>path_1, <br>path_2)</p>
 </code></dt>
@@ -845,6 +963,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="sertit.ci.get_db4_path" href="#sertit.ci.get_db4_path">get_db4_path</a></code></li>
 <li><code><a title="sertit.ci.assert_raster_equal" href="#sertit.ci.assert_raster_equal">assert_raster_equal</a></code></li>
 <li><code><a title="sertit.ci.assert_raster_almost_equal" href="#sertit.ci.assert_raster_almost_equal">assert_raster_almost_equal</a></code></li>
+<li><code><a title="sertit.ci.assert_raster_max_mismatch" href="#sertit.ci.assert_raster_max_mismatch">assert_raster_max_mismatch</a></code></li>
 <li><code><a title="sertit.ci.assert_dir_equal" href="#sertit.ci.assert_dir_equal">assert_dir_equal</a></code></li>
 <li><code><a title="sertit.ci.assert_geom_equal" href="#sertit.ci.assert_geom_equal">assert_geom_equal</a></code></li>
 <li><code><a title="sertit.ci.assert_xml_equal" href="#sertit.ci.assert_xml_equal">assert_xml_equal</a></code></li>
