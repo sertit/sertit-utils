@@ -6,7 +6,7 @@
   See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
   for more information.
 - FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options. See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
-- CI: Do not run pytests on tags
+- CI: Do not run pytests on tags and discard `except` keywords
 
 ## 1.4.8 (2021-07-29)
 - ENH: Adding `ci.assert_raster_max_mismatch` allowing a mismatch between two rasters' pixels

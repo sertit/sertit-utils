@@ -14,10 +14,6 @@ lint:
     - flake8 .
   tags:
     - linux
-  except:
-    changes:
-      - "*.html"
-      - doc_template/*
 
 pytest:
   image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest
@@ -31,10 +27,6 @@ pytest:
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - linux
-  except:
-    changes:
-      - "*.html"
-      - doc_template/*
   rules:
     - if: '$CI_COMMIT_TAG == null'
 
