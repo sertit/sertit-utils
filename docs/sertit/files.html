@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
-<meta name="generator" content="pdoc 0.9.2"/>
+<meta name="generator" content="pdoc 0.10.0"/>
 <title>sertit.files API documentation</title>
 <meta name="description" content="Tools for paths and files"/>
 <link rel="preload stylesheet" as="style"
@@ -550,7 +550,7 @@ def archive(
 def add_to_zip(
     zip_path: Union[str, CloudPath, Path],
     dirs_to_add: Union[list, str, CloudPath, Path],
-) -&gt; None:
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Add folders to an already existing zip file (recursively).
 
@@ -563,9 +563,16 @@ def add_to_zip(
 
     Args:
         zip_path (Union[str, CloudPath, Path]): Already existing zip file
-        dirs_to_add (Union[list, str]): Directories to add
+        dirs_to_add (Union[list, str, CloudPath, Path]): Directories to add
+
+    Returns:
+        Union[CloudPath, Path]: Updated zip_path
     &#34;&#34;&#34;
     zip_path = AnyPath(zip_path)
+
+    # If the zip is on the cloud, cache it (zipfile doesnt like cloud paths)
+    if isinstance(zip_path, CloudPath):
+        zip_path = AnyPath(zip_path.fspath)
 
     # Check if existing zipfile
     if not zip_path.is_file():
@@ -579,7 +586,15 @@ def add_to_zip(
     # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
     with zipfile.ZipFile(zip_path, &#34;a&#34;) as zip_file:
         progress_bar = tqdm(dirs_to_add)
-        for dir_to_add in progress_bar:
+        for dir_to_add_path in progress_bar:
+            # Just to be sure, use str instead of Paths
+            if isinstance(dir_to_add_path, Path):
+                dir_to_add = str(dir_to_add_path)
+            elif isinstance(dir_to_add_path, CloudPath):
+                dir_to_add = dir_to_add_path.fspath
+            else:
+                dir_to_add = dir_to_add_path
+
             progress_bar.set_description(
                 f&#34;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#34;
             )
@@ -597,6 +612,8 @@ def add_to_zip(
                             os.path.join(root, file), os.path.join(dir_to_add, &#34;..&#34;)
                         ),
                     )
+
+    return zip_path
 
 
 def get_filename(file_path: Union[str, CloudPath, Path]) -&gt; str:
@@ -1839,8 +1856,13 @@ for more information.</p>
 <dl>
 <dt><strong><code>zip_path</code></strong> :&ensp;<code>Union[str, CloudPath, Path]</code></dt>
 <dd>Already existing zip file</dd>
-<dt><strong><code>dirs_to_add</code></strong> :&ensp;<code>Union[list, str]</code></dt>
+<dt><strong><code>dirs_to_add</code></strong> :&ensp;<code>Union[list, str, CloudPath, Path]</code></dt>
 <dd>Directories to add</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[CloudPath, Path]</code></dt>
+<dd>Updated zip_path</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1849,7 +1871,7 @@ for more information.</p>
 <pre><code class="python">def add_to_zip(
     zip_path: Union[str, CloudPath, Path],
     dirs_to_add: Union[list, str, CloudPath, Path],
-) -&gt; None:
+) -&gt; Union[CloudPath, Path]:
     &#34;&#34;&#34;
     Add folders to an already existing zip file (recursively).
 
@@ -1862,9 +1884,16 @@ for more information.</p>
 
     Args:
         zip_path (Union[str, CloudPath, Path]): Already existing zip file
-        dirs_to_add (Union[list, str]): Directories to add
+        dirs_to_add (Union[list, str, CloudPath, Path]): Directories to add
+
+    Returns:
+        Union[CloudPath, Path]: Updated zip_path
     &#34;&#34;&#34;
     zip_path = AnyPath(zip_path)
+
+    # If the zip is on the cloud, cache it (zipfile doesnt like cloud paths)
+    if isinstance(zip_path, CloudPath):
+        zip_path = AnyPath(zip_path.fspath)
 
     # Check if existing zipfile
     if not zip_path.is_file():
@@ -1878,7 +1907,15 @@ for more information.</p>
     # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
     with zipfile.ZipFile(zip_path, &#34;a&#34;) as zip_file:
         progress_bar = tqdm(dirs_to_add)
-        for dir_to_add in progress_bar:
+        for dir_to_add_path in progress_bar:
+            # Just to be sure, use str instead of Paths
+            if isinstance(dir_to_add_path, Path):
+                dir_to_add = str(dir_to_add_path)
+            elif isinstance(dir_to_add_path, CloudPath):
+                dir_to_add = dir_to_add_path.fspath
+            else:
+                dir_to_add = dir_to_add_path
+
             progress_bar.set_description(
                 f&#34;Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}&#34;
             )
@@ -1895,7 +1932,9 @@ for more information.</p>
                         os.path.relpath(
                             os.path.join(root, file), os.path.join(dir_to_add, &#34;..&#34;)
                         ),
-                    )</code></pre>
+                    )
+
+    return zip_path</code></pre>
 </details>
 </dd>
 <dt id="sertit.files.get_filename"><code class="name flex">
@@ -2978,7 +3017,7 @@ setTimeout(() => input.focus(), 100);
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

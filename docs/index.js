@@ -209,7 +209,7 @@ INDEX=[
 {
 "ref":"sertit.files.add_to_zip",
 "url":4,
-"doc":"Add folders to an already existing zip file (recursively).   >>> zip_path = 'D:\\path\\to\\zip.zip' >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2'] >>> add_to_zip(zip_path, dirs_to_add) >>>  zip.zip contains 2 more folders, dir1 and dir2   Args: zip_path (Union[str, CloudPath, Path]): Already existing zip file dirs_to_add (Union[list, str]): Directories to add",
+"doc":"Add folders to an already existing zip file (recursively).   >>> zip_path = 'D:\\path\\to\\zip.zip' >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2'] >>> add_to_zip(zip_path, dirs_to_add) >>>  zip.zip contains 2 more folders, dir1 and dir2   Args: zip_path (Union[str, CloudPath, Path]): Already existing zip file dirs_to_add (Union[list, str, CloudPath, Path]): Directories to add Returns: Union[CloudPath, Path]: Updated zip_path",
 "func":1
 },
 {
