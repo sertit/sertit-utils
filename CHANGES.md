@@ -1,6 +1,6 @@
 # Release History
 
-## 1.5.0 (2021-08-DD)
+## 1.5.0 (2021-08-18)
 
 - ENH: Making `add_to_zip` work with cloud zips
 - BREAKING CHANGE: `add_to_zip` outputs the completed path

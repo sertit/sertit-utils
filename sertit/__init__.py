@@ -20,4 +20,4 @@
 .. include:: ../README.md
 """
 
-__version__ = "1.4.8"
+__version__ = "1.5.0"
