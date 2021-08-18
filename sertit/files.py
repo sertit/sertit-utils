@@ -512,7 +512,7 @@ def archive(
 def add_to_zip(
     zip_path: Union[str, CloudPath, Path],
     dirs_to_add: Union[list, str, CloudPath, Path],
-) -> None:
+) -> Union[CloudPath, Path]:
     """
     Add folders to an already existing zip file (recursively).
 
@@ -525,9 +525,16 @@ def add_to_zip(
 
     Args:
         zip_path (Union[str, CloudPath, Path]): Already existing zip file
-        dirs_to_add (Union[list, str]): Directories to add
+        dirs_to_add (Union[list, str, CloudPath, Path]): Directories to add
+
+    Returns:
+        Union[CloudPath, Path]: Updated zip_path
     """
     zip_path = AnyPath(zip_path)
+
+    # If the zip is on the cloud, cache it (zipfile doesnt like cloud paths)
+    if isinstance(zip_path, CloudPath):
+        zip_path = AnyPath(zip_path.fspath)
 
     # Check if existing zipfile
     if not zip_path.is_file():
@@ -541,7 +548,15 @@ def add_to_zip(
     # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
     with zipfile.ZipFile(zip_path, "a") as zip_file:
         progress_bar = tqdm(dirs_to_add)
-        for dir_to_add in progress_bar:
+        for dir_to_add_path in progress_bar:
+            # Just to be sure, use str instead of Paths
+            if isinstance(dir_to_add_path, Path):
+                dir_to_add = str(dir_to_add_path)
+            elif isinstance(dir_to_add_path, CloudPath):
+                dir_to_add = dir_to_add_path.fspath
+            else:
+                dir_to_add = dir_to_add_path
+
             progress_bar.set_description(
                 f"Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}"
             )
@@ -559,6 +574,8 @@ def add_to_zip(
                             os.path.join(root, file), os.path.join(dir_to_add, "..")
                         ),
                     )
+
+    return zip_path
 
 
 def get_filename(file_path: Union[str, CloudPath, Path]) -> str:

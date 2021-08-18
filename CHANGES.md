@@ -1,7 +1,9 @@
 # Release History
 
-## 1.4.Z (2021-MM-DD)
+## 1.5.0 (2021-08-DD)
 
+- ENH: Making `add_to_zip` work with cloud zips
+- BREAKING CHANGE: `add_to_zip` outputs the completed path
 - FIX: `environment.yml` to respect the stricter use of `file:` syntax.
   See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
   for more information.

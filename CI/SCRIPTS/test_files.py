@@ -97,9 +97,12 @@ def test_archive():
             files.remove(out)
 
         # Add to zip
-        zip_out = archive_base + ".zip"
+        if isinstance(zip2_file, CloudPath):
+            zip_out = zip2_file
+        else:
+            zip_out = archive_base + ".zip"
         core_copy = files.copy(core_dir, os.path.join(tmp_dir, "core2"))
-        files.add_to_zip(zip_out, core_copy)
+        zip_out = files.add_to_zip(zip_out, core_copy)
 
         # Extract
         unzip_out = os.path.join(tmp_dir, "out")
