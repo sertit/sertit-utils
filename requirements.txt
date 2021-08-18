@@ -20,6 +20,7 @@ tqdm
 psutil
 lxml
 colorlog
+numpy>=1.21.2
 rasterio[s3]>=1.2.2
 xarray>=0.18.0
 rioxarray>=0.4.0
