@@ -20,13 +20,14 @@ import logging
 
 import numpy as np
 
-from CI.SCRIPTS.script_utils import display_path, s3_env
+from CI.SCRIPTS.script_utils import dask_env, display_path, s3_env
 from sertit import display, rasters_rio
 
 LOGGER = logging.getLogger("Test_logger")
 
 
 @s3_env
+@dask_env
 def test_display():
     """Testing Display functions"""
     path_2d = display_path().joinpath("2d.tif")

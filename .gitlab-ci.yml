@@ -14,6 +14,8 @@ lint:
     - flake8 .
   tags:
     - linux
+  except:
+    - tags
 
 pytest:
   image: docker.sertit.unistra.fr/extracteo/extracteo_deps:latest

@@ -64,6 +64,34 @@ def get_ci_data_path():
         return get_proj_path().joinpath("CI", "DATA")
 
 
+def dask_env(function: Callable):
+    """
+    Create dask-using environment
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    """
+
+    @wraps(function)
+    def dask_env_wrapper():
+        """ S3 environment wrapper """
+        try:
+            from dask.distributed import Client, LocalCluster
+
+            with LocalCluster() as cluster, Client(cluster):
+                print("Using DASK")
+                function()
+        except ImportError:
+            pass
+
+        print("Using NUMPY")
+        function()
+
+    return dask_env_wrapper
+
+
 def s3_env(function: Callable):
     """
     Create S3 compatible storage environment
@@ -85,7 +113,7 @@ def s3_env(function: Callable):
             os.environ[CI_SERTIT_S3] = "1"
             print("Using S3 files")
             with rasterio.Env(
-                CPL_CURL_VERBOSE=True,
+                CPL_CURL_VERBOSE=False,
                 AWS_VIRTUAL_HOSTING=False,
                 AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
                 GDAL_DISABLE_READDIR_ON_OPEN=False,

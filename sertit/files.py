@@ -560,6 +560,10 @@ def add_to_zip(
             progress_bar.set_description(
                 f"Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}"
             )
+            tmp = tempfile.TemporaryDirectory()
+            if os.path.isfile(dir_to_add):
+                dir_to_add = extract_file(dir_to_add, tmp.name)
+
             for root, _, files in os.walk(dir_to_add):
                 base_path = os.path.join(dir_to_add, "..")
 
@@ -574,6 +578,9 @@ def add_to_zip(
                             os.path.join(root, file), os.path.join(dir_to_add, "..")
                         ),
                     )
+
+            # Clean tmp
+            tmp.cleanup()
 
     return zip_path
 

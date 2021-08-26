@@ -310,7 +310,15 @@ def _to_polygons(val: Any) -> Polygon:
 
 
 def shapes_to_gdf(shapes: Generator, crs: str):
-    """TODO"""
+    """
+    Convert rasterio shapes to geodataframe
+
+    Args:
+        shapes (Generator): Shapes from rasterio
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+    Returns:
+        gpd.GeoDataFrame: Shapes as a GeoDataFrame
+    """
     # Convert results to pandas (because of invalid geometries) and save it
     pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
 

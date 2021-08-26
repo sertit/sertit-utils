@@ -106,7 +106,7 @@ def get_gpt_cli(
         "-J-Dsnap.log.level=WARNING",
         f"-J-Dsnap.jai.defaultTileSize={TILE_SIZE}",
         f"-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}",
-        f"-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}",
+        f"-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}",
         "-J-Dsnap.jai.prefetchTiles=true",
         f"-c {bytes2snap(int(0.5 * MAX_MEM))}",  # Tile cache set to 50% of max memory (up to 75%)
         # '-x',

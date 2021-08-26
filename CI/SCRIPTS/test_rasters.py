@@ -24,14 +24,15 @@ import pytest
 import rasterio
 import xarray as xr
 
-from CI.SCRIPTS.script_utils import rasters_path, s3_env
+from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
 from sertit import ci, files, rasters, vectors
 
 
 @s3_env
+@dask_env
 def test_rasters():
     """Test raster functions"""
-
+    # Create cluster
     # Rasters
     raster_path = rasters_path().joinpath("raster.tif")
     raster_masked_path = rasters_path().joinpath("raster_masked.tif")
@@ -218,6 +219,7 @@ def test_vrt():
 
 
 @s3_env
+@dask_env
 def test_write():
     raster_path = rasters_path().joinpath("raster.tif")
     raster_xds = rasters.read(raster_path)
@@ -252,6 +254,7 @@ def test_dim():
     )
 
 
+@dask_env
 def test_bit():
     """Test bit arrays"""
     # Bit
@@ -296,6 +299,7 @@ def test_bit():
 
 
 @s3_env
+@dask_env
 def test_xarray_fct():
     """ Test xarray functions """
     # Set nodata
@@ -325,6 +329,7 @@ def test_xarray_fct():
     assert xda_sum.name == "sum"
 
 
+@dask_env
 def test_where():
     """ Test overloading of xr.where function """
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])

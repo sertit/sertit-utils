@@ -1,5 +1,12 @@
 # Release History
 
+## 1.6.0 (2021-08-26)
+
+- ENH: Enabling Dask and ensure the functions are Dask-compatible
+- FIX: Fixing typo in `snap.get_gpt_cli` function (`tileHeight`)
+- CI: Do not lint on tags
+- CI: Test with Dask local cluster
+
 ## 1.5.0 (2021-08-18)
 
 - ENH: Making `add_to_zip` work with cloud zips
@@ -7,19 +14,23 @@
 - FIX: `environment.yml` to respect the stricter use of `file:` syntax.
   See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
   for more information.
-- FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options. See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
+- FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options.
+  See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
 - CI: Do not run pytests on tags and discard `except` keywords
 
 ## 1.4.8 (2021-07-29)
+
 - ENH: Adding `ci.assert_raster_max_mismatch` allowing a mismatch between two rasters' pixels
 
 ## 1.4.7 (2021-07-28)
+
 - FIX: Fixing the management of shapefiles on the cloud (caching the .shp and all other files)
 - FIX: `ci.assert_geom_equal` manages correctly GeoSeries
 - CI: renaming `build` step to `lint`
 - CI: Optimizing the lib installation
 
 ## 1.4.6 (2021-07-19)
+
 - `rasters.write` and `rasters_rio.write`:
     - Manage correctly BigTiffs with LZW compression
     - Use the maximum number of available threads to compress

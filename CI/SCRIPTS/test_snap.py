@@ -44,7 +44,7 @@ def test_snap():
         "-J-Dsnap.log.level=WARNING",
         "-J-Dsnap.jai.defaultTileSize=2048",
         "-J-Dsnap.dataio.reader.tileWidth=2048",
-        "-J-Dsnap.dataio.reader.tileHeigh=2048",
+        "-J-Dsnap.dataio.reader.tileHeight=2048",
         "-J-Dsnap.jai.prefetchTiles=true",
     ]
 

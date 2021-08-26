@@ -28,9 +28,16 @@ setuptools.setup(
             "rasterio[s3]>=1.2.2",
             "rioxarray>=0.4.0",
             "colorlog",
+            "dask[complete]",
         ],
         "rasters_rio": ["rasterio[s3]>=1.2.2"],
         "rasters": ["xarray>=0.18.0", "rasterio[s3]>=1.2.2", "rioxarray>=0.4.0"],
+        "dask": [
+            "xarray>=0.18.0",
+            "rasterio[s3]>=1.2.2",
+            "rioxarray>=0.4.0",
+            "dask[complete]",
+        ],
     },
     classifiers=[
         "Development Status :: 4 - Beta",

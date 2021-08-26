@@ -137,7 +137,7 @@ def path_xarr_dst(function: Callable) -> Callable:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                path_or_ds, masked=True, default_name=name
+                path_or_ds, masked=True, default_name=name, chunks=True
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
@@ -302,6 +302,14 @@ def _vectorize(
         nodata_arr = rasters_rio.get_nodata_mask(
             data, has_nodata=False, default_nodata=nodata
         )
+
+    # WARNING: features.shapes do NOT accept dask arrays !
+    if not isinstance(data, (np.ndarray, np.ma.masked_array)):
+        data = data.compute()
+    if nodata_arr is not None and not isinstance(
+        nodata_arr, (np.ndarray, np.ma.masked_array)
+    ):
+        nodata_arr = nodata_arr.compute()
 
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
@@ -608,6 +616,8 @@ def read(
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
     indexes: Union[int, list] = None,
+    chunks: Union[int, tuple, dict] = None,
+    **kwargs,
 ) -> XDS_TYPE:
     """
     Read a raster dataset from a :
@@ -622,6 +632,10 @@ def read(
     - a tuple or a list of (X, Y) resolutions
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
+
+    Uses [rioxarray.open_rasterio](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio).
+    For Dask usage, you can look at the
+    [rioxarray tutorial](https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html).
 
     ```python
     >>> raster_path = "path\\to\\raster.tif"
@@ -640,7 +654,11 @@ def read(
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
         indexes (Union[int, list]): Indexes to load. Load the whole array if None.
-
+        chunks (int, tuple or dict): Chunk sizes along each dimension, e.g., 5, (5, 5) or {'x': 5, 'y': 5}.
+            If chunks is provided, it used to load the new DataArray into a dask array.
+            Chunks can also be set to True or "auto" to choose sensible chunk sizes
+            according to dask.config.get("array.chunk-size").
+        **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
     Returns:
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
 
@@ -651,7 +669,7 @@ def read(
     # Read data (and load it to discard lock)
     with xarray.set_options(keep_attrs=True):
         with rioxarray.open_rasterio(
-            dst, default_name=files.get_filename(dst.name)
+            dst, default_name=files.get_filename(dst.name), chunks=chunks, **kwargs
         ) as xda:
             orig_dtype = xda.dtype
             if indexes:
@@ -766,6 +784,10 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
         bigtiff = "YES"
     else:
         bigtiff = "IF_NEEDED"
+
+    # Manage tiles
+    if "tiled" not in kwargs:
+        kwargs["tiled"] = True
 
     # Write on disk
     xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
