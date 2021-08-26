@@ -144,7 +144,7 @@ def get_gpt_cli(
         &#34;-J-Dsnap.log.level=WARNING&#34;,
         f&#34;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#34;,
         f&#34;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#34;,
-        f&#34;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}&#34;,
         &#34;-J-Dsnap.jai.prefetchTiles=true&#34;,
         f&#34;-c {bytes2snap(int(0.5 * MAX_MEM))}&#34;,  # Tile cache set to 50% of max memory (up to 75%)
         # &#39;-x&#39;,
@@ -309,7 +309,7 @@ Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
         &#34;-J-Dsnap.log.level=WARNING&#34;,
         f&#34;-J-Dsnap.jai.defaultTileSize={TILE_SIZE}&#34;,
         f&#34;-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}&#34;,
-        f&#34;-J-Dsnap.dataio.reader.tileHeigh={TILE_SIZE}&#34;,
+        f&#34;-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}&#34;,
         &#34;-J-Dsnap.jai.prefetchTiles=true&#34;,
         f&#34;-c {bytes2snap(int(0.5 * MAX_MEM))}&#34;,  # Tile cache set to 50% of max memory (up to 75%)
         # &#39;-x&#39;,

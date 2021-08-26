@@ -349,7 +349,15 @@ def _to_polygons(val: Any) -&gt; Polygon:
 
 
 def shapes_to_gdf(shapes: Generator, crs: str):
-    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Convert rasterio shapes to geodataframe
+
+    Args:
+        shapes (Generator): Shapes from rasterio
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+    Returns:
+        gpd.GeoDataFrame: Shapes as a GeoDataFrame
+    &#34;&#34;&#34;
     # Convert results to pandas (because of invalid geometries) and save it
     pd_results = pd.DataFrame(shapes, columns=[&#34;geometry&#34;, &#34;raster_val&#34;])
 
@@ -935,13 +943,33 @@ Its format should be WKT or any format read by Fiona, like shapefiles.</dd>
 <p>def <span class="ident">shapes_to_gdf</span>(</p><p>shapes, <br>crs)</p>
 </code></dt>
 <dd>
-<div class="desc"><p>TODO</p></div>
+<div class="desc"><p>Convert rasterio shapes to geodataframe</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>shapes</code></strong> :&ensp;<code>Generator</code></dt>
+<dd>Shapes from rasterio</dd>
+<dt><strong><code>crs</code></strong></dt>
+<dd>Wanted CRS of the vector. If None, using naive or origin CRS.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>gpd.GeoDataFrame</code></dt>
+<dd>Shapes as a GeoDataFrame</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def shapes_to_gdf(shapes: Generator, crs: str):
-    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Convert rasterio shapes to geodataframe
+
+    Args:
+        shapes (Generator): Shapes from rasterio
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+    Returns:
+        gpd.GeoDataFrame: Shapes as a GeoDataFrame
+    &#34;&#34;&#34;
     # Convert results to pandas (because of invalid geometries) and save it
     pd_results = pd.DataFrame(shapes, columns=[&#34;geometry&#34;, &#34;raster_val&#34;])
 

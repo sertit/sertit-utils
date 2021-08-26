@@ -132,7 +132,7 @@ INDEX=[
 {
 "ref":"sertit.vectors.shapes_to_gdf",
 "url":3,
-"doc":"TODO",
+"doc":"Convert rasterio shapes to geodataframe Args: shapes (Generator): Shapes from rasterio crs: Wanted CRS of the vector. If None, using naive or origin CRS. Returns: gpd.GeoDataFrame: Shapes as a GeoDataFrame",
 "func":1
 },
 {
@@ -489,7 +489,7 @@ INDEX=[
 {
 "ref":"sertit.rasters.read",
 "url":7,
-"doc":"Read a raster dataset from a : -  xarray (compatibility issues) -  rasterio.Dataset -  rasterio opened data (array, metadata) - a path. The resolution can be provided (in dataset unit) as: - a tuple or a list of (X, Y) resolutions - a float, in which case X resolution = Y resolution - None, in which case the dataset resolution will be used   >>> raster_path = \"path\\to\\raster.tif\" >>> xds1 = read(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> xds2 = read(dst) >>> xds1  xds2 True   Args: dst (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y) size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided. resampling (Resampling): Resampling method masked (bool): Get a masked array indexes (Union[int, list]): Indexes to load. Load the whole array if None. Returns: Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data",
+"doc":"Read a raster dataset from a : -  xarray (compatibility issues) -  rasterio.Dataset -  rasterio opened data (array, metadata) - a path. The resolution can be provided (in dataset unit) as: - a tuple or a list of (X, Y) resolutions - a float, in which case X resolution = Y resolution - None, in which case the dataset resolution will be used Uses [rioxarray.open_rasterio](https: corteva.github.io/rioxarray/stable/rioxarray.html rioxarray-open-rasterio). For Dask usage, you can look at the [rioxarray tutorial](https: corteva.github.io/rioxarray/stable/examples/dask_read_write.html).   >>> raster_path = \"path\\to\\raster.tif\" >>> xds1 = read(raster_path) >>>  or >>> with rasterio.open(raster_path) as dst: >>> xds2 = read(dst) >>> xds1  xds2 True   Args: dst (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y) size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided. resampling (Resampling): Resampling method masked (bool): Get a masked array indexes (Union[int, list]): Indexes to load. Load the whole array if None. chunks (int, tuple or dict): Chunk sizes along each dimension, e.g., 5, (5, 5) or {'x': 5, 'y': 5}. If chunks is provided, it used to load the new DataArray into a dask array. Chunks can also be set to True or \"auto\" to choose sensible chunk sizes according to dask.config.get(\"array.chunk-size\").  kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio(). Returns: Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data",
 "func":1
 },
 {
