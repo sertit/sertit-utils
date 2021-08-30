@@ -14,10 +14,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-**Source Code**: https://github.com/sertit/sertit-utils
+""" Script testing the arcpy module """
+from sertit import arcpy
 
-.. include:: ../README.md
-"""
 
-__version__ = "1.7.0"
+# flake8: noqa
+def test_arcpy():
+    """Test CI functions"""
+    arcpy.init_conda_arcpy_env()
+    import geopandas as gpd
+    import rasterio
+    from lxml import etree  # Should work

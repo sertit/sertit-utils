@@ -1,5 +1,8 @@
 # Release History
 
+## 1.7.0
+- ENH: Adding a function managing `arcpy` environment
+
 ## 1.6.0 (2021-08-26)
 
 - ENH: Enabling Dask and ensure the functions are Dask-compatible
