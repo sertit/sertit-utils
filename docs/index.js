@@ -95,6 +95,17 @@ INDEX=[
 "func":1
 },
 {
+"ref":"sertit.arcpy.ArcPyLogHandler",
+"url":3,
+"doc":"Custom logging class that bounces messages to the arcpy tool window as well as reflecting back to the file. Open the specified file and use it as the stream for logging. By default, the file grows indefinitely. You can specify particular values of maxBytes and backupCount to allow the file to rollover at a predetermined size. Rollover occurs whenever the current log file is nearly maxBytes in length. If backupCount is >= 1, the system will successively create new files with the same pathname as the base file, but with extensions \".1\", \".2\" etc. appended to it. For example, with a backupCount of 5 and a base file name of \"app.log\", you would get \"app.log\", \"app.log.1\", \"app.log.2\",  . through to \"app.log.5\". The file being written to is always \"app.log\" - when it gets filled up, it is closed and renamed to \"app.log.1\", and if files \"app.log.1\", \"app.log.2\" etc. exist, then they are renamed to \"app.log.2\", \"app.log.3\" etc. respectively. If maxBytes is zero, rollover never occurs."
+},
+{
+"ref":"sertit.arcpy.ArcPyLogHandler.emit",
+"url":3,
+"doc":"Write the log message",
+"func":1
+},
+{
 "ref":"sertit.vectors",
 "url":4,
 "doc":"Vectors tools You can use this only if you have installed sertit[full] or sertit[vectors]"

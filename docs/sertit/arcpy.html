@@ -35,7 +35,11 @@ integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></sc
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python"># flake8: noqa
+<pre><code class="python">import logging
+import logging.handlers
+
+
+# flake8: noqa
 def init_conda_arcpy_env():
     &#34;&#34;&#34;
     Initialize conda environment with Arcgis Pro
@@ -59,14 +63,48 @@ def init_conda_arcpy_env():
                 conda_env_list = conda_env_list.split(&#34;\n&#34;)
                 curr_env = [env for env in conda_env_list if &#34;*&#34; in env][0]
                 root_dir = [elem for elem in curr_env.split(&#34; &#34;) if elem][-1]
+            except IndexError:
+                os_file = os.__file__
+                root_dir = os.path.dirname(os.path.dirname(os_file))
             except Exception:
                 raise ImportError(
                     &#34;Cannot import lxml. Please try &#39;pip uninstall lxml -y&#39; then &#39;pip install lxml&#39;.&#34;
                 )
 
-        os.environ[&#34;PATH&#34;] = root_dir + r&#34;\Library\bin;&#34;
+        os.environ[&#34;PATH&#34;] = root_dir + r&#34;\Library\bin;&#34; + os.environ[&#34;PATH&#34;]
         print(f&#34;Missing lxml DLLs. Completing PATH: {os.environ[&#39;PATH&#39;]}&#34;)
-        from lxml import etree  # Try again</code></pre>
+        from lxml import etree  # Try again
+
+
+class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
+    &#34;&#34;&#34;
+    Custom logging class that bounces messages to the arcpy tool window as well
+    as reflecting back to the file.
+    &#34;&#34;&#34;
+
+    def emit(self, record):
+        &#34;&#34;&#34;
+        Write the log message
+        &#34;&#34;&#34;
+
+        import arcpy
+
+        try:
+            msg = record.msg % record.args
+        except:
+            try:
+                msg = record.msg.format(record.args)
+            except:
+                msg = record.msg
+
+        if record.levelno &gt;= logging.ERROR:
+            arcpy.AddError(msg)
+        elif record.levelno &gt;= logging.WARNING:
+            arcpy.AddWarning(msg)
+        elif record.levelno &gt;= logging.INFO:
+            arcpy.AddMessage(msg)
+
+        super(ArcPyLogHandler, self).emit(record)</code></pre>
 </details>
 </section>
 <section>
@@ -108,12 +146,15 @@ def init_conda_arcpy_env():
                 conda_env_list = conda_env_list.split(&#34;\n&#34;)
                 curr_env = [env for env in conda_env_list if &#34;*&#34; in env][0]
                 root_dir = [elem for elem in curr_env.split(&#34; &#34;) if elem][-1]
+            except IndexError:
+                os_file = os.__file__
+                root_dir = os.path.dirname(os.path.dirname(os_file))
             except Exception:
                 raise ImportError(
                     &#34;Cannot import lxml. Please try &#39;pip uninstall lxml -y&#39; then &#39;pip install lxml&#39;.&#34;
                 )
 
-        os.environ[&#34;PATH&#34;] = root_dir + r&#34;\Library\bin;&#34;
+        os.environ[&#34;PATH&#34;] = root_dir + r&#34;\Library\bin;&#34; + os.environ[&#34;PATH&#34;]
         print(f&#34;Missing lxml DLLs. Completing PATH: {os.environ[&#39;PATH&#39;]}&#34;)
         from lxml import etree  # Try again</code></pre>
 </details>
@@ -121,6 +162,112 @@ def init_conda_arcpy_env():
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="sertit.arcpy.ArcPyLogHandler"><code class="flex name class">
+<span>class <span class="ident">ArcPyLogHandler</span></span>
+<span>(</span><span>filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Custom logging class that bounces messages to the arcpy tool window as well
+as reflecting back to the file.</p>
+<p>Open the specified file and use it as the stream for logging.</p>
+<p>By default, the file grows indefinitely. You can specify particular
+values of maxBytes and backupCount to allow the file to rollover at
+a predetermined size.</p>
+<p>Rollover occurs whenever the current log file is nearly maxBytes in
+length. If backupCount is &gt;= 1, the system will successively create
+new files with the same pathname as the base file, but with extensions
+".1", ".2" etc. appended to it. For example, with a backupCount of 5
+and a base file name of "app.log", you would get "app.log",
+"app.log.1", "app.log.2", &hellip; through to "app.log.5". The file being
+written to is always "app.log" - when it gets filled up, it is closed
+and renamed to "app.log.1", and if files "app.log.1", "app.log.2" etc.
+exist, then they are renamed to "app.log.2", "app.log.3" etc.
+respectively.</p>
+<p>If maxBytes is zero, rollover never occurs.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
+    &#34;&#34;&#34;
+    Custom logging class that bounces messages to the arcpy tool window as well
+    as reflecting back to the file.
+    &#34;&#34;&#34;
+
+    def emit(self, record):
+        &#34;&#34;&#34;
+        Write the log message
+        &#34;&#34;&#34;
+
+        import arcpy
+
+        try:
+            msg = record.msg % record.args
+        except:
+            try:
+                msg = record.msg.format(record.args)
+            except:
+                msg = record.msg
+
+        if record.levelno &gt;= logging.ERROR:
+            arcpy.AddError(msg)
+        elif record.levelno &gt;= logging.WARNING:
+            arcpy.AddWarning(msg)
+        elif record.levelno &gt;= logging.INFO:
+            arcpy.AddMessage(msg)
+
+        super(ArcPyLogHandler, self).emit(record)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>logging.handlers.RotatingFileHandler</li>
+<li>logging.handlers.BaseRotatingHandler</li>
+<li>logging.FileHandler</li>
+<li>logging.StreamHandler</li>
+<li>logging.Handler</li>
+<li>logging.Filterer</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="sertit.arcpy.ArcPyLogHandler.emit"><code class="name flex">
+<p>def <span class="ident">emit</span>(</p><p>self, <br>record)</p>
+</code></dt>
+<dd>
+<div class="desc"><p>Write the log message</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def emit(self, record):
+    &#34;&#34;&#34;
+    Write the log message
+    &#34;&#34;&#34;
+
+    import arcpy
+
+    try:
+        msg = record.msg % record.args
+    except:
+        try:
+            msg = record.msg.format(record.args)
+        except:
+            msg = record.msg
+
+    if record.levelno &gt;= logging.ERROR:
+        arcpy.AddError(msg)
+    elif record.levelno &gt;= logging.WARNING:
+        arcpy.AddWarning(msg)
+    elif record.levelno &gt;= logging.INFO:
+        arcpy.AddMessage(msg)
+
+    super(ArcPyLogHandler, self).emit(record)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -190,6 +337,26 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="sertit.arcpy.init_conda_arcpy_env" href="#sertit.arcpy.init_conda_arcpy_env">init_conda_arcpy_env</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="sertit.arcpy.ArcPyLogHandler" href="#sertit.arcpy.ArcPyLogHandler">ArcPyLogHandler</a></code></h4>
+<ul>
+<li>
+</li>
+<li>
+<ul class="">
+<li><code><a title="sertit.arcpy.ArcPyLogHandler.emit" href="#sertit.arcpy.ArcPyLogHandler.emit">emit</a></code></li>
+</ul>
+</li>
+<li>
+</li>
+<li>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
