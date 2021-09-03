@@ -68,6 +68,7 @@ def test_rasters():
 
         with rasterio.open(str(raster_path)) as dst:
             dst_dtype = dst.meta["dtype"]
+
             # Read
             xda = rasters.read(raster_path)
             xda_1 = rasters.read(raster_path, resolution=dst.res[0])
@@ -75,6 +76,8 @@ def test_rasters():
             xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
             xda_4 = rasters.read(raster_path, resolution=dst.res[0] / 2)
             xda_5 = rasters.read(raster_path, indexes=1)
+            xda_dask = rasters.read(raster_path, chunks=True)
+
             assert xda_4.shape[-2] == xda.shape[-2] * 2
             assert xda_4.shape[-1] == xda.shape[-1] * 2
             with pytest.raises(ValueError):
@@ -92,6 +95,7 @@ def test_rasters():
             np.testing.assert_array_equal(xda_1, xda_2)
             np.testing.assert_array_equal(xda_1, xda_3)
             np.testing.assert_array_equal(xda_1, xda_5)
+            np.testing.assert_array_equal(xda, xda_dask)
 
             # Write
             xda_out = os.path.join(tmp_dir, "test_xda.tif")

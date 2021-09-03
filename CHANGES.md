@@ -1,6 +1,13 @@
 # Release History
 
-## 1.7.0
+## 1.7.1 (2021-09-03)
+
+- ENH: Adding  `ArcPyLogHandler` in `arcpy`
+- FIX: Updating `init_conda_arcpy_env`
+- CI: Testing `rasters.read` with chunks
+
+## 1.7.0 (2021-08-30)
+
 - ENH: Adding a function managing `arcpy` environment
 
 ## 1.6.0 (2021-08-26)
