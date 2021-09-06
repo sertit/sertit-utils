@@ -1,5 +1,9 @@
 # Release History
 
+## 1.7.3 (2021-09-XX)
+
+- FIX: Do not modify in place the input in `merge_vrt` (`str` transformed in `Path`)
+
 ## 1.7.2 (2021-09-06)
 
 - FIX: Managing dask arrays with rasterio `sieve`

@@ -1068,33 +1068,35 @@ def merge_vrt(
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     """
+    # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
+    crs_paths_cp = crs_paths.copy()
 
-    for idp, path in enumerate(crs_paths):
-        crs_paths[idp] = path
+    for idp, path in enumerate(crs_paths_cp):
+        crs_paths_cp[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
     if isinstance(crs_merged_path, CloudPath):
         crs_merged_path = AnyPath(crs_merged_path.fspath)
 
-    for i, crs_path in enumerate(crs_paths):
+    for i, crs_path in enumerate(crs_paths_cp):
         path = AnyPath(crs_path)
         if isinstance(path, CloudPath):
             path = AnyPath(path.fspath)
-        crs_paths[i] = path
+        crs_paths_cp[i] = path
 
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
     try:
         rel_paths = [
             strings.to_cmd_string(str(files.real_rel_path(path, vrt_root)))
-            for path in crs_paths
+            for path in crs_paths_cp
         ]
         rel_vrt = strings.to_cmd_string(
             str(files.real_rel_path(crs_merged_path, vrt_root))
         )
     except ValueError:
-        rel_paths = crs_paths
+        rel_paths = crs_paths_cp
         rel_vrt = crs_merged_path
 
     # Run cmd
