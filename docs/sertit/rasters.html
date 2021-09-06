@@ -911,7 +911,13 @@ def sieve(
     data = np.squeeze(to_np(xds, dtype))
 
     # Sieve
-    sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+    try:
+        sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+    except TypeError:
+        # Manage dask arrays that fails with rasterio sieve
+        sieved_arr = features.sieve(
+            data.compute(), size=sieve_thresh, connectivity=connectivity
+        )
 
     # Create back the xarray
     sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
@@ -2579,7 +2585,13 @@ def sieve(
     data = np.squeeze(to_np(xds, dtype))
 
     # Sieve
-    sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+    try:
+        sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+    except TypeError:
+        # Manage dask arrays that fails with rasterio sieve
+        sieved_arr = features.sieve(
+            data.compute(), size=sieve_thresh, connectivity=connectivity
+        )
 
     # Create back the xarray
     sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
