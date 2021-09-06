@@ -69,7 +69,8 @@ def test_rasters():
         with rasterio.open(str(raster_path)) as dst:
             dst_dtype = dst.meta["dtype"]
 
-            # Read
+            # ----------------------------------------------------------------------------------------------
+            # -- Read
             xda = rasters.read(raster_path)
             xda_1 = rasters.read(raster_path, resolution=dst.res[0])
             xda_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
@@ -78,6 +79,7 @@ def test_rasters():
             xda_5 = rasters.read(raster_path, indexes=1)
             xda_dask = rasters.read(raster_path, chunks=True)
 
+            # Test shape (link between resolution and size)
             assert xda_4.shape[-2] == xda.shape[-2] * 2
             assert xda_4.shape[-1] == xda.shape[-1] * 2
             with pytest.raises(ValueError):
@@ -87,6 +89,7 @@ def test_rasters():
             name = files.get_filename(dst.name)
             xds = xr.Dataset({name: xda})
 
+            # Test dataset integrity
             assert xda.shape == (dst.count, dst.height, dst.width)
             assert xda.encoding["dtype"] == dst_dtype
             assert xds[name].shape == xda.shape
@@ -97,60 +100,121 @@ def test_rasters():
             np.testing.assert_array_equal(xda_1, xda_5)
             np.testing.assert_array_equal(xda, xda_dask)
 
-            # Write
+            # ----------------------------------------------------------------------------------------------
+            # -- Write
+            # DataArray
             xda_out = os.path.join(tmp_dir, "test_xda.tif")
-            xds_out = os.path.join(tmp_dir, "test_xds.tif")
             rasters.write(xda, xda_out, dtype=dst_dtype)
-            rasters.write(xds, xds_out, dtype=dst_dtype)
             assert os.path.isfile(xda_out)
 
-            # Mask
-            xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
-            xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
+            # Dataset
+            xds_out = os.path.join(tmp_dir, "test_xds.tif")
+            rasters.write(xds, xds_out, dtype=dst_dtype)
+            assert os.path.isfile(xds_out)
+
+            # With dask
+            xda_dask_out = os.path.join(tmp_dir, "test_xda_dask.tif")
+            rasters.write(xda_dask, xda_dask_out, dtype=dst_dtype)
+            assert os.path.isfile(xda_dask_out)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Mask
             mask = vectors.read(mask_path)
+
+            # DataArray
+            xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
             mask_xda = rasters.mask(xda, mask.geometry)
-            mask_xds = rasters.mask(xda, mask)
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
+
+            # Dataset
+            xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
+            mask_xds = rasters.mask(xds, mask)
             rasters.write(mask_xds, xds_masked, dtype=np.uint8)
 
-            # Paint
+            # With dask
+            mask_xda_dask = rasters.mask(xda_dask, mask)
+            np.testing.assert_array_equal(mask_xda, mask_xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Paint
+            mask = vectors.read(mask_path)
+
+            # DataArray
             xda_paint_true = os.path.join(tmp_dir, "test_paint_true_xda.tif")
             xda_paint_false = os.path.join(tmp_dir, "test_paint_false_xda.tif")
-            xds_paint_true = os.path.join(tmp_dir, "test_paint_true_xds.tif")
-            xds_paint_false = os.path.join(tmp_dir, "test_paint_false_xds.tif")
-            mask = vectors.read(mask_path)
             paint_true_xda = rasters.paint(xda, mask.geometry, value=600, invert=True)
             paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
-            paint_true_xds = rasters.paint(xda, mask, value=600, invert=True)
-            paint_false_xds = rasters.paint(xda, mask, value=600, invert=False)
             rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
             rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
+
+            # Dataset
+            xds_paint_true = os.path.join(tmp_dir, "test_paint_true_xds.tif")
+            xds_paint_false = os.path.join(tmp_dir, "test_paint_false_xds.tif")
+            paint_true_xds = rasters.paint(xda, mask, value=600, invert=True)
+            paint_false_xds = rasters.paint(xda, mask, value=600, invert=False)
             rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
             rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
 
-            # Crop
+            # With dask
+            paint_true_xda_dask = rasters.paint(
+                xda_dask, mask.geometry, value=600, invert=True
+            )
+            paint_false_xda_dask = rasters.paint(
+                xda_dask, mask.geometry, value=600, invert=False
+            )
+            np.testing.assert_array_equal(paint_true_xda, paint_true_xda_dask)
+            np.testing.assert_array_equal(paint_false_xda, paint_false_xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Crop
+            # DataArray
             xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
-            xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
             crop_xda = rasters.crop(xda, mask.geometry)
-            crop_xds = rasters.crop(xds, mask)
             rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
+
+            # Dataset
+            xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
+            crop_xds = rasters.crop(xds, mask)
             rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
 
-            # Sieve
+            # With dask
+            crop_xda_dask = rasters.crop(xda_dask, mask)
+            np.testing.assert_array_equal(crop_xda, crop_xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Sieve
+            # DataArray
             xda_sieved = os.path.join(tmp_dir, "test_sieved_xda.tif")
-            xds_sieved = os.path.join(tmp_dir, "test_sieved_xds.tif")
             sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
-            sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
             rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
+
+            # Dataset
+            xds_sieved = os.path.join(tmp_dir, "test_sieved_xds.tif")
+            sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
             rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
 
-            # Collocate
+            # With dask
+            sieve_xda_dask = rasters.sieve(xda_dask, sieve_thresh=20, connectivity=4)
+            np.testing.assert_array_equal(sieve_xda, sieve_xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Collocate
+            # DataArray
             coll_xda = rasters.collocate(xda, xda)  # Just hope that it doesnt crash
             xr.testing.assert_equal(coll_xda, xda)
+
+            # Dataset
             coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesnt crash
             xr.testing.assert_equal(coll_xds, xds)
 
-            # Merge GTiff
+            # With dask
+            coll_xda_dask = rasters.collocate(
+                xda_dask, xda_dask
+            )  # Just hope that it doesnt crash
+            xr.testing.assert_equal(coll_xda_dask, xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Merge GTiff
             raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
             rasters.merge_gtiff(
                 [raster_path, raster_to_merge_path],
@@ -158,39 +222,68 @@ def test_rasters():
                 method="max",
             )
 
-            # Vectorize
+            # ----------------------------------------------------------------------------------------------
+            # -- Vectorize
             val = 2
-            vect = rasters.vectorize(raster_path)
-            vect_xds = rasters.vectorize(xds)
+            vect_truth = vectors.read(vect_truth_path)
+            diss_truth = vectors.read(diss_truth_path)
+
+            # DataArray
+            vect_xda = rasters.vectorize(raster_path)
             vect_val = rasters.vectorize(raster_path, values=val)
             vect_val_diss = rasters.vectorize(raster_path, values=val, dissolve=True)
             vect_val_disc = rasters.vectorize(
                 raster_path, values=[1, 255], keep_values=False
             )
-            vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
-            vect_truth = vectors.read(vect_truth_path)
-            diss_truth = vectors.read(diss_truth_path)
-            ci.assert_geom_equal(vect, vect_truth)
-            ci.assert_geom_equal(vect_xds[name], vect_truth)
+            ci.assert_geom_equal(vect_xda, vect_truth)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
             ci.assert_geom_equal(vect_val_diss, diss_truth)
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
             )
+            vect_xda.to_file(
+                os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON"
+            )
 
-            # Get valid vec
-            valid_vec = rasters.get_valid_vector(raster_path)
-            valid_vec_xds = rasters.get_valid_vector(xds)
+            # Dataset
+            vect_xds = rasters.vectorize(xds)
+            ci.assert_geom_equal(vect_xds[name], vect_truth)
+
+            # With dask
+            vect_xda_dask = rasters.vectorize(xda_dask)
+            ci.assert_geom_equal(vect_xda_dask, vect_truth)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Get valid vec
             valid_truth = vectors.read(valid_truth_path)
+
+            # DataArray
+            valid_vec = rasters.get_valid_vector(raster_path)
             ci.assert_geom_equal(valid_vec, valid_truth)
+
+            # Dataset
+            valid_vec_xds = rasters.get_valid_vector(xds)
             ci.assert_geom_equal(valid_vec_xds[name], valid_truth)
 
-            # Get nodata vec
-            nodata_vec = rasters.get_nodata_vector(raster_path)
-            nodata_vec_xds = rasters.get_nodata_vector(xds)
+            # With dask
+            valid_vec_xda_dask = rasters.get_valid_vector(xda_dask)
+            ci.assert_geom_equal(valid_vec_xda_dask, valid_truth)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Get nodata vec
             nodata_truth = vectors.read(nodata_truth_path)
+
+            # DataArray
+            nodata_vec = rasters.get_nodata_vector(raster_path)
             ci.assert_geom_equal(nodata_vec, nodata_truth)
+
+            # Dataset
+            nodata_vec_xds = rasters.get_nodata_vector(xds)
             ci.assert_geom_equal(nodata_vec_xds[name], nodata_truth)
+
+            # With dask
+            nodata_vec_dask = rasters.get_nodata_vector(xda_dask)
+            ci.assert_geom_equal(nodata_vec_dask, nodata_truth)
 
         # Tests
         ci.assert_raster_equal(raster_path, xda_out)

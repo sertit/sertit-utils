@@ -1,5 +1,10 @@
 # Release History
 
+## 1.7.2 (2021-09-06)
+
+- FIX: Managing dask arrays with rasterio `sieve`
+- CI: Testing properly `rasters` functions with dask
+
 ## 1.7.1 (2021-09-03)
 
 - ENH: Adding  `ArcPyLogHandler` in `arcpy`
