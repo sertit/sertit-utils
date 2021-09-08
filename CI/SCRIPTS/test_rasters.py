@@ -48,11 +48,12 @@ def test_rasters():
     footprint_path = rasters_path().joinpath("footprint.geojson")
     if shapely.__version__ >= "1.8a1":
         vect_truth_path = rasters_path().joinpath("vector.geojson")
+        diss_truth_path = rasters_path().joinpath("dissolved.geojson")
     else:
         print("USING OLD VECTORS")
         vect_truth_path = rasters_path().joinpath("vector_old.geojson")
+        diss_truth_path = rasters_path().joinpath("dissolved_old.geojson")
 
-    diss_truth_path = rasters_path().joinpath("dissolved.geojson")
     nodata_truth_path = rasters_path().joinpath("nodata.geojson")
     valid_truth_path = rasters_path().joinpath("valid.geojson")
 
