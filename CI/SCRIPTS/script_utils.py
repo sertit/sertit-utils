@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import sys
 from collections import Callable
 from enum import unique
 from functools import wraps
@@ -42,7 +43,7 @@ class Polarization(ListEnum):
 
 def get_proj_path():
     """Get project path"""
-    if int(os.getenv(CI_SERTIT_S3, 0)):
+    if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
         # ON S3
         client = S3Client(
             endpoint_url=f"https://{AWS_S3_ENDPOINT}",
@@ -58,7 +59,7 @@ def get_proj_path():
 
 def get_ci_data_path():
     """Get CI DATA path"""
-    if int(os.getenv(CI_SERTIT_S3, 0)):
+    if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
         return get_proj_path().joinpath("DATA")
     else:
         return get_proj_path().joinpath("CI", "DATA")
@@ -109,7 +110,7 @@ def s3_env(function: Callable):
         print("Using on disk files")
         function()
 
-        if os.getenv(AWS_SECRET_ACCESS_KEY):
+        if os.getenv(AWS_SECRET_ACCESS_KEY) and sys.platform != "win32":
             os.environ[CI_SERTIT_S3] = "1"
             print("Using S3 files")
             with rasterio.Env(

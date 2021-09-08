@@ -364,6 +364,7 @@ def read(
     """
     tmp_dir = None
     arch_vect_path = None
+
     try:
         path = AnyPath(path)
 
@@ -404,6 +405,9 @@ def read(
             vect_path = str(path)
     except AnyPathTypeError:
         vect_path = str(path)
+
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Non existing file: {path}")
 
     # Open vector
     try:

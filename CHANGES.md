@@ -2,6 +2,7 @@
 
 ## 1.7.3 (2021-09-08)
 
+- FIX: Checking path existence in `vectors.read`
 - FIX: Repair geometries in `vectorize`
 - FIX: Do not modify in place the input in `merge_vrt` (`str` transformed in `Path`)
 

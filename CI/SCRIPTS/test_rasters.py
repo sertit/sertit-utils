@@ -59,7 +59,7 @@ def test_rasters():
     # Create tmp file
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # tmp_dir = rasters_path().joinpath("OUTPUT_XARRAY")
+        tmp_dir = rasters_path().joinpath("OUTPUT_XARRAY")
         os.makedirs(tmp_dir, exist_ok=True)
 
         # Get Extent
@@ -238,17 +238,20 @@ def test_rasters():
             vect_xda = rasters.vectorize(raster_path)
             vect_val = rasters.vectorize(raster_path, values=val)
             vect_val_diss = rasters.vectorize(raster_path, values=val, dissolve=True)
+            vect_val_diss.to_file(
+                os.path.join(tmp_dir, "vect_val_diss.geojson"), driver="GeoJSON"
+            )
             vect_val_disc = rasters.vectorize(
                 raster_path, values=[1, 255], keep_values=False
             )
-            ci.assert_geom_equal(vect_xda, vect_truth)
-            ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
-            ci.assert_geom_equal(vect_val_diss, diss_truth)
-            ci.assert_geom_equal(
-                vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
-            )
             vect_xda.to_file(
                 os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON"
+            )
+            ci.assert_geom_equal(vect_xda, vect_truth)
+            ci.assert_geom_equal(vect_val_diss, diss_truth)
+            ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
+            ci.assert_geom_equal(
+                vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
             )
 
             # Dataset
