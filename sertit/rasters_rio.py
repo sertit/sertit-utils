@@ -19,6 +19,7 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
+import logging
 import os
 from functools import wraps
 from pathlib import Path
@@ -26,6 +27,8 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
+
+from sertit.logs import SU_NAME
 
 try:
     import geopandas as gpd
@@ -44,6 +47,8 @@ from sertit import files, misc, strings, vectors
 
 MAX_CORES = os.cpu_count() - 2
 PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
+LOGGER = logging.getLogger(SU_NAME)
+
 """
 Types:
 
@@ -404,10 +409,22 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, dst.crs)
 
+    try:
+        from shapely.validation import make_valid
+
+        # Discard self-intersection and null geometries
+        gdf.geometry = gdf.geometry.apply(make_valid)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
+            f"The obtained vector may be broken !"
+        )
+        pass
+
     # Dissolve if needed
     if dissolve:
-        # Discard self-intersection and null geometries
-        gdf = gdf.buffer(0)
         gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
 
     return gdf

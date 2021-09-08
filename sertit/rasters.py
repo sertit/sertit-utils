@@ -19,7 +19,7 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters]
 """
-import os
+import logging
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -29,7 +29,8 @@ import xarray
 from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
-from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
+from sertit.logs import SU_NAME
+from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, path_arr_dst
 
 try:
     import geopandas as gpd
@@ -46,8 +47,10 @@ except ModuleNotFoundError as ex:
 
 from sertit import files, rasters_rio, vectors
 
-MAX_CORES = os.cpu_count() - 2
+MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
+LOGGER = logging.getLogger(SU_NAME)
+
 """
 Types:
 
@@ -317,10 +320,22 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
 
+    try:
+        from shapely.validation import make_valid
+
+        # Discard self-intersection and null geometries
+        gdf.geometry = gdf.geometry.apply(make_valid)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
+            f"The obtained vector may be broken !"
+        )
+        pass
+
     # Dissolve if needed
     if dissolve:
-        # Discard self-intersection and null geometries
-        gdf = gdf.buffer(0)
         gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
 
     return gdf

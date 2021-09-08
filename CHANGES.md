@@ -1,7 +1,8 @@
 # Release History
 
-## 1.7.3 (2021-09-XX)
+## 1.7.3 (2021-09-08)
 
+- FIX: Repair geometries in `vectorize`
 - FIX: Do not modify in place the input in `merge_vrt` (`str` transformed in `Path`)
 
 ## 1.7.2 (2021-09-06)

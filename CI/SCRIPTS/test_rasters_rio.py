@@ -22,6 +22,7 @@ import tempfile
 import numpy as np
 import pytest
 import rasterio
+import shapely
 
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
@@ -42,7 +43,11 @@ def test_rasters_rio():
     mask_path = rasters_path().joinpath("raster_mask.geojson")
     extent_path = rasters_path().joinpath("extent.geojson")
     footprint_path = rasters_path().joinpath("footprint.geojson")
-    vect_truth_path = rasters_path().joinpath("vector.geojson")
+    if shapely.__version__ >= "1.8a1":
+        vect_truth_path = rasters_path().joinpath("vector.geojson")
+    else:
+        print("USING OLD VECTORS")
+        vect_truth_path = rasters_path().joinpath("vector_old.geojson")
     diss_truth_path = rasters_path().joinpath("dissolved.geojson")
     nodata_truth_path = rasters_path().joinpath("nodata.geojson")
     valid_truth_path = rasters_path().joinpath("valid.geojson")
@@ -50,6 +55,9 @@ def test_rasters_rio():
     # Create tmp file
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
+        # tmp_dir = rasters_path().joinpath("OUTPUT_RASTERIO")
+        os.makedirs(tmp_dir, exist_ok=True)
+
         # Get Extent
         extent = rasters_rio.get_extent(raster_path)
         truth_extent = vectors.read(extent_path)
