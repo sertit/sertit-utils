@@ -5,6 +5,7 @@
 - FIX: Checking path existence in `vectors.read`
 - FIX: Repair geometries in `vectorize`
 - FIX: Do not modify in place the input in `merge_vrt` (`str` transformed in `Path`)
+- CI: Stop writing vector on disk
 
 ## 1.7.2 (2021-09-06)
 

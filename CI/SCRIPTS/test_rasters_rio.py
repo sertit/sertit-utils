@@ -133,10 +133,6 @@ def test_rasters_rio():
             vect_val_disc = rasters_rio.vectorize(
                 raster_path, values=[1, 255], keep_values=False
             )
-            vect.to_file(os.path.join(tmp_dir, "test_vector.geojson"), driver="GeoJSON")
-            vect_val_diss.to_file(
-                os.path.join(tmp_dir, "vect_val_diss.geojson"), driver="GeoJSON"
-            )
             vect_truth = vectors.read(vect_truth_path)
             diss_truth = vectors.read(diss_truth_path)
             ci.assert_geom_equal(vect, vect_truth)
