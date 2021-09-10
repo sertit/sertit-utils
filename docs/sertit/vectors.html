@@ -403,6 +403,7 @@ def read(
     &#34;&#34;&#34;
     tmp_dir = None
     arch_vect_path = None
+
     try:
         path = AnyPath(path)
 
@@ -443,6 +444,9 @@ def read(
             vect_path = str(path)
     except AnyPathTypeError:
         vect_path = str(path)
+
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f&#34;Non existing file: {path}&#34;)
 
     # Open vector
     try:
@@ -1054,6 +1058,7 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
     &#34;&#34;&#34;
     tmp_dir = None
     arch_vect_path = None
+
     try:
         path = AnyPath(path)
 
@@ -1094,6 +1099,9 @@ You can use this <a href="https://regexr.com/">site</a> to build your regex.
             vect_path = str(path)
     except AnyPathTypeError:
         vect_path = str(path)
+
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f&#34;Non existing file: {path}&#34;)
 
     # Open vector
     try:

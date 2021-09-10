@@ -58,7 +58,7 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters]
 &#34;&#34;&#34;
-import os
+import logging
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -68,7 +68,8 @@ import xarray
 from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
-from sertit.rasters_rio import PATH_ARR_DS, path_arr_dst
+from sertit.logs import SU_NAME
+from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, path_arr_dst
 
 try:
     import geopandas as gpd
@@ -85,8 +86,10 @@ except ModuleNotFoundError as ex:
 
 from sertit import files, rasters_rio, vectors
 
-MAX_CORES = os.cpu_count() - 2
+MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
+LOGGER = logging.getLogger(SU_NAME)
+
 &#34;&#34;&#34;
 Types:
 
@@ -356,10 +359,22 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
 
+    try:
+        from shapely.validation import make_valid
+
+        # Discard self-intersection and null geometries
+        gdf.geometry = gdf.geometry.apply(make_valid)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f&#34;make_valid not available in shapely (version {shapely.__version__} &lt; 1.8). &#34;
+            f&#34;The obtained vector may be broken !&#34;
+        )
+        pass
+
     # Dissolve if needed
     if dissolve:
-        # Discard self-intersection and null geometries
-        gdf = gdf.buffer(0)
         gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
 
     return gdf
@@ -1335,7 +1350,7 @@ def where(
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="sertit.rasters.PATH_XARR_DS"><code class="name">var <span class="ident">PATH_XARR_DS</span></code></dt>
+<dt id="sertit.rasters.LOGGER"><code class="name">var <span class="ident">LOGGER</span></code></dt>
 <dd>
 <div class="desc"><p>Types:</p>
 <ul>
@@ -1663,7 +1678,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>values</code></strong> :&ensp;<code>Union[None, int, list]</code></dt>
 <dd>Get only the polygons concerning this/these particular values</dd>
@@ -1748,7 +1763,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Default values for nodata in case of non existing in file</dd>
@@ -1879,7 +1894,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
@@ -1973,7 +1988,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
@@ -2082,7 +2097,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
@@ -2532,7 +2547,7 @@ forces the <em>slave</em> raster to be exactly georeferenced onto the <em>master
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 <dt><strong><code>sieve_thresh</code></strong> :&ensp;<code>int</code></dt>
 <dd>Sieving threshold in pixels</dd>
@@ -2674,7 +2689,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -2727,7 +2742,7 @@ def get_extent(xds: PATH_XARR_DS) -&gt; gpd.GeoDataFrame:
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>xds</code></strong> :&ensp;<code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></dt>
+<dt><strong><code>xds</code></strong> :&ensp;<code>PATH_XARR_DS</code></dt>
 <dd>Path to the raster or a rasterio dataset or a xarray</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -3475,7 +3490,7 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="sertit.rasters.PATH_XARR_DS" href="#sertit.rasters.PATH_XARR_DS">PATH_XARR_DS</a></code></li>
+<li><code><a title="sertit.rasters.LOGGER" href="#sertit.rasters.LOGGER">LOGGER</a></code></li>
 <li><code><a title="sertit.rasters.XDS_TYPE" href="#sertit.rasters.XDS_TYPE">XDS_TYPE</a></code></li>
 </ul>
 </li>

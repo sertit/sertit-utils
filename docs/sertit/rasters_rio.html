@@ -58,6 +58,7 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 &#34;&#34;&#34;
+import logging
 import os
 from functools import wraps
 from pathlib import Path
@@ -65,6 +66,8 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
+
+from sertit.logs import SU_NAME
 
 try:
     import geopandas as gpd
@@ -83,6 +86,8 @@ from sertit import files, misc, strings, vectors
 
 MAX_CORES = os.cpu_count() - 2
 PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
+LOGGER = logging.getLogger(SU_NAME)
+
 &#34;&#34;&#34;
 Types:
 
@@ -443,10 +448,22 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, dst.crs)
 
+    try:
+        from shapely.validation import make_valid
+
+        # Discard self-intersection and null geometries
+        gdf.geometry = gdf.geometry.apply(make_valid)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f&#34;make_valid not available in shapely (version {shapely.__version__} &lt; 1.8). &#34;
+            f&#34;The obtained vector may be broken !&#34;
+        )
+        pass
+
     # Dissolve if needed
     if dissolve:
-        # Discard self-intersection and null geometries
-        gdf = gdf.buffer(0)
         gdf = gpd.GeoDataFrame(geometry=gdf.geometry, crs=gdf.crs).dissolve()
 
     return gdf
@@ -1107,33 +1124,35 @@ def merge_vrt(
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
+    # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
+    crs_paths_cp = crs_paths.copy()
 
-    for idp, path in enumerate(crs_paths):
-        crs_paths[idp] = path
+    for idp, path in enumerate(crs_paths_cp):
+        crs_paths_cp[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
     if isinstance(crs_merged_path, CloudPath):
         crs_merged_path = AnyPath(crs_merged_path.fspath)
 
-    for i, crs_path in enumerate(crs_paths):
+    for i, crs_path in enumerate(crs_paths_cp):
         path = AnyPath(crs_path)
         if isinstance(path, CloudPath):
             path = AnyPath(path.fspath)
-        crs_paths[i] = path
+        crs_paths_cp[i] = path
 
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
     try:
         rel_paths = [
             strings.to_cmd_string(str(files.real_rel_path(path, vrt_root)))
-            for path in crs_paths
+            for path in crs_paths_cp
         ]
         rel_vrt = strings.to_cmd_string(
             str(files.real_rel_path(crs_merged_path, vrt_root))
         )
     except ValueError:
-        rel_paths = crs_paths
+        rel_paths = crs_paths_cp
         rel_vrt = crs_merged_path
 
     # Run cmd
@@ -1290,7 +1309,7 @@ def read_bit_array(
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="sertit.rasters_rio.PATH_ARR_DS"><code class="name">var <span class="ident">PATH_ARR_DS</span></code></dt>
+<dt id="sertit.rasters_rio.LOGGER"><code class="name">var <span class="ident">LOGGER</span></code></dt>
 <dd>
 <div class="desc"><p>Types:</p>
 <ul>
@@ -1441,7 +1460,7 @@ True
 <div class="desc"><p>Get the new shape (height, width) of a resampled raster.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>resolution</code></strong> :&ensp;<code>Union[tuple, list, float]</code></dt>
 <dd>Resolution of the wanted band, in dataset resolution unit (X, Y)</dd>
@@ -1774,7 +1793,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>values</code></strong> :&ensp;<code>Union[None, int, list]</code></dt>
 <dd>Get only the polygons concerning this/these particular values</dd>
@@ -1859,7 +1878,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Default values for nodata in case of non existing in file</dd>
@@ -1923,7 +1942,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>default_nodata</code></strong> :&ensp;<code>int</code></dt>
 <dd>Default values for nodata in case of non existing in file</dd>
@@ -1993,7 +2012,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
@@ -2076,7 +2095,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>shapes</code></strong> :&ensp;<code>Union[gpd.GeoDataFrame, Polygon, list]</code></dt>
 <dd>Shapes with the same CRS as the dataset
@@ -2162,7 +2181,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 <dt><strong><code>resolution</code></strong> :&ensp;<code>Union[tuple, list, float]</code></dt>
 <dd>Resolution of the wanted band, in dataset resolution unit (X, Y)</dd>
@@ -2660,7 +2679,7 @@ True
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -2713,7 +2732,7 @@ def get_extent(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
 </code></pre>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>dst</code></strong> :&ensp;<code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></dt>
+<dt><strong><code>dst</code></strong> :&ensp;<code>PATH_ARR_DS</code></dt>
 <dd>Path to the raster, its dataset, its <code>xarray</code> or a tuple containing its array and metadata</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -2815,33 +2834,35 @@ def get_footprint(dst: PATH_ARR_DS) -&gt; gpd.GeoDataFrame:
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other gdlabuildvrt arguments
     &#34;&#34;&#34;
+    # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
+    crs_paths_cp = crs_paths.copy()
 
-    for idp, path in enumerate(crs_paths):
-        crs_paths[idp] = path
+    for idp, path in enumerate(crs_paths_cp):
+        crs_paths_cp[idp] = path
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
     if isinstance(crs_merged_path, CloudPath):
         crs_merged_path = AnyPath(crs_merged_path.fspath)
 
-    for i, crs_path in enumerate(crs_paths):
+    for i, crs_path in enumerate(crs_paths_cp):
         path = AnyPath(crs_path)
         if isinstance(path, CloudPath):
             path = AnyPath(path.fspath)
-        crs_paths[i] = path
+        crs_paths_cp[i] = path
 
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
     try:
         rel_paths = [
             strings.to_cmd_string(str(files.real_rel_path(path, vrt_root)))
-            for path in crs_paths
+            for path in crs_paths_cp
         ]
         rel_vrt = strings.to_cmd_string(
             str(files.real_rel_path(crs_merged_path, vrt_root))
         )
     except ValueError:
-        rel_paths = crs_paths
+        rel_paths = crs_paths_cp
         rel_vrt = crs_merged_path
 
     # Run cmd
@@ -3169,7 +3190,7 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="sertit.rasters_rio.PATH_ARR_DS" href="#sertit.rasters_rio.PATH_ARR_DS">PATH_ARR_DS</a></code></li>
+<li><code><a title="sertit.rasters_rio.LOGGER" href="#sertit.rasters_rio.LOGGER">LOGGER</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>

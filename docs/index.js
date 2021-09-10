@@ -446,7 +446,7 @@ INDEX=[
 "doc":"Raster tools You can use this only if you have installed sertit[full] or sertit[rasters]"
 },
 {
-"ref":"sertit.rasters.PATH_XARR_DS",
+"ref":"sertit.rasters.LOGGER",
 "url":8,
 "doc":"Types: - Path - rasterio Dataset -  xarray.DataArray and  xarray.Dataset "
 },
@@ -605,7 +605,7 @@ INDEX=[
 "doc":"Raster tools You can use this only if you have installed sertit[full] or sertit[rasters_rio]"
 },
 {
-"ref":"sertit.rasters_rio.PATH_ARR_DS",
+"ref":"sertit.rasters_rio.LOGGER",
 "url":9,
 "doc":"Types: - Path - Rasterio open data: (array, meta) - rasterio Dataset -  xarray "
 },
