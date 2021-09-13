@@ -1,5 +1,9 @@
 # Release History
 
+## 1.Y.Z (YYYY-MM-DD)
+
+- FIX: Fixing python version in environment.yml
+
 ## 1.7.3 (2021-09-08)
 
 - FIX: Checking path existence in `vectors.read`
