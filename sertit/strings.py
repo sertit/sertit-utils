@@ -38,6 +38,7 @@ def str_to_bool(bool_str: str) -> bool:
     - `False` <=> `no`, `false`, `f`, `0`
 
     .. code-block:: python
+
         >>> str_to_bool("yes") == True  # Works with "yes", "true", "t", "y", "1" (accepted with any letter case)
         True
 
@@ -79,6 +80,7 @@ def str_to_verbosity(verbosity_str: str) -> int:
     - `ERROR`   <=> {`error`, `e`, `err`}
 
     .. code-block:: python
+
         >>> str_to_bool("d") == logging.DEBUG  # Works with 'debug', 'd', 10 (accepted with any letter case)
         True
 
@@ -129,6 +131,7 @@ def str_to_list(
     Convert str to list with `,`, `;`, ` ` separators.
 
     .. code-block:: python
+
         >>> str_to_list("A, B; C D")
         ["A", "B", "C", "D"]
 
@@ -183,6 +186,7 @@ def str_to_date(
     - Already formatted datetimes and dates
 
     .. code-block:: python
+
         # Default date format (isoformat)
         >>> str_to_date("2020-05-05T08:05:15")
         datetime(2020, 5, 5, 8, 5, 15)
@@ -243,6 +247,7 @@ def str_to_list_of_dates(
     - Already formatted datetimes and dates
 
     .. code-block:: python
+
         >>> # Default date format (isoformat)
         >>> str_to_list_of_dates("20200909105055, 2019-08-06;19560702121212\t2020-08-09",
         >>>                      date_format="%Y%m%d%H%M%S",
@@ -272,6 +277,7 @@ def to_cmd_string(unquoted_str: str) -> str:
     (useful with tricky symbols like & or white spaces):
 
     .. code-block:: python
+
         >>> # This str wont work in the terminal without quotes (because of the &)
         >>> pb_str = r"D:\Minab_4-DA&VHR\Minab_4-DA&VHR.shp"
         >>> to_cmd_string(pb_str)
@@ -299,6 +305,7 @@ def snake_to_camel_case(snake_str: str) -> str:
     Convert a `snake_case` string to `CamelCase`.
 
     .. code-block:: python
+
         >>> snake_to_camel_case("snake_case")
         "SnakeCase"
 
@@ -316,6 +323,7 @@ def camel_to_snake_case(snake_str: str) -> str:
     Convert a `CamelCase` string to `snake_case`.
 
     .. code-block:: python
+
         >>> camel_to_snake_case("CamelCase")
         "camel_case"
 

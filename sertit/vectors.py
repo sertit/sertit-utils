@@ -58,6 +58,7 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     Find the EPSG code of the UTM projection from a lon/lat in WGS84.
 
     .. code-block:: python
+
         >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
         'EPSG:32632'
 
@@ -83,6 +84,7 @@ def from_polygon_to_bounds(
     Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
     .. code-block:: python
+
         >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
         >>> from_polygon_to_bounds(poly)
         (0.0, 0.0, 1.0, 1.0)
@@ -111,6 +113,7 @@ def from_bounds_to_polygon(
     Convert the bounds to a `shapely.polygon`.
 
     .. code-block:: python
+
         >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
         >>> print(poly)
         'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
@@ -135,6 +138,7 @@ def get_geodf(
     Get a GeoDataFrame from a geometry and a crs
 
     .. code-block:: python
+
         >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
         >>> geodf = get_geodf(poly, crs=WGS84)
         >>> print(geodf)
@@ -173,6 +177,7 @@ def set_kml_driver() -> None:
     Set KML driver for Fiona data (use it at your own risks !)
 
     .. code-block:: python
+
         >>> path = "path\\to\\kml.kml"
         >>> gpd.read_file(path)
         fiona.errors.DriverError: unsupported driver: 'LIBKML'
@@ -206,6 +211,7 @@ def get_aoi_wkt(
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
     .. code-block:: python
+
         >>> path = "path\\to\\vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
         >>> get_aoi_wkt(path)
         'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
@@ -336,6 +342,7 @@ def read(
     - if GML: manages the empty errors
 
     .. code-block:: python
+
         >>> # Usual
         >>> path = 'D:\\path\\to\\vector.geojson'
         >>> vectors.read(path, crs=WGS84)

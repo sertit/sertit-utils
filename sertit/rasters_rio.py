@@ -70,6 +70,7 @@ def path_arr_dst(function: Callable) -> Callable:
     - `rasterio` open data: (array, meta)
 
     .. code-block:: python
+
         >>> # Create mock function
         >>> @path_or_dst
         >>> def fct(dst):
@@ -229,6 +230,7 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
         The array's shape is interpreted in rasterio's way (count, height, width) !
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
         >>> with rasterio.open(raster_path) as dst:
         >>>      meta = dst.meta
@@ -301,6 +303,7 @@ def get_nodata_mask(
     The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
 
     .. code-block:: python
+
         >>> diag_arr = np.diag([1,2,3])
         array([[1, 0, 0],
                [0, 2, 0],
@@ -448,6 +451,7 @@ def vectorize(
             Please be careful.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
         >>> vec1 = vectorize(raster_path)
         >>> # or
@@ -484,6 +488,7 @@ def get_valid_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
     If you want only the footprint of the raster, please use `get_footprint`.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
@@ -516,6 +521,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     If you want only the footprint of the raster, please use `get_footprint`.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
@@ -608,6 +614,7 @@ def mask(
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
         >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
@@ -652,6 +659,7 @@ def crop(
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
         >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
@@ -699,6 +707,7 @@ def read(
     Use index with a list of one element to keep a 3D array
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
         >>> raster1, meta1 = read(raster_path)
         >>> # or
@@ -773,6 +782,7 @@ def write(
     The file will be compressed if the raster is a mask (saved as uint8)
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
         >>> raster_out = "path\\to\\out.tif"
 
@@ -843,6 +853,7 @@ def collocate(
     Use it like `OTB SuperImpose`.
 
     .. code-block:: python
+
         >>> master_path = "path\\to\\master.tif"
         >>> slave_path = "path\\to\\slave.tif"
         >>> col_path = "path\\to\\collocated.tif"
@@ -912,6 +923,7 @@ def sieve(
     Forces the output to `np.uint8` (as only classified rasters should be sieved)
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"  # classified raster
 
         >>> # Read raster
@@ -970,6 +982,7 @@ def get_dim_img_path(
     A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
 
     .. code-block:: python
+
         >>> dim_path = "path\\to\\dimap.dim"  # BEAM-DIMAP image
         >>> img_path = get_dim_img_path(dim_path)
 
@@ -998,6 +1011,7 @@ def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     Get the extent of a raster as a `geopandas.Geodataframe`.
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
 
         >>> extent1 = get_extent(raster_path)
@@ -1022,6 +1036,7 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
     Get real footprint of the product (without nodata, in french == emprise utile)
 
     .. code-block:: python
+
         >>> raster_path = "path\\to\\raster.tif"
 
         >>> footprint1 = get_footprint(raster_path)
@@ -1055,6 +1070,7 @@ def merge_vrt(
         They should have the same CRS otherwise the mosaic will be false !
 
     .. code-block:: python
+
         >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
         >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
 
@@ -1117,6 +1133,7 @@ def merge_gtiff(
         They should have the same CRS otherwise the mosaic will be false !
 
     .. code-block:: python
+
         >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
         >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
 
@@ -1165,6 +1182,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
 
     .. code-block:: python
+
         >>> bit_array = np.random.randint(5, size=[3,3])
         array([[1, 1, 3],
                [4, 2, 0],
@@ -1212,6 +1230,7 @@ def read_bit_array(
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 
     .. code-block:: python
+
         >>> bit_array = np.random.randint(5, size=[3,3])
         array([[1, 1, 3],
                [4, 2, 0],

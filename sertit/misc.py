@@ -39,6 +39,7 @@ class ListEnum(Enum):
     List Enum (enum with function listing names and values)
 
     .. code-block:: python
+
         >>> @unique
         >>> class TsxPolarization(ListEnum):
         >>>     SINGLE = "S"  # Single
@@ -53,6 +54,7 @@ class ListEnum(Enum):
         Get the value list of this enum
 
         .. code-block:: python
+
             >>> TsxPolarization.list_values()
             ["S", "D", "Q", "T"]
 
@@ -65,6 +67,7 @@ class ListEnum(Enum):
         Get the name list of this enum:
 
         .. code-block:: python
+
             >>> TsxPolarization.list_values()
             ["SINGLE", "DUAL", "QUAD", "TWIN"]
         """
@@ -76,6 +79,7 @@ class ListEnum(Enum):
         Get the enum class from its value:
 
         .. code-block:: python
+
             >>> TsxPolarization.from_value("Q")
             <TsxPolarization.QUAD: 'Q'>
 
@@ -98,6 +102,7 @@ class ListEnum(Enum):
         Convert from a list or a string to an enum instance
 
         .. code-block:: python
+
             >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
             [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
 
@@ -134,6 +139,7 @@ def remove_empty_values(list_with_empty_values: list) -> list:
     Remove empty values from list:
 
     .. code-block:: python
+
         >>> lst = ["A", "T", "R", "", 3, None]
         >>> list_to_dict(lst)
         ["A", "T", "R", 3]
@@ -152,6 +158,7 @@ def list_to_dict(dict_list: list) -> dict:
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
     .. code-block:: python
+
         >>> lst = ["A","T", "R", 3]
         >>> list_to_dict(lst)
         {"A": "T", "R": 3}
@@ -171,6 +178,7 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
     Set value in nested directory:
 
     .. code-block:: python
+
         >>> dct = {"A": "T", "R": 3}
         >>> nested_set(dct, keys=["B", "C", "D"], value="value")
         {
@@ -201,6 +209,7 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
     **Note**: nested keys do not work here !
 
     .. code-block:: python
+
         >>> dct = {"A": "T", "R": 3}
         >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
         >>> check_mandatory_keys(dct, ["C"])
@@ -227,6 +236,7 @@ def find_by_key(data: dict, target: str) -> Any:
     Find a value by key in a dictionary.
 
     .. code-block:: python
+
         >>> dct = {
         >>>         "A": "T",
         >>>         "R": 3,
@@ -269,6 +279,7 @@ def run_cli(
     Run a command line.
 
     .. code-block:: python
+
         >>> cmd_hillshade = ["gdaldem", "--config",
         >>>                  "NUM_THREADS", "1",
         >>>                  "hillshade", strings.to_cmd_string(dem_path),
@@ -351,6 +362,7 @@ def get_function_name() -> str:
     Get the name of the function where this one is launched.
 
     .. code-block:: python
+
         >>> def huhuhu():
         >>>     return get_function_name()
         >>> huhuhu()
@@ -368,6 +380,7 @@ def in_docker() -> bool:
     Check if the session is running inside a docker
 
     .. code-block:: python
+
         if in_docker():
             print("OMG we are stock in a Docker ! Get me out of here !")
         else:
@@ -392,6 +405,7 @@ def chdir(newdir: Union[str, CloudPath, Path]) -> None:
     Change current directory, used as a context manager, ie:
 
     .. code-block:: python
+
         >>> folder = r"C:\"
         >>> with chdir(folder):
         >>>     print(os.getcwd())

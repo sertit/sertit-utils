@@ -36,6 +36,7 @@ def init_logger(
     To be done before everything (like parsing log_file etc...)
 
     .. code-block:: python
+
         >>> logger = logging.getLogger("logger_test")
         >>> init_logger(logger, logging.INFO, '%(asctime)s - [%(levelname)s] - %(message)s')
         >>> logger.info("MESSAGE")
@@ -94,6 +95,7 @@ def create_logger(
     It will also manage the log level of other specified logger that you give.
 
     .. code-block:: python
+
         >>> logger = logging.getLogger("logger_test")
         >>> create_logger(logger, logging.DEBUG, logging.INFO, "path\\to\\log", "log.txt")
         >>> logger.info("MESSAGE")
@@ -237,6 +239,7 @@ def shutdown_logger(logger: logging.Logger) -> None:
     Shutdown logger (if you need to delete the log file for example)
 
     .. code-block:: python
+
         >>> logger = logging.getLogger("logger_test")
         >>> shutdown_logger(logger)
         >>> # "logger_test" won't log anything after another init
@@ -258,6 +261,7 @@ def reset_logging() -> None:
         MAY BE OVERKILL**
 
     .. code-block:: python
+
         >>> reset_logging()
         Reset root logger
 

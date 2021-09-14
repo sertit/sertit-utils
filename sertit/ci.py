@@ -43,6 +43,7 @@ def get_mnt_path() -> str:
         This won't work on Windows !
 
     .. code-block:: python
+
         >>> get_mnt_path()
         '/mnt'
 
@@ -60,6 +61,7 @@ def _get_db_path(db_nb=2) -> str:
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     .. code-block:: python
+
         >>> get_db_path(db_nb=2)
         '/mnt/ds2_db2'
     """
@@ -79,6 +81,7 @@ def get_db2_path() -> str:
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     .. code-block:: python
+
         >>> get_db2_path()
         '/mnt/ds2_db2'
 
@@ -96,6 +99,7 @@ def get_db3_path() -> str:
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     .. code-block:: python
+
         >>> get_db3_path()
         '/mnt/ds2_db3'
 
@@ -113,6 +117,7 @@ def get_db4_path() -> str:
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
     .. code-block:: python
+
         >>> get_db4_path()
         '/mnt/ds2_db4'
 
@@ -131,6 +136,7 @@ def assert_raster_equal(
     -> Useful for pytests.
 
     .. code-block:: python
+
         >>> path = r"CI\DATA\rasters\raster.tif"
         >>> assert_raster_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
@@ -157,6 +163,7 @@ def assert_raster_almost_equal(
     -> Useful for pytests.
 
     .. code-block:: python
+
         >>> path = r"CI\DATA\rasters\raster.tif"
         >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
         >>> assert_raster_equal(path, path2)
@@ -196,6 +203,7 @@ def assert_raster_max_mismatch(
     -> Useful for pytests.
 
     .. code-block:: python
+
         >>> path = r"CI\DATA\rasters\raster.tif"
         >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
         >>> assert_raster_equal(path, path2)
@@ -234,6 +242,7 @@ def assert_dir_equal(
     # Useful for pytests.
 
     .. code-block:: python
+
         >>> path = r"CI\DATA\rasters"
         >>> assert_dir_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
@@ -284,6 +293,7 @@ def assert_geom_equal(
     -> Useful for pytests.
 
     .. code-block:: python
+
         >>> path = r"CI\DATA\vectors\aoi.geojson"
         >>> assert_geom_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong

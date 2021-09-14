@@ -36,6 +36,7 @@ def bytes2snap(nof_bytes: int) -> str:
     Convert nof bytes into snap-compatible Java options.
 
     .. code-block:: python
+
         >>> bytes2snap(32000)
         '31K'
 
@@ -65,6 +66,7 @@ def get_gpt_cli(
     To see options, type this command line with --diag (but it won't run the graph)
 
     .. code-block:: python
+
         >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
         SNAP Release version 8.0
         SNAP home: C:\Program Files\snap\bin\/..

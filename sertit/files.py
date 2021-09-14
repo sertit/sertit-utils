@@ -52,6 +52,7 @@ def get_root_path() -> Union[CloudPath, Path]:
     - On Windows this returns `C:\\` or whatever the current drive is
 
     .. code-block:: python
+
         >>> get_root_path()
         "/" on Linux
         "C:\\" on Windows (if you run this code from the C: drive)
@@ -66,6 +67,7 @@ def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
     It is the same function than `os.listdir` but returning absolute paths.
 
     .. code-block:: python
+
         >>> folder = "."
         >>> listdir_abspath(folder)
         ['D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\files.py',
@@ -103,6 +105,7 @@ def to_abspath(
     To be used with argparse to retrieve the absolute path of a file, like:
 
     .. code-block:: python
+
         >>> parser = argparse.ArgumentParser()
         >>> # Add config file path key
         >>> parser.add_argument("--config",
@@ -138,6 +141,7 @@ def real_rel_path(
     (and not just adding `..\..` between the start and the target)
 
     .. code-block:: python
+
         >>> path = r'D:\_SERTIT_UTILS\sertit-utils\sertit'
         >>> start = os.path.join(".", "..", "..")
         >>> real_rel_path(path, start)
@@ -170,6 +174,7 @@ def extract_file(
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
 
     .. code-block:: python
+
         >>> file_path = 'D:\\path\\to\\zip.zip'
         >>> output = 'D:\\path\\to\\output'
         >>> extract_file(file_path, output, overwrite=True)
@@ -277,6 +282,7 @@ def extract_files(
     Extract all archived files. Overwrites if specified.
 
     .. code-block:: python
+
         >>> file_path = ['D:\\path\\to\\zip1.zip', 'D:\\path\\to\\zip2.zip']
         >>> output = 'D:\\path\\to\\output'
         >>> extract_files(file_path, output, overwrite=True)
@@ -305,6 +311,7 @@ def get_archived_file_list(archive_path: Union[str, CloudPath, Path]) -> list:
     Get the list of all the files contained in an archive.
 
     .. code-block:: python
+
         >>> arch_path = 'D:\\path\\to\\zip.zip'
         >>> get_archived_file_list(arch_path, file_regex)
         ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
@@ -351,6 +358,7 @@ def get_archived_rio_path(
     You can use this [site](https://regexr.com/) to build your regex.
 
     .. code-block:: python
+
         >>> arch_path = 'D:\\path\\to\\zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> path = get_archived_tif_path(arch_path, file_regex)
@@ -413,6 +421,7 @@ def read_archived_xml(
     You can use this [site](https://regexr.com/) to build your regex.
 
     .. code-block:: python
+
         >>> arch_path = 'D:\\path\\to\\zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> read_archived_xml(arch_path, file_regex)
@@ -470,6 +479,7 @@ def archive(
     Archives a folder recursively.
 
     .. code-block:: python
+
         >>> folder_path = 'D:\\path\\to\\folder_to_archive'
         >>> archive_path = 'D:\\path\\to\\output'
         >>> archive = archive(folder_path, archive_path, fmt="gztar")
@@ -507,6 +517,7 @@ def add_to_zip(
     Add folders to an already existing zip file (recursively).
 
     .. code-block:: python
+
         >>> zip_path = 'D:\\path\\to\\zip.zip'
         >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2']
         >>> add_to_zip(zip_path, dirs_to_add)
@@ -579,6 +590,7 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
     Get file name (without extension) from file path, ie:
 
     .. code-block:: python
+
         >>> file_path = 'D:\\path\\to\\filename.zip'
         >>> get_file_name(file_path)
         'filename'
@@ -600,6 +612,7 @@ def remove(path: Union[str, CloudPath, Path]) -> None:
     Deletes a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
 
     .. code-block:: python
+
         >>> path_to_remove = 'D:\\path\\to\\remove'  # Could also be a file
         >>> remove(path_to_remove)
         path_to_remove deleted
@@ -633,6 +646,7 @@ def remove_by_pattern(
     Remove files corresponding to a pattern from a directory.
 
     .. code-block:: python
+
         >>> directory = 'D:\\path\\to\\folder'
         >>> os.listdir(directory)
         ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
@@ -666,6 +680,7 @@ def copy(
     Copy a file or a directory (recursively) with `copytree` or `copy2`.
 
     .. code-block:: python
+
         >>> src = 'D:\\path\\to\\copy'
         >>> dst = 'D:\\path\\to\\output'
         >>> copy(src, dst)
@@ -712,6 +727,7 @@ def find_files(
     Regex are allowed (using glob)
 
     .. code-block:: python
+
         >>> root_path = 'D:\\root'
         >>> dir1_path = 'D:\\root\\dir1'
         >>> dir2_path = 'D:\\root\\dir2'
@@ -842,6 +858,7 @@ def read_json(json_file: Union[str, CloudPath, Path], print_file: bool = True) -
     Read a JSON file
 
     .. code-block:: python
+
         >>> json_path = 'D:\\path\\to\\json.json'
         >>> read_json(json_path, print_file=False)
         {"A": 1, "B": 2}
@@ -870,6 +887,7 @@ def save_json(output_json: Union[str, CloudPath, Path], json_dict: dict) -> None
     Save a JSON file, with datetime, numpy types and Enum management.
 
     .. code-block:: python
+
         >>> output_json = 'D:\\path\\to\\json.json'
         >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
         >>> save_json(output_json, json_dict)
@@ -888,6 +906,7 @@ def save_obj(obj: Any, path: Union[str, CloudPath, Path]) -> None:
     Save an object as a pickle (can save any Python objects).
 
     .. code-block:: python
+
         >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
         >>> pkl_dict = {"A": np.ones([3, 3]),
                         "B": datetime.today(),
@@ -907,6 +926,7 @@ def load_obj(path: Union[str, CloudPath, Path]) -> Any:
     Load a pickled object.
 
     .. code-block:: python
+
         >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
         >>> load_obj(output_pkl)
         {"A": np.ones([3, 3]), "B": datetime.today(), "C": SomeEnum.some_name}
@@ -939,6 +959,7 @@ def get_file_in_dir(
     If `exact_name` is `False`, the searched pattern will be `*{pattern}*.{extension}`, else `{pattern}.{extension}`.
 
     .. code-block:: python
+
         >>> directory = 'D:\\path\\to\\dir'
         >>> os.listdir(directory)
         ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
@@ -1013,6 +1034,7 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
     Hash a file into a unique str.
 
     .. code-block:: python
+
         >>> read_json("path\\to\\json.json")
         {"A": 1, "B": 2}
 
