@@ -4,6 +4,7 @@
 *.txt
 !test.txt
 !*requirements.txt
+!*requirements-doc.txt
 *.aux.xml
 __pycache__/
 .tox
