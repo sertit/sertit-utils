@@ -804,6 +804,9 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     if "tiled" not in kwargs:
         kwargs["tiled"] = True
 
+    # Force GTiff
+    kwargs["driver"] = "GTiff"
+
     # Write on disk
     xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
 

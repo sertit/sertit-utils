@@ -2,7 +2,11 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.7.4 (2021-09-14)
+
 - FIX: Fixing python version in environment.yml
+- FIX: Fixing driver to `GTiff` in `rasters.write`
+- CI: Fixing dissolve with shapely < 1.8
 
 ## 1.7.3 (2021-09-08)
 

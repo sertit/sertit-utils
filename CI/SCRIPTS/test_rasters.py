@@ -233,7 +233,6 @@ def test_rasters():
             # -- Vectorize
             val = 2
             vect_truth = vectors.read(vect_truth_path)
-            diss_truth = vectors.read(diss_truth_path)
 
             # DataArray
             vect_xda = rasters.vectorize(raster_path)
@@ -243,7 +242,7 @@ def test_rasters():
                 raster_path, values=[1, 255], keep_values=False
             )
             ci.assert_geom_equal(vect_xda, vect_truth)
-            ci.assert_geom_equal(vect_val_diss, diss_truth)
+            ci.assert_geom_equal(vect_val_diss, diss_truth_path)
             ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
             ci.assert_geom_equal(
                 vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
