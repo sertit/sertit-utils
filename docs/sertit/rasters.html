@@ -843,6 +843,9 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None
     if &#34;tiled&#34; not in kwargs:
         kwargs[&#34;tiled&#34;] = True
 
+    # Force GTiff
+    kwargs[&#34;driver&#34;] = &#34;GTiff&#34;
+
     # Write on disk
     xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
 
@@ -2445,6 +2448,9 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -&gt; None
     # Manage tiles
     if &#34;tiled&#34; not in kwargs:
         kwargs[&#34;tiled&#34;] = True
+
+    # Force GTiff
+    kwargs[&#34;driver&#34;] = &#34;GTiff&#34;
 
     # Write on disk
     xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)</code></pre>
