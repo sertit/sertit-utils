@@ -35,12 +35,11 @@ def init_logger(
 
     To be done before everything (like parsing log_file etc...)
 
-    ```python
-    >>> logger = logging.getLogger("logger_test")
-    >>> init_logger(logger, logging.INFO, '%(asctime)s - [%(levelname)s] - %(message)s')
-    >>> logger.info("MESSAGE")
-    2021-03-02 16:57:35 - [INFO] - MESSAGE
-    ```
+    .. code-block:: python
+        >>> logger = logging.getLogger("logger_test")
+        >>> init_logger(logger, logging.INFO, '%(asctime)s - [%(levelname)s] - %(message)s')
+        >>> logger.info("MESSAGE")
+        2021-03-02 16:57:35 - [INFO] - MESSAGE
 
     Args:
         curr_logger (logging.Logger): Logger to be initialize
@@ -94,15 +93,14 @@ def create_logger(
 
     It will also manage the log level of other specified logger that you give.
 
-    ```python
-    >>> logger = logging.getLogger("logger_test")
-    >>> create_logger(logger, logging.DEBUG, logging.INFO, "path\\to\\log", "log.txt")
-    >>> logger.info("MESSAGE")
-    2021-03-02 16:57:35 - [INFO] - MESSAGE
+    .. code-block:: python
+        >>> logger = logging.getLogger("logger_test")
+        >>> create_logger(logger, logging.DEBUG, logging.INFO, "path\\to\\log", "log.txt")
+        >>> logger.info("MESSAGE")
+        2021-03-02 16:57:35 - [INFO] - MESSAGE
 
-    >>> # "logger_test" will also log DEBUG messages
-    >>> # to the "path\\to\\log\\log.txt" file with the same format
-    ```
+        >>> # "logger_test" will also log DEBUG messages
+        >>> # to the "path\\to\\log\\log.txt" file with the same format
 
     Args:
         logger (logging.Logger): Logger to create
@@ -238,11 +236,10 @@ def shutdown_logger(logger: logging.Logger) -> None:
     """
     Shutdown logger (if you need to delete the log file for example)
 
-    ```python
-    >>> logger = logging.getLogger("logger_test")
-    >>> shutdown_logger(logger)
-    >>> # "logger_test" won't log anything after another init
-    ```
+    .. code-block:: python
+        >>> logger = logging.getLogger("logger_test")
+        >>> shutdown_logger(logger)
+        >>> # "logger_test" won't log anything after another init
 
     Args:
         logger (logging.Logger): Logger to shutdown
@@ -260,10 +257,9 @@ def reset_logging() -> None:
     .. WARNING::
         MAY BE OVERKILL**
 
-    ```python
-    >>> reset_logging()
-    Reset root logger
-    ```
+    .. code-block:: python
+        >>> reset_logging()
+        Reset root logger
 
     """
     manager = logging.root.manager

@@ -2,6 +2,8 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+- DOC: Using readthedocs instead of github docs
+
 ## 1.7.4 (2021-09-14)
 
 - FIX: Fixing python version in environment.yml

@@ -21,3 +21,11 @@
 """
 
 __version__ = "1.7.4"
+__title__ = "sertit"
+__description__ = ("SERTIT python library for generic tools",)
+__author__ = "ICube-SERTIT"
+__author_email__ = "dev-sertit@unistra.fr"
+__url__ = "https://github.com/sertit/sertit-utils"
+__license__ = "Apache 2.0"
+__copyright__ = "Copyright 2021, SERTIT-ICube - France, https://sertit.unistra.fr/"
+__documentation__ = "https://sertit-utils.readthedocs.io/en/latest/"

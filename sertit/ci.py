@@ -42,10 +42,9 @@ def get_mnt_path() -> str:
     .. WARNING::
         This won't work on Windows !
 
-    ```python
-    >>> get_mnt_path()
-    '/mnt'
-    ```
+    .. code-block:: python
+        >>> get_mnt_path()
+        '/mnt'
 
     Returns:
         str: Mounting directory
@@ -60,10 +59,9 @@ def _get_db_path(db_nb=2) -> str:
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
-    ```python
-    >>> get_db_path(db_nb=2)
-    '/mnt/ds2_db2'
-    ```
+    .. code-block:: python
+        >>> get_db_path(db_nb=2)
+        '/mnt/ds2_db2'
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
@@ -80,10 +78,9 @@ def get_db2_path() -> str:
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
-    ```python
-    >>> get_db2_path()
-    '/mnt/ds2_db2'
-    ```
+    .. code-block:: python
+        >>> get_db2_path()
+        '/mnt/ds2_db2'
 
     Returns:
         str: Mounted directory
@@ -98,10 +95,9 @@ def get_db3_path() -> str:
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
-    ```python
-    >>> get_db3_path()
-    '/mnt/ds2_db3'
-    ```
+    .. code-block:: python
+        >>> get_db3_path()
+        '/mnt/ds2_db3'
 
     Returns:
         str: Mounted directory
@@ -116,10 +112,9 @@ def get_db4_path() -> str:
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
 
-    ```python
-    >>> get_db4_path()
-    '/mnt/ds2_db4'
-    ```
+    .. code-block:: python
+        >>> get_db4_path()
+        '/mnt/ds2_db4'
 
     Returns:
         str: Mounted directory
@@ -135,11 +130,10 @@ def assert_raster_equal(
 
     -> Useful for pytests.
 
-    ```python
-    >>> path = r"CI\DATA\rasters\raster.tif"
-    >>> assert_raster_equal(path, path)
-    >>> # Raises AssertionError if sth goes wrong
-    ```
+    .. code-block:: python
+        >>> path = r"CI\DATA\rasters\raster.tif"
+        >>> assert_raster_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
 
     Args:
         path_1 (Union[str, CloudPath, Path]): Raster 1
@@ -162,12 +156,11 @@ def assert_raster_almost_equal(
 
     -> Useful for pytests.
 
-    ```python
-    >>> path = r"CI\DATA\rasters\raster.tif"
-    >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
-    >>> assert_raster_equal(path, path2)
-    >>> # Raises AssertionError if sth goes wrong
-    ```
+    .. code-block:: python
+        >>> path = r"CI\DATA\rasters\raster.tif"
+        >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+        >>> assert_raster_equal(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
 
     Args:
         path_1 (Union[str, CloudPath, Path]): Raster 1
@@ -202,12 +195,11 @@ def assert_raster_max_mismatch(
 
     -> Useful for pytests.
 
-    ```python
-    >>> path = r"CI\DATA\rasters\raster.tif"
-    >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
-    >>> assert_raster_equal(path, path2)
-    >>> # Raises AssertionError if sth goes wrong
-    ```
+    .. code-block:: python
+        >>> path = r"CI\DATA\rasters\raster.tif"
+        >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+        >>> assert_raster_equal(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
 
     Args:
         path_1 (Union[str, CloudPath, Path]): Raster 1
@@ -241,11 +233,10 @@ def assert_dir_equal(
 
     # Useful for pytests.
 
-    ```python
-    >>> path = r"CI\DATA\rasters"
-    >>> assert_dir_equal(path, path)
-    >>> # Raises AssertionError if sth goes wrong
-    ```
+    .. code-block:: python
+        >>> path = r"CI\DATA\rasters"
+        >>> assert_dir_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
 
     Args:
         path_1 (str): Directory 1
@@ -292,11 +283,10 @@ def assert_geom_equal(
 
     -> Useful for pytests.
 
-    ```python
-    >>> path = r"CI\DATA\vectors\aoi.geojson"
-    >>> assert_geom_equal(path, path)
-    >>> # Raises AssertionError if sth goes wrong
-    ```
+    .. code-block:: python
+        >>> path = r"CI\DATA\vectors\aoi.geojson"
+        >>> assert_geom_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
 
     .. WARNING::
         Only checks:

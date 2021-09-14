@@ -38,14 +38,13 @@ class ListEnum(Enum):
     """
     List Enum (enum with function listing names and values)
 
-    ```python
-    >>> @unique
-    >>> class TsxPolarization(ListEnum):
-    >>>     SINGLE = "S"  # Single
-    >>>     DUAL = "D"  # Dual
-    >>>     QUAD = "Q"  # Quad
-    >>>     TWIN = "T"  # Twin
-    ```
+    .. code-block:: python
+        >>> @unique
+        >>> class TsxPolarization(ListEnum):
+        >>>     SINGLE = "S"  # Single
+        >>>     DUAL = "D"  # Dual
+        >>>     QUAD = "Q"  # Quad
+        >>>     TWIN = "T"  # Twin
     """
 
     @classmethod
@@ -53,10 +52,9 @@ class ListEnum(Enum):
         """
         Get the value list of this enum
 
-        ```python
-        >>> TsxPolarization.list_values()
-        ["S", "D", "Q", "T"]
-        ```
+        .. code-block:: python
+            >>> TsxPolarization.list_values()
+            ["S", "D", "Q", "T"]
 
         """
         return list(map(lambda c: c.value, cls))
@@ -66,10 +64,9 @@ class ListEnum(Enum):
         """
         Get the name list of this enum:
 
-        ```python
-        >>> TsxPolarization.list_values()
-        ["SINGLE", "DUAL", "QUAD", "TWIN"]
-        ```
+        .. code-block:: python
+            >>> TsxPolarization.list_values()
+            ["SINGLE", "DUAL", "QUAD", "TWIN"]
         """
         return list(map(lambda c: c.name, cls))
 
@@ -78,10 +75,9 @@ class ListEnum(Enum):
         """
         Get the enum class from its value:
 
-        ```python
-        >>> TsxPolarization.from_value("Q")
-        <TsxPolarization.QUAD: 'Q'>
-        ```
+        .. code-block:: python
+            >>> TsxPolarization.from_value("Q")
+            <TsxPolarization.QUAD: 'Q'>
 
         Args:
             val (Any): Value of the Enum
@@ -101,10 +97,9 @@ class ListEnum(Enum):
         """
         Convert from a list or a string to an enum instance
 
-        ```python
-        >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
-        [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
-        ```
+        .. code-block:: python
+            >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
+            [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
 
         Args:
             to_convert (Union[list, str]): List or string to convert into an enum instance
@@ -138,11 +133,10 @@ def remove_empty_values(list_with_empty_values: list) -> list:
     """
     Remove empty values from list:
 
-    ```python
-    >>> lst = ["A", "T", "R", "", 3, None]
-    >>> list_to_dict(lst)
-    ["A", "T", "R", 3]
-    ```
+    .. code-block:: python
+        >>> lst = ["A", "T", "R", "", 3, None]
+        >>> list_to_dict(lst)
+        ["A", "T", "R", 3]
 
     Args:
         list_with_empty_values (list): List with empty values
@@ -157,11 +151,10 @@ def list_to_dict(dict_list: list) -> dict:
     """
     Return a dictionary from a list `[key, value, key_2, value_2...]`
 
-    ```python
-    >>> lst = ["A","T", "R", 3]
-    >>> list_to_dict(lst)
-    {"A": "T", "R": 3}
-    ```
+    .. code-block:: python
+        >>> lst = ["A","T", "R", 3]
+        >>> list_to_dict(lst)
+        {"A": "T", "R": 3}
 
     Args:
         dict_list (list[str]): Dictionary as a list
@@ -177,19 +170,18 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
     """
     Set value in nested directory:
 
-    ```python
-    >>> dct = {"A": "T", "R": 3}
-    >>> nested_set(dct, keys=["B", "C", "D"], value="value")
-    {
-    "A": "T",
-    "R": 3,
-    "B": {
-         "C": {
-              "D": "value"
-              }
-         }
-    }
-    ```
+    .. code-block:: python
+        >>> dct = {"A": "T", "R": 3}
+        >>> nested_set(dct, keys=["B", "C", "D"], value="value")
+        {
+        "A": "T",
+        "R": 3,
+        "B": {
+             "C": {
+                  "D": "value"
+                  }
+             }
+        }
 
     Args:
         dic (dict): Dictionary
@@ -208,15 +200,15 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
 
     **Note**: nested keys do not work here !
 
-    ```python
-    >>> dct = {"A": "T", "R": 3}
-    >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
-    >>> check_mandatory_keys(dct, ["C"])
-    Traceback (most recent call last):
-      File "<input>", line 1, in <module>
-      File "<input>", line 167, in check_mandatory_keys
-    ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
-    ```
+    .. code-block:: python
+        >>> dct = {"A": "T", "R": 3}
+        >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
+        >>> check_mandatory_keys(dct, ["C"])
+        Traceback (most recent call last):
+          File "<input>", line 1, in <module>
+          File "<input>", line 167, in check_mandatory_keys
+        ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
+
 
     Args:
         data_dict (dict): Data dictionary to be checked
@@ -234,19 +226,18 @@ def find_by_key(data: dict, target: str) -> Any:
     """
     Find a value by key in a dictionary.
 
-    ```python
-    >>> dct = {
-    >>>         "A": "T",
-    >>>         "R": 3,
-    >>>         "B": {
-    >>>             "C": {
-    >>>                 "D": "value"
-    >>>                  }
-    >>>              }
-    >>>        }
-    >>> find_by_key(dct, "D")
-    "value"
-    ```
+    .. code-block:: python
+        >>> dct = {
+        >>>         "A": "T",
+        >>>         "R": 3,
+        >>>         "B": {
+        >>>             "C": {
+        >>>                 "D": "value"
+        >>>                  }
+        >>>              }
+        >>>        }
+        >>> find_by_key(dct, "D")
+        "value"
 
     Args:
         data (dict): Dict to walk through
@@ -277,19 +268,18 @@ def run_cli(
     """
     Run a command line.
 
-    ```python
-    >>> cmd_hillshade = ["gdaldem", "--config",
-    >>>                  "NUM_THREADS", "1",
-    >>>                  "hillshade", strings.to_cmd_string(dem_path),
-    >>>                  "-compute_edges",
-    >>>                  "-z", self.nof_threads,
-    >>>                  "-az", azimuth,
-    >>>                  "-alt", zenith,
-    >>>                  "-of", "GTiff",
-    >>>                  strings.to_cmd_string(hillshade_dem)]
-    >>> # Run command
-    >>> run_cli(cmd_hillshade)
-    ```
+    .. code-block:: python
+        >>> cmd_hillshade = ["gdaldem", "--config",
+        >>>                  "NUM_THREADS", "1",
+        >>>                  "hillshade", strings.to_cmd_string(dem_path),
+        >>>                  "-compute_edges",
+        >>>                  "-z", self.nof_threads,
+        >>>                  "-az", azimuth,
+        >>>                  "-alt", zenith,
+        >>>                  "-of", "GTiff",
+        >>>                  strings.to_cmd_string(hillshade_dem)]
+        >>> # Run command
+        >>> run_cli(cmd_hillshade)
 
     Args:
         cmd (str or list[str]): Command as a list
@@ -360,12 +350,11 @@ def get_function_name() -> str:
     """
     Get the name of the function where this one is launched.
 
-    ```python
-    >>> def huhuhu():
-    >>>     return get_function_name()
-    >>> huhuhu()
-    "huhuhu"
-    ```
+    .. code-block:: python
+        >>> def huhuhu():
+        >>>     return get_function_name()
+        >>> huhuhu()
+        "huhuhu"
 
     Returns:
         str: Function's name
@@ -378,12 +367,11 @@ def in_docker() -> bool:
     """
     Check if the session is running inside a docker
 
-    ```python
-    if in_docker():
-        print("OMG we are stock in a Docker ! Get me out of here !")
-    else:
-        print("We are safe")
-    ```
+    .. code-block:: python
+        if in_docker():
+            print("OMG we are stock in a Docker ! Get me out of here !")
+        else:
+            print("We are safe")
 
     Returns:
         bool: True if inside a docker
@@ -403,12 +391,11 @@ def chdir(newdir: Union[str, CloudPath, Path]) -> None:
     """
     Change current directory, used as a context manager, ie:
 
-    ```python
-    >>> folder = r"C:\"
-    >>> with chdir(folder):
-    >>>     print(os.getcwd())
-    'C:\\'
-    ```
+    .. code-block:: python
+        >>> folder = r"C:\"
+        >>> with chdir(folder):
+        >>>     print(os.getcwd())
+        'C:\\'
 
     Args:
         newdir (str): New directory

@@ -73,21 +73,20 @@ def path_xarr_dst(function: Callable) -> Callable:
     - a `xarray`
     - a `rasterio` dataset
 
-    ```python
-    >>> # Create mock function
-    >>> @path_or_dst
-    >>> def fct(dst):
-    >>>     read(dst)
-    >>>
-    >>> # Test the two ways
-    >>> read1 = fct("path\\to\\raster.tif")
-    >>> with rasterio.open("path\\to\\raster.tif") as dst:
-    >>>     read2 = fct(dst)
-    >>>
-    >>> # Test
-    >>> read1 == read2
-    True
-    ```
+    .. code-block:: python
+        >>> # Create mock function
+        >>> @path_or_dst
+        >>> def fct(dst):
+        >>>     read(dst)
+        >>>
+        >>> # Test the two ways
+        >>> read1 = fct("path\\to\\raster.tif")
+        >>> with rasterio.open("path\\to\\raster.tif") as dst:
+        >>>     read2 = fct(dst)
+        >>>
+        >>> # Test
+        >>> read1 == read2
+        True
     Args:
         function (Callable): Function to decorate
 
@@ -154,28 +153,28 @@ def to_np(xds: xarray.DataArray, dtype: Any = None) -> np.ndarray:
 
     This is particularly useful when reading with `masked=True`.
 
-    ```python
-    >>> raster_path = "path\\to\\mask.tif"  # Classified raster in np.uint8 with nodata = 255
-    >>> # We read with masked=True so the data is converted to float
-    >>> xds = read(raster_path)
-    <xarray.DataArray 'path/to/mask.tif' (band: 1, y: 322, x: 464)>
-    [149408 values with dtype=float64]
-    Coordinates:
-      * band         (band) int32 1
-      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
-      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
-        spatial_ref  int32 0
-    >>> to_np(xds)  # Getting back np.uint8 and encoded nodata
-    array([[[255, 255, 255, ..., 255, 255, 255],
-        [255, 255, 255, ..., 255, 255, 255],
-        [255, 255, 255, ..., 255, 255, 255],
-        ...,
-        [255, 255, 255, ...,   1, 255, 255],
-        [255, 255, 255, ...,   1, 255, 255],
-        [255, 255, 255, ...,   1, 255, 255]]], dtype=uint8)
+    .. code-block:: python
+        >>> raster_path = "path\\to\\mask.tif"  # Classified raster in np.uint8 with nodata = 255
+        >>> # We read with masked=True so the data is converted to float
+        >>> xds = read(raster_path)
+        <xarray.DataArray 'path/to/mask.tif' (band: 1, y: 322, x: 464)>
+        [149408 values with dtype=float64]
+        Coordinates:
+          * band         (band) int32 1
+          * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+          * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+            spatial_ref  int32 0
+        >>> to_np(xds)  # Getting back np.uint8 and encoded nodata
+        array([[[255, 255, 255, ..., 255, 255, 255],
+            [255, 255, 255, ..., 255, 255, 255],
+            [255, 255, 255, ..., 255, 255, 255],
+            ...,
+            [255, 255, 255, ...,   1, 255, 255],
+            [255, 255, 255, ...,   1, 255, 255],
+            [255, 255, 255, ...,   1, 255, 255]]], dtype=uint8)
 
-    True
-    ```
+        True
+
     Args:
         xds (xarray.DataArray): `xarray.DataArray` to convert
         dtype (Any): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
@@ -203,20 +202,19 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
     """
     Get nodata mask from a xarray.
 
-    ```python
-    >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
-    >>> diag_arr.rio.write_nodata(0, inplace=True)
-    <xarray.DataArray (dim_0: 3, dim_1: 3)>
-    array([[1, 0, 0],
-           [0, 2, 0],
-           [0, 0, 3]])
-    Dimensions without coordinates: dim_0, dim_1
+    .. code-block:: python
+        >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
+        >>> diag_arr.rio.write_nodata(0, inplace=True)
+        <xarray.DataArray (dim_0: 3, dim_1: 3)>
+        array([[1, 0, 0],
+               [0, 2, 0],
+               [0, 0, 3]])
+        Dimensions without coordinates: dim_0, dim_1
 
-    >>> get_nodata_mask(diag_arr)
-    array([[1, 0, 0],
-           [0, 1, 0],
-           [0, 0, 1]], dtype=uint8)
-    ```
+        >>> get_nodata_mask(diag_arr)
+        array([[1, 0, 0],
+               [0, 1, 0],
+               [0, 0, 1]], dtype=uint8)
 
     Args:
         xds (XDS_TYPE): Array to evaluate
@@ -360,15 +358,14 @@ def vectorize(
         - This could take a while as the computing time directly depends on the number of polygons to vectorize.
             Please be careful.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> vec1 = vectorize(raster_path)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     vec2 = vectorize(dst)
-    >>> vec1 == vec2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> vec1 = vectorize(raster_path)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     vec2 = vectorize(dst)
+        >>> vec1 == vec2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -397,15 +394,14 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     Pay attention that every nodata pixel will appear too.
     If you want only the footprint of the raster, please use `get_footprint`.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> nodata1 = get_nodata_vec(raster_path)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     nodata2 = get_nodata_vec(dst)
-    >>> nodata1 == nodata2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> nodata1 = get_nodata_vec(raster_path)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     nodata2 = get_nodata_vec(dst)
+        >>> nodata1 == nodata2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -430,15 +426,14 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     Pay attention that every nodata pixel will appear too.
     If you want only the footprint of the raster, please use `get_footprint`.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
-    >>> nodata1 = get_nodata_vec(raster_path)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     nodata2 = get_nodata_vec(dst)
-    >>> nodata1 == nodata2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+        >>> nodata1 = get_nodata_vec(raster_path)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     nodata2 = get_nodata_vec(dst)
+        >>> nodata1 == nodata2
+        True
 
     Args:
         dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
@@ -471,17 +466,16 @@ def mask(
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
-    >>> shapes = gpd.read_file(shape_path)
-    >>> mask1 = mask(raster_path, shapes)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     mask2 = mask(dst, shapes)
-    >>> mask1 == mask2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
+        >>> shapes = gpd.read_file(shape_path)
+        >>> mask1 = mask(raster_path, shapes)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     mask2 = mask(dst, shapes)
+        >>> mask1 == mask2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -524,17 +518,16 @@ def paint(
     Overload of rasterio mask function in order to create a `xarray`.
     The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
-    >>> shapes = gpd.read_file(shape_path)
-    >>> paint1 = paint(raster_path, shapes, value=100)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     paint2 = paint(dst, shapes, value=100)
-    >>> paint1 == paint2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
+        >>> shapes = gpd.read_file(shape_path)
+        >>> paint1 = paint(raster_path, shapes, value=100)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     paint2 = paint(dst, shapes, value=100)
+        >>> paint1 == paint2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -587,17 +580,16 @@ def crop(
     clip](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip)
     function in order to create a masked_array.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
-    >>> shapes = gpd.read_file(shape_path)
-    >>> xds2 = crop(raster_path, shapes)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     xds2 = crop(dst, shapes)
-    >>> xds1 == xds2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
+        >>> shapes = gpd.read_file(shape_path)
+        >>> xds2 = crop(raster_path, shapes)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     xds2 = crop(dst, shapes)
+        >>> xds1 == xds2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -652,15 +644,14 @@ def read(
     For Dask usage, you can look at the
     [rioxarray tutorial](https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html).
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
-    >>> xds1 = read(raster_path)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>    xds2 = read(dst)
-    >>> xds1 == xds2
-    True
-    ```
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
+        >>> xds1 = read(raster_path)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>    xds2 = read(dst)
+        >>> xds1 == xds2
+        True
 
     Args:
         dst (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -822,17 +813,16 @@ def collocate(
 
     Use it like `OTB SuperImpose`.
 
-    ```python
-    >>> master_path = "path\\to\\master.tif"
-    >>> slave_path = "path\\to\\slave.tif"
-    >>> col_path = "path\\to\\collocated.tif"
+    .. code-block:: python
+        >>> master_path = "path\\to\\master.tif"
+        >>> slave_path = "path\\to\\slave.tif"
+        >>> col_path = "path\\to\\collocated.tif"
 
-    >>> # Collocate the slave to the master
-    >>> col_xds = collocate(read(master_path), read(slave_path), Resampling.bilinear)
+        >>> # Collocate the slave to the master
+        >>> col_xds = collocate(read(master_path), read(slave_path), Resampling.bilinear)
 
-    >>> # Write it
-    >>> write(col_xds, col_path)
-    ```
+        >>> # Write it
+        >>> write(col_xds, col_path)
 
     Args:
         master_xds (XDS_TYPE): Master xarray
@@ -863,16 +853,15 @@ def sieve(
     .. WARNING::
         Your data is casted by force into `np.uint8`, so be sure that your data is classified.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"  # classified raster
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"  # classified raster
 
-    >>> # Rewrite it
-    >>> sieved_xds = sieve(raster_path, sieve_thresh=20)
+        >>> # Rewrite it
+        >>> sieved_xds = sieve(raster_path, sieve_thresh=20)
 
-    >>> # Write it
-    >>> raster_out = "path\\to\\raster_sieved.tif"
-    >>> write(sieved_xds, raster_out)
-    ```
+        >>> # Write it
+        >>> raster_out = "path\\to\\raster_sieved.tif"
+        >>> write(sieved_xds, raster_out)
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -917,13 +906,12 @@ def get_dim_img_path(
 
     A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
 
-    ```python
-    >>> dim_path = "path\\to\\dimap.dim"  # BEAM-DIMAP image
-    >>> img_path = get_dim_img_path(dim_path)
+    .. code-block:: python
+        >>> dim_path = "path\\to\\dimap.dim"  # BEAM-DIMAP image
+        >>> img_path = get_dim_img_path(dim_path)
 
-    >>> # Read raster
-    >>> raster, meta = read(img_path)
-    ```
+        >>> # Read raster
+        >>> raster, meta = read(img_path)
 
     Args:
         dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
@@ -940,16 +928,15 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a `geopandas.Geodataframe`.
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
 
-    >>> extent1 = get_extent(raster_path)
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     extent2 = get_extent(dst)
-    >>> extent1 == extent2
-    True
-    ```
+        >>> extent1 = get_extent(raster_path)
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     extent2 = get_extent(dst)
+        >>> extent1 == extent2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -965,16 +952,15 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, in french == emprise utile)
 
-    ```python
-    >>> raster_path = "path\\to\\raster.tif"
+    .. code-block:: python
+        >>> raster_path = "path\\to\\raster.tif"
 
-    >>> footprint1 = get_footprint(raster_path)
+        >>> footprint1 = get_footprint(raster_path)
 
-    >>> # or
-    >>> with rasterio.open(raster_path) as dst:
-    >>>     footprint2 = get_footprint(dst)
-    >>> footprint1 == footprint2
-    ```
+        >>> # or
+        >>> with rasterio.open(raster_path) as dst:
+        >>>     footprint2 = get_footprint(dst)
+        >>> footprint1 == footprint2
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -998,17 +984,16 @@ def merge_vrt(
     .. WARNING::
         They should have the same CRS otherwise the mosaic will be false !
 
-    ```python
-    >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
-    >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
+    .. code-block:: python
+        >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
+        >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
 
-    >>> mosaic_32630 = "path\\to\\mosaic_32630.vrt"
-    >>> mosaic_32631 = "path\\to\\mosaic_32631.vrt"
+        >>> mosaic_32630 = "path\\to\\mosaic_32630.vrt"
+        >>> mosaic_32631 = "path\\to\\mosaic_32631.vrt"
 
-    >>> # Create mosaic, one by CRS !
-    >>> merge_vrt(paths_utm32630, mosaic_32630)
-    >>> merge_vrt(paths_utm32631, mosaic_32631, {"-srcnodata":255, "-vrtnodata":0})
-    ```
+        >>> # Create mosaic, one by CRS !
+        >>> merge_vrt(paths_utm32630, mosaic_32630)
+        >>> merge_vrt(paths_utm32631, mosaic_32631, {"-srcnodata":255, "-vrtnodata":0})
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
@@ -1027,17 +1012,16 @@ def merge_gtiff(
     .. WARNING::
         They should have the same CRS otherwise the mosaic will be false !
 
-    ```python
-    >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
-    >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
+    .. code-block:: python
+        >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
+        >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
 
-    >>> mosaic_32630 = "path\\to\\mosaic_32630.tif"
-    >>> mosaic_32631 = "path\\to\\mosaic_32631.tif"
+        >>> mosaic_32630 = "path\\to\\mosaic_32630.tif"
+        >>> mosaic_32631 = "path\\to\\mosaic_32631.tif"
 
-    # Create mosaic, one by CRS !
-    >>> merge_gtiff(paths_utm32630, mosaic_32630)
-    >>> merge_gtiff(paths_utm32631, mosaic_32631)
-    ```
+        # Create mosaic, one by CRS !
+        >>> merge_gtiff(paths_utm32630, mosaic_32630)
+        >>> merge_gtiff(paths_utm32631, mosaic_32631)
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
@@ -1053,26 +1037,23 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     Function found here:
     https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
 
+    .. code-block:: python
+        >>> bit_array = np.random.randint(5, size=[3,3])
+        array([[1, 1, 3],
+               [4, 2, 0],
+               [4, 3, 2]], dtype=uint8)
 
-    ```python
-    >>> bit_array = np.random.randint(5, size=[3,3])
-    array([[1, 1, 3],
-           [4, 2, 0],
-           [4, 3, 2]], dtype=uint8)
-
-    # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
-    >>> unpackbits(bit_array, 8)
-    array([[[1, 0, 0, 0, 0, 0, 0, 0],
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 0, 0, 0, 0, 0, 0]],
-           [[0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0]],
-           [[0, 0, 1, 0, 0, 0, 0, 0],
-            [1, 1, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
-    ```
-
+        # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
+        >>> unpackbits(bit_array, 8)
+        array([[[1, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [1, 1, 0, 0, 0, 0, 0, 0]],
+               [[0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0]],
+               [[0, 0, 1, 0, 0, 0, 0, 0],
+                [1, 1, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
     Args:
         array (np.ndarray): Array to unpack
         nof_bits (int): Number of bits to unpack
@@ -1089,18 +1070,17 @@ def read_bit_array(
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 
-    ```python
-    >>> bit_array = np.random.randint(5, size=[3,3])
-    array([[1, 1, 3],
-           [4, 2, 0],
-           [4, 3, 2]], dtype=uint8)
+    .. code-block:: python
+        >>> bit_array = np.random.randint(5, size=[3,3])
+        array([[1, 1, 3],
+               [4, 2, 0],
+               [4, 3, 2]], dtype=uint8)
 
-    # Get the 2nd bit array
-    >>> read_bit_array(bit_array, 2)
-    array([[0, 0, 0],
-           [1, 0, 0],
-           [1, 0, 0]], dtype=uint8)
-    ```
+        # Get the 2nd bit array
+        >>> read_bit_array(bit_array, 2)
+        array([[0, 0, 0],
+               [1, 0, 0],
+               [1, 0, 0]], dtype=uint8)
 
     Args:
         bit_mask (np.ndarray): Bit array to read
@@ -1145,51 +1125,50 @@ def set_metadata(
 
     Useful when performing operations on xarray that result in metadata loss such as sums.
 
-    ```python
-    >>> # xda: some xr.DataArray
-    >>> sum = xda + xda  # Sum loses its metadata here
-    <xarray.DataArray 'xda' (band: 1, y: 322, x: 464)>
-    array([[[nan, nan, nan, ..., nan, nan, nan],
-            [nan, nan, nan, ..., nan, nan, nan],
-            [nan, nan, nan, ..., nan, nan, nan],
-            ...,
-            [nan, nan, nan, ...,  2., nan, nan],
-            [nan, nan, nan, ...,  2., nan, nan],
-            [nan, nan, nan, ...,  2., nan, nan]]])
-    Coordinates:
-      * band         (band) int32 1
-      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
-      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+    .. code-block:: python
+        >>> # xda: some xr.DataArray
+        >>> sum = xda + xda  # Sum loses its metadata here
+        <xarray.DataArray 'xda' (band: 1, y: 322, x: 464)>
+        array([[[nan, nan, nan, ..., nan, nan, nan],
+                [nan, nan, nan, ..., nan, nan, nan],
+                [nan, nan, nan, ..., nan, nan, nan],
+                ...,
+                [nan, nan, nan, ...,  2., nan, nan],
+                [nan, nan, nan, ...,  2., nan, nan],
+                [nan, nan, nan, ...,  2., nan, nan]]])
+        Coordinates:
+          * band         (band) int32 1
+          * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+          * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
 
-    >>> # We need to set the metadata back (and we can set a new name)
-    >>> sum = set_metadata(sum, xda, new_name="sum")
-    <xarray.DataArray 'sum' (band: 1, y: 322, x: 464)>
-    array([[[nan, nan, nan, ..., nan, nan, nan],
-            [nan, nan, nan, ..., nan, nan, nan],
-            [nan, nan, nan, ..., nan, nan, nan],
-            ...,
-            [nan, nan, nan, ...,  2., nan, nan],
-            [nan, nan, nan, ...,  2., nan, nan],
-            [nan, nan, nan, ...,  2., nan, nan]]])
-    Coordinates:
-      * band         (band) int32 1
-      * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
-      * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
-        spatial_ref  int32 0
-    Attributes: (12/13)
-        grid_mapping:              spatial_ref
-        BandName:                  Band_1
-        RepresentationType:        ATHEMATIC
-        STATISTICS_COVARIANCES:    0.2358157950609785
-        STATISTICS_MAXIMUM:        2
-        STATISTICS_MEAN:           1.3808942647686
-        ...                        ...
-        STATISTICS_SKIPFACTORX:    1
-        STATISTICS_SKIPFACTORY:    1
-        STATISTICS_STDDEV:         0.48560665546817
-        STATISTICS_VALID_PERCENT:  80.07
-        original_dtype:            uint8
-    ```
+        >>> # We need to set the metadata back (and we can set a new name)
+        >>> sum = set_metadata(sum, xda, new_name="sum")
+        <xarray.DataArray 'sum' (band: 1, y: 322, x: 464)>
+        array([[[nan, nan, nan, ..., nan, nan, nan],
+                [nan, nan, nan, ..., nan, nan, nan],
+                [nan, nan, nan, ..., nan, nan, nan],
+                ...,
+                [nan, nan, nan, ...,  2., nan, nan],
+                [nan, nan, nan, ...,  2., nan, nan],
+                [nan, nan, nan, ...,  2., nan, nan]]])
+        Coordinates:
+          * band         (band) int32 1
+          * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
+          * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
+            spatial_ref  int32 0
+        Attributes: (12/13)
+            grid_mapping:              spatial_ref
+            BandName:                  Band_1
+            RepresentationType:        ATHEMATIC
+            STATISTICS_COVARIANCES:    0.2358157950609785
+            STATISTICS_MAXIMUM:        2
+            STATISTICS_MEAN:           1.3808942647686
+            ...                        ...
+            STATISTICS_SKIPFACTORX:    1
+            STATISTICS_SKIPFACTORY:    1
+            STATISTICS_STDDEV:         0.48560665546817
+            STATISTICS_VALID_PERCENT:  80.07
+            original_dtype:            uint8
 
     Args:
         naked_xda (xr.DataArray): DataArray to complete
@@ -1221,22 +1200,21 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     In the data array, the no data will be set to `np.nan`.
     The encoded value can be retrieved with `xda.rio.encoded_nodata`.
 
-    ```python
-    >>> A = xr.DataArray(dims=("x", "y"), data=np.zeros((3,3), dtype=np.uint8))
-    >>> A[0, 0] = 1
-    <xarray.DataArray (x: 3, y: 3)>
-    array([[1, 0, 0],
-           [0, 0, 0],
-           [0, 0, 0]], dtype=uint8)
-    Dimensions without coordinates: x, y
+    .. code-block:: python
+        >>> A = xr.DataArray(dims=("x", "y"), data=np.zeros((3,3), dtype=np.uint8))
+        >>> A[0, 0] = 1
+        <xarray.DataArray (x: 3, y: 3)>
+        array([[1, 0, 0],
+               [0, 0, 0],
+               [0, 0, 0]], dtype=uint8)
+        Dimensions without coordinates: x, y
 
-    >>> A_nodata = set_nodata(A, 0)
-    <xarray.DataArray (x: 3, y: 3)>
-    array([[ 1., nan, nan],
-           [nan, nan, nan],
-           [nan, nan, nan]])
-    Dimensions without coordinates: x, y
-    ```
+        >>> A_nodata = set_nodata(A, 0)
+        <xarray.DataArray (x: 3, y: 3)>
+        array([[ 1., nan, nan],
+               [nan, nan, nan],
+               [nan, nan, nan]])
+        Dimensions without coordinates: x, y
 
     Args:
         xda (xr.DataArray): DataArray
@@ -1270,14 +1248,13 @@ def where(
         as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
         Just pass `if_true=true_xda.data` inplace of `if_true=true_xda` and the same for `if_false`
 
-    ```python
-    >>> A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
-    >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
-    <xarray.DataArray 'mask_A' (x: 2, y: 3)>
-    array([[ 1.,  1.,  0.],
-           [nan,  1.,  1.]])
-    Dimensions without coordinates: x, y
-    ```
+    .. code-block:: python
+        >>> A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
+        >>> mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
+        <xarray.DataArray 'mask_A' (x: 2, y: 3)>
+        array([[ 1.,  1.,  0.],
+               [nan,  1.,  1.]])
+        Dimensions without coordinates: x, y
     Args:
         cond (scalar, array, Variable, DataArray or Dataset): Conditional array
         if_true (scalar, array, Variable, DataArray or Dataset): What to do if `cond` is True

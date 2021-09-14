@@ -1,16 +1,24 @@
 import setuptools
 
-from sertit import __version__
+from sertit import (
+    __author__,
+    __author_email__,
+    __description__,
+    __documentation__,
+    __title__,
+    __url__,
+    __version__,
+)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="sertit",
+    name=__title__,
     version=__version__,
-    author="Rémi BRAUN",
-    author_email="dev-sertit@unistra.fr",
-    description="SERTIT python library for generic tools",
+    author=__author__,
+    author_email=__author_email__,
+    description=__description__,
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
@@ -40,7 +48,7 @@ setuptools.setup(
         ],
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
@@ -57,8 +65,8 @@ setuptools.setup(
     include_package_data=True,
     python_requires=">=3.7",
     project_urls={
-        "Bug Tracker": "https://github.com/sertit/sertit-utils/issues/",
-        "Documentation": "https://sertit.github.io/sertit-utils/sertit/",
-        "Source Code": "https://github.com/sertit/sertit-utils",
+        "Bug Tracker": f"{__url__}/issues/",
+        "Documentation": __documentation__,
+        "Source Code": __url__,
     },
 )

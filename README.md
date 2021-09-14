@@ -8,7 +8,7 @@
 
 Library gathering functions for all SERTIT's projects.
 
-Find the API documentation [**here**](https://sertit.github.io/sertit-utils/).
+Find the API documentation [**here**](https://sertit-utils.readthedocs.io/en/latest/).
 
 # Installing
 

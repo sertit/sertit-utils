@@ -57,10 +57,9 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
     Find the EPSG code of the UTM projection from a lon/lat in WGS84.
 
-    ```python
-    >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
-    'EPSG:32632'
-    ```
+    .. code-block:: python
+        >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
+        'EPSG:32632'
 
     Args:
         lon (float): Longitude (WGS84)
@@ -83,11 +82,10 @@ def from_polygon_to_bounds(
     """
     Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
 
-    ```python
-    >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
-    >>> from_polygon_to_bounds(poly)
-    (0.0, 0.0, 1.0, 1.0)
-    ```
+    .. code-block:: python
+        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+        >>> from_polygon_to_bounds(poly)
+        (0.0, 0.0, 1.0, 1.0)
 
     Args:
         polygon (MultiPolygon): polygon to convert
@@ -112,11 +110,10 @@ def from_bounds_to_polygon(
     """
     Convert the bounds to a `shapely.polygon`.
 
-    ```python
-    >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
-    >>> print(poly)
-    'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
-    ```
+    .. code-block:: python
+        >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
+        >>> print(poly)
+        'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
 
     Args:
         left (float): Left coordinates
@@ -137,13 +134,12 @@ def get_geodf(
     """
     Get a GeoDataFrame from a geometry and a crs
 
-    ```python
-    >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
-    >>> geodf = get_geodf(poly, crs=WGS84)
-    >>> print(geodf)
-                                                geometry
-    0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
-    ```
+    .. code-block:: python
+        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+        >>> geodf = get_geodf(poly, crs=WGS84)
+        >>> print(geodf)
+                                                    geometry
+        0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
 
     Args:
         geometry (Union[Polygon, list]): List of Polygons, or Polygon or bounds
@@ -176,17 +172,16 @@ def set_kml_driver() -> None:
     """
     Set KML driver for Fiona data (use it at your own risks !)
 
-    ```python
-    >>> path = "path\\to\\kml.kml"
-    >>> gpd.read_file(path)
-    fiona.errors.DriverError: unsupported driver: 'LIBKML'
+    .. code-block:: python
+        >>> path = "path\\to\\kml.kml"
+        >>> gpd.read_file(path)
+        fiona.errors.DriverError: unsupported driver: 'LIBKML'
 
-    >>> set_kml_driver()
-    >>> gpd.read_file(path)
-                   Name  ...                                           geometry
-    0  CC679_new_AOI2_3  ...  POLYGON Z ((45.03532 32.49765 0.00000, 46.1947...
-    [1 rows x 12 columns]
-    ```
+        >>> set_kml_driver()
+        >>> gpd.read_file(path)
+                       Name  ...                                           geometry
+        0  CC679_new_AOI2_3  ...  POLYGON Z ((45.03532 32.49765 0.00000, 46.1947...
+        [1 rows x 12 columns]
 
     """
     drivers = gpd.io.file.fiona.drvsupport.supported_drivers
@@ -209,13 +204,13 @@ def get_aoi_wkt(
 
     - only **one** polygon composes the AOI (as only the first one is read)
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
-    ```python
-    >>> path = "path\\to\\vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
-    >>> get_aoi_wkt(path)
-    'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
-    0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
-    34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
-    ```
+
+    .. code-block:: python
+        >>> path = "path\\to\\vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
+        >>> get_aoi_wkt(path)
+        'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
+        0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
+        34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
 
     Args:
         aoi_path (Union[str, CloudPath, Path]): Absolute or relative path to an AOI.
@@ -340,19 +335,18 @@ def read(
         You can use this [site](https://regexr.com/) to build your regex.
     - if GML: manages the empty errors
 
-    ```python
-    >>> # Usual
-    >>> path = 'D:\\path\\to\\vector.geojson'
-    >>> vectors.read(path, crs=WGS84)
-                           Name  ...                                           geometry
-    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+    .. code-block:: python
+        >>> # Usual
+        >>> path = 'D:\\path\\to\\vector.geojson'
+        >>> vectors.read(path, crs=WGS84)
+                               Name  ...                                           geometry
+        0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 
-    >>> # Archive
-    >>> arch_path = 'D:\\path\\to\\zip.zip'
-    >>> vectors.read(arch_path, archive_regex=".*map-overlay\.kml")
-                           Name  ...                                           geometry
-    0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
-    ```
+        >>> # Archive
+        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> vectors.read(arch_path, archive_regex=".*map-overlay\.kml")
+                               Name  ...                                           geometry
+        0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 
     Args:
         path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.

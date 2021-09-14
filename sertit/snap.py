@@ -35,10 +35,9 @@ def bytes2snap(nof_bytes: int) -> str:
     """
     Convert nof bytes into snap-compatible Java options.
 
-    ```python
-    >>> bytes2snap(32000)
-    '31K'
-    ```
+    .. code-block:: python
+        >>> bytes2snap(32000)
+        '31K'
 
     Args:
         nof_bytes (int): Byte nb
@@ -65,29 +64,27 @@ def get_gpt_cli(
     Get GPT command line with system OK optimizations.
     To see options, type this command line with --diag (but it won't run the graph)
 
-    ```python
-    >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
-    SNAP Release version 8.0
-    SNAP home: C:\Program Files\snap\bin\/..
-    SNAP debug: null
-    SNAP log level: WARNING
-    Java home: c:\program files\snap\jre\jre
-    Java version: 1.8.0_242
-    Processors: 16
-    Max memory: 53.3 GB
-    Cache size: 30.0 GB
-    Tile parallelism: 14
-    Tile size: 2048 x 2048 pixels
-    To configure your gpt memory usage:
-    Edit snap/bin/gpt.vmoptions
-    To configure your gpt cache size and parallelism:
-    Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
+    .. code-block:: python
+        >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
+        SNAP Release version 8.0
+        SNAP home: C:\Program Files\snap\bin\/..
+        SNAP debug: null
+        SNAP log level: WARNING
+        Java home: c:\program files\snap\jre\jre
+        Java version: 1.8.0_242
+        Processors: 16
+        Max memory: 53.3 GB
+        Cache size: 30.0 GB
+        Tile parallelism: 14
+        Tile size: 2048 x 2048 pixels
+        To configure your gpt memory usage:
+        Edit snap/bin/gpt.vmoptions
+        To configure your gpt cache size and parallelism:
+        Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
 
-    ['gpt', '"graph_path"', '-q', 14, '-J-Xms2G -J-Xmx60G', '-J-Dsnap.log.level=WARNING',
-    '-J-Dsnap.jai.defaultTileSize=2048', '-J-Dsnap.dataio.reader.tileWidth=2048',
-    '-J-Dsnap.dataio.reader.tileHeigh=2048', '-J-Dsnap.jai.prefetchTiles=true', '-c 30G']
-
-    ```
+        ['gpt', '"graph_path"', '-q', 14, '-J-Xms2G -J-Xmx60G', '-J-Dsnap.log.level=WARNING',
+        '-J-Dsnap.jai.defaultTileSize=2048', '-J-Dsnap.dataio.reader.tileWidth=2048',
+        '-J-Dsnap.dataio.reader.tileHeigh=2048', '-J-Dsnap.jai.prefetchTiles=true', '-c 30G']
 
     Args:
         graph_path (str): Graph path
