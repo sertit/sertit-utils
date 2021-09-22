@@ -25,7 +25,7 @@ import pytest
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import Polarization, files_path, s3_env
+from CI.SCRIPTS.script_utils import Polarization, files_path, get_s3_ci_path, s3_env
 from sertit import ci, files, misc, vectors
 
 
@@ -55,6 +55,13 @@ def test_paths():
 
         # Root path
         assert str(abs_file).startswith(str(files.get_root_path()))
+
+        # Writeable
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            assert files.is_writable(tmp_dir)  # Writeable
+
+        assert not files.is_writable(get_s3_ci_path())  # Not writable
+        assert not files.is_writable("cvfgbherth")  # Non existing
 
 
 def test_archive():

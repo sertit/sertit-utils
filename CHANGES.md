@@ -2,6 +2,9 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.8.0 (2021-09-22)
+
+- ENH: Adding `files.is_writable` function to test if a directory is writable or not
 - DOC: Using readthedocs instead of github docs
 
 ## 1.7.4 (2021-09-14)

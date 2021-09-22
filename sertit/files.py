@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Tools for paths and files """
 
+import errno
 import hashlib
 import json
 import logging
@@ -1051,3 +1052,28 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
     hasher = hashlib.shake_256()
     hasher.update(str.encode(file_content))
     return hasher.hexdigest(len_param)
+
+
+def is_writable(dir_path: Union[str, CloudPath, Path]):
+    """
+    Determine whether the directory is writeable or not
+    Args:
+        dir_path (Union[str, CloudPath, Path]): Directory path
+
+    Returns:
+        bool: True if the directory is writable
+    """
+    try:
+        testfile = tempfile.TemporaryFile(dir=dir_path)
+        testfile.close()
+    except (OSError, IOError, FileNotFoundError) as e:
+        if e.errno in [
+            errno.EACCES,
+            errno.EEXIST,
+            errno.EROFS,
+            errno.ENOENT,
+        ]:  # 2, 13, 17, 30
+            return False
+        e.filename = dir_path
+        raise
+    return True

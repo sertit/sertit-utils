@@ -41,17 +41,20 @@ class Polarization(ListEnum):
     hv = "HV"
 
 
+def get_s3_ci_path():
+    client = S3Client(
+        endpoint_url=f"https://{AWS_S3_ENDPOINT}",
+        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
+        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+    )
+    client.set_as_default_client()
+    return AnyPath("s3://sertit-sertit-utils-ci")
+
+
 def get_proj_path():
     """Get project path"""
     if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
-        # ON S3
-        client = S3Client(
-            endpoint_url=f"https://{AWS_S3_ENDPOINT}",
-            aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-            aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-        )
-        client.set_as_default_client()
-        return AnyPath("s3://sertit-sertit-utils-ci")
+        return get_s3_ci_path()
     else:
         # ON DISK
         return AnyPath(__file__).parent.parent.parent
