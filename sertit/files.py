@@ -1064,7 +1064,7 @@ def is_writable(dir_path: Union[str, CloudPath, Path]):
         bool: True if the directory is writable
     """
     try:
-        testfile = tempfile.TemporaryFile(dir=dir_path)
+        testfile = tempfile.TemporaryFile(dir=str(dir_path))
         testfile.close()
     except (OSError, IOError, FileNotFoundError) as e:
         if e.errno in [

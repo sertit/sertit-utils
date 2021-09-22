@@ -2,6 +2,10 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.8.1 (2021-09-22)
+
+- Handling more cases in `files.is_writable`
+
 ## 1.8.0 (2021-09-22)
 
 - ENH: Adding `files.is_writable` function to test if a directory is writable or not
