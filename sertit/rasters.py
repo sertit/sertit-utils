@@ -1306,3 +1306,51 @@ def where(
         where_xda = set_metadata(where_xda, master_xda, new_name=new_name)
 
     return where_xda
+
+
+@path_xarr_dst
+def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XDS_TYPE:
+    """
+    Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
+
+    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+
+    NB: altitude = zenith
+
+    Reference:
+    - https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py
+    - http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works
+
+    Args:
+        dst (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        azimuth (float): Azimuth angle in degrees
+        zenith (float): Zenith angle in degrees
+
+    Returns:
+        XDS_TYPE: Hillshade
+    """
+    # Use classic option
+    arr, meta = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
+
+    return xds.copy(data=arr)
+
+
+@path_xarr_dst
+def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_TYPE:
+    """
+    Compute the slope of a DEM (in degrees).
+
+    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+
+    NB: altitude = zenith
+
+    Args:
+        dst (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+
+    Returns:
+        XDS_TYPE: Slope
+    """
+    # Use classic option
+    arr, meta = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
+
+    return xds.copy(data=arr)

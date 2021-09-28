@@ -45,9 +45,13 @@ except ModuleNotFoundError as ex:
 
 from sertit import files, misc, strings, vectors
 
+np.seterr(divide="ignore", invalid="ignore")
+
 MAX_CORES = os.cpu_count() - 2
 PATH_ARR_DS = Union[str, tuple, rasterio.DatasetReader]
 LOGGER = logging.getLogger(SU_NAME)
+
+DEG_2_RAD = np.pi / 180
 
 """
 Types:
@@ -1263,3 +1267,156 @@ def read_bit_array(
         bit_arr = msk[..., bit_id]
 
     return bit_arr
+
+
+@path_arr_dst
+def hillshade(
+    dst: PATH_ARR_DS, azimuth: float = 315, zenith: float = 45
+) -> (np.ma.masked_array, dict):
+    """
+    Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
+
+    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+
+    NB: altitude = 90 - zenith
+
+    .. WARNING::
+
+        - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
+        - z_factor is fixed to 1.0
+        - scale managed by dst resolution
+
+    Reference:
+    - https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        azimuth (float): Azimuth angle in degrees
+        zenith (float): Zenith angle in degrees
+
+    Returns:
+        (np.ma.masked_array, dict): Hillshade and its metadata
+    """
+    array = dst.read(masked=True)
+
+    # Squeeze if needed
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Compute angles
+    az_rad = azimuth * DEG_2_RAD
+    alt_rad = (90 - zenith) * DEG_2_RAD
+
+    # Compute slope and aspect
+    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
+    x2_y2 = dx ** 2 + dy ** 2
+    aspect = np.arctan2(dx, dy)
+
+    # Compute hillshade (GDAL algo)
+    hillshade = (
+        np.sin(alt_rad) + np.cos(alt_rad) * np.sqrt(x2_y2) * np.sin(aspect - az_rad)
+    ) / np.sqrt(1 + x2_y2)
+    hillshade = np.where(hillshade <= 0, 1.0, 254.0 * hillshade + 1)
+
+    # Use this trick to get the array back to 'normal'
+    if expand:
+        hillshade = np.expand_dims(hillshade, axis=0)
+
+    # Convert to masked array
+    hillshade_msk = np.ma.masked_array(hillshade, array.mask, fill_value=dst.nodata)
+
+    # Meta
+    meta = update_meta(hillshade_msk, dst.meta)
+
+    return hillshade_msk, meta
+
+
+@path_arr_dst
+def slope(
+    dst: PATH_ARR_DS,
+    in_pct: bool = False,
+    in_rad: bool = False,
+) -> (np.ma.masked_array, dict):
+    """
+    Compute the slope of a DEM (in degrees).
+
+    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+
+    .. WARNING::
+
+        - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
+        - z_factor is fixed to 1.0
+        - scale managed by dst resolution
+
+    Reference:
+    - https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        in_pct (bool): Outputs slope in percents
+        in_rad (bool): Outputs slope in radians. Not taken into account if `in_pct == True`
+
+    Returns:
+        (np.ma.masked_array, dict): Slope and its metadata
+    """
+    array = dst.read(masked=True)
+
+    # Squeeze if needed
+    expand = False
+    if len(array.shape) == 3 and array.shape[0] == 1:
+        array = np.squeeze(array)  # Use this trick to make the sieve work
+        expand = True
+
+    # Compute slope (on unmasked data)
+    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
+    x2_y2 = dx ** 2 + dy ** 2
+
+    if in_pct:
+        slope = 100 * (np.sqrt(x2_y2))
+    else:
+        slope = np.arctan(np.sqrt(x2_y2))
+
+        # Convert into degrees
+        if not in_rad:
+            slope = slope / DEG_2_RAD
+
+    # Use this trick to get the array back to 'normal'
+    if expand:
+        slope = np.expand_dims(slope, axis=0)
+
+    # Convert to masked array
+    slope_msk = np.ma.masked_array(slope, array.mask, fill_value=dst.nodata)
+
+    # Meta
+    meta = update_meta(slope_msk, dst.meta)
+
+    return slope_msk, meta
+
+
+# def _horn(arr, res_x, res_y):
+#     """
+#           0 1 2
+#           3 4 5
+#           6 7 8
+#
+#     Args:
+#         arr:
+#
+#     Returns:
+#
+#     """
+#     arr_0 = np.pad(arr, ((0, 1), (0, 1)), mode='constant')[1:, 1:]
+#     arr_1 = np.pad(arr, ((0, 1), (0, 0)), mode='constant')[1:, :]
+#     arr_2 = np.pad(arr, ((0, 1), (1, 0)), mode='constant')[1:, :-1]
+#     arr_3 = np.pad(arr, ((0, 0), (0, 1)), mode='constant')[:, 1:]
+#     arr_5 = np.pad(arr, ((0, 0), (1, 0)), mode='constant')[:, :-1]
+#     arr_6 = np.pad(arr, ((1, 0), (0, 1)), mode='constant')[:-1, 1:]
+#     arr_7 = np.pad(arr, ((1, 0), (0, 0)), mode='constant')[:-1, :]
+#     arr_8 = np.pad(arr, ((1, 0), (1, 0)), mode='constant')[:-1, :-1]
+#
+#     dy = ((arr_0 + 2 * arr_3 + arr_6) - (arr_2 + 2 * arr_5 + arr_8)) / res_y / 8.0
+#     dx = ((arr_6 + 2 * arr_7 + arr_8) - (arr_0 + 2 * arr_1 + arr_2)) / res_x / 8.0
+#
+#     return dx, dy

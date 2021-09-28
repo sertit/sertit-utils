@@ -195,3 +195,41 @@ def test_bit():
     assert (np_ones == ones).all()
     for arr in zeros:
         assert (np_ones == 1 + arr).all()
+
+
+@s3_env
+def test_dem_fct():
+    """ Test DEM fct, ie. slope and hillshade"""
+    # Paths IN
+    dem_path = rasters_path().joinpath("dem.tif")
+    hlsd_path = rasters_path().joinpath("hillshade.tif")
+    slope_path = rasters_path().joinpath("slope.tif")
+    slope_r_path = rasters_path().joinpath("slope_r.tif")
+    slope_p_path = rasters_path().joinpath("slope_p.tif")
+
+    # Create tmp file
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Path OUT
+        hlsd_path_out = os.path.join(tmp_dir, "hillshade_out.tif")
+        slope_path_out = os.path.join(tmp_dir, "slope.tif")
+        slope_r_path_out = os.path.join(tmp_dir, "slope_r.tif")
+        slope_p_path_out = os.path.join(tmp_dir, "slope_p.tif")
+
+        # Compute
+        hlsd, meta = rasters_rio.hillshade(dem_path, 34.0, 45.2)
+        rasters_rio.write(hlsd, meta, hlsd_path_out)
+
+        slp, meta = rasters_rio.slope(dem_path)
+        rasters_rio.write(slp, meta, slope_path_out)
+
+        slp_r, meta = rasters_rio.slope(dem_path, in_pct=False, in_rad=True)
+        rasters_rio.write(slp_r, meta, slope_r_path_out)
+
+        slp_p, meta = rasters_rio.slope(dem_path, in_pct=True)
+        rasters_rio.write(slp_p, meta, slope_p_path_out)
+
+        # Test
+        ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)

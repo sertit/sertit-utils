@@ -2,9 +2,13 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.9.0 (2021-09-28)
+
+- ENH: Adding `slope` and `hillshade` functions (to bypass `gdaldem` CLI)
+
 ## 1.8.1 (2021-09-22)
 
-- Handling more cases in `files.is_writable`
+- FIX: Handling more cases in `files.is_writable`
 
 ## 1.8.0 (2021-09-22)
 

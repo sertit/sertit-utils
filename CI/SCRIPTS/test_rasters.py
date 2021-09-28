@@ -440,3 +440,40 @@ def test_where():
     np.testing.assert_equal(
         mask_A.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
     )
+
+
+@s3_env
+def test_dem_fct():
+    """ Test DEM fct, ie. slope and hillshade"""
+    # Paths IN
+    dem_path = rasters_path().joinpath("dem.tif")
+    hlsd_path = rasters_path().joinpath("hillshade.tif")
+    slope_path = rasters_path().joinpath("slope.tif")
+    slope_r_path = rasters_path().joinpath("slope_r.tif")
+    slope_p_path = rasters_path().joinpath("slope_p.tif")
+
+    # Create tmp file
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Path OUT
+        hlsd_path_out = os.path.join(tmp_dir, "hillshade_out.tif")
+        slope_path_out = os.path.join(tmp_dir, "slope.tif")
+        slope_r_path_out = os.path.join(tmp_dir, "slope_r.tif")
+        slope_p_path_out = os.path.join(tmp_dir, "slope_p.tif")
+
+        # Compute
+        hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
+        slp = rasters.slope(dem_path)
+        slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
+        slp_p = rasters.slope(dem_path, in_pct=True)
+
+        # Write
+        rasters.write(hlsd, hlsd_path_out)
+        rasters.write(slp, slope_path_out)
+        rasters.write(slp_r, slope_r_path_out)
+        rasters.write(slp_p, slope_p_path_out)
+
+        # Test
+        ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
+        ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
