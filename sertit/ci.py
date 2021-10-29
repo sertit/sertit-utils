@@ -55,7 +55,7 @@ def get_mnt_path() -> str:
 
 def _get_db_path(db_nb=2) -> str:
     """
-    Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2\database02`.
+    Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2/database02`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -75,7 +75,7 @@ def _get_db_path(db_nb=2) -> str:
 
 def get_db2_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2\database02`.
+    Return mounted directory `/mnt/ds2_db2` which corresponds to `\\ds2/database02`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -93,7 +93,7 @@ def get_db2_path() -> str:
 
 def get_db3_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db3` which corresponds to `\\ds2\database03`.
+    Return mounted directory `/mnt/ds2_db3` which corresponds to `\\ds2/database03`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -111,7 +111,7 @@ def get_db3_path() -> str:
 
 def get_db4_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db4` which corresponds to `\\ds2\database04`.
+    Return mounted directory `/mnt/ds2_db4` which corresponds to `\\ds2/database04`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -133,11 +133,11 @@ def assert_raster_equal(
     """
     Assert that two rasters are equal.
 
-    -> Useful for pytests.
+    Useful for pytests.
 
     .. code-block:: python
 
-        >>> path = r"CI\DATA\rasters\raster.tif"
+        >>> path = r"CI/DATA/rasters/raster.tif"
         >>> assert_raster_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
 
@@ -160,12 +160,12 @@ def assert_raster_almost_equal(
 
     Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
 
-    -> Useful for pytests.
+    Useful for pytests.
 
     .. code-block:: python
 
-        >>> path = r"CI\DATA\rasters\raster.tif"
-        >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
         >>> assert_raster_equal(path, path2)
         >>> # Raises AssertionError if sth goes wrong
 
@@ -200,12 +200,12 @@ def assert_raster_max_mismatch(
 
     Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
 
-    -> Useful for pytests.
+    Useful for pytests.
 
     .. code-block:: python
 
-        >>> path = r"CI\DATA\rasters\raster.tif"
-        >>> path2 = r"CI\DATA\rasters\raster_almost.tif"
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
         >>> assert_raster_equal(path, path2)
         >>> # Raises AssertionError if sth goes wrong
 
@@ -239,11 +239,11 @@ def assert_dir_equal(
     """
     Assert that two directories are equal.
 
-    # Useful for pytests.
+    Useful for pytests.
 
     .. code-block:: python
 
-        >>> path = r"CI\DATA\rasters"
+        >>> path = r"CI/DATA/rasters"
         >>> assert_dir_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
 
@@ -290,11 +290,11 @@ def assert_geom_equal(
     Assert that two geometries are equal
     (do not check equality between geodataframe as they may differ on other fields).
 
-    -> Useful for pytests.
+    Useful for pytests.
 
     .. code-block:: python
 
-        >>> path = r"CI\DATA\vectors\aoi.geojson"
+        >>> path = r"CI/DATA/vectors/aoi.geojson"
         >>> assert_geom_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
 
