@@ -148,58 +148,6 @@ def path_xarr_dst(function: Callable) -> Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def to_np(xds: xarray.DataArray, dtype: Any = None) -> np.ndarray:
-    """
-    Convert the `xarray` to a `np.ndarray` with the correct nodata encoded.
-
-    This is particularly useful when reading with `masked=True`.
-
-    .. code-block:: python
-
-        >>> raster_path = "path\\to\\mask.tif"  # Classified raster in np.uint8 with nodata = 255
-        >>> # We read with masked=True so the data is converted to float
-        >>> xds = read(raster_path)
-        <xarray.DataArray 'path/to/mask.tif' (band: 1, y: 322, x: 464)>
-        [149408 values with dtype=float64]
-        Coordinates:
-          * band         (band) int32 1
-          * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
-          * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
-            spatial_ref  int32 0
-        >>> to_np(xds)  # Getting back np.uint8 and encoded nodata
-        array([[[255, 255, 255, ..., 255, 255, 255],
-            [255, 255, 255, ..., 255, 255, 255],
-            [255, 255, 255, ..., 255, 255, 255],
-            ...,
-            [255, 255, 255, ...,   1, 255, 255],
-            [255, 255, 255, ...,   1, 255, 255],
-            [255, 255, 255, ...,   1, 255, 255]]], dtype=uint8)
-
-        True
-
-    Args:
-        xds (xarray.DataArray): `xarray.DataArray` to convert
-        dtype (Any): Dtype to convert to. If None, using the origin dtype if existing or its current dtype.
-
-    Returns:
-
-    """
-    # Manage dtype
-    if not dtype:
-        dtype = xds.encoding.get("dtype", xds.dtype)
-
-    # Manage nodata
-    if xds.rio.encoded_nodata is not None:
-        xds_fill = xds.fillna(xds.rio.encoded_nodata)
-    else:
-        xds_fill = xds
-
-    # Cast to wanted dtype
-    arr = xds_fill.data.astype(dtype)
-
-    return arr
-
-
 def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
     """
     Get nodata mask from a xarray.
@@ -277,13 +225,16 @@ def _vectorize(
     """
     # Manage nodata value
     has_nodata = xds.rio.encoded_nodata is not None
-    nodata = xds.rio.encoded_nodata if has_nodata else default_nodata
+    uint8_val = 255
+    nodata = uint8_val if has_nodata else default_nodata
 
     if get_nodata:
         data = get_nodata_mask(xds)
         nodata_arr = None
     else:
-        data = to_np(xds, dtype=np.uint8)
+        xds_uint8 = xds.fillna(uint8_val)
+        data = xds_uint8.data.astype(np.uint8)
+
         # Manage values
         if values is not None:
             if not isinstance(values, list):
@@ -298,14 +249,16 @@ def _vectorize(
                 true = nodata
                 false = arr_vals
 
+            # Update data array
             data = np.where(np.isin(data, values), true, false).astype(np.uint8)
+
+        # Get nodata array
+        nodata_arr = rasters_rio.get_nodata_mask(
+            data, has_nodata=False, default_nodata=uint8_val
+        )
 
         if data.dtype != np.uint8:
             raise TypeError("Your data should be classified (np.uint8).")
-
-        nodata_arr = rasters_rio.get_nodata_mask(
-            data, has_nodata=False, default_nodata=nodata
-        )
 
     # WARNING: features.shapes do NOT accept dask arrays !
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
@@ -855,9 +808,7 @@ def collocate(
 
 
 @path_xarr_dst
-def sieve(
-    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4, dtype=np.uint8
-) -> XDS_TYPE:
+def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TYPE:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -879,8 +830,6 @@ def sieve(
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
-        dtype: Dtype of the xarray
-            (if nodata is set, the xds.dtype is float whereas the values are meant to be ie in np.uint8)
 
     Returns:
         (XDS_TYPE): Sieved xarray
@@ -888,24 +837,28 @@ def sieve(
     assert connectivity in [4, 8]
 
     # Use this trick to make the sieve work
-    data = np.squeeze(to_np(xds, dtype))
+    mask = np.squeeze(np.where(np.isnan(xds.data), 0, 1).astype(np.uint8))
+    data = np.squeeze(xds.data.astype(np.uint8))
 
     # Sieve
     try:
-        sieved_arr = features.sieve(data, size=sieve_thresh, connectivity=connectivity)
+        sieved_arr = features.sieve(
+            data, size=sieve_thresh, connectivity=connectivity, mask=mask
+        )
     except TypeError:
         # Manage dask arrays that fails with rasterio sieve
         sieved_arr = features.sieve(
-            data.compute(), size=sieve_thresh, connectivity=connectivity
+            data.compute(),
+            size=sieve_thresh,
+            connectivity=connectivity,
+            mask=mask.compute(),
         )
 
-    # Create back the xarray
-    sieved_arr = np.expand_dims(sieved_arr.astype(xds.dtype), axis=0)
+    # Set back nodata and expand back dim
+    sieved_arr = sieved_arr.astype(xds.dtype)
+    sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
+    sieved_arr = np.expand_dims(sieved_arr, axis=0)
     sieved_xds = xds.copy(data=sieved_arr)
-
-    # Set back nodata
-    if xds.rio.encoded_nodata is not None:
-        sieved_xds = set_nodata(sieved_xds, xds.rio.encoded_nodata)
 
     return sieved_xds
 
@@ -1322,7 +1275,7 @@ def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XD
     - http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works
 
     Args:
-        dst (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        xds (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth angle in degrees
         zenith (float): Zenith angle in degrees
 
@@ -1345,7 +1298,9 @@ def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_
     NB: altitude = zenith
 
     Args:
-        dst (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        xds (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        in_pct (bool): Outputs slope in percents
+        in_rad (bool): Outputs slope in radians. Not taken into account if `in_pct == True`
 
     Returns:
         XDS_TYPE: Slope

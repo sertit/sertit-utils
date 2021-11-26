@@ -336,7 +336,10 @@ def get_nodata_mask(
     if not has_nodata or not isinstance(
         array, np.ma.masked_array
     ):  # Unspecified nodata is set to None by rasterio
-        nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
+        if np.isnan(default_nodata):
+            nodata_mask = np.where(np.isnan(array), 0, 1).astype(np.uint8)
+        else:
+            nodata_mask = np.where(array != default_nodata, 1, 0).astype(np.uint8)
     else:
         nodata_mask = np.where(array.mask, 0, 1).astype(np.uint8)
 
@@ -802,16 +805,18 @@ def write(
         path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie `nodata=255`
     """
+    raster_out = raster.copy()
+
     # Manage raster type (impossible to write boolean arrays)
-    if raster.dtype == bool:
-        raster = raster.astype(np.uint8)
+    if raster_out.dtype == bool:
+        raster_out = raster_out.astype(np.uint8)
 
     # Update metadata
     out_meta = meta.copy()
 
     # Update raster to be sure to write down correct nodata pixels
-    if isinstance(raster, np.ma.masked_array):
-        raster[raster.mask] = raster.fill_value
+    if isinstance(raster_out, np.ma.masked_array):
+        raster_out[raster_out.mask] = raster_out.fill_value
 
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta["driver"] = "GTiff"
@@ -820,7 +825,7 @@ def write(
     out_meta["compress"] = kwargs.get("compress", "lzw")
 
     # Bigtiff if needed (more than 4Go)
-    if raster.size * raster.itemsize / 1024 / 1024 / 1024 > 4:
+    if raster_out.size * raster_out.itemsize / 1024 / 1024 / 1024 > 4:
         out_meta["BIGTIFF"] = "YES"
     else:
         out_meta["BIGTIFF"] = "IF_NEEDED"  # Should be the default but just to be sure
@@ -829,19 +834,19 @@ def write(
     out_meta["NUM_THREADS"] = MAX_CORES
 
     # Update metadata with array data
-    out_meta = update_meta(raster, out_meta)
+    out_meta = update_meta(raster_out, out_meta)
 
     # Update metadata with additional params
     for key, val in kwargs.items():
         out_meta[key] = val
 
     # Manage raster shape
-    if len(raster.shape) == 2:
-        raster = np.expand_dims(raster, axis=0)
+    if len(raster_out.shape) == 2:
+        raster_out = np.expand_dims(raster_out, axis=0)
 
     # Write product
     with rasterio.open(str(path), "w", **out_meta) as dst:
-        dst.write(raster)
+        dst.write(raster_out)
 
 
 def collocate(
@@ -957,6 +962,15 @@ def sieve(
         array = np.squeeze(array)  # Use this trick to make the sieve work
         expand = True
 
+    # Get nodata mask
+    if isinstance(array, np.ma.masked_array):
+        mask = ~array.mask
+    else:
+        mask = np.ones_like(array)
+
+    if expand:
+        mask = np.squeeze(mask)
+
     # Convert to np.uint8 if needed
     dtype = np.uint8
     meta = out_meta.copy()
@@ -967,7 +981,7 @@ def sieve(
     # Sieve
     result_array = np.empty(array.shape, dtype=array.dtype)
     features.sieve(
-        array, size=sieve_thresh, out=result_array, connectivity=connectivity
+        array, size=sieve_thresh, out=result_array, connectivity=connectivity, mask=mask
     )
 
     # Use this trick to get the array back to 'normal'

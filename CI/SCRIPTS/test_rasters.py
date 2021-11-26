@@ -61,7 +61,7 @@ def test_rasters():
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
         # tmp_dir = rasters_path().joinpath("OUTPUT_XARRAY")
-        os.makedirs(tmp_dir, exist_ok=True)
+        # os.makedirs(tmp_dir, exist_ok=True)
 
         # Get Extent
         extent = rasters.get_extent(raster_path)

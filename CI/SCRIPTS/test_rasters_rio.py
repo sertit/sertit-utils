@@ -57,7 +57,7 @@ def test_rasters_rio():
     # VRT needs to be build on te same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
         # tmp_dir = rasters_path().joinpath("OUTPUT_RASTERIO")
-        os.makedirs(tmp_dir, exist_ok=True)
+        # os.makedirs(tmp_dir, exist_ok=True)
 
         # Get Extent
         extent = rasters_rio.get_extent(raster_path)
@@ -69,9 +69,9 @@ def test_rasters_rio():
         truth_footprint = vectors.read(footprint_path)
         ci.assert_geom_equal(footprint, truth_footprint)
 
+        # Read
+        raster, meta = rasters_rio.read(raster_path)
         with rasterio.open(str(raster_path)) as dst:
-            # Read
-            raster, meta = rasters_rio.read(dst)
             raster_1, meta1 = rasters_rio.read(dst, resolution=20)
             raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
             raster_3, _ = rasters_rio.read(dst, size=(meta1["width"], meta1["height"]))

@@ -2,6 +2,13 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.10.0 (2021-11-26)
+
+- **BREAKING CHANGE**: Removing `to_np` function (useless)
+- **BREAKING CHANGE**: Removing useless `dtype` argument from the `rasqters.sieve` function
+- FIX: Correcting the `sieving` function that misused nodata values
+- FIX: Correcting the `rasters_rio.write` function that modified the array instead of just writing it
+
 ## 1.9.0 (2021-09-28)
 
 - ENH: Adding `slope` and `hillshade` functions (to bypass `gdaldem` CLI)
