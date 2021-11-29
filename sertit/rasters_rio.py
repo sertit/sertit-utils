@@ -144,9 +144,9 @@ def path_arr_dst(function: Callable) -> Callable:
                             dst.write(xds.data)
                             out = function(dst, *args, **kwargs)
             except ModuleNotFoundError:
-                pass
+                out = None
 
-            if not out:
+            if out is None:
                 out = function(path_or_arr_or_ds, *args, **kwargs)
         return out
 

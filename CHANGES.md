@@ -2,6 +2,7 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+- FIX: Fixing ValueError in `rasters_rio.path_or_arr_or_dst_wrapper` (ambiguous test)
 ## 1.10.0 (2021-11-26)
 
 - **BREAKING CHANGE**: Removing `to_np` function (useless)
