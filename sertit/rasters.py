@@ -224,15 +224,17 @@ def _vectorize(
         gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
     """
     # Manage nodata value
-    has_nodata = xds.rio.encoded_nodata is not None
-    uint8_val = 255
-    nodata = uint8_val if has_nodata else default_nodata
+    uint8_nodata = 255
+    if xds.rio.encoded_nodata is not None:
+        nodata = uint8_nodata
+    else:
+        nodata = default_nodata
 
     if get_nodata:
         data = get_nodata_mask(xds)
         nodata_arr = None
     else:
-        xds_uint8 = xds.fillna(uint8_val)
+        xds_uint8 = xds.fillna(uint8_nodata)
         data = xds_uint8.data.astype(np.uint8)
 
         # Manage values
@@ -254,7 +256,7 @@ def _vectorize(
 
         # Get nodata array
         nodata_arr = rasters_rio.get_nodata_mask(
-            data, has_nodata=False, default_nodata=uint8_val
+            data, has_nodata=False, default_nodata=uint8_nodata
         )
 
         if data.dtype != np.uint8:
