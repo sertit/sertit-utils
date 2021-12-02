@@ -23,7 +23,7 @@ from datetime import date, datetime
 import numpy as np
 import pytest
 from cloudpathlib import AnyPath, CloudPath
-from lxml import etree
+from lxml import etree, html
 
 from CI.SCRIPTS.script_utils import Polarization, files_path, get_s3_ci_path, s3_env
 from sertit import ci, files, misc, vectors
@@ -142,13 +142,9 @@ def test_archived_files():
     ci.assert_raster_equal(tif_ok, tif_list[0])
     ci.assert_raster_equal(tif_ok, tif_tar)
 
-    xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
-    xml_ok_path = ok_folder.joinpath(xml_name)
-
+    # VECTORS
     vect_name = "map-overlay.kml"
     vec_ok_path = ok_folder.joinpath(vect_name)
-
-    # VECTORS
     if shutil.which("ogr2ogr"):  # Only works if ogr2ogr can be found.
         vect_regex = f".*{vect_name}"
         vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
@@ -158,32 +154,60 @@ def test_archived_files():
         ci.assert_geom_equal(vect_ok, vect_zip)
         ci.assert_geom_equal(vect_ok, vect_tar)
 
-    # XML
-    if isinstance(files_path(), CloudPath):
-        xml_ok_path = xml_ok_path.fspath
-    else:
-        xml_ok_path = str(xml_ok_path)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # XML
+        xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+        xml_ok_path = ok_folder.joinpath(xml_name)
+        if isinstance(files_path(), CloudPath):
+            xml_ok_path = str(xml_ok_path.download_to(tmp_dir))
+        else:
+            xml_ok_path = str(xml_ok_path)
 
-    xml_regex = f".*{xml_name}"
-    xml_zip = files.read_archived_xml(zip_file, xml_regex)
-    xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
-    xml_ok = etree.parse(xml_ok_path).getroot()
-    ci.assert_xml_equal(xml_ok, xml_zip)
-    ci.assert_xml_equal(xml_ok, xml_tar)
+        xml_regex = f".*{xml_name}"
+        xml_zip = files.read_archived_xml(zip_file, xml_regex)
+        xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
+        xml_ok = etree.parse(xml_ok_path).getroot()
+        ci.assert_xml_equal(xml_ok, xml_zip)
+        ci.assert_xml_equal(xml_ok, xml_tar)
 
-    # ERRORS
-    with pytest.raises(TypeError):
-        files.get_archived_rio_path(targz_file, tif_regex)
-    with pytest.raises(TypeError):
-        files.get_archived_rio_path(sz_file, tif_regex)
-    with pytest.raises(FileNotFoundError):
-        files.get_archived_rio_path(zip_file, "cdzeferf")
-    with pytest.raises(TypeError):
-        files.read_archived_xml(targz_file, xml_regex)
-    with pytest.raises(TypeError):
-        files.read_archived_xml(sz_file, xml_regex)
-    with pytest.raises(FileNotFoundError):
-        files.read_archived_xml(zip_file, "cdzeferf")
+        # FILE + HTML
+        html_zip_file = files_path().joinpath("productPreview.zip")
+        html_tar_file = files_path().joinpath("productPreview.tar")
+        html_name = "productPreview.html"
+        html_ok_path = files_path().joinpath(html_name)
+        if isinstance(files_path(), CloudPath):
+            html_ok_path = str(html_ok_path.download_to(tmp_dir))
+        else:
+            html_ok_path = str(html_ok_path)
+
+        html_regex = f".*{html_name}"
+
+        # FILE
+        file_zip = files.read_archived_file(html_zip_file, html_regex)
+        file_tar = files.read_archived_file(html_tar_file, html_regex)
+        html_ok = html.parse(html_ok_path).getroot()
+        ci.assert_html_equal(html_ok, html.fromstring(file_zip))
+        ci.assert_html_equal(html_ok, html.fromstring(file_tar))
+
+        # HTML
+        html_zip = files.read_archived_html(html_zip_file, html_regex)
+        html_tar = files.read_archived_html(html_tar_file, html_regex)
+        ci.assert_html_equal(html_ok, html_zip)
+        ci.assert_html_equal(html_ok, html_tar)
+
+        # ERRORS
+        with pytest.raises(TypeError):
+            files.get_archived_rio_path(targz_file, tif_regex)
+        with pytest.raises(TypeError):
+            files.get_archived_rio_path(sz_file, tif_regex)
+        with pytest.raises(FileNotFoundError):
+            files.get_archived_rio_path(zip_file, "cdzeferf")
+        with pytest.raises(TypeError):
+            files.read_archived_file(targz_file, xml_regex)
+        with pytest.raises(TypeError):
+            files.read_archived_file(sz_file, xml_regex)
+        with pytest.raises(FileNotFoundError):
+            files.read_archived_file(zip_file, "cdzeferf")
 
 
 def test_get_file_name():

@@ -2,7 +2,11 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.11.0 (2021-12-02)
+
+- ENH: Add `read_archived_file` and `read_archived_html` functions
 - FIX: Fixing ValueError in `rasters_rio.path_or_arr_or_dst_wrapper` (ambiguous test)
+
 ## 1.10.0 (2021-11-26)
 
 - **BREAKING CHANGE**: Removing `to_np` function (useless)

@@ -117,6 +117,25 @@ def test_assert_xml():
         ci.assert_xml_equal(xml_ok, xml_nok)
 
 
+@s3_env
+def test_assert_html():
+    # HTML
+    html_path = files_path().joinpath("productPreview.html")
+    html_bad_path = files_path().joinpath("false.html")
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        if isinstance(files_path(), CloudPath):
+            html_path = html_path.download_to(tmp_dir)
+            html_bad_path = html_bad_path.download_to(tmp_dir)
+
+        html_ok = etree.parse(str(html_path)).getroot()
+        html_nok = etree.parse(str(html_bad_path)).getroot()
+
+        ci.assert_xml_equal(html_ok, html_ok)
+        with pytest.raises(AssertionError):
+            ci.assert_xml_equal(html_ok, html_nok)
+
+
 @pytest.mark.skipif(not misc.in_docker(), reason="Only works in docker")
 def test_mnt():
     """Test mounted directories"""

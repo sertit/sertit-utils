@@ -36,7 +36,7 @@ from typing import Any, Union
 
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
-from lxml import etree
+from lxml import etree, html
 from tqdm import tqdm
 
 from sertit import misc
@@ -413,6 +413,55 @@ def get_archived_rio_path(
     return archived_band_path
 
 
+def read_archived_file(archive_path: Union[str, CloudPath, Path], regex: str) -> bytes:
+    """
+    Read archived file (in bytes) from `zip` or `tar` archives.
+
+    You can use this [site](https://regexr.com/) to build your regex.
+
+    Args:
+        archive_path (Union[str, CloudPath, Path]): Archive path
+        regex (str): Regex (used by re) as it can be found in the getmembers() list
+
+    Returns:
+         bytes: Archived file in bytes
+    """
+    archive_path = AnyPath(archive_path)
+
+    # Compile regex
+    regex = re.compile(regex)
+
+    # Open tar and zip XML
+    try:
+        if archive_path.suffix == ".tar":
+            with tarfile.open(archive_path) as tar_ds:
+                tar_mb = tar_ds.getmembers()
+                name_list = [mb.name for mb in tar_mb]
+                band_name = list(filter(regex.match, name_list))[0]
+                tarinfo = [mb for mb in tar_mb if mb.name == band_name][0]
+                file_str = tar_ds.extractfile(tarinfo).read()
+        elif archive_path.suffix == ".zip":
+            with zipfile.ZipFile(archive_path) as zip_ds:
+                name_list = [f.filename for f in zip_ds.filelist]
+                band_name = list(filter(regex.match, name_list))[0]
+                file_str = zip_ds.read(band_name)
+
+        elif archive_path.suffix == ".tar.gz":
+            raise TypeError(
+                ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
+            )
+        else:
+            raise TypeError(
+                "Only .zip and .tar files can be read from inside its archive."
+            )
+    except IndexError:
+        raise FileNotFoundError(
+            f"Impossible to find file {regex} in {get_filename(archive_path)}"
+        )
+
+    return file_str
+
+
 def read_archived_xml(
     archive_path: Union[str, CloudPath, Path], xml_regex: str
 ) -> etree._Element:
@@ -435,40 +484,36 @@ def read_archived_xml(
     Returns:
          etree._Element: XML file
     """
-    archive_path = AnyPath(archive_path)
+    xml_bytes = read_archived_file(archive_path, xml_regex)
 
-    # Compile regex
-    regex = re.compile(xml_regex)
+    return etree.fromstring(xml_bytes)
 
-    # Open tar and zip XML
-    try:
-        if archive_path.suffix == ".tar":
-            with tarfile.open(archive_path) as tar_ds:
-                tar_mb = tar_ds.getmembers()
-                name_list = [mb.name for mb in tar_mb]
-                band_name = list(filter(regex.match, name_list))[0]
-                tarinfo = [mb for mb in tar_mb if mb.name == band_name][0]
-                xml_str = tar_ds.extractfile(tarinfo).read()
-        elif archive_path.suffix == ".zip":
-            with zipfile.ZipFile(archive_path) as zip_ds:
-                name_list = [f.filename for f in zip_ds.filelist]
-                band_name = list(filter(regex.match, name_list))[0]
-                xml_str = zip_ds.read(band_name)
 
-        elif archive_path.suffix == ".tar.gz":
-            raise TypeError(
-                ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
-            )
-        else:
-            raise TypeError(
-                "Only .zip and .tar files can be read from inside its archive."
-            )
-    except IndexError:
-        raise FileNotFoundError(
-            f"Impossible to find XML file {xml_regex} in {get_filename(archive_path)}"
-        )
+def read_archived_html(
+    archive_path: Union[str, CloudPath, Path], regex: str
+) -> html.HtmlElement:
+    """
+    Read archived HTML from `zip` or `tar` archives.
 
-    return etree.fromstring(xml_str)
+    You can use this [site](https://regexr.com/) to build your regex.
+
+    .. code-block:: python
+
+        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> read_archived_html(arch_path, file_regex)
+        <Element html at 0x1c90007f8c8>
+
+    Args:
+        archive_path (Union[str, CloudPath, Path]): Archive path
+        regex (str): HTML regex (used by re) as it can be found in the getmembers() list
+
+    Returns:
+         html._Element: HTML file
+    """
+    html_bytes = read_archived_file(archive_path, regex)
+
+    return html.fromstring(html_bytes)
 
 
 def archive(

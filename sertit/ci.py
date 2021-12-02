@@ -29,8 +29,8 @@ import geopandas as gpd
 import numpy as np
 import rasterio
 from cloudpathlib import AnyPath, CloudPath
-from lxml import etree
-from lxml.doctestcompare import LXMLOutputChecker
+from lxml import etree, html
+from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 
 from sertit import vectors
 
@@ -331,9 +331,27 @@ def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> 
         xml_elem_1 (etree._Element): 1st Element
         xml_elem_2 (etree._Element): 2nd Element
     """
-    str_1 = etree.tounicode(xml_elem_1)
-    str_2 = etree.tounicode(xml_elem_2)
+    str_1 = etree.tostring(xml_elem_1, encoding="unicode")
+    str_2 = etree.tostring(xml_elem_2, encoding="unicode")
     checker = LXMLOutputChecker()
+    if not checker.check_output(str_1, str_2, 0):
+        message = checker.output_difference(Example("", str_1), str_2, 0)
+        raise AssertionError(message)
+
+
+def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
+    """
+    Assert that 2 XML (as etree Elements) are equal.
+
+    -> Useful for pytests.
+
+    Args:
+        xml_elem_1 (etree._Element): 1st Element
+        xml_elem_2 (etree._Element): 2nd Element
+    """
+    str_1 = html.tostring(xml_elem_1, encoding="unicode")
+    str_2 = html.tostring(xml_elem_2, encoding="unicode")
+    checker = LHTMLOutputChecker()
     if not checker.check_output(str_1, str_2, 0):
         message = checker.output_difference(Example("", str_1), str_2, 0)
         raise AssertionError(message)
