@@ -2,6 +2,10 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.11.1 (2021-12-06)
+
+- FIX: Using `dill` instead of `pickle` as it works on more python types
+
 ## 1.11.0 (2021-12-02)
 
 - ENH: Add `read_archived_file` and `read_archived_html` functions

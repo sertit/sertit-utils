@@ -21,7 +21,6 @@ import hashlib
 import json
 import logging
 import os
-import pickle
 import pprint
 import re
 import shutil
@@ -34,6 +33,7 @@ from json import JSONDecoder, JSONEncoder
 from pathlib import Path
 from typing import Any, Union
 
+import dill
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
@@ -964,7 +964,7 @@ def save_obj(obj: Any, path: Union[str, CloudPath, Path]) -> None:
         path (Union[str, CloudPath, Path]): Path where to write the pickle
     """
     with open(path, "wb+") as file:
-        pickle.dump(obj, file)
+        dill.dump(obj, file)
 
 
 def load_obj(path: Union[str, CloudPath, Path]) -> Any:
@@ -984,7 +984,7 @@ def load_obj(path: Union[str, CloudPath, Path]) -> Any:
 
     """
     with open(path, "rb") as file:
-        return pickle.load(file)
+        return dill.load(file)
 
 
 # too many arguments

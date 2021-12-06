@@ -16,6 +16,7 @@ pdoc3
 
 # Libs for all platforms
 cloudpathlib[all]
+dill
 tqdm
 psutil
 lxml
