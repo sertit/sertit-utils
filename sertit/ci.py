@@ -21,6 +21,7 @@ You can use `assert_raster_equal` only if you have installed sertit[full] or ser
 """
 import filecmp
 import os
+import pprint
 from doctest import Example
 from pathlib import Path
 from typing import Union
@@ -127,6 +128,42 @@ def get_db4_path() -> str:
     return _get_db_path(4)
 
 
+def _assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
+    """
+    Compare two fields of a dictionary
+
+    Args:
+        dict_1 (dict): Dict 1
+        dict_2 (dict): Dict 2
+        field (str): Field to compare
+    """
+    assert (
+        dict_1[field] == dict_2[field]
+    ), f"{field} incoherent:\n{dict_1[field]} != {dict_2[field]}"
+
+
+def _assert_meta(meta_1, meta_2):
+    """
+    Compare rasterio metadata
+
+    Args:
+        meta_1 (dict): Metadata 1
+        meta_2 (dict): Metadata 2
+    """
+    # Driver
+    _assert_field(meta_1, meta_2, "driver")
+    _assert_field(meta_1, meta_2, "dtype")
+    _assert_field(meta_1, meta_2, "nodata")
+    _assert_field(meta_1, meta_2, "width")
+    _assert_field(meta_1, meta_2, "height")
+    _assert_field(meta_1, meta_2, "count")
+    _assert_field(meta_1, meta_2, "crs")
+
+    assert meta_1["transform"].almost_equals(
+        meta_2["transform"], precision=1e-9
+    ), f'transform incoherent: {meta_1["transform"]} != {meta_2["transform"]}'
+
+
 def assert_raster_equal(
     path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
 ) -> None:
@@ -145,10 +182,13 @@ def assert_raster_equal(
         path_1 (Union[str, CloudPath, Path]): Raster 1
         path_2 (Union[str, CloudPath, Path]): Raster 2
     """
-    with rasterio.open(str(path_1)) as dst_1:
-        with rasterio.open(str(path_2)) as dst_2:
-            assert dst_1.meta == dst_2.meta
-            np.testing.assert_array_equal(dst_1.read(), dst_2.read())
+    with rasterio.open(str(path_1)) as ds_1:
+        with rasterio.open(str(path_2)) as ds_2:
+            # Metadata
+            _assert_meta(ds_1.meta, ds_2.meta)
+
+            # Assert equal
+            np.testing.assert_array_equal(ds_1.read(), ds_2.read())
 
 
 def assert_raster_almost_equal(
@@ -172,21 +212,16 @@ def assert_raster_almost_equal(
     Args:
         path_1 (Union[str, CloudPath, Path]): Raster 1
         path_2 (Union[str, CloudPath, Path]): Raster 2
+        decimal (int): Number of decimal
     """
 
-    with rasterio.open(str(path_1)) as dst_1:
-        with rasterio.open(str(path_2)) as dst_2:
-            assert dst_1.meta["driver"] == dst_2.meta["driver"]
-            assert dst_1.meta["dtype"] == dst_2.meta["dtype"]
-            assert dst_1.meta["nodata"] == dst_2.meta["nodata"]
-            assert dst_1.meta["width"] == dst_2.meta["width"]
-            assert dst_1.meta["height"] == dst_2.meta["height"]
-            assert dst_1.meta["count"] == dst_2.meta["count"]
-            assert dst_1.meta["crs"] == dst_2.meta["crs"]
-            assert dst_1.meta["transform"].almost_equals(
-                dst_2.meta["transform"], precision=1e-9
-            )
-            np.testing.assert_almost_equal(dst_1.read(), dst_2.read(), decimal=decimal)
+    with rasterio.open(str(path_1)) as ds_1:
+        with rasterio.open(str(path_2)) as ds_2:
+            # Metadata
+            _assert_meta(ds_1.meta, ds_2.meta)
+
+            # Assert almost equal
+            np.testing.assert_almost_equal(ds_1.read(), ds_2.read(), decimal=decimal)
 
 
 def assert_raster_max_mismatch(
@@ -215,22 +250,20 @@ def assert_raster_max_mismatch(
         max_mismatch_pct (float): Maximum of element mismatch in %
     """
 
-    with rasterio.open(str(path_1)) as dst_1:
-        with rasterio.open(str(path_2)) as dst_2:
-            assert dst_1.meta["driver"] == dst_2.meta["driver"]
-            assert dst_1.meta["dtype"] == dst_2.meta["dtype"]
-            assert dst_1.meta["nodata"] == dst_2.meta["nodata"]
-            assert dst_1.meta["width"] == dst_2.meta["width"]
-            assert dst_1.meta["height"] == dst_2.meta["height"]
-            assert dst_1.meta["count"] == dst_2.meta["count"]
-            assert dst_1.meta["crs"] == dst_2.meta["crs"]
-            assert dst_1.meta["transform"].almost_equals(
-                dst_2.meta["transform"], precision=1e-9
+    with rasterio.open(str(path_1)) as ds_1:
+        with rasterio.open(str(path_2)) as ds_2:
+            # Metadata
+            _assert_meta(ds_1.meta, ds_2.meta)
+
+            # Compute the number of mismatch
+            nof_mismatch = np.count_nonzero(ds_1.read() != ds_2.read())
+            nof_elements = ds_1.count * ds_1.width * ds_1.height
+            pct_mismatch = nof_mismatch / nof_elements * 100.0
+            assert pct_mismatch < max_mismatch_pct, (
+                f"Too many mismatches !\n"
+                f"Number of mismatches: {nof_mismatch} / {nof_elements},\n"
+                f"Percentage of mismatches: {pct_mismatch}% > {max_mismatch_pct}%,"
             )
-            nof_mismatch = np.count_nonzero(dst_1.read() != dst_2.read())
-            assert (
-                nof_mismatch / (dst_1.count * dst_1.width * dst_1.height)
-            ) * 100.0 < max_mismatch_pct
 
 
 def assert_dir_equal(
@@ -253,33 +286,23 @@ def assert_dir_equal(
     """
     path_1 = AnyPath(path_1)
     path_2 = AnyPath(path_2)
-    assert path_1.is_dir()
-    assert path_2.is_dir()
+    assert path_1.is_dir(), f"{path_1} is not a directory!"
+    assert path_2.is_dir(), f"{path_2} is not a directory!"
 
     dcmp = filecmp.dircmp(path_1, path_2)
     try:
-        assert dcmp.left_only == []
-        assert dcmp.right_only == []
+        assert (
+            dcmp.left_only == []
+        ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
+        assert (
+            dcmp.right_only == []
+        ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
     except FileNotFoundError:
-        assert [AnyPath(path).name for path in AnyPath(path_1).iterdir()] == [
-            AnyPath(path).name for path in AnyPath(path_2).iterdir()
-        ]
-
-    # def assert_archive_equal(path_1: str, path_2: str) -> None:
-
-
-#     """
-#     Assert that two archives are equal, by creating hashes that should be equal
-#
-#     Args:
-#         path_1 (str): Archive 1
-#         path_2 (str): Archive 2
-#     """
-#     filecmp.cmp(path_1, path_2)
-#
-#     file_1 = hashlib.sha256(open(path_1, 'rb').read()).digest()
-#     file_2 = hashlib.sha256(open(path_2, 'rb').read()).digest()
-#     assert file_1 == file_2
+        files_1 = [AnyPath(path).name for path in AnyPath(path_1).iterdir()]
+        files_2 = [AnyPath(path).name for path in AnyPath(path_2).iterdir()]
+        assert (
+            files_1 == files_2
+        ), f"Files non equal!\n{pprint.pformat(files_1)} != {pprint.pformat(files_2)}"
 
 
 def assert_geom_equal(
@@ -313,12 +336,73 @@ def assert_geom_equal(
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_2 = vectors.read(geom_2)
 
-    assert len(geom_1) == len(geom_2)
-    assert geom_1.crs == geom_2.crs
+    assert len(geom_1) == len(
+        geom_2
+    ), f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
+    assert (
+        geom_1.crs == geom_2.crs
+    ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+
     for idx in range(len(geom_1)):
-        if geom_1.geometry.iat[idx].is_valid and geom_2.geometry.iat[idx].is_valid:
-            # If valid geometries, assert that the both are equal
-            assert geom_1.geometry.iat[idx].equals(geom_2.geometry.iat[idx])
+        curr_geom_1 = geom_1.geometry.iat[idx]
+        curr_geom_2 = geom_2.geometry.iat[idx]
+
+        # If valid geometries, assert that the both are equal
+        if curr_geom_1.is_valid and curr_geom_2.is_valid:
+            assert curr_geom_1.equals(
+                curr_geom_2
+            ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+
+
+def assert_geom_almost_equal(
+    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    decimal=9,
+) -> None:
+    """
+    Assert that two geometries are equal
+    (do not check equality between geodataframe as they may differ on other fields).
+
+    Useful for pytests.
+
+    .. code-block:: python
+
+        >>> path = r"CI/DATA/vectors/aoi.geojson"
+        >>> assert_geom_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
+
+    .. WARNING::
+        Only checks:
+         - valid geometries
+         - length of GeoDataFrame
+         - CRS
+
+    Args:
+        geom_1 (gpd.GeoDataFrame): Geometry 1
+        geom_2 (gpd.GeoDataFrame): Geometry 2
+        decimal (int): Number of decimal
+    """
+    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        geom_1 = vectors.read(geom_1)
+    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        geom_2 = vectors.read(geom_2)
+
+    assert len(geom_1) == len(
+        geom_2
+    ), f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
+    assert (
+        geom_1.crs == geom_2.crs
+    ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+
+    for idx in range(len(geom_1)):
+        curr_geom_1 = geom_1.geometry.iat[idx]
+        curr_geom_2 = geom_2.geometry.iat[idx]
+
+        # If valid geometries, assert that the both are equal
+        if curr_geom_1.is_valid and curr_geom_2.is_valid:
+            assert curr_geom_1.almost_equals(
+                curr_geom_2, decimal=decimal
+            ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
 
 
 def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:

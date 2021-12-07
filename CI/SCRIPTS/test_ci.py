@@ -52,6 +52,11 @@ def test_assert_vect():
     with pytest.raises(AssertionError):
         ci.assert_geom_equal(vector_path, vec2_df)
 
+    assert not vec_df.empty
+    ci.assert_geom_almost_equal(vec_df, vector_path)
+    with pytest.raises(AssertionError):
+        ci.assert_geom_almost_equal(vector_path, vec2_df)
+
 
 @s3_env
 def test_assert_raster():

@@ -2,6 +2,11 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.12.0 (2021-12-07)
+
+- **ENH: Adding a `assert_geom_almost_equal` function**
+- FIX: Better logs for CI functions
+
 ## 1.11.1 (2021-12-06)
 
 - FIX: Using `dill` instead of `pickle` as it works on more python types
