@@ -2,6 +2,9 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.12.1 (2021-12-07)
+- OPT: Do not `export_grid_mapping` when using `rioxarray.open_rasterio`
+
 ## 1.12.0 (2021-12-07)
 
 - **ENH: Adding a `assert_geom_almost_equal` function**
