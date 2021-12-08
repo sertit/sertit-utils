@@ -161,7 +161,7 @@ def _assert_meta(meta_1, meta_2):
 
     assert meta_1["transform"].almost_equals(
         meta_2["transform"], precision=1e-9
-    ), f'transform incoherent: {meta_1["transform"]} != {meta_2["transform"]}'
+    ), f'transform incoherent:\n{meta_1["transform"]}\n!=\n{meta_2["transform"]}'
 
 
 def assert_raster_equal(
