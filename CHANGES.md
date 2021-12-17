@@ -4,7 +4,8 @@
 
 ## 1.12.1 (2021-MM-DD)
 - OPT: Do not `export_grid_mapping` when using `rioxarray.open_rasterio`
-- `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas
+- FIX: `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas
+- FIX: `rasters_rio.collocate` returns a masked_array if a masked_array is given as input
 
 ## 1.12.0 (2021-12-07)
 

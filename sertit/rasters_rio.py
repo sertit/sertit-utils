@@ -917,6 +917,11 @@ def collocate(
         }
     )
 
+    if isinstance(slave_arr, np.ma.masked_array):
+        collocated_arr = np.ma.masked_array(
+            collocated_arr, slave_arr.mask, fill_value=slave_meta["nodata"]
+        )
+
     return collocated_arr, meta
 
 
