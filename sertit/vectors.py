@@ -302,15 +302,12 @@ def _to_polygons(val: Any) -> Polygon:
         poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
     else:
         poly = Polygon(val["coordinates"][0])
+        pass
 
-    # Note: it doesn't check if polygons are valid or not !
-    # If needed, do:
-    # if not poly.is_valid:
-    #   poly = poly.buffer(1.0E-9)
     return poly
 
 
-def shapes_to_gdf(shapes: Generator, crs: str):
+def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     """
     Convert rasterio shapes to geodataframe
 
@@ -328,7 +325,22 @@ def shapes_to_gdf(shapes: Generator, crs: str):
         pd_results.geometry = pd_results.geometry.apply(_to_polygons)
 
     # Convert to geodataframe with correct geometry
-    return gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
+    gdf = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
+
+    try:
+        from shapely.validation import make_valid
+
+        # Discard self-intersection and null geometries
+        gdf.geometry = gdf.geometry.apply(make_valid)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
+            f"The obtained vector may be broken !"
+        )
+
+    return gdf
 
 
 def read(
