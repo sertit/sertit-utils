@@ -363,7 +363,7 @@ def read(
 
         >>> # Archive
         >>> arch_path = 'D:/path/to/zip.zip'
-        >>> vectors.read(arch_path, archive_regex=r".*map-overlay\.kml")
+        >>> vectors.read(arch_path, archive_regex=r".*map-overlay.kml")
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 

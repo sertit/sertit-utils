@@ -55,7 +55,9 @@ def test_vectors():
     aoi3 = vectors.get_aoi_wkt(utm_path, as_str=False)
 
     assert aoi.equals(aoi2)  # No reprojection, should be equal
-    assert aoi.almost_equals(aoi3)  # Reprojection, so almost equal
+    assert aoi.equals_exact(
+        aoi3, tolerance=0.5 * 10 ** 6
+    )  # Reprojection, so almost equal
     assert wkt.dumps(aoi) == aoi_str
 
     # UTM and bounds
