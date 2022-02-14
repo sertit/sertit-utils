@@ -400,7 +400,7 @@ def assert_geom_almost_equal(
 
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
-            assert curr_geom_1.aoi.equals_exact(
+            assert curr_geom_1.equals_exact(
                 curr_geom_2, tolerance=0.5 * 10 ** decimal
             ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
 
