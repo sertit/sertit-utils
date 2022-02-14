@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
-        os: [ubuntu-latest]  # , windows-latest]  # rasterio and geopandas can be installed easily on Windows
+        os: [ubuntu-latest]  # , windows-latest]  # rasterio and geopandas cant be installed easily on Windows
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v2
