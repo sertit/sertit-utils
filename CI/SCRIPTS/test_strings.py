@@ -47,7 +47,7 @@ def test_conversion():
         strings.str_to_verbosity("oopsie")
 
     # Str to list of dates
-    list_of_str_dates = "20200909105055, 2019-08-06;19560702121212\t2020-08-09"
+    list_of_str_dates = r"20200909105055, 2019-08-06;19560702121212\t2020-08-09"
     list_of_datetimes = [
         datetime(2020, 9, 9, 10, 50, 55),
         datetime(2019, 8, 6),

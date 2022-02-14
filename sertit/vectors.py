@@ -178,7 +178,7 @@ def set_kml_driver() -> None:
 
     .. code-block:: python
 
-        >>> path = "path\\to\\kml.kml"
+        >>> path = "path/to/kml.kml"
         >>> gpd.read_file(path)
         fiona.errors.DriverError: unsupported driver: 'LIBKML'
 
@@ -212,7 +212,7 @@ def get_aoi_wkt(
 
     .. code-block:: python
 
-        >>> path = "path\\to\\vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
+        >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
         >>> get_aoi_wkt(path)
         'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
         0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
@@ -356,14 +356,14 @@ def read(
     .. code-block:: python
 
         >>> # Usual
-        >>> path = 'D:\\path\\to\\vector.geojson'
+        >>> path = 'D:/path/to/vector.geojson'
         >>> vectors.read(path, crs=WGS84)
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 
         >>> # Archive
-        >>> arch_path = 'D:\\path\\to\\zip.zip'
-        >>> vectors.read(arch_path, archive_regex=".*map-overlay\.kml")
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> vectors.read(arch_path, archive_regex=r".*map-overlay\.kml")
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 

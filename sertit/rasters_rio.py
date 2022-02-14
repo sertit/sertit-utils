@@ -81,8 +81,8 @@ def path_arr_dst(function: Callable) -> Callable:
         >>>     read(dst)
         >>>
         >>> # Test the two ways
-        >>> read1 = fct("path\\to\\raster.tif")
-        >>> with rasterio.open("path\\to\\raster.tif") as dst:
+        >>> read1 = fct("path/to/raster.tif")
+        >>> with rasterio.open("path/to/raster.tif") as dst:
         >>>     read2 = fct(dst)
         >>>
         >>> # Test
@@ -235,7 +235,7 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
+        >>> raster_path = "path/to/raster.tif"
         >>> with rasterio.open(raster_path) as dst:
         >>>      meta = dst.meta
         >>>      arr = dst.read()
@@ -459,7 +459,7 @@ def vectorize(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+        >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> vec1 = vectorize(raster_path)
         >>> # or
         >>> with rasterio.open(raster_path) as dst:
@@ -496,7 +496,7 @@ def get_valid_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+        >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
         >>> with rasterio.open(raster_path) as dst:
@@ -529,7 +529,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"  # Classified raster, with no data set to 255
+        >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
         >>> with rasterio.open(raster_path) as dst:
@@ -622,8 +622,8 @@ def mask(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
-        >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
+        >>> raster_path = "path/to/raster.tif"
+        >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
         >>> masked_raster1, meta1 = mask(raster_path, shapes)
         >>> # or
@@ -667,8 +667,8 @@ def crop(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
-        >>> shape_path = "path\\to\\shapes.geojson"  # Any vector that geopandas can read
+        >>> raster_path = "path/to/raster.tif"
+        >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
         >>> cropped_raster1, meta1 = crop(raster_path, shapes)
         >>> # or
@@ -715,7 +715,7 @@ def read(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
+        >>> raster_path = "path/to/raster.tif"
         >>> raster1, meta1 = read(raster_path)
         >>> # or
         >>> with rasterio.open(raster_path) as dst:
@@ -790,8 +790,8 @@ def write(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
-        >>> raster_out = "path\\to\\out.tif"
+        >>> raster_path = "path/to/raster.tif"
+        >>> raster_out = "path/to/out.tif"
 
         >>> # Read raster
         >>> raster, meta = read(raster_path)
@@ -863,9 +863,9 @@ def collocate(
 
     .. code-block:: python
 
-        >>> master_path = "path\\to\\master.tif"
-        >>> slave_path = "path\\to\\slave.tif"
-        >>> col_path = "path\\to\\collocated.tif"
+        >>> master_path = "path/to/master.tif"
+        >>> slave_path = "path/to/slave.tif"
+        >>> col_path = "path/to/collocated.tif"
 
         >>> # Just open the master data
         >>> with rasterio.open(master_path) as master_dst:
@@ -938,7 +938,7 @@ def sieve(
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"  # classified raster
+        >>> raster_path = "path/to/raster.tif"  # classified raster
 
         >>> # Read raster
         >>> raster, meta = read(raster_path)
@@ -947,7 +947,7 @@ def sieve(
         >>> sieved, sieved_meta = sieve(raster, meta, sieve_thresh=20)
 
         >>> # Write it
-        >>> raster_out = "path\\to\\raster_sieved.tif"
+        >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved, raster_out, sieved_meta)
 
     Args:
@@ -1006,7 +1006,7 @@ def get_dim_img_path(
 
     .. code-block:: python
 
-        >>> dim_path = "path\\to\\dimap.dim"  # BEAM-DIMAP image
+        >>> dim_path = "path/to/dimap.dim"  # BEAM-DIMAP image
         >>> img_path = get_dim_img_path(dim_path)
 
         >>> # Read raster
@@ -1035,7 +1035,7 @@ def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
+        >>> raster_path = "path/to/raster.tif"
 
         >>> extent1 = get_extent(raster_path)
         >>> # or
@@ -1060,7 +1060,7 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
     .. code-block:: python
 
-        >>> raster_path = "path\\to\\raster.tif"
+        >>> raster_path = "path/to/raster.tif"
 
         >>> footprint1 = get_footprint(raster_path)
 
@@ -1094,11 +1094,11 @@ def merge_vrt(
 
     .. code-block:: python
 
-        >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
-        >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
+        >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
+        >>> paths_utm32631 = ["path/to/raster4.tif", "path/to/raster5.tif"]
 
-        >>> mosaic_32630 = "path\\to\\mosaic_32630.vrt"
-        >>> mosaic_32631 = "path\\to\\mosaic_32631.vrt"
+        >>> mosaic_32630 = "path/to/mosaic_32630.vrt"
+        >>> mosaic_32631 = "path/to/mosaic_32631.vrt"
 
         >>> # Create mosaic, one by CRS !
         >>> merge_vrt(paths_utm32630, mosaic_32630)
@@ -1157,11 +1157,11 @@ def merge_gtiff(
 
     .. code-block:: python
 
-        >>> paths_utm32630 = ["path\\to\\raster1.tif", "path\\to\\raster2.tif", "path\\to\\raster3.tif"]
-        >>> paths_utm32631 = ["path\\to\\raster4.tif", "path\\to\\raster5.tif"]
+        >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
+        >>> paths_utm32631 = ["path/to/raster4.tif", "path/to/raster5.tif"]
 
-        >>> mosaic_32630 = "path\\to\\mosaic_32630.tif"
-        >>> mosaic_32631 = "path\\to\\mosaic_32631.tif"
+        >>> mosaic_32630 = "path/to/mosaic_32630.tif"
+        >>> mosaic_32631 = "path/to/mosaic_32631.tif"
 
         # Create mosaic, one by CRS !
         >>> merge_gtiff(paths_utm32630, mosaic_32630)

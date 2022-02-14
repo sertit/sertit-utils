@@ -16,7 +16,7 @@
 # limitations under the License.
 import os
 import sys
-from collections import Callable
+from collections.abc import Callable
 from enum import unique
 from functools import wraps
 

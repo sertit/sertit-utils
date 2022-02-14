@@ -69,10 +69,10 @@ def get_gpt_cli(
 
         >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
         SNAP Release version 8.0
-        SNAP home: C:\Program Files\snap\bin\/..
+        SNAP home: C:/Program Files/snap/bin/..
         SNAP debug: null
         SNAP log level: WARNING
-        Java home: c:\program files\snap\jre\jre
+        Java home: c:/program files/snap/jre/jre
         Java version: 1.8.0_242
         Processors: 16
         Max memory: 53.3 GB

@@ -50,13 +50,13 @@ def get_root_path() -> Union[CloudPath, Path]:
     Get the root path of the current disk:
 
     - On Linux this returns `/`
-    - On Windows this returns `C:\\` or whatever the current drive is
+    - On Windows this returns `C:/` or whatever the current drive is
 
     .. code-block:: python
 
         >>> get_root_path()
         "/" on Linux
-        "C:\\" on Windows (if you run this code from the C: drive)
+        "C:/" on Windows (if you run this code from the C: drive)
     """
     return AnyPath(os.path.abspath(os.sep))
 
@@ -71,15 +71,15 @@ def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
 
         >>> folder = "."
         >>> listdir_abspath(folder)
-        ['D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\files.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\logs.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\misc.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\network.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\rasters_rio.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\strings.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\vectors.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\version.py',
-        'D:\\_SERTIT_UTILS\\sertit-utils\\sertit\\__init__.py']
+        ['D:/_SERTIT_UTILS/sertit-utils/sertit/files.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/logs.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/misc.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/network.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/rasters_rio.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/strings.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/vectors.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/version.py',
+        'D:/_SERTIT_UTILS/sertit-utils/sertit/__init__.py']
 
     Args:
         directory (Union[str, CloudPath, Path]): Relative or absolute path to the directory to be scanned
@@ -139,14 +139,14 @@ def real_rel_path(
 ) -> Union[CloudPath, Path]:
     """
     Gives the real relative path from a starting folder.
-    (and not just adding `..\..` between the start and the target)
+    (and not just adding `../..` between the start and the target)
 
     .. code-block:: python
 
-        >>> path = r'D:\_SERTIT_UTILS\sertit-utils\sertit'
+        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
         >>> start = os.path.join(".", "..", "..")
         >>> real_rel_path(path, start)
-        'sertit-utils\\sertit'
+        'sertit-utils/sertit'
 
     Args:
         path (Union[str, CloudPath, Path]): Path to make relative
@@ -176,10 +176,10 @@ def extract_file(
 
     .. code-block:: python
 
-        >>> file_path = 'D:\\path\\to\\zip.zip'
-        >>> output = 'D:\\path\\to\\output'
+        >>> file_path = 'D:/path/to/zip.zip'
+        >>> output = 'D:/path/to/output'
         >>> extract_file(file_path, output, overwrite=True)
-        D:\\path\\to\\output\zip'
+        D:/path/to/output.zip'
 
     Args:
         file_path (str): Archive file path
@@ -284,10 +284,10 @@ def extract_files(
 
     .. code-block:: python
 
-        >>> file_path = ['D:\\path\\to\\zip1.zip', 'D:\\path\\to\\zip2.zip']
-        >>> output = 'D:\\path\\to\\output'
+        >>> file_path = ['D:/path/to/zip1.zip', 'D:/path/to/zip2.zip']
+        >>> output = 'D:/path/to/output'
         >>> extract_files(file_path, output, overwrite=True)
-        ['D:\\path\\to\\output\zip1', 'D:\\path\\to\\output\zip2']
+        ['D:/path/to/output.zip1', 'D:/path/to/output.zip2']
 
     Args:
         archives (list of str): List of archives to be extracted
@@ -313,7 +313,7 @@ def get_archived_file_list(archive_path: Union[str, CloudPath, Path]) -> list:
 
     .. code-block:: python
 
-        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> arch_path = 'D:/path/to/zip.zip'
         >>> get_archived_file_list(arch_path, file_regex)
         ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
 
@@ -360,12 +360,12 @@ def get_archived_rio_path(
 
     .. code-block:: python
 
-        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> arch_path = 'D:/path/to/zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> path = get_archived_tif_path(arch_path, file_regex)
-        'zip+file://D:\\path\\to\\output\zip!dir/filename.tif'
+        'zip+file://D:/path/to/output.zip!dir/filename.tif'
         >>> rasterio.open(path)
-        <open DatasetReader name='zip+file://D:\\path\\to\\output\zip!dir/filename.tif' mode='r'>
+        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
 
     Args:
         archive_path (Union[str, CloudPath, Path]): Archive path
@@ -472,7 +472,7 @@ def read_archived_xml(
 
     .. code-block:: python
 
-        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> arch_path = 'D:/path/to/zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> read_archived_xml(arch_path, file_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
@@ -499,7 +499,7 @@ def read_archived_html(
 
     .. code-block:: python
 
-        >>> arch_path = 'D:\\path\\to\\zip.zip'
+        >>> arch_path = 'D:/path/to/zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> read_archived_html(arch_path, file_regex)
         <Element html at 0x1c90007f8c8>
@@ -526,10 +526,10 @@ def archive(
 
     .. code-block:: python
 
-        >>> folder_path = 'D:\\path\\to\\folder_to_archive'
-        >>> archive_path = 'D:\\path\\to\\output'
+        >>> folder_path = 'D:/path/to/folder_to_archive'
+        >>> archive_path = 'D:/path/to/output'
         >>> archive = archive(folder_path, archive_path, fmt="gztar")
-        'D:\\path\\to\\output\\folder_to_archive.tar.gz'
+        'D:/path/to/output/folder_to_archive.tar.gz'
 
     Args:
         folder_path (Union[str, CloudPath, Path]): Folder to archive
@@ -564,8 +564,8 @@ def add_to_zip(
 
     .. code-block:: python
 
-        >>> zip_path = 'D:\\path\\to\\zip.zip'
-        >>> dirs_to_add = ['D:\\path\\to\\dir1', 'D:\\path\\to\\dir2']
+        >>> zip_path = 'D:/path/to/zip.zip'
+        >>> dirs_to_add = ['D:/path/to/dir1', 'D:/path/to/dir2']
         >>> add_to_zip(zip_path, dirs_to_add)
         >>> # zip.zip contains 2 more folders, dir1 and dir2
 
@@ -637,7 +637,7 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
 
     .. code-block:: python
 
-        >>> file_path = 'D:\\path\\to\\filename.zip'
+        >>> file_path = 'D:/path/to/filename.zip'
         >>> get_file_name(file_path)
         'filename'
 
@@ -659,7 +659,7 @@ def remove(path: Union[str, CloudPath, Path]) -> None:
 
     .. code-block:: python
 
-        >>> path_to_remove = 'D:\\path\\to\\remove'  # Could also be a file
+        >>> path_to_remove = 'D:/path/to/remove'  # Could also be a file
         >>> remove(path_to_remove)
         path_to_remove deleted
 
@@ -693,7 +693,7 @@ def remove_by_pattern(
 
     .. code-block:: python
 
-        >>> directory = 'D:\\path\\to\\folder'
+        >>> directory = 'D:/path/to/folder'
         >>> os.listdir(directory)
         ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
 
@@ -727,15 +727,15 @@ def copy(
 
     .. code-block:: python
 
-        >>> src = 'D:\\path\\to\\copy'
-        >>> dst = 'D:\\path\\to\\output'
+        >>> src = 'D:/path/to/copy'
+        >>> dst = 'D:/path/to/output'
         >>> copy(src, dst)
-        copydir 'D:\\path\\to\\output\\copy'
+        copydir 'D:/path/to/output/copy'
 
-        >>> src = 'D:\\path\\to\\copy.txt'
-        >>> dst = 'D:\\path\\to\\output\\huhu.txt'
+        >>> src = 'D:/path/to/copy.txt'
+        >>> dst = 'D:/path/to/output/huhu.txt'
         >>> copyfile = copy(src, dst)
-        'D:\\path\\to\\output\\huhu.txt' but with the content of copy.txt
+        'D:/path/to/output/huhu.txt' but with the content of copy.txt
 
     Args:
         src (Union[str, CloudPath, Path]): Source Path
@@ -774,9 +774,9 @@ def find_files(
 
     .. code-block:: python
 
-        >>> root_path = 'D:\\root'
-        >>> dir1_path = 'D:\\root\\dir1'
-        >>> dir2_path = 'D:\\root\\dir2'
+        >>> root_path = 'D:/root'
+        >>> dir1_path = 'D:/root/dir1'
+        >>> dir2_path = 'D:/root/dir2'
 
         >>> os.listdir(dir1_path)
         ["haha.txt", "huhu.txt", "hoho.txt"]
@@ -784,13 +784,13 @@ def find_files(
         ["huhu.txt", "hehe.txt"]
 
         >>> find_files("huhu.txt", root_path)
-        ['D:\\root\\dir1\\huhu.txt', 'D:\\root\\dir2\\huhu.txt']
+        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
 
         >>> find_files("huhu.txt", root_path, max_nof_files=1)
-        ['D:\\root\\dir1\\huhu.txt']
+        ['D:/root/dir1/huhu.txt']
 
         >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
-        found = 'D:\\root\\dir1\\huhu.txt'
+        found = 'D:/root/dir1/huhu.txt'
 
     Args:
         names (Union[list, str]): File names.
@@ -905,7 +905,7 @@ def read_json(json_file: Union[str, CloudPath, Path], print_file: bool = True) -
 
     .. code-block:: python
 
-        >>> json_path = 'D:\\path\\to\\json.json'
+        >>> json_path = 'D:/path/to/json.json'
         >>> read_json(json_path, print_file=False)
         {"A": 1, "B": 2}
 
@@ -934,7 +934,7 @@ def save_json(output_json: Union[str, CloudPath, Path], json_dict: dict) -> None
 
     .. code-block:: python
 
-        >>> output_json = 'D:\\path\\to\\json.json'
+        >>> output_json = 'D:/path/to/json.json'
         >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
         >>> save_json(output_json, json_dict)
 
@@ -953,7 +953,7 @@ def save_obj(obj: Any, path: Union[str, CloudPath, Path]) -> None:
 
     .. code-block:: python
 
-        >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
+        >>> output_pkl = 'D:/path/to/pickle.pkl'
         >>> pkl_dict = {"A": np.ones([3, 3]),
                         "B": datetime.today(),
                         "C": SomeEnum.some_name}
@@ -973,7 +973,7 @@ def load_obj(path: Union[str, CloudPath, Path]) -> Any:
 
     .. code-block:: python
 
-        >>> output_pkl = 'D:\\path\\to\\pickle.pkl'
+        >>> output_pkl = 'D:/path/to/pickle.pkl'
         >>> load_obj(output_pkl)
         {"A": np.ones([3, 3]), "B": datetime.today(), "C": SomeEnum.some_name}
 
@@ -1006,18 +1006,18 @@ def get_file_in_dir(
 
     .. code-block:: python
 
-        >>> directory = 'D:\\path\\to\\dir'
+        >>> directory = 'D:/path/to/dir'
         >>> os.listdir(directory)
         ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
 
         >>> get_file_in_dir(directory, "huhu")
-        'D:\\path\\to\\dir\\huhu1.geojson'
+        'D:/path/to/dir/huhu1.geojson'
 
         >>> get_file_in_dir(directory, "huhu", extension="txt")
-        'D:\\path\\to\\dir\\huhu1.txt'
+        'D:/path/to/dir/huhu1.txt'
 
         >>> get_file_in_dir(directory, "huhu", get_list=True)
-        ['D:\\path\\to\\dir\\huhu1.txt', 'D:\\path\\to\\dir\\huhu1.geojson']
+        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
 
         >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
         ['huhu1.txt', 'huhu1.geojson']
@@ -1081,7 +1081,7 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
 
     .. code-block:: python
 
-        >>> read_json("path\\to\\json.json")
+        >>> read_json("path/to/json.json")
         {"A": 1, "B": 2}
 
         >>> hash_file_content(str(file_content))

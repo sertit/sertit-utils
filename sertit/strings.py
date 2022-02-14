@@ -279,9 +279,9 @@ def to_cmd_string(unquoted_str: str) -> str:
     .. code-block:: python
 
         >>> # This str wont work in the terminal without quotes (because of the &)
-        >>> pb_str = r"D:\Minab_4-DA&VHR\Minab_4-DA&VHR.shp"
+        >>> pb_str = r"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp"
         >>> to_cmd_string(pb_str)
-        "\"D:\Minab_4-DA&VHR\Minab_4-DA&VHR.shp\""
+        "\"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp\""
 
     Args:
         unquoted_str (str): String to update

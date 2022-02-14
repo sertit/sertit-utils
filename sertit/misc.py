@@ -406,10 +406,10 @@ def chdir(newdir: Union[str, CloudPath, Path]) -> None:
 
     .. code-block:: python
 
-        >>> folder = r"C:\"
+        >>> folder = r"C:/"
         >>> with chdir(folder):
         >>>     print(os.getcwd())
-        'C:\\'
+        'C:/'
 
     Args:
         newdir (str): New directory

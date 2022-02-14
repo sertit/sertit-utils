@@ -8,6 +8,8 @@
 - FIX: `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas
 - FIX: `rasters_rio.collocate` returns a masked_array if a masked_array is given as input
 - FIX: Use `--no-binary fiona,rasterio` directly in `requirements.txt`
+- FIX: Remove warnings
+- CI: Clean `gitlab-ci`
 
 ## 1.12.0 (2021-12-07)
 

@@ -97,12 +97,12 @@ def create_logger(
     .. code-block:: python
 
         >>> logger = logging.getLogger("logger_test")
-        >>> create_logger(logger, logging.DEBUG, logging.INFO, "path\\to\\log", "log.txt")
+        >>> create_logger(logger, logging.DEBUG, logging.INFO, "path/to/log", "log.txt")
         >>> logger.info("MESSAGE")
         2021-03-02 16:57:35 - [INFO] - MESSAGE
 
         >>> # "logger_test" will also log DEBUG messages
-        >>> # to the "path\\to\\log\\log.txt" file with the same format
+        >>> # to the "path/to/log/log.txt" file with the same format
 
     Args:
         logger (logging.Logger): Logger to create
