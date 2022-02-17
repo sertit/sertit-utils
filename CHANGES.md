@@ -10,6 +10,7 @@
 - FIX: Use `--no-binary fiona,rasterio` directly in `requirements.txt`
 - FIX: Remove warnings
 - CI: Clean `gitlab-ci`
+- REPO: Setting GitHub as the main repository and using new Gitlab runners
 
 ## 1.12.0 (2021-12-07)
 
