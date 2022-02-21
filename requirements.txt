@@ -15,7 +15,7 @@ twine
 pdoc3
 
 # Libs for all platforms
-cloudpathlib[all]
+cloudpathlib[all]>=0.7.0
 dill
 tqdm
 psutil

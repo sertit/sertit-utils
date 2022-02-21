@@ -328,10 +328,14 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     gdf = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
     try:
+        geos_logger = logging.getLogger("shapely.geos")
+        previous_level = geos_logger.level
+        geos_logger.setLevel(logging.CRITICAL)
         from shapely.validation import make_valid
 
         # Discard self-intersection and null geometries
         gdf.geometry = gdf.geometry.apply(make_valid)
+        geos_logger.setLevel(previous_level)
     except ImportError:
         import shapely
 

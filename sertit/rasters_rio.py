@@ -418,10 +418,14 @@ def _vectorize(
     gdf = vectors.shapes_to_gdf(shapes, dst.crs)
 
     try:
+        geos_logger = logging.getLogger("shapely.geos")
+        previous_level = geos_logger.level
+        geos_logger.setLevel(logging.CRITICAL)
         from shapely.validation import make_valid
 
         # Discard self-intersection and null geometries
         gdf.geometry = gdf.geometry.apply(make_valid)
+        geos_logger.setLevel(previous_level)
     except ImportError:
         import shapely
 
