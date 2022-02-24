@@ -2,8 +2,13 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+## 1.12.1.post0 (2021-24-02)
+
+- CI: Test code only if files have changed
+- CI: Publishing wheel from Github instead of Gitlab
 
 ## 1.12.1 (2021-24-02)
+
 - OPT: Do not `export_grid_mapping` when using `rioxarray.open_rasterio`
 - FIX: `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas
 - FIX: `rasters_rio.collocate` returns a masked_array if a masked_array is given as input
@@ -85,11 +90,9 @@
 
 - ENH: Making `add_to_zip` work with cloud zips
 - BREAKING CHANGE: `add_to_zip` outputs the completed path
-- FIX: `environment.yml` to respect the stricter use of `file:` syntax.
-  See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
+- FIX: `environment.yml` to respect the stricter use of `file:` syntax. See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
   for more information.
-- FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options.
-  See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
+- FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options. See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
 - CI: Do not run pytests on tags and discard `except` keywords
 
 ## 1.4.8 (2021-07-29)
