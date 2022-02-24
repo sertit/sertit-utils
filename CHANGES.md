@@ -3,7 +3,7 @@
 ## 1.Y.Z (YYYY-MM-DD)
 
 
-## 1.12.1 (2021-MM-DD)
+## 1.12.1 (2021-24-02)
 - OPT: Do not `export_grid_mapping` when using `rioxarray.open_rasterio`
 - FIX: `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas
 - FIX: `rasters_rio.collocate` returns a masked_array if a masked_array is given as input
