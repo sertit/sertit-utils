@@ -2,10 +2,10 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
-## 1.12.1.post0 (2021-24-02)
+## 1.12.2 (2021-24-02)
 
 - CI: Test code only if files have changed
-- CI: Publishing wheel from Github instead of Gitlab
+- CI: Publishing wheel from GitHub instead of Gitlab
 
 ## 1.12.1 (2021-24-02)
 
