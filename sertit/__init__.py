@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2021, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2022, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
@@ -27,5 +27,5 @@ __author__ = "ICube-SERTIT"
 __author_email__ = "dev-sertit@unistra.fr"
 __url__ = "https://github.com/sertit/sertit-utils"
 __license__ = "Apache 2.0"
-__copyright__ = "Copyright 2021, SERTIT-ICube - France, https://sertit.unistra.fr/"
+__copyright__ = "Copyright 2022, SERTIT-ICube - France, https://sertit.unistra.fr/"
 __documentation__ = "https://sertit-utils.readthedocs.io/en/latest/"
