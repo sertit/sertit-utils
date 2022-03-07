@@ -1103,7 +1103,8 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
 
 def is_writable(dir_path: Union[str, CloudPath, Path]):
     """
-    Determine whether the directory is writeable or not
+    Determine whether the directory is writeable or not.
+
     Args:
         dir_path (Union[str, CloudPath, Path]): Directory path
 

@@ -310,7 +310,7 @@ def vectorize(
     .. WARNING::
         - Your data is casted by force into np.uint8, so be sure that your data is classified.
         - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-            Please be careful.
+        Please be careful.
 
     .. code-block:: python
 
@@ -420,7 +420,7 @@ def mask(
 
     Overload of rasterio mask function in order to create a :code:`xarray`.
 
-    The :code:`mask` function docs can be seen :code:`here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
+    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
@@ -866,9 +866,9 @@ def get_dim_img_path(
     dim_path: Union[str, CloudPath, Path], img_name: str = "*"
 ) -> Union[CloudPath, Path]:
     """
-    Get the image path from a *BEAM-DIMAP* data.
+    Get the image path from a :code:`BEAM-DIMAP` data.
 
-    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
+    A :code:`BEAM-DIMAP` file cannot be opened by rasterio, although its :code:`.img` file can.
 
     .. code-block:: python
 
@@ -1004,7 +1004,7 @@ def merge_gtiff(
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     """
     Function found
-    `here <https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types>_
+    `here <https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types>`_
 
     .. code-block:: python
 
@@ -1265,13 +1265,14 @@ def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XD
     """
     Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
 
-    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+    Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     NB: altitude = zenith
 
-    Reference:
-    - https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py
-    - http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works
+    References:
+
+    - `1 <https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py>`_
+    - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
 
     Args:
         xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -1292,9 +1293,7 @@ def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_
     """
     Compute the slope of a DEM (in degrees).
 
-    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
-
-    NB: altitude = zenith
+    Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
         xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata

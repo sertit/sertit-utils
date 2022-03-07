@@ -266,8 +266,9 @@ def get_aoi_wkt(
 def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Get the wider exterior of a MultiPolygon as a Polygon
+
     Args:
-        vector (vector: gpd.GeoDataFrame): Polygon to simplify
+        vector (gpd.GeoDataFrame): Polygon to simplify
 
     Returns:
         vector: gpd.GeoDataFrame: Wider exterior
@@ -352,6 +353,7 @@ def read(
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
+
     - if KML: sets correctly the drivers and open layered KML (you may need :code:`ogr2ogr` to make it work !)
     - if archive (only zip or tar), use a regex to look for the vector inside the archive.
         You can use this `site <https://regexr.com/>`_ to build your regex.

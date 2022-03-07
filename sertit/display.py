@@ -29,7 +29,7 @@ def scale(array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2):
 
     The min max are computed with percentiles (2 by default), but can be true min/max if :code:`perc=0`.
 
-    ..WARNING::
+    .. WARNING::
         If 3D, the raster should be in rasterio's convention: :code:`(count, height, width)`
 
     Args:

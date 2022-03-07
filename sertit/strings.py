@@ -128,7 +128,7 @@ def str_to_list(
     list_str: Union[str, list], additional_separator: str = "", case: str = None
 ) -> list:
     """
-    Convert str to list with :code:`,`, :code:`;`, :code:` ` separators.
+    Convert str to list with :code:`,`, :code:`;`, :code:`\x20` separators.
 
     .. code-block:: python
 
@@ -137,7 +137,7 @@ def str_to_list(
 
     Args:
         list_str (Union[str, list]): List as a string
-        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:` `.
+        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\x20`.
         case (str): {none, 'lower', 'upper'}
     Returns:
         list: A list from split string
@@ -181,8 +181,8 @@ def str_to_date(
 
     Also accepted date formats:
 
-    - "now": datetime.today()
-    - Usual JSON date format: '%Y-%m-%d'
+    - :code:`now`: datetime.today()
+    - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
     .. code-block:: python
@@ -242,8 +242,8 @@ def str_to_list_of_dates(
 
     Also accepted date formats:
 
-    - "now": datetime.today()
-    - Usual JSON date format: '%Y-%m-%d'
+    - :code:`now`: datetime.today()
+    - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
     .. code-block:: python
@@ -274,7 +274,7 @@ def str_to_list_of_dates(
 def to_cmd_string(unquoted_str: str) -> str:
     """
     Add quotes around the string in order to make the command understand it's a string
-    (useful with tricky symbols like & or white spaces):
+    (useful with tricky symbols like :code:`&` or white spaces):
 
     .. code-block:: python
 

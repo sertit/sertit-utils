@@ -995,9 +995,9 @@ def get_dim_img_path(
     dim_path: Union[str, CloudPath, Path], img_name: str = "*"
 ) -> Union[CloudPath, Path]:
     """
-    Get the image path from a *BEAM-DIMAP* data.
+    Get the image path from a :code:`BEAM-DIMAP` data.
 
-    A *BEAM-DIMAP* file cannot be opened by rasterio, although its .img file can.
+    A :code:`BEAM-DIMAP` file cannot be opened by rasterio, although its :code:`.img` file can.
 
     .. code-block:: python
 
@@ -1196,8 +1196,8 @@ def merge_gtiff(
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     """
-    Function found here:
-    https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
+    Function found
+    `here <https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types>`_
 
     .. code-block:: python
 
@@ -1288,28 +1288,27 @@ def hillshade(
     dst: PATH_ARR_DS, azimuth: float = 315, zenith: float = 45
 ) -> (np.ma.masked_array, dict):
     """
-    Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
+     Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
 
-    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
-    NB: altitude = 90 - zenith
+     NB: altitude = 90 - zenith
 
-    .. WARNING::
+     .. WARNING::
 
-        - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
-        - z_factor is fixed to 1.0
-        - scale managed by dst resolution
+         - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
+         - z_factor is fixed to 1.0
+         - scale managed by dst resolution
 
-    Reference:
-    - https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp
+    `Reference <https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp>`_
 
-    Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        azimuth (float): Azimuth angle in degrees
-        zenith (float): Zenith angle in degrees
+     Args:
+         dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+         azimuth (float): Azimuth angle in degrees
+         zenith (float): Zenith angle in degrees
 
-    Returns:
-        (np.ma.masked_array, dict): Hillshade and its metadata
+     Returns:
+         (np.ma.masked_array, dict): Hillshade and its metadata
     """
     array = dst.read(masked=True)
 
@@ -1354,26 +1353,25 @@ def slope(
     in_rad: bool = False,
 ) -> (np.ma.masked_array, dict):
     """
-    Compute the slope of a DEM (in degrees).
+     Compute the slope of a DEM (in degrees).
 
-    Goal: replace `gdaldem` CLI (https://gdal.org/programs/gdaldem.html)
+     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
-    .. WARNING::
+     .. WARNING::
 
-        - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
-        - z_factor is fixed to 1.0
-        - scale managed by dst resolution
+         - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
+         - z_factor is fixed to 1.0
+         - scale managed by dst resolution
 
-    Reference:
-    - https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp
+    `Reference <https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp>`_
 
-    Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        in_pct (bool): Outputs slope in percents
-        in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
+     Args:
+         dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+         in_pct (bool): Outputs slope in percents
+         in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 
-    Returns:
-        (np.ma.masked_array, dict): Slope and its metadata
+     Returns:
+         (np.ma.masked_array, dict): Slope and its metadata
     """
     array = dst.read(masked=True)
 

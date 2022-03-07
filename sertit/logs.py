@@ -258,7 +258,7 @@ def reset_logging() -> None:
     Reset root logger
 
     .. WARNING::
-        MAY BE OVERKILL**
+        MAY BE OVERKILL
 
     .. code-block:: python
 
