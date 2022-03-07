@@ -27,10 +27,10 @@ def scale(array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2):
     """
     Scale a raster given as a np.ndarray between 0 and 1.
 
-    The min max are computed with percentiles (2 by default), but can be true min/max if `perc=0`.
+    The min max are computed with percentiles (2 by default), but can be true min/max if :code:`perc=0`.
 
     ..WARNING::
-        If 3D, the raster should be in rasterio's convention: `(count, height, width)`
+        If 3D, the raster should be in rasterio's convention: :code:`(count, height, width)`
 
     Args:
         array (Union[np.ndarray, numpy.ma.masked_array]): Matrix to be scaled

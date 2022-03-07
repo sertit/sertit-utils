@@ -51,14 +51,6 @@ MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
 LOGGER = logging.getLogger(SU_NAME)
 
-"""
-Types:
-
-- Path
-- rasterio Dataset
-- `xarray.DataArray` and `xarray.Dataset`
-"""  # fmt:skip
-
 XDS_TYPE = Union[xr.Dataset, xr.DataArray]
 """
 Xarray types: xr.Dataset and xr.DataArray
@@ -67,11 +59,11 @@ Xarray types: xr.Dataset and xr.DataArray
 
 def path_xarr_dst(function: Callable) -> Callable:
     """
-    Path, `xarray` or dataset decorator. Allows a function to ingest:
+    Path, :code:`xarray` or dataset decorator. Allows a function to ingest:
 
     - a path
-    - a `xarray`
-    - a `rasterio` dataset
+    - a :code:`xarray`
+    - a :code:`rasterio` dataset
 
     .. code-block:: python
 
@@ -206,7 +198,7 @@ def _vectorize(
     with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
 
     .. WARNING::
-        - If `get_nodata` is set to False:
+        - If :code:`get_nodata` is set to False:
             - Your data is casted by force into np.uint8, so be sure that your data is classified.
             - This could take a while as the computing time directly depends on the number of polygons to vectorize.
                 Please be careful.
@@ -310,7 +302,7 @@ def vectorize(
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
-    Vectorize a `xarray` to get the class vectors.
+    Vectorize a :code:`xarray` to get the class vectors.
 
     If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
     with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
@@ -355,7 +347,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     Get the valid data of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use `get_footprint`.
+    If you want only the footprint of the raster, please use :code:`get_footprint`.
 
     .. code-block:: python
 
@@ -388,7 +380,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     Get the nodata vector of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use `get_footprint`.
+    If you want only the footprint of the raster, please use :code:`get_footprint`.
 
     .. code-block:: python
 
@@ -401,7 +393,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Nodata Vector
@@ -426,9 +418,9 @@ def mask(
 
     The original nodata is kept and completed with the nodata provided by the shapes.
 
-    Overload of rasterio mask function in order to create a `xarray`.
+    Overload of rasterio mask function in order to create a :code:`xarray`.
 
-    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
+    The :code:`mask` function docs can be seen :code:`here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
@@ -446,7 +438,7 @@ def mask(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
+            (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
 
@@ -475,14 +467,14 @@ def paint(
 ) -> XDS_TYPE:
     """
     Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
-    Pay attention that this behavior is the opposite of the `rasterio.mask` function.
+    Pay attention that this behavior is the opposite of the :code:`rasterio.mask` function.
 
     The original nodata is kept.
     This means if your shapes intersects the original nodata,
     the value of the pixel will be set to nodata rather than to the wanted value.
 
-    Overload of rasterio mask function in order to create a `xarray`.
-    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
+    Overload of rasterio mask function in order to create a :code:`xarray`.
+    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
 
     .. code-block:: python
 
@@ -499,7 +491,7 @@ def paint(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
+            (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
         **kwargs: Other rasterio.mask options
@@ -562,7 +554,7 @@ def crop(
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
-            (except if a `GeoDataFrame` is passed, in which case it will automatically be converted)
+            (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rioxarray.clip options
 
@@ -597,9 +589,9 @@ def read(
     """
     Read a raster dataset from a :
 
-    - `xarray` (compatibility issues)
-    - `rasterio.Dataset`
-    - `rasterio` opened data (array, metadata)
+    - :code:`xarray` (compatibility issues)
+    - :code:`rasterio.Dataset`
+    - :code:`rasterio` opened data (array, metadata)
     - a path.
 
     The resolution can be provided (in dataset unit) as:
@@ -692,20 +684,20 @@ def read(
 def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     """
     Write raster to disk.
-    (encapsulation of `rasterio`'s function, because for now `rioxarray` to_raster doesn't work as expected)
+    (encapsulation of :code:`rasterio`'s function, because for now :code:`rioxarray` to_raster doesn't work as expected)
 
-    Metadata will be created with the `xarray` metadata (ie. width, height, count, type...)
-    The driver is `GTiff` by default, and no nodata value is provided.
+    Metadata will be created with the :code:`xarray` metadata (ie. width, height, count, type...)
+    The driver is :code:`GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
-    If not overwritten, sets the nodata according to `dtype`:
+    If not overwritten, sets the nodata according to :code:`dtype`:
 
     - uint8: 255
     - int8: -128
     - uint16, uint32, int32, int64, uint64: 65535
     - int16, float32, float64, float128, float: -9999
 
-    Compress with `LZW` option by default. To disable it, add the `compress=None` parameter.
+    Compress with :code:`LZW` option by default. To disable it, add the :code:`compress=None` parameter.
 
 
     .. code-block:: python
@@ -719,7 +711,7 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
         path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
-        **kwargs: Overloading metadata, ie `nodata=255` or `dtype=np.uint8`
+        **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
     """
     if "nodata" in kwargs:
         xds.encoding["_FillValue"] = kwargs.pop("nodata")
@@ -781,7 +773,7 @@ def collocate(
     Collocate two georeferenced arrays:
     forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
 
-    Use it like `OTB SuperImpose`.
+    Use it like :code:`OTB SuperImpose`.
 
     .. code-block:: python
 
@@ -820,7 +812,7 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TY
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
     .. WARNING::
-        Your data is casted by force into `np.uint8`, so be sure that your data is classified.
+        Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
 
     .. code-block:: python
 
@@ -899,7 +891,7 @@ def get_dim_img_path(
 @path_xarr_dst
 def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
-    Get the extent of a raster as a `geopandas.Geodataframe`.
+    Get the extent of a raster as a :code:`geopandas.Geodataframe`.
 
     .. code-block:: python
 
@@ -916,7 +908,7 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
 
     Returns:
-        gpd.GeoDataFrame: Extent as a `geopandas.Geodataframe`
+        gpd.GeoDataFrame: Extent as a :code:`geopandas.Geodataframe`
     """
     return vectors.get_geodf(geometry=[*xds.rio.bounds()], crs=xds.rio.crs)
 
@@ -950,7 +942,7 @@ def merge_vrt(
     crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
 ) -> None:
     """
-    Merge rasters as a VRT. Uses `gdalbuildvrt`.
+    Merge rasters as a VRT. Uses :code:`gdalbuildvrt`.
 
     See here: https://gdal.org/programs/gdalbuildvrt.html
 
@@ -1081,9 +1073,9 @@ def read_uint8_array(
     """
     Read 8 bit arrays as a succession of binary masks.
 
-    Forces array to `np.uint8`.
+    Forces array to :code:`np.uint8`.
 
-    See `read_bit_array`.
+    See :code:`read_bit_array`.
 
     Args:
         bit_mask (np.ndarray): Bit array to read
@@ -1100,7 +1092,7 @@ def set_metadata(
     naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
 ) -> xr.DataArray:
     """
-    Set metadata from a `xr.DataArray` to another (including `rioxarray` metadata such as encoded_nodata and crs).
+    Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
 
     Useful when performing operations on xarray that result in metadata loss such as sums.
 
@@ -1177,8 +1169,8 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     """
     Set nodata to a xarray that have no default nodata value.
 
-    In the data array, the no data will be set to `np.nan`.
-    The encoded value can be retrieved with `xda.rio.encoded_nodata`.
+    In the data array, the no data will be set to :code:`np.nan`.
+    The encoded value can be retrieved with :code:`xda.rio.encoded_nodata`.
 
     .. code-block:: python
 
@@ -1215,19 +1207,19 @@ def where(
     cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
 ) -> xr.DataArray:
     """
-    Overloads `xr.where` with:
+    Overloads :code:`xr.where` with:
 
-    - setting metadata of `master_xda`
-    - preserving the nodata pixels of the `master_xda`
+    - setting metadata of :code:`master_xda`
+    - preserving the nodata pixels of the :code:`master_xda`
 
-    If `master_xda` is None, use it like `xr.where`.
-    Else, it outputs a `xarray.DataArray` with the same dtype than `master_xda`.
+    If :code:`master_xda` is None, use it like :code:`xr.where`.
+    Else, it outputs a :code:`xarray.DataArray` with the same dtype than :code:`master_xda`.
 
     .. WARNING::
-        If you don't give a `master_xda`,
-        it is better to pass numpy arrays to `if_false` and `if_true` keywords
+        If you don't give a :code:`master_xda`,
+        it is better to pass numpy arrays to :code:`if_false` and :code:`if_true` keywords
         as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
-        Just pass `if_true=true_xda.data` inplace of `if_true=true_xda` and the same for `if_false`
+        Just pass :code:`if_true=true_xda.data` inplace of :code:`if_true=true_xda` and the same for :code:`if_false`
 
     .. code-block:: python
 
@@ -1239,9 +1231,9 @@ def where(
         Dimensions without coordinates: x, y
     Args:
         cond (scalar, array, Variable, DataArray or Dataset): Conditional array
-        if_true (scalar, array, Variable, DataArray or Dataset): What to do if `cond` is True
-        if_false (scalar, array, Variable, DataArray or Dataset):  What to do if `cond` is False
-        master_xda: Master `xr.DataArray` used to set the metadata and the nodata
+        if_true (scalar, array, Variable, DataArray or Dataset): What to do if :code:`cond` is True
+        if_false (scalar, array, Variable, DataArray or Dataset):  What to do if :code:`cond` is False
+        master_xda: Master :code:`xr.DataArray` used to set the metadata and the nodata
         new_name (str): New name of the array
 
     Returns:
@@ -1282,7 +1274,7 @@ def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XD
     - http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth angle in degrees
         zenith (float): Zenith angle in degrees
 
@@ -1305,9 +1297,9 @@ def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_
     NB: altitude = zenith
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster, its dataset, its `xarray` or a tuple containing its array and metadata
+        xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         in_pct (bool): Outputs slope in percents
-        in_rad (bool): Outputs slope in radians. Not taken into account if `in_pct == True`
+        in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 
     Returns:
         XDS_TYPE: Slope

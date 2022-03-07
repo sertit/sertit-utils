@@ -59,10 +59,10 @@ def exponential_backoff(
         max_wait (float): Maximum of time one will wait for the network request to perform successfully.
             If the maximum amount of time is reached a timeout exception is thrown.
         max_retries (int): Number of total tries to perform the network request.
-            Must be at least 2 and maximum `EXP_BACK_OFF_ABS_MAX_RETRIES`
+            Must be at least 2 and maximum :code:`EXP_BACK_OFF_ABS_MAX_RETRIES`
             (or 100 if the environment value is not defined). Recommended range [5 - 25].
-            If the value exceeds `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
-            The value will be set to `EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
+            If the value exceeds :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
+            The value will be set to :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
         desc (str): Description of the network request being attempted
         random_state (int): Seed to the random number generator (optional)
     """

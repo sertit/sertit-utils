@@ -81,7 +81,7 @@ def from_polygon_to_bounds(
     polygon: Union[Polygon, MultiPolygon]
 ) -> (float, float, float, float):
     """
-    Convert a `shapely.polygon` to its bounds, sorted as `left, bottom, right, top`.
+    Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
 
     .. code-block:: python
 
@@ -110,7 +110,7 @@ def from_bounds_to_polygon(
     left: float, bottom: float, right: float, top: float
 ) -> Polygon:
     """
-    Convert the bounds to a `shapely.polygon`.
+    Convert the bounds to a :code:`shapely.polygon`.
 
     .. code-block:: python
 
@@ -352,7 +352,7 @@ def read(
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
-    - if KML: sets correctly the drivers and open layered KML (you may need `ogr2ogr` to make it work !)
+    - if KML: sets correctly the drivers and open layered KML (you may need :code:`ogr2ogr` to make it work !)
     - if archive (only zip or tar), use a regex to look for the vector inside the archive.
         You can use this `site <https://regexr.com/>`_ to build your regex.
     - if GML: manages the empty errors

@@ -34,8 +34,8 @@ def str_to_bool(bool_str: str) -> bool:
 
     Accepted values (compared in lower case):
 
-    - `True` <=> `yes`, `true`, `t`, `1`
-    - `False` <=> `no`, `false`, `f`, `0`
+    - :code:`True` <=> :code:`yes`, :code:`true`, :code:`t`, :code:`1`
+    - :code:`False` <=> :code:`no`, :code:`false`, :code:`f`, :code:`0`
 
     .. code-block:: python
 
@@ -74,10 +74,10 @@ def str_to_verbosity(verbosity_str: str) -> int:
     """
     Return a logging level from a string (compared in lower case).
 
-    - `DEBUG`   <=> {`debug`, `d`, `10`}
-    - `INFO`    <=> {`info`, `i`, `20`}
-    - `WARNING` <=> {`warning`, `w`, `warn`}
-    - `ERROR`   <=> {`error`, `e`, `err`}
+    - :code:`DEBUG`   <=> {:code:`debug`, :code:`d`, :code:`10`}
+    - :code:`INFO`    <=> {:code:`info`, :code:`i`, :code:`20`}
+    - :code:`WARNING` <=> {:code:`warning`, :code:`w`, :code:`warn`}
+    - :code:`ERROR`   <=> {:code:`error`, :code:`e`, :code:`err`}
 
     .. code-block:: python
 
@@ -128,7 +128,7 @@ def str_to_list(
     list_str: Union[str, list], additional_separator: str = "", case: str = None
 ) -> list:
     """
-    Convert str to list with `,`, `;`, ` ` separators.
+    Convert str to list with :code:`,`, :code:`;`, :code:` ` separators.
 
     .. code-block:: python
 
@@ -137,7 +137,7 @@ def str_to_list(
 
     Args:
         list_str (Union[str, list]): List as a string
-        additional_separator (str): Additional separators. Base ones are `,`, `;`, ` `.
+        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:` `.
         case (str): {none, 'lower', 'upper'}
     Returns:
         list: A list from split string
@@ -177,7 +177,7 @@ def str_to_date(
     date_str: Union[str, datetime], date_format: str = DATE_FORMAT
 ) -> datetime:
     """
-    Convert string to a `datetime.datetime`.
+    Convert string to a :code:`datetime.datetime`.
 
     Also accepted date formats:
 
@@ -238,7 +238,7 @@ def str_to_list_of_dates(
     additional_separator: str = "",
 ) -> list:
     """
-    Convert a string containing a list of dates to a list of `datetime.datetime`.
+    Convert a string containing a list of dates to a list of :code:`datetime.datetime`.
 
     Also accepted date formats:
 
@@ -302,7 +302,7 @@ def to_cmd_string(unquoted_str: str) -> str:
 
 def snake_to_camel_case(snake_str: str) -> str:
     """
-    Convert a `snake_case` string to `CamelCase`.
+    Convert a :code:`snake_case` string to :code:`CamelCase`.
 
     .. code-block:: python
 
@@ -320,7 +320,7 @@ def snake_to_camel_case(snake_str: str) -> str:
 
 def camel_to_snake_case(snake_str: str) -> str:
     """
-    Convert a `CamelCase` string to `snake_case`.
+    Convert a :code:`CamelCase` string to :code:`snake_case`.
 
     .. code-block:: python
 

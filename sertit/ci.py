@@ -17,7 +17,7 @@
 """
 CI tools
 
-You can use `assert_raster_equal` only if you have installed sertit[full] or sertit[rasters]
+You can use :code:`assert_raster_equal` only if you have installed sertit[full] or sertit[rasters]
 """
 import filecmp
 import os
@@ -38,7 +38,7 @@ from sertit import vectors
 
 def get_mnt_path() -> str:
     """
-    Return mounting directory `/mnt`.
+    Return mounting directory :code::code:`/mnt`.
 
     .. WARNING::
         This won't work on Windows !
@@ -56,7 +56,7 @@ def get_mnt_path() -> str:
 
 def _get_db_path(db_nb=2) -> str:
     """
-    Return mounted directory `/mnt/ds2_db2` which corresponds to `/ds2/database02`.
+    Return mounted directory :code::code:`/mnt/ds2_db2` which corresponds to :code::code:`/ds2/database02`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -76,7 +76,7 @@ def _get_db_path(db_nb=2) -> str:
 
 def get_db2_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db2` which corresponds to `/ds2/database02`.
+    Return mounted directory :code::code:`/mnt/ds2_db2` which corresponds to :code::code:`/ds2/database02`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -94,7 +94,7 @@ def get_db2_path() -> str:
 
 def get_db3_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db3` which corresponds to `/ds2/database03`.
+    Return mounted directory :code::code:`/mnt/ds2_db3` which corresponds to :code::code:`/ds2/database03`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -112,7 +112,7 @@ def get_db3_path() -> str:
 
 def get_db4_path() -> str:
     """
-    Return mounted directory `/mnt/ds2_db4` which corresponds to `/ds2/database04`.
+    Return mounted directory :code:`/mnt/ds2_db4` which corresponds to :code:`/ds2/database04`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -198,7 +198,7 @@ def assert_raster_almost_equal(
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
 
-    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
+    Accepts an offset of :code:`1E{decimal}` on the array and a precision of 10^-9 on the transform
 
     Useful for pytests.
 
@@ -233,7 +233,7 @@ def assert_raster_max_mismatch(
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
 
-    Accepts an offset of `1E{decimal}` on the array and a precision of 10^-9 on the transform
+    Accepts an offset of :code:`1E{decimal}` on the array and a precision of 10^-9 on the transform
 
     Useful for pytests.
 

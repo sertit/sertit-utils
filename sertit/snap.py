@@ -90,7 +90,7 @@ def get_gpt_cli(
 
     Args:
         graph_path (str): Graph path
-        other_args (list): Other args as a list such as `['-Pfile="in_file.zip", '-Pout="out_file.dim"']`
+        other_args (list): Other args as a list such as :code:`['-Pfile="in_file.zip", '-Pout="out_file.dim"']`
         display_snap_opt (bool): Display SNAP options via --diag
 
     Returns:

@@ -155,7 +155,7 @@ def remove_empty_values(list_with_empty_values: list) -> list:
 
 def list_to_dict(dict_list: list) -> dict:
     """
-    Return a dictionary from a list `[key, value, key_2, value_2...]`
+    Return a dictionary from a list :code:`[key, value, key_2, value_2...]`
 
     .. code-block:: python
 

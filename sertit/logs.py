@@ -89,7 +89,7 @@ def create_logger(
     """
     Create file and stream logger at the wanted level for the given logger.
 
-    - If you have `colorlog` installed, it will produce colored logs.
+    - If you have :code:`colorlog` installed, it will produce colored logs.
     - If you do not give any output and name, it won't create any file logger
 
     It will also manage the log level of other specified logger that you give.

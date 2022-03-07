@@ -49,8 +49,8 @@ def get_root_path() -> Union[CloudPath, Path]:
     """
     Get the root path of the current disk:
 
-    - On Linux this returns `/`
-    - On Windows this returns `C:/` or whatever the current drive is
+    - On Linux this returns :code:`/`
+    - On Windows this returns :code:`C:/` or whatever the current drive is
 
     .. code-block:: python
 
@@ -65,7 +65,7 @@ def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
     """
     Get absolute path of all files in the given directory.
 
-    It is the same function than `os.listdir` but returning absolute paths.
+    It is the same function than :code:`os.listdir` but returning absolute paths.
 
     .. code-block:: python
 
@@ -139,7 +139,7 @@ def real_rel_path(
 ) -> Union[CloudPath, Path]:
     """
     Gives the real relative path from a starting folder.
-    (and not just adding `../..` between the start and the target)
+    (and not just adding :code:`../..` between the start and the target)
 
     .. code-block:: python
 
@@ -344,8 +344,8 @@ def get_archived_rio_path(
     """
     Get archived file path from inside the archive, to be read with rasterio:
 
-    - `zip+file://{zip_path}!{file_name}`
-    - `tar+file://{tar_path}!{file_name}`
+    - :code:`zip+file://{zip_path}!{file_name}`
+    - :code:`tar+file://{tar_path}!{file_name}`
 
 
     See `here <https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers>`_
@@ -355,7 +355,7 @@ def get_archived_rio_path(
         It wont be readable by pandas, geopandas or xmltree !
 
     .. WARNING::
-        If `as_list` is `False`, it will only return the first file matched !
+        If :code:`as_list` is :code:`False`, it will only return the first file matched !
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
@@ -416,7 +416,7 @@ def get_archived_rio_path(
 
 def read_archived_file(archive_path: Union[str, CloudPath, Path], regex: str) -> bytes:
     """
-    Read archived file (in bytes) from `zip` or `tar` archives.
+    Read archived file (in bytes) from :code:`zip` or :code:`tar` archives.
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
@@ -467,7 +467,7 @@ def read_archived_xml(
     archive_path: Union[str, CloudPath, Path], xml_regex: str
 ) -> etree._Element:
     """
-    Read archived XML from `zip` or `tar` archives.
+    Read archived XML from :code:`zip` or :code:`tar` archives.
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
@@ -494,7 +494,7 @@ def read_archived_html(
     archive_path: Union[str, CloudPath, Path], regex: str
 ) -> html.HtmlElement:
     """
-    Read archived HTML from `zip` or `tar` archives.
+    Read archived HTML from :code:`zip` or :code:`tar` archives.
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
@@ -535,7 +535,7 @@ def archive(
     Args:
         folder_path (Union[str, CloudPath, Path]): Folder to archive
         archive_path (Union[str, CloudPath, Path]): Archive path, with or without extension
-        fmt (str): Format of the archive, used by `shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
+        fmt (str): Format of the archive, used by :code:`shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
     Returns:
         str: Archive filename
     """
@@ -656,7 +656,7 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
 
 def remove(path: Union[str, CloudPath, Path]) -> None:
     """
-    Deletes a file or a directory (recursively) using `shutil.rmtree` or `os.remove`.
+    Deletes a file or a directory (recursively) using :code:`shutil.rmtree` or :code:`os.remove`.
 
     .. code-block:: python
 
@@ -724,7 +724,7 @@ def copy(
     src: Union[str, CloudPath, Path], dst: Union[str, CloudPath, Path]
 ) -> Union[CloudPath, Path]:
     """
-    Copy a file or a directory (recursively) with `copytree` or `copy2`.
+    Copy a file or a directory (recursively) with :code:`copytree` or :code:`copy2`.
 
     .. code-block:: python
 
@@ -855,7 +855,7 @@ class CustomDecoder(JSONDecoder):
     # - Method could be a function (no-self-use)
     def object_hook(self, obj: Any):
         """
-        Overload of object_hook function that deals with `datetime.datetime`
+        Overload of object_hook function that deals with :code:`datetime.datetime`
 
         Args:
             obj (dict): Dict containing objects to decode from JSON
@@ -1001,9 +1001,10 @@ def get_file_in_dir(
     """
     Get one or all matching files (pattern + extension) from inside a directory.
 
-    Note that the pattern is a regex with glob's convention, ie. `*pattern*`.
+    Note that the pattern is a regex with glob's convention, ie. :code:`*pattern*`.
 
-    If `exact_name` is `False`, the searched pattern will be `*{pattern}*.{extension}`, else `{pattern}.{extension}`.
+    If :code:`exact_name` is :code:`False`, the searched pattern will be :code:`*{pattern}*.{extension}`,
+    else :code:`{pattern}.{extension}`.
 
     .. code-block:: python
 
@@ -1029,10 +1030,10 @@ def get_file_in_dir(
     Args:
         directory (str): Directory where to find the files
         pattern_str (str): Pattern wanted as a string, with glob's convention.
-        extension (str): Extension wanted, optional. With or without point. (`yaml` or `.yaml` accepted)
+        extension (str): Extension wanted, optional. With or without point. (:code:`yaml` or :code:`.yaml` accepted)
         filename_only (bool): Get only the filename
         get_list (bool): Get the whole list of matching files
-        exact_name (bool): Get the exact name (without adding `*` before and after the given pattern)
+        exact_name (bool): Get the exact name (without adding :code:`*` before and after the given pattern)
 
     Returns:
         Union[CloudPath, Path, list]: File

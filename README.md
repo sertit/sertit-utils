@@ -15,7 +15,7 @@ Find the API documentation [**here**](https://sertit-utils.readthedocs.io/en/lat
 ## Pip
 For installing this library to your environment, please type this: `pip install sertit[full]`
 
-`[full]` will allow you to use the whole library, but you will need to install also`rioxarray` and `geopandas`
+`[full]` will allow you to use the whole library, but you will need to install also `rioxarray` and `geopandas`
 (with GDAL installation issues on Windows, so please install them from wheels that you can
 find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)).
 
