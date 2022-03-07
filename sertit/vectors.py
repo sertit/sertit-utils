@@ -354,7 +354,7 @@ def read(
     Read any vector:
     - if KML: sets correctly the drivers and open layered KML (you may need `ogr2ogr` to make it work !)
     - if archive (only zip or tar), use a regex to look for the vector inside the archive.
-        You can use this [site](https://regexr.com/) to build your regex.
+        You can use this `site <https://regexr.com/>`_ to build your regex.
     - if GML: manages the empty errors
 
     .. code-block:: python

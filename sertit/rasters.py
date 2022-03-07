@@ -428,7 +428,7 @@ def mask(
 
     Overload of rasterio mask function in order to create a `xarray`.
 
-    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
@@ -482,7 +482,7 @@ def paint(
     the value of the pixel will be set to nodata rather than to the wanted value.
 
     Overload of rasterio mask function in order to create a `xarray`.
-    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
 
     .. code-block:: python
 
@@ -543,8 +543,8 @@ def crop(
     Cropping a dataset:
     setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
 
-    Overload of [`rioxarray`
-    clip](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip)
+    Overload of
+    `rioxarray.clip <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip>`_
     function in order to create a masked_array.
 
     .. code-block:: python
@@ -608,9 +608,9 @@ def read(
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
 
-    Uses [rioxarray.open_rasterio](https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio).
+    Uses `rioxarray.open_rasterio <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
     For Dask usage, you can look at the
-    [rioxarray tutorial](https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html).
+    `rioxarray tutorial <https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html>`_.
 
     .. code-block:: python
 
@@ -707,16 +707,14 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
 
     Compress with `LZW` option by default. To disable it, add the `compress=None` parameter.
 
-    ```python
-    >>> raster_path = "path/to/raster.tif"
-    >>> raster_out = "path/to/out.tif"
 
-    >>> # Read raster
-    >>> xds = read(raster_path)
-
-    >>> # Rewrite it
-    >>> write(xds, raster_out)
-    ```
+    .. code-block:: python
+        >>> raster_path = "path/to/raster.tif"
+        >>> raster_out = "path/to/out.tif"
+        >>> # Read raster
+        >>> xds = read(raster_path)
+        >>> # Rewrite it
+        >>> write(xds, raster_out)
 
     Args:
         xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
@@ -1006,15 +1004,15 @@ def merge_gtiff(
         crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
-            More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
+            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>_
     """
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     """
-    Function found here:
-    https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types
+    Function found
+    `here <https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types>_
 
     .. code-block:: python
 

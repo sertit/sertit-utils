@@ -347,7 +347,8 @@ def get_archived_rio_path(
     - `zip+file://{zip_path}!{file_name}`
     - `tar+file://{tar_path}!{file_name}`
 
-    See [here](https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers)
+
+    See `here <https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers>`_
     for more information.
 
     .. WARNING::
@@ -356,7 +357,7 @@ def get_archived_rio_path(
     .. WARNING::
         If `as_list` is `False`, it will only return the first file matched !
 
-    You can use this [site](https://regexr.com/) to build your regex.
+    You can use this `site <https://regexr.com/>`_ to build your regex.
 
     .. code-block:: python
 
@@ -417,7 +418,7 @@ def read_archived_file(archive_path: Union[str, CloudPath, Path], regex: str) ->
     """
     Read archived file (in bytes) from `zip` or `tar` archives.
 
-    You can use this [site](https://regexr.com/) to build your regex.
+    You can use this `site <https://regexr.com/>`_ to build your regex.
 
     Args:
         archive_path (Union[str, CloudPath, Path]): Archive path
@@ -468,7 +469,7 @@ def read_archived_xml(
     """
     Read archived XML from `zip` or `tar` archives.
 
-    You can use this [site](https://regexr.com/) to build your regex.
+    You can use this `site <https://regexr.com/>`_ to build your regex.
 
     .. code-block:: python
 
@@ -495,7 +496,7 @@ def read_archived_html(
     """
     Read archived HTML from `zip` or `tar` archives.
 
-    You can use this [site](https://regexr.com/) to build your regex.
+    You can use this `site <https://regexr.com/>`_ to build your regex.
 
     .. code-block:: python
 

@@ -567,7 +567,7 @@ def _mask(
     """
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
 
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
@@ -621,7 +621,7 @@ def mask(
 
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
@@ -666,7 +666,7 @@ def crop(
 
     Overload of rasterio mask function in order to create a masked_array.
 
-    The `mask` function docs can be seen [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html).
+    The `mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     .. code-block:: python
@@ -1175,7 +1175,7 @@ def merge_gtiff(
         crs_paths (list): Path of the rasters to be merged with the same CRS)
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
-            More info [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge)
+            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
     # Open datasets for merging
     crs_datasets = []
