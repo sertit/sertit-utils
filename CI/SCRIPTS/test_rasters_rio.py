@@ -27,6 +27,8 @@ import shapely
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
 
+ci.reduce_verbosity()
+
 
 @s3_env
 def test_rasters_rio():

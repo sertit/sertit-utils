@@ -28,6 +28,8 @@ import xarray as xr
 from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
 from sertit import ci, files, rasters, vectors
 
+ci.reduce_verbosity()
+
 
 @s3_env
 @dask_env

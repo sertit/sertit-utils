@@ -25,6 +25,8 @@ from lxml import etree
 from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
 from sertit import ci, misc, rasters_rio, vectors
 
+ci.reduce_verbosity()
+
 
 @s3_env
 def test_assert_dir():

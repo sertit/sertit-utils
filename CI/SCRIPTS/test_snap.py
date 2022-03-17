@@ -21,7 +21,9 @@ import shutil
 
 import pytest
 
-from sertit import snap
+from sertit import ci, snap
+
+ci.reduce_verbosity()
 
 LOGGER = logging.getLogger("Test_logger")
 

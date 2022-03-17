@@ -20,7 +20,9 @@ import os
 import pytest
 
 from CI.SCRIPTS.script_utils import Polarization
-from sertit import misc
+from sertit import ci, misc
+
+ci.reduce_verbosity()
 
 
 def test_run_command():

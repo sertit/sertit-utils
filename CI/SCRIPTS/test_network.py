@@ -17,7 +17,9 @@
 """ Script testing the network.control """
 import pytest
 
-from sertit.network import exponential_backoff
+from sertit import ci, network
+
+ci.reduce_verbosity()
 
 
 class NetworkRequestMocker:
@@ -41,7 +43,7 @@ def test_network():
         mocker.network_request()  # Must raise
 
     with pytest.raises(TimeoutError):
-        exponential_backoff(
+        network.exponential_backoff(
             network_request=lambda: mocker.network_request(),
             wait_time_slot=0.05,
             increase_factor=2,
@@ -51,7 +53,7 @@ def test_network():
             random_state=0,
         )
 
-    resource = exponential_backoff(
+    resource = network.exponential_backoff(
         network_request=lambda: mocker.network_request(),
         wait_time_slot=0.05,
         increase_factor=2,

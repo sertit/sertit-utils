@@ -21,7 +21,9 @@ from datetime import date, datetime
 
 import pytest
 
-from sertit import strings
+from sertit import ci, strings
+
+ci.reduce_verbosity()
 
 
 def test_conversion():

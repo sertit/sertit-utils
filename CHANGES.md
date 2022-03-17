@@ -2,12 +2,19 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
-## 1.12.2 (2021-24-02)
+## 1.13.0 (2022-03-17)
+
+- **ENH: Adding a `reduce_verbosity` function in CI**
+- CI: Log debug when tests
+- DOC: Copyright to 2022
+- DOC: Some updates
+
+## 1.12.2 (2022-02-24)
 
 - CI: Test code only if files have changed
 - CI: Publishing wheel from GitHub instead of Gitlab
 
-## 1.12.1 (2021-24-02)
+## 1.12.1 (2022-02-24)
 
 - OPT: Do not `export_grid_mapping` when using `rioxarray.open_rasterio`
 - FIX: `vectors.shapes_to_gdf`: Fix geometry when converting to geopandas

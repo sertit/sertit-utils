@@ -15,8 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing the arcpy module """
-from sertit import arcpy
+from sertit import arcpy, ci
 
+ci.reduce_verbosity()
 
 # flake8: noqa
 def test_arcpy():

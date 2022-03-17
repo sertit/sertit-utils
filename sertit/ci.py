@@ -20,6 +20,7 @@ CI tools
 You can use :code:`assert_raster_equal` only if you have installed sertit[full] or sertit[rasters]
 """
 import filecmp
+import logging
 import os
 import pprint
 from doctest import Example
@@ -439,3 +440,15 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
     if not checker.check_output(str_1, str_2, 0):
         message = checker.output_difference(Example("", str_1), str_2, 0)
         raise AssertionError(message)
+
+
+def reduce_verbosity() -> None:
+    """ Reduce verbosity for other loggers """
+    logging.getLogger("boto3").setLevel(logging.WARNING)
+    logging.getLogger("botocore").setLevel(logging.WARNING)
+    logging.getLogger("shapely").setLevel(logging.WARNING)
+    logging.getLogger("fiona").setLevel(logging.WARNING)
+    logging.getLogger("rasterio").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("s3transfer").setLevel(logging.WARNING)
+    logging.getLogger("pyproj").setLevel(logging.WARNING)

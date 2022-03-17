@@ -28,6 +28,8 @@ from lxml import etree, html
 from CI.SCRIPTS.script_utils import Polarization, files_path, get_s3_ci_path, s3_env
 from sertit import ci, files, misc, vectors
 
+ci.reduce_verbosity()
+
 
 def test_paths():
     """Test path functions"""

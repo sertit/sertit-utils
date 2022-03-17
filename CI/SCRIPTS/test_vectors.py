@@ -22,6 +22,8 @@ from CI.SCRIPTS.script_utils import s3_env, vectors_path
 from sertit import ci, vectors
 from sertit.vectors import WGS84
 
+ci.reduce_verbosity()
+
 
 @s3_env
 def test_vectors():

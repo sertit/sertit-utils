@@ -22,8 +22,10 @@ import tempfile
 
 import colorlog as clog
 
-from sertit import logs
+from sertit import ci, logs
 from sertit.logs import LOGGING_FORMAT
+
+ci.reduce_verbosity()
 
 LOGGER = logging.getLogger("Test_logger")
 
