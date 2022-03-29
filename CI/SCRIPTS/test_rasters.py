@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing raster functions (with XARRAY) """
+import logging
 import os
 import shutil
 import tempfile
@@ -29,6 +30,27 @@ from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
 from sertit import ci, files, rasters, vectors
 
 ci.reduce_verbosity()
+
+
+def test_indexes(caplog):
+    @s3_env
+    @dask_env
+    def test_core():
+        raster_path = rasters_path().joinpath("raster.tif")
+        xda_1 = rasters.read(raster_path)
+        xda_5 = rasters.read(raster_path, indexes=1)
+
+        with pytest.raises(ValueError):
+            rasters.read(raster_path, indexes=0)
+
+        np.testing.assert_array_equal(xda_1, xda_5)
+
+        with caplog.at_level(logging.WARNING):
+            idx = [2, 3]
+            rasters.read(raster_path, indexes=idx)
+            assert f"Non available index: {idx}" in caplog.text
+
+    test_core()
 
 
 @s3_env
@@ -85,7 +107,7 @@ def test_rasters():
             xda_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
             xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
             xda_4 = rasters.read(raster_path, resolution=dst.res[0] / 2)
-            xda_5 = rasters.read(raster_path, indexes=1)
+
             xda_dask = rasters.read(raster_path, chunks=True)
 
             # Test shape (link between resolution and size)
@@ -106,7 +128,6 @@ def test_rasters():
             assert xda_1.rio.transform() == dst.transform
             np.testing.assert_array_equal(xda_1, xda_2)
             np.testing.assert_array_equal(xda_1, xda_3)
-            np.testing.assert_array_equal(xda_1, xda_5)
             np.testing.assert_array_equal(xda, xda_dask)
 
             # ----------------------------------------------------------------------------------------------

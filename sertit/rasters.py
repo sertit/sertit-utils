@@ -620,7 +620,7 @@ def read(
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
-        indexes (Union[int, list]): Indexes to load. Load the whole array if None.
+        indexes (Union[int, list]): Indexes to load. Load the whole array if None. Starts at 1.
         chunks (int, tuple or dict): Chunk sizes along each dimension, e.g., 5, (5, 5) or {'x': 5, 'y': 5}.
             If chunks is provided, it used to load the new DataArray into a dask array.
             Chunks can also be set to True or "auto" to choose sensible chunk sizes
@@ -640,11 +640,20 @@ def read(
                 dst, default_name=files.get_filename(dst.name), chunks=chunks, **kwargs
             ) as xda:
                 orig_dtype = xda.dtype
-                if indexes:
+                if indexes is not None:
                     if not isinstance(indexes, list):
                         indexes = [indexes]
 
                     # Open only wanted bands
+                    if 0 in indexes:
+                        raise ValueError("Indexes should start at 1.")
+
+                    ok_indexes = np.isin(indexes, xda.band)
+                    if any(~ok_indexes):
+                        LOGGER.warning(
+                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]}"
+                        )
+
                     xda = xda[np.isin(xda.band, indexes)]
 
                     try:

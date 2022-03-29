@@ -2,6 +2,8 @@
 
 ## 1.Y.Z (YYYY-MM-DD)
 
+- FIX: Add checks for indexes in `rasters.read`
+
 ## 1.13.0 (2022-03-17)
 
 - **ENH: Adding a `reduce_verbosity` function in CI**
