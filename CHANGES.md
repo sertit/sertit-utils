@@ -1,8 +1,9 @@
 # Release History
 
-## 1.Y.Z (YYYY-MM-DD)
+## 1.13.1(2020-04-11)
 
 - FIX: Add checks for indexes in `rasters.read`
+- FIX: Fix bug with nodata in `rasters._vectorize` and rasters without notdata set
 
 ## 1.13.0 (2022-03-17)
 

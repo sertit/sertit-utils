@@ -248,7 +248,7 @@ def _vectorize(
 
         # Get nodata array
         nodata_arr = rasters_rio.get_nodata_mask(
-            data, has_nodata=False, default_nodata=uint8_nodata
+            data, has_nodata=False, default_nodata=nodata
         )
 
         if data.dtype != np.uint8:
