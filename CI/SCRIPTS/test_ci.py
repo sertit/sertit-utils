@@ -25,7 +25,7 @@ from lxml import etree
 from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
 from sertit import ci, misc, rasters_rio, vectors
 
-ci.reduce_verbosity()
+ci.reduce_verbosity(other_loggers=["botocore"])
 
 
 @s3_env

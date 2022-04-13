@@ -1,6 +1,10 @@
 # Release History
 
-## 1.13.1(2020-04-11)
+## 1.13.2(2022-04-13)
+
+- FIX: Add other loggers to `ci.reduce_verbosity`
+
+## 1.13.1(2022-04-11)
 
 - FIX: Add checks for indexes in `rasters.read`
 - FIX: Fix bug with nodata in `rasters._vectorize` and rasters without notdata set

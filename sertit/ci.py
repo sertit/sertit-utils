@@ -442,13 +442,22 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
         raise AssertionError(message)
 
 
-def reduce_verbosity() -> None:
+def reduce_verbosity(other_loggers: list = None) -> None:
     """ Reduce verbosity for other loggers """
-    logging.getLogger("boto3").setLevel(logging.WARNING)
-    logging.getLogger("botocore").setLevel(logging.WARNING)
-    logging.getLogger("shapely").setLevel(logging.WARNING)
-    logging.getLogger("fiona").setLevel(logging.WARNING)
-    logging.getLogger("rasterio").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("s3transfer").setLevel(logging.WARNING)
-    logging.getLogger("pyproj").setLevel(logging.WARNING)
+    loggers = [
+        "boto3",
+        "botocore",
+        "shapely",
+        "fiona",
+        "rasterio",
+        "urllib3",
+        "s3transfer",
+        "pyproj",
+        "matplotlib",
+    ]
+    if other_loggers:
+        loggers += other_loggers
+
+    # Unique logger names
+    for logger in list(set(loggers)):
+        logging.getLogger(logger).setLevel(logging.WARNING)
