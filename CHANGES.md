@@ -1,5 +1,9 @@
 # Release History
 
+## 1.YY.ZZ(2022-MM-DD)
+
+- DOC: Remove `Use it like OTB SuperImpose` from documentation
+
 ## 1.13.2(2022-04-13)
 
 - FIX: Add other loggers to `ci.reduce_verbosity`

@@ -782,7 +782,6 @@ def collocate(
     Collocate two georeferenced arrays:
     forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
 
-    Use it like :code:`OTB SuperImpose`.
 
     .. code-block:: python
 
