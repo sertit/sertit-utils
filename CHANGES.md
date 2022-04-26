@@ -3,6 +3,7 @@
 ## 1.YY.ZZ(2022-MM-DD)
 
 - DOC: Remove `Use it like OTB SuperImpose` from documentation
+- DOC: Update theme
 
 ## 1.13.2(2022-04-13)
 
