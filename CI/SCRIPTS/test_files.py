@@ -133,9 +133,15 @@ def test_archived_files():
     targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
     sz_file = files_path().joinpath(f"{landsat_name}.7z")
 
-    # RASTERIO
+    # Archive file
     tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
+    tif_ok = f"{ok_folder.name}/{tif_name}"
     tif_regex = f".*{tif_name}"
+    assert tif_ok == files.get_archived_path(zip_file, tif_regex)
+    assert tif_ok == files.get_archived_path(zip_file, tif_regex, as_list=True)[0]
+    assert tif_ok == files.get_archived_path(tar_file, ".*RADSAT")
+
+    # RASTERIO
     tif_zip = files.get_archived_rio_path(zip_file, tif_regex)
     tif_list = files.get_archived_rio_path(zip_file, tif_regex, as_list=True)
     tif_tar = files.get_archived_rio_path(tar_file, ".*RADSAT")

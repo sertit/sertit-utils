@@ -1,7 +1,9 @@
 # Release History
 
-## 1.YY.ZZ(2022-MM-DD)
+## 1.14.0(2022-04-26)
 
+- **ENH: Add `get_archived_path` function in `files`**
+- FIX: Add `errno.EINVAL` error in `files.is_writable`
 - DOC: Remove `Use it like OTB SuperImpose` from documentation
 - DOC: Update theme
 

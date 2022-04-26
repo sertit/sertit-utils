@@ -338,6 +338,51 @@ def get_archived_file_list(archive_path: Union[str, CloudPath, Path]) -> list:
     return file_list
 
 
+def get_archived_path(
+    archive_path: Union[str, CloudPath, Path], file_regex: str, as_list: bool = False
+) -> Union[list, CloudPath, Path]:
+    """
+    Get archived file path from inside the archive.
+
+    .. WARNING::
+        If :code:`as_list` is :code:`False`, it will only return the first file matched !
+
+    You can use this `site <https://regexr.com/>`_ to build your regex.
+
+    .. code-block:: python
+
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> path = get_archived_path(arch_path, file_regex)
+        'dir/filename.tif'
+
+    Args:
+        archive_path (Union[str, CloudPath, Path]): Archive path
+        file_regex (str): File regex (used by re) as it can be found in the getmembers() list
+        as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
+
+    Returns:
+        Union[list, str]: Path from inside the zipfile
+    """
+    # Get file list
+    archive_path = AnyPath(archive_path)
+    file_list = get_archived_file_list(archive_path)
+
+    # Search for file
+    regex = re.compile(file_regex)
+    archived_band_paths = list(filter(regex.match, file_list))
+    if not archived_band_paths:
+        raise FileNotFoundError(
+            f"Impossible to find file {file_regex} in {get_filename(archive_path)}"
+        )
+
+    # Convert to str if needed
+    if not as_list:
+        archived_band_paths = archived_band_paths[0]
+
+    return archived_band_paths
+
+
 def get_archived_rio_path(
     archive_path: Union[str, CloudPath, Path], file_regex: str, as_list: bool = False
 ) -> Union[list, CloudPath, Path]:
@@ -376,10 +421,6 @@ def get_archived_rio_path(
     Returns:
         Union[list, str]: Band path that can be read by rasterio
     """
-    # Get file list
-    archive_path = AnyPath(archive_path)
-    file_list = get_archived_file_list(archive_path)
-
     if archive_path.suffix in [".tar", ".zip"]:
         prefix = archive_path.suffix[-3:]
     elif archive_path.suffix == ".tar.gz":
@@ -390,28 +431,23 @@ def get_archived_rio_path(
         raise TypeError("Only .zip and .tar files can be read from inside its archive.")
 
     # Search for file
-    regex = re.compile(file_regex)
-    archived_band_path = list(filter(regex.match, file_list))
-    if not archived_band_path:
-        raise FileNotFoundError(
-            f"Impossible to find file {file_regex} in {get_filename(archive_path)}"
-        )
+    archived_band_paths = get_archived_path(archive_path, file_regex, as_list=True)
 
     # Convert to rio path
     if isinstance(archive_path, CloudPath):
-        archived_band_path = [
-            f"{prefix}+file+{archive_path}!{path}" for path in archived_band_path
+        archived_band_paths = [
+            f"{prefix}+file+{archive_path}!{path}" for path in archived_band_paths
         ]
     else:
-        archived_band_path = [
-            f"{prefix}+file://{archive_path}!{path}" for path in archived_band_path
+        archived_band_paths = [
+            f"{prefix}+file://{archive_path}!{path}" for path in archived_band_paths
         ]
 
     # Convert to str if needed
     if not as_list:
-        archived_band_path = archived_band_path[0]
+        archived_band_paths = archived_band_paths[0]
 
-    return archived_band_path
+    return archived_band_paths
 
 
 def read_archived_file(archive_path: Union[str, CloudPath, Path], regex: str) -> bytes:
@@ -1120,7 +1156,8 @@ def is_writable(dir_path: Union[str, CloudPath, Path]):
             errno.EEXIST,
             errno.EROFS,
             errno.ENOENT,
-        ]:  # 2, 13, 17, 30
+            errno.EINVAL,
+        ]:  # 2, 13, 17, 30, 22
             return False
         e.filename = dir_path
         raise
