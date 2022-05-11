@@ -1,5 +1,9 @@
 # Release History
 
+## 1.14.1(2022-05-11)
+
+- FIX: Manage `nodata` keyword in `rasters_rio`
+
 ## 1.14.0(2022-04-26)
 
 - **ENH: Add `get_archived_path` function in `files`**

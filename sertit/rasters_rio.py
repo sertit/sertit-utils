@@ -810,8 +810,17 @@ def write(
     out_meta = meta.copy()
 
     # Update raster to be sure to write down correct nodata pixels
+    nodata = kwargs.get("nodata")
+    if nodata is None:
+        nodata = meta.get("nodata")
+        if nodata is None:
+            if isinstance(raster_out, np.ma.masked_array):
+                nodata = raster_out.fill_value
+
     if isinstance(raster_out, np.ma.masked_array):
-        raster_out[raster_out.mask] = raster_out.fill_value
+        raster_out[raster_out.mask] = nodata
+
+    out_meta["nodata"] = nodata
 
     # Force compression and driver (but can be overwritten by kwargs)
     out_meta["driver"] = "GTiff"
