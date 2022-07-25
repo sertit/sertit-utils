@@ -2,8 +2,9 @@
 
 ## 1.15.0 (2022-MM-DD)
 
-- **ENH: Creating a `make_valid` function base on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
-- **ENH: Creating a `reproject_match` function base on rioxarray's [#3](https://git.unistra.fr/sertit/sertit-utils/-/issues/3)**
+- **ENH: Creating a `make_valid` function based on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
+- **ENH: Creating a `reproject_match` function based on rioxarray's [#3](https://git.unistra.fr/sertit/sertit-utils/-/issues/3)**
+- **ENH: Creating a `rasterize` function base on rasterio's [#5](https://git.unistra.fr/sertit/sertit-utils/-/issues/5)**
 
 ## 1.14.1(2022-05-11)
 

@@ -183,6 +183,43 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
 
 
 @path_xarr_dst
+def rasterize(
+    xds: PATH_XARR_DS,
+    vector: Union[gpd.GeoDataFrame, Path, CloudPath, str],
+    value_field: str = None,
+    default_nodata: int = 0,
+    **kwargs,
+) -> XDS_TYPE:
+    """
+    Rasterize a vector into raster format.
+
+    Note that passing `merge_alg = MergeAlg.add` will add the vector values to the given a raster
+
+    See: https://pygis.io/docs/e_raster_rasterize.html
+
+    Args:
+        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        vector (Union[gpd.GeoDataFrame, Path, CloudPath, str]): Vector to be rasterized
+        value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
+        default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
+
+    Returns:
+        XDS_TYPE: Rasterized vector
+    """
+    # Use classic option
+    arr, meta = rasters_rio.rasterize(
+        xds, vector, value_field, default_nodata, **kwargs
+    )
+    if len(arr.shape) != 3:
+        arr = np.expand_dims(arr, axis=0)
+
+    # Change nodata
+    rasterized_xds = xds.copy(data=arr)
+    rasterized_xds = set_nodata(rasterized_xds, nodata_val=meta["nodata"])
+    return rasterized_xds
+
+
+@path_xarr_dst
 def _vectorize(
     xds: PATH_XARR_DS,
     values: Union[None, int, list] = None,

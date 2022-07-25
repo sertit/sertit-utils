@@ -338,6 +338,70 @@ def get_nodata_mask(
 
 
 @path_arr_dst
+def rasterize(
+    dst: PATH_ARR_DS,
+    vector: Union[gpd.GeoDataFrame, Path, CloudPath, str],
+    value_field: str = None,
+    default_nodata: int = 0,
+    default_value: int = 1,
+    **kwargs,
+) -> (np.ma.masked_array, dict):
+    """
+    Rasterize a vector into raster format.
+
+    Note that passing `merge_alg = MergeAlg.add` will add the vector values to the given a raster
+
+    See: https://pygis.io/docs/e_raster_rasterize.html
+
+    Args:
+        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        vector (Union[gpd.GeoDataFrame, Path, CloudPath, str]): Vector to be rasterized
+        value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary (`default_nodata`, `default_value`).
+        default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
+        default_value (int): Used as value for all geometries, if `value_field` not provided
+
+    Returns:
+        np.ma.masked_array, dict: Rasterized vector and its metadata
+    """
+    if not isinstance(vector, gpd.GeoDataFrame):
+        vector = vectors.read(vector)
+
+    # Manage nodata
+    if dst.nodata:
+        nodata = dst.nodata
+    else:
+        nodata = default_nodata
+
+    # Manage vector values
+    if value_field:
+        geom_value = (
+            (geom, value) for geom, value in zip(vector.geometry, vector[value_field])
+        )
+        dtype = kwargs.pop("dtype", vector[value_field].dtype)
+    else:
+        geom_value = vector.geometry
+        dtype = kwargs.pop("dtype", np.uint8)
+
+    # Rasterize vector
+    mask = features.rasterize(
+        geom_value,
+        out_shape=(dst.height, dst.width),
+        fill=nodata,  # Outside vector
+        default_value=default_value,  # Inside vector
+        transform=dst.transform,
+        dtype=dtype,
+        all_touched=kwargs.get("all_touched", True),
+        **kwargs,
+    )
+
+    meta = dst.meta.copy()
+    meta["dtype"] = dtype
+    meta["nodata"] = nodata
+
+    return mask, meta
+
+
+@path_arr_dst
 def _vectorize(
     dst: PATH_ARR_DS,
     values: Union[None, int, list] = None,

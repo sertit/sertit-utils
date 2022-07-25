@@ -268,3 +268,29 @@ def test_reproj():
                 rasters_rio.write(dst_arr, dst_meta, path_out)
 
                 ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)
+
+
+@s3_env
+def test_rasterize():
+    """ Test rasterize fct """
+    vec_path = rasters_path().joinpath("vector.geojson")
+    raster_path = rasters_path().joinpath("raster.tif")
+    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
+    raster_true_path = rasters_path().joinpath("rasterized.tif")
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Binary vector
+        out_bin_path = os.path.join(tmp_dir, "out_bin.tif")
+        rast_bin, bin_meta = rasters_rio.rasterize(raster_path, vec_path)
+        rasters_rio.write(rast_bin, bin_meta, out_bin_path)
+
+        ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
+
+        # Vector
+        out_path = os.path.join(tmp_dir, "out.tif")
+        rast, meta = rasters_rio.rasterize(
+            raster_path, vec_path, "raster_val", dtype=np.uint8
+        )
+        rasters_rio.write(rast, meta, out_path)
+
+        ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
