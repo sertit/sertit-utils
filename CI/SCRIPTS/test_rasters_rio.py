@@ -246,8 +246,8 @@ def test_reproj():
     raster_path = rasters_path().joinpath("raster.tif")
     reproj_path = rasters_path().joinpath("reproj_out.tif")
 
-    with rasterio.open(dem_path) as src:
-        with rasterio.open(raster_path) as dst:
+    with rasterio.open(str(dem_path)) as src:
+        with rasterio.open(str(raster_path)) as dst:
             dst_arr, dst_meta = rasters_rio.reproject_match(
                 dst.meta, src.read(), src.meta
             )
