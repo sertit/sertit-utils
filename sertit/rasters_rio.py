@@ -1400,28 +1400,63 @@ def slope(
     return slope_msk, meta
 
 
-# def _horn(arr, res_x, res_y):
-#     """
-#           0 1 2
-#           3 4 5
-#           6 7 8
-#
-#     Args:
-#         arr:
-#
-#     Returns:
-#
-#     """
-#     arr_0 = np.pad(arr, ((0, 1), (0, 1)), mode='constant')[1:, 1:]
-#     arr_1 = np.pad(arr, ((0, 1), (0, 0)), mode='constant')[1:, :]
-#     arr_2 = np.pad(arr, ((0, 1), (1, 0)), mode='constant')[1:, :-1]
-#     arr_3 = np.pad(arr, ((0, 0), (0, 1)), mode='constant')[:, 1:]
-#     arr_5 = np.pad(arr, ((0, 0), (1, 0)), mode='constant')[:, :-1]
-#     arr_6 = np.pad(arr, ((1, 0), (0, 1)), mode='constant')[:-1, 1:]
-#     arr_7 = np.pad(arr, ((1, 0), (0, 0)), mode='constant')[:-1, :]
-#     arr_8 = np.pad(arr, ((1, 0), (1, 0)), mode='constant')[:-1, :-1]
-#
-#     dy = ((arr_0 + 2 * arr_3 + arr_6) - (arr_2 + 2 * arr_5 + arr_8)) / res_y / 8.0
-#     dx = ((arr_6 + 2 * arr_7 + arr_8) - (arr_0 + 2 * arr_1 + arr_2)) / res_x / 8.0
-#
-#     return dx, dy
+def reproject_match(
+    dst_meta: dict,
+    src_arr: Union[np.ma.masked_array, np.ndarray],
+    src_meta: dict,
+    resampling: Resampling = Resampling.nearest,
+    **kwargs,
+) -> (Union[np.ma.masked_array, np.ndarray], dict):
+    """
+    Reproject a raster to match the resolution, projection, and region of another raster.
+
+    Matching rioxarray reproject_match.
+
+    Args:
+        dst_meta (dict): Destination metadata
+        src_arr (Union[np.ma.masked_array, np.ndarray]): Source raster's array
+        src_meta (dict): Source metadata
+        resampling (Resampling): Resampling method
+        **kwargs: Passing other kwargs to `calculate_default_transform` and `reproject`
+
+    Returns:
+        Union[np.ma.masked_array, np.ndarray], dict: Reprojected array and its metadata
+    """
+
+    # Source metadata
+    src_crs = src_meta["crs"]
+    src_count = src_meta["count"]
+    src_dtype = src_meta["dtype"]
+    src_nodata = src_meta["nodata"]
+
+    # Destination metadata
+    dst_crs = dst_meta["crs"]
+    meta = dst_meta.copy()
+
+    # Reproject data
+    dst_arr = np.empty(
+        (src_count, dst_meta["height"], dst_meta["width"]), dtype=src_dtype
+    )
+    dst_arr, dst_tr = warp.reproject(
+        source=src_arr,
+        destination=dst_arr,
+        src_crs=src_crs,
+        dst_crs=dst_crs,
+        src_transform=src_meta["transform"],
+        dst_transform=dst_meta["transform"],
+        src_nodata=src_nodata,
+        dst_nodata=dst_meta["nodata"],  # input data should be in integer
+        num_threads=MAX_CORES,
+        resampling=resampling,
+        **kwargs,
+    )
+
+    # Update metadata
+    meta["count"] = src_count
+    meta["nodata"] = src_nodata
+    meta["dtype"] = src_dtype
+    meta["transform"] = dst_tr
+    meta["crs"] = dst_crs
+    meta["driver"] = "GTiff"  # Force GTiff
+
+    return dst_arr, meta

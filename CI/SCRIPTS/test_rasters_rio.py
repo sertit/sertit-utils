@@ -235,3 +235,36 @@ def test_dem_fct():
         ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
         ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
         ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
+
+
+@s3_env
+def test_reproj():
+    """ Test reproject fct """
+    dem_path = rasters_path().joinpath(
+        "Copernicus_DSM_10_N43_00_W003_00_DEM_resampled.tif"
+    )
+    raster_path = rasters_path().joinpath("raster.tif")
+    reproj_path = rasters_path().joinpath("reproj_out.tif")
+
+    with rasterio.open(dem_path) as src:
+        with rasterio.open(raster_path) as dst:
+            dst_arr, dst_meta = rasters_rio.reproject_match(
+                dst.meta, src.read(), src.meta
+            )
+
+            # from dst
+            assert dst.meta["driver"] == dst_meta["driver"]
+            assert dst.meta["width"] == dst_meta["width"]
+            assert dst.meta["height"] == dst_meta["height"]
+            assert dst.meta["transform"] == dst_meta["transform"]
+
+            # from src
+            assert src.meta["count"] == dst_meta["count"]
+            assert src.meta["nodata"] == dst_meta["nodata"]
+            assert src.meta["dtype"] == dst_meta["dtype"]
+
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                path_out = os.path.join(tmp_dir, "out.tif")
+                rasters_rio.write(dst_arr, dst_meta, path_out)
+
+                ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)

@@ -2,7 +2,8 @@
 
 ## 1.15.0 (2022-MM-DD)
 
-- **ENH: Creating a make_valid function base on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
+- **ENH: Creating a `make_valid` function base on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
+- **ENH: Creating a `reproject_match` function base on rioxarray's [#3](https://git.unistra.fr/sertit/sertit-utils/-/issues/3)**
 
 ## 1.14.1(2022-05-11)
 
@@ -22,7 +23,7 @@
 ## 1.13.1(2022-04-11)
 
 - FIX: Add checks for indexes in `rasters.read`
-- FIX: Fix bug with nodata in `rasters._vectorize` and rasters without notdata set
+- FIX: Fix bug with nodata in `rasters._vectorize` and rasters without nodata set
 
 ## 1.13.0 (2022-03-17)
 
