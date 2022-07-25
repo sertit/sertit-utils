@@ -408,23 +408,8 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, dst.crs)
 
-    try:
-        geos_logger = logging.getLogger("shapely.geos")
-        previous_level = geos_logger.level
-        geos_logger.setLevel(logging.CRITICAL)
-        from shapely.validation import make_valid
-
-        # Discard self-intersection and null geometries
-        gdf.geometry = gdf.geometry.apply(make_valid)
-        geos_logger.setLevel(previous_level)
-    except ImportError:
-        import shapely
-
-        LOGGER.warning(
-            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
-            f"The obtained vector may be broken !"
-        )
-        pass
+    # Return valid geometries
+    gdf = vectors.make_valid(gdf)
 
     # Dissolve if needed
     if dissolve:
@@ -817,6 +802,7 @@ def write(
             if isinstance(raster_out, np.ma.masked_array):
                 nodata = raster_out.fill_value
 
+    # TODO: change this with rasterio 1.3.0 (masked option in write)
     if isinstance(raster_out, np.ma.masked_array):
         raster_out[raster_out.mask] = nodata
 

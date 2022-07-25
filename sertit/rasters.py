@@ -268,23 +268,8 @@ def _vectorize(
     # Convert to geodataframe
     gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
 
-    try:
-        geos_logger = logging.getLogger("shapely.geos")
-        previous_level = geos_logger.level
-        geos_logger.setLevel(logging.CRITICAL)
-        from shapely.validation import make_valid
-
-        # Discard self-intersection and null geometries
-        gdf.geometry = gdf.geometry.apply(make_valid)
-        geos_logger.setLevel(previous_level)
-    except ImportError:
-        import shapely
-
-        LOGGER.warning(
-            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
-            f"The obtained vector may be broken !"
-        )
-        pass
+    # Return valid geometries
+    gdf = vectors.make_valid(gdf)
 
     # Dissolve if needed
     if dissolve:
@@ -584,6 +569,7 @@ def read(
     masked: bool = True,
     indexes: Union[int, list] = None,
     chunks: Union[int, tuple, dict] = None,
+    as_type: Any = None,
     **kwargs,
 ) -> XDS_TYPE:
     """
@@ -625,6 +611,7 @@ def read(
             If chunks is provided, it used to load the new DataArray into a dask array.
             Chunks can also be set to True or "auto" to choose sensible chunk sizes
             according to dask.config.get("array.chunk-size").
+        as_type (Any): Type in which to load the array
         **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
     Returns:
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
@@ -678,6 +665,11 @@ def read(
                             shape=(new_height, new_width),
                             resampling=resampling,
                         )
+
+                if as_type:
+                    # Modify the type as wanted by the user
+                    # TODO: manage nodata and uint/int numbers
+                    xda = xda.astype(as_type)
 
                 if masked:
                     # Set nodata not in opening due to some performance issues

@@ -86,6 +86,14 @@ def test_vectors():
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2], aoi.crs)
 
+    # Test make_valid
+    broken_geom_path = vectors_path().joinpath("broken_geom.shp")
+    broken_geom = vectors.read(broken_geom_path)
+    assert len(broken_geom[~broken_geom.is_valid]) == 1
+    valid = vectors.make_valid(broken_geom, verbose=True)
+    assert len(valid[~valid.is_valid]) == 0
+    assert len(valid) == len(broken_geom)
+
 
 @s3_env
 def test_gml():

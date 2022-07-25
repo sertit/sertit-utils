@@ -1,5 +1,9 @@
 # Release History
 
+## 1.15.0 (2022-MM-DD)
+
+- **ENH: Creating a make_valid function base on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
+
 ## 1.14.1(2022-05-11)
 
 - FIX: Manage `nodata` keyword in `rasters_rio`

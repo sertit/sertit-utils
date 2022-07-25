@@ -328,22 +328,8 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     # Convert to geodataframe with correct geometry
     gdf = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
-    try:
-        geos_logger = logging.getLogger("shapely.geos")
-        previous_level = geos_logger.level
-        geos_logger.setLevel(logging.CRITICAL)
-        from shapely.validation import make_valid
-
-        # Discard self-intersection and null geometries
-        gdf.geometry = gdf.geometry.apply(make_valid)
-        geos_logger.setLevel(previous_level)
-    except ImportError:
-        import shapely
-
-        LOGGER.warning(
-            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
-            f"The obtained vector may be broken !"
-        )
+    # Return valid geometries
+    gdf = make_valid(gdf)
 
     return gdf
 
@@ -511,3 +497,30 @@ def read(
         tmp_dir.cleanup()
 
     return vect
+
+
+def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
+    try:
+        geos_logger = logging.getLogger("shapely.geos")
+        previous_level = geos_logger.level
+        if verbose:
+            logging.debug("Invalid geometries:\n" f"\t{gdf[~gdf.is_valid]}")
+        else:
+            geos_logger.setLevel(logging.CRITICAL)
+
+        # Discard self-intersection and null geometries
+        from shapely.validation import make_valid
+
+        gdf.geometry = gdf.geometry.apply(make_valid)
+
+        if not verbose:
+            geos_logger.setLevel(previous_level)
+    except ImportError:
+        import shapely
+
+        LOGGER.warning(
+            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
+            f"The obtained vector may be broken !"
+        )
+
+    return gdf
