@@ -5,6 +5,7 @@
 - **ENH: Creating a `vectors.make_valid` function based on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
 - **ENH: Creating a `rasters_rio.reproject_match` function based on rioxarray's [#3](https://git.unistra.fr/sertit/sertit-utils/-/issues/3)**
 - **ENH: Creating a `rasters(_rio).rasterize` function base on rasterio's [#5](https://git.unistra.fr/sertit/sertit-utils/-/issues/5)**
+- OPTIM: Do not copy array whith `rasters.set_nodata`
 
 ## 1.14.1(2022-05-11)
 
