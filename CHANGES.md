@@ -1,6 +1,6 @@
 # Release History
 
-## 1.15.0 (2022-MM-DD)
+## 1.15.0 (2022-08-24)
 
 - **ENH: Creating a `vectors.make_valid` function based on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**
 - **ENH: Creating a `rasters_rio.reproject_match` function based on rioxarray's [#3](https://git.unistra.fr/sertit/sertit-utils/-/issues/3)**
