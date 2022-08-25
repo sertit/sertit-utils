@@ -19,6 +19,7 @@
 import argparse
 import logging
 import re
+import uuid
 from datetime import date, datetime
 from typing import Union
 
@@ -336,3 +337,26 @@ def camel_to_snake_case(snake_str: str) -> str:
     return "".join(["_" + c.lower() if c.isupper() else c for c in snake_str]).lstrip(
         "_"
     )
+
+
+def is_uuid(uuid_string, version=4):
+    """
+    Check if uuid_string is a valid UUID
+
+    Args:
+        uuid_string (str): UUID to be tested
+        version (int): 4 (default), UUID version
+
+    Returns:
+        bool: Valid UUID or not
+    """
+    if not 1 <= version <= 5:
+        raise ValueError(
+            f"Illegal version number: {version} (should be between 1 and 5)"
+        )
+
+    try:
+        uid = uuid.UUID(str(uuid_string), version=version)
+        return uid.hex == uuid_string.replace("-", "")
+    except ValueError:
+        return False

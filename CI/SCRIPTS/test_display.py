@@ -52,3 +52,13 @@ def test_display():
     np.testing.assert_array_equal(scaled_2d, arr_2d[0, ...])
     np.testing.assert_array_equal(scaled_3d, arr_3d)
     np.testing.assert_almost_equal(scaled_3d_m, arr_3d_m)  # Almost here
+
+    # Scale to uint8
+    scaled_uint8_2d = display.scale_to_uint8(stack[0, ...])
+    scaled_uint8_3d = display.scale_to_uint8(stack)
+
+    assert scaled_uint8_2d.dtype == scaled_uint8_3d.dtype == np.uint8
+    np.testing.assert_array_equal(
+        scaled_uint8_2d, (arr_2d[0, ...] * 254 + 1).astype(np.uint8)
+    )
+    np.testing.assert_array_equal(scaled_uint8_3d, (arr_3d * 254 + 1).astype(np.uint8))

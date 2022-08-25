@@ -81,3 +81,26 @@ def test_str():
     tstr = "ThisIsATest"
     assert strings.snake_to_camel_case(strings.camel_to_snake_case(tstr)) == tstr
     assert strings.to_cmd_string(tstr) == f'"{tstr}"'
+
+
+def test_uuid():
+    """Test string function"""
+    is_uuid_4 = "d0910ba4-9ed9-409a-8527-e40b581bf0c2"
+    is_uuid_1 = "78d31fbe-2454-11ed-b256-7b4fd196c4c5"
+    is_not_uuid = "random"
+
+    assert strings.is_uuid(is_uuid_4, 4)
+
+    for i in [1, 2, 3, 5]:
+        assert not strings.is_uuid(is_uuid_4, i)
+
+    assert not strings.is_uuid(is_uuid_1, 4)
+
+    for i in [2, 3, 4, 5]:
+        assert not strings.is_uuid(is_uuid_1, i)
+
+    for i in range(1, 5):
+        assert not strings.is_uuid(is_not_uuid, i)
+
+    with pytest.raises(ValueError):
+        assert not strings.is_uuid(is_uuid_4, 8)

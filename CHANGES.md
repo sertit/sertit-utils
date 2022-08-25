@@ -1,5 +1,9 @@
 # Release History
 
+## 1.16.0 (2022-MM-DD)
+
+- **ENH: Adding useful AXA utils functions (`display.scale_to_uint8` and `strings.is_uuid`) [#2](https://git.unistra.fr/sertit/sertit-utils/-/issues/2)**
+
 ## 1.15.0 (2022-08-24)
 
 - **ENH: Creating a `vectors.make_valid` function based on shapely's [#6](https://git.unistra.fr/sertit/sertit-utils/-/issues/6)**

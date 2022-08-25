@@ -23,7 +23,9 @@ import numpy as np
 import numpy.ma
 
 
-def scale(array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2):
+def scale(
+    array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2
+) -> Union[np.ndarray, numpy.ma.masked_array]:
     """
     Scale a raster given as a np.ndarray between 0 and 1.
 
@@ -82,3 +84,26 @@ def scale(array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2):
         f_arr = np.ma.masked_array(f_arr, mask=array.mask, fill_value=array.fill_value)
 
     return f_arr
+
+
+def scale_to_uint8(
+    array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2
+) -> Union[np.ndarray, numpy.ma.masked_array]:
+    """
+    Rescale array (read as rasterio arrays, which means the bands are the first dimension) to uint8.
+    0 will be the nodata.
+
+    Args:
+        arr (numpy array): Array to rescale
+
+    Returns:
+        numpy array: Rescaled array from 0 to 255 saved in uint8
+    """
+    # Convert it to uint8
+    scaled_arr = (scale(array) * 254 + 1).astype(np.uint8)
+    scaled_arr = np.where(array.mask, 0, scaled_arr)
+
+    if isinstance(array, np.ma.masked_array):
+        scaled_arr = np.ma.masked_array(scaled_arr, mask=array.mask, fill_value=0)
+
+    return scaled_arr
