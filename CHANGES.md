@@ -1,8 +1,9 @@
 # Release History
 
-## 1.16.0 (2022-MM-DD)
+## 1.16.0 (2022-08-26)
 
 - **ENH: Adding useful AXA utils functions (`display.scale_to_uint8` and `strings.is_uuid`) [#2](https://git.unistra.fr/sertit/sertit-utils/-/issues/2)**
+- OTHER: Log stack path when missing index in `rasters.read`
 
 ## 1.15.0 (2022-08-24)
 

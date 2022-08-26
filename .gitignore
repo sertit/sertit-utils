@@ -19,3 +19,6 @@ dist
 
 # Vectors
 *.gfs
+
+# dask
+dask-worker-space/*

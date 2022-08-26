@@ -675,7 +675,7 @@ def read(
                     ok_indexes = np.isin(indexes, xda.band)
                     if any(~ok_indexes):
                         LOGGER.warning(
-                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]}"
+                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {dst.name}"
                         )
 
                     xda = xda[np.isin(xda.band, indexes)]
