@@ -189,7 +189,10 @@ def set_kml_driver() -> None:
         [1 rows x 12 columns]
 
     """
-    drivers = gpd.io.file.fiona.drvsupport.supported_drivers
+    import fiona
+
+    drivers = fiona.drvsupport.supported_drivers
+
     if "LIBKML" not in drivers:
         drivers["LIBKML"] = "rw"
     if "KML" not in drivers:  # Just in case

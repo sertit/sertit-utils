@@ -1,5 +1,9 @@
 # Release History
 
+## 1.16.1 (2022-08-30)
+
+- FIX: Do not call fiona drivers through geopandas in `vectors.set_kml_driver`
+
 ## 1.16.0 (2022-08-26)
 
 - **ENH: Adding useful AXA utils functions (`display.scale_to_uint8` and `strings.is_uuid`) [#2](https://git.unistra.fr/sertit/sertit-utils/-/issues/2)**
