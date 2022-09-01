@@ -1,5 +1,9 @@
 # Release History
 
+## 1.YY.ZZ (2022-MM-DD)
+
+- FIX: Fixing pandas FutureWarning `The frame.append method is deprecated and will be removed from pandas in a future version.`
+
 ## 1.16.1 (2022-08-30)
 
 - FIX: Do not call fiona drivers through geopandas in `vectors.set_kml_driver`

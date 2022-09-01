@@ -442,7 +442,7 @@ def read(
                     if not vect_layer.empty:
                         # KML files are always in WGS84 (and does not contain this information)
                         vect_layer.crs = WGS84
-                        vect = vect.append(vect_layer, ignore_index=True)
+                        vect = pd.concat([vect, vect_layer])
                 except ValueError:
                     pass  # Except Null Layer
 
