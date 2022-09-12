@@ -9,7 +9,7 @@ variables:
   EO_CONTAINER: $REGISTRY_GITLAB/eo-containers/python
 
 lint:
-  image: python:3.7-buster
+  image: python:3.8-buster
   stage: lint
   script:
     - python -m pip install --upgrade pip
@@ -19,7 +19,7 @@ lint:
     - tags
 
 pytest:
-  image: $EEO_DEPS:latest
+  image: $EEO_DEPS:38
   stage: test
   before_script:
     - python -m pip install --upgrade pip
@@ -39,20 +39,6 @@ pytest:
         - .gitlab-ci.yml
         - pytest.ini
   needs: [ "lint" ]
-
-tox-linux-3.7:on-schedule:
-  image: $EO_CONTAINER:3.7
-  stage: weekly_tests
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install tox
-  script:
-    - tox -c tox.ini -e py37
-  tags:
-    - sertit
-    - linux
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
 tox-linux-3.8:on-schedule:
   image: $EO_CONTAINER:3.8

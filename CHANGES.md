@@ -5,6 +5,7 @@
 - FIX: Allow BIGTIFF in memfiles
 - FIX: Do not import `rasterio` and `geopandas` for `ci` functions that don't need it
 - FIX: Fixing pandas FutureWarning `The frame.append method is deprecated and will be removed from pandas in a future version.`
+- DEPS: Drop support of Python 3.7
 
 ## 1.16.1 (2022-08-30)
 
