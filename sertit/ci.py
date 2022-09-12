@@ -27,6 +27,7 @@ from doctest import Example
 from pathlib import Path
 from typing import Union
 
+import geopandas as gpd
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
@@ -324,8 +325,8 @@ def assert_dir_equal(
 
 
 def assert_geom_equal(
-    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
-    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
+    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
+    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
 ) -> None:
     """
     Assert that two geometries are equal
@@ -349,12 +350,7 @@ def assert_geom_equal(
         geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
         geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
     """
-    try:
-        import geopandas as gpd
-    except ModuleNotFoundError as ex:
-        raise ModuleNotFoundError(
-            "Please install 'geopandas' to use assert_geom_equal."
-        ) from ex
+
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
@@ -379,8 +375,8 @@ def assert_geom_equal(
 
 
 def assert_geom_almost_equal(
-    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
-    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
+    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
+    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
     decimal=9,
 ) -> None:
     """
@@ -406,12 +402,6 @@ def assert_geom_almost_equal(
         geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
         decimal (int): Number of decimal
     """
-    try:
-        import geopandas as gpd
-    except ModuleNotFoundError as ex:
-        raise ModuleNotFoundError(
-            "Please install 'geopandas' to use assert_geom_equal."
-        ) from ex
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
