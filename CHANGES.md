@@ -1,6 +1,6 @@
 # Release History
 
-## 1.16.2 (2022-09-12)
+## 1.17.0 (2022-09-12)
 
 - FIX: Allow BIGTIFF in memfiles
 - FIX: Do not import `rasterio` and `geopandas` for `ci` functions that don't need it
