@@ -107,7 +107,7 @@ def path_arr_dst(function: Callable) -> Callable:
         elif isinstance(path_or_arr_or_ds, tuple):
             arr, meta = path_or_arr_or_ds
             with MemoryFile() as memfile:
-                with memfile.open(**meta) as dst:
+                with memfile.open(**meta, BIGTIFF="IF_NEEDED") as dst:
                     dst.write(arr)
                     out = function(dst, *args, **kwargs)
         else:
@@ -128,7 +128,7 @@ def path_arr_dst(function: Callable) -> Callable:
                         "transform": path_or_arr_or_ds.rio.transform(),
                     }
                     with MemoryFile() as memfile:
-                        with memfile.open(**meta) as dst:
+                        with memfile.open(**meta, BIGTIFF="IF_NEEDED") as dst:
                             xds = path_or_arr_or_ds.copy()
                             if xds.rio.encoded_nodata is not None:
                                 xds = xds.fillna(xds.rio.encoded_nodata)

@@ -2,6 +2,7 @@
 
 ## 1.YY.ZZ (2022-MM-DD)
 
+- FIX: Allow BIGTIFF in memfiles
 - FIX: Do not import `rasterio` and `geopandas` for `ci` functions that don't need it
 - FIX: Fixing pandas FutureWarning `The frame.append method is deprecated and will be removed from pandas in a future version.`
 
