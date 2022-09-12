@@ -27,9 +27,7 @@ from doctest import Example
 from pathlib import Path
 from typing import Union
 
-import geopandas as gpd
 import numpy as np
-import rasterio
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
@@ -183,6 +181,13 @@ def assert_raster_equal(
         path_1 (Union[str, CloudPath, Path]): Raster 1
         path_2 (Union[str, CloudPath, Path]): Raster 2
     """
+    try:
+        import rasterio
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' to use assert_raster_equal."
+        ) from ex
+
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
             # Metadata
@@ -215,6 +220,12 @@ def assert_raster_almost_equal(
         path_2 (Union[str, CloudPath, Path]): Raster 2
         decimal (int): Number of decimal
     """
+    try:
+        import rasterio
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' to use assert_raster_almost_equal."
+        ) from ex
 
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
@@ -250,6 +261,12 @@ def assert_raster_max_mismatch(
         path_2 (Union[str, CloudPath, Path]): Raster 2
         max_mismatch_pct (float): Maximum of element mismatch in %
     """
+    try:
+        import rasterio
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' to use assert_raster_max_mismatch."
+        ) from ex
 
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
@@ -307,8 +324,8 @@ def assert_dir_equal(
 
 
 def assert_geom_equal(
-    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
-    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
+    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
 ) -> None:
     """
     Assert that two geometries are equal
@@ -329,9 +346,15 @@ def assert_geom_equal(
          - CRS
 
     Args:
-        geom_1 (gpd.GeoDataFrame): Geometry 1
-        geom_2 (gpd.GeoDataFrame): Geometry 2
+        geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
+        geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
     """
+    try:
+        import geopandas as gpd
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'geopandas' to use assert_geom_equal."
+        ) from ex
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
@@ -356,8 +379,8 @@ def assert_geom_equal(
 
 
 def assert_geom_almost_equal(
-    geom_1: Union[str, CloudPath, Path, gpd.GeoDataFrame],
-    geom_2: Union[str, CloudPath, Path, gpd.GeoDataFrame],
+    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
+    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],  # noqa
     decimal=9,
 ) -> None:
     """
@@ -379,10 +402,17 @@ def assert_geom_almost_equal(
          - CRS
 
     Args:
-        geom_1 (gpd.GeoDataFrame): Geometry 1
-        geom_2 (gpd.GeoDataFrame): Geometry 2
+        geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
+        geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
         decimal (int): Number of decimal
     """
+    try:
+        import geopandas as gpd
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'geopandas' to use assert_geom_equal."
+        ) from ex
+
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
