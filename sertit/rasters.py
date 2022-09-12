@@ -30,7 +30,7 @@ from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
 from sertit.logs import SU_NAME
-from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, path_arr_dst
+from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, bigtiff_value, path_arr_dst
 
 try:
     import geopandas as gpd
@@ -786,10 +786,7 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
         xds.attrs.pop("_FillValue")
 
     # Bigtiff if needed
-    if xds.data.size * xds.data.itemsize / 1024 / 1024 / 1024 > 4:
-        bigtiff = "YES"
-    else:
-        bigtiff = "IF_NEEDED"
+    bigtiff = bigtiff_value(xds)
 
     # Manage tiles
     if "tiled" not in kwargs:

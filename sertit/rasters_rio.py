@@ -54,6 +54,31 @@ LOGGER = logging.getLogger(SU_NAME)
 DEG_2_RAD = np.pi / 180
 
 
+def bigtiff_value(arr: Any) -> str:
+    """
+    Returns YES if array is larger than 4 GB, IF_NEEDED otherwise.
+
+    Args:
+        arr (Any): Numpy array or xarray
+
+    Returns:
+        str: YES or IF_NEEDED
+
+    """
+    try:
+        itemsize = arr.itemsize
+    except AttributeError:
+        itemsize = arr.data.itemsize
+
+    # Check size
+    if arr.size * itemsize / 1024 / 1024 / 1024 > 4:
+        bigtiff = "YES"
+    else:
+        bigtiff = "IF_NEEDED"
+
+    return bigtiff
+
+
 def path_arr_dst(function: Callable) -> Callable:
     """
     Path, :code:`xarray`, (array, metadata) or dataset decorator.
@@ -107,7 +132,7 @@ def path_arr_dst(function: Callable) -> Callable:
         elif isinstance(path_or_arr_or_ds, tuple):
             arr, meta = path_or_arr_or_ds
             with MemoryFile() as memfile:
-                with memfile.open(**meta, BIGTIFF="IF_NEEDED") as dst:
+                with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as dst:
                     dst.write(arr)
                     out = function(dst, *args, **kwargs)
         else:
@@ -117,6 +142,7 @@ def path_arr_dst(function: Callable) -> Callable:
                 import xarray as xr
 
                 if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
+
                     meta = {
                         "driver": "GTiff",
                         "dtype": path_or_arr_or_ds.dtype,
@@ -128,11 +154,14 @@ def path_arr_dst(function: Callable) -> Callable:
                         "transform": path_or_arr_or_ds.rio.transform(),
                     }
                     with MemoryFile() as memfile:
-                        with memfile.open(**meta, BIGTIFF="IF_NEEDED") as dst:
-                            xds = path_or_arr_or_ds.copy()
-                            if xds.rio.encoded_nodata is not None:
-                                xds = xds.fillna(xds.rio.encoded_nodata)
-                            dst.write(xds.data)
+                        with memfile.open(
+                            **meta, BIGTIFF=bigtiff_value(path_or_arr_or_ds)
+                        ) as dst:
+                            if path_or_arr_or_ds.rio.encoded_nodata is not None:
+                                path_or_arr_or_ds = path_or_arr_or_ds.fillna(
+                                    path_or_arr_or_ds.rio.encoded_nodata
+                                )
+                            dst.write(path_or_arr_or_ds.data)
                             out = function(dst, *args, **kwargs)
             except ModuleNotFoundError:
                 out = None
@@ -879,10 +908,7 @@ def write(
     out_meta["compress"] = kwargs.get("compress", "lzw")
 
     # Bigtiff if needed (more than 4Go)
-    if raster_out.size * raster_out.itemsize / 1024 / 1024 / 1024 > 4:
-        out_meta["BIGTIFF"] = "YES"
-    else:
-        out_meta["BIGTIFF"] = "IF_NEEDED"  # Should be the default but just to be sure
+    out_meta["BIGTIFF"] = bigtiff_value(raster_out)
 
     # Set more threads
     out_meta["NUM_THREADS"] = MAX_CORES

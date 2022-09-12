@@ -1,5 +1,10 @@
 # Release History
 
+## 1.17.1 (2022-09-12)
+
+- FIX: Set `BIGTIFF=YES` when needed in memfile (`IF_NEEDED` is not sufficient)
+- OPTIM: Reduce memory usage when passing xarrays to `rasters_rio` functions
+
 ## 1.17.0 (2022-09-12)
 
 - FIX: Allow BIGTIFF in memfiles
