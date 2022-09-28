@@ -1,5 +1,19 @@
 # Release History
 
+## 1.18.0 (2022-09-28)
+
+- Add a `xml` folder grouping some helpers for `lxml.etree` such as:
+  - `read`
+  - `read_archive`
+  - `write`
+  - `add`
+  - `remove`
+  - `update_attrib`
+  - `update_txt`
+  - `update_txt_fct`
+  - `convert_to_xml`
+  - `df_to_xml`
+
 ## 1.17.1 (2022-09-12)
 
 - FIX: Set `BIGTIFF=YES` when needed in memfile (`IF_NEEDED` is not sufficient)

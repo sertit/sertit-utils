@@ -143,3 +143,7 @@ def files_path():
 
 def display_path():
     return get_ci_data_path().joinpath("display")
+
+
+def xml_path():
+    return get_ci_data_path().joinpath("xml")
