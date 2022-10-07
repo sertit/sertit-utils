@@ -21,7 +21,7 @@ import logging
 import re
 import uuid
 from datetime import date, datetime
-from typing import Union
+from typing import Any, Union
 
 from sertit.logs import SU_NAME
 
@@ -272,7 +272,7 @@ def str_to_list_of_dates(
     return list_of_dates
 
 
-def to_cmd_string(unquoted_str: str) -> str:
+def to_cmd_string(unquoted_str: Any) -> str:
     """
     Add quotes around the string in order to make the command understand it's a string
     (useful with tricky symbols like :code:`&` or white spaces):

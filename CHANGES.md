@@ -1,5 +1,10 @@
 # Release History
 
+## 1.18.1 (2022-10-07)
+
+- FIX: Enabling the option of absolute or relative paths in `rasters(_rio).merge_vrt`
+- FIX: Fix issue with too long command line with `rasters(_rio).merge_vrt` (VRT with too much files)
+
 ## 1.18.0 (2022-09-28)
 
 - Add a `xml` folder grouping some helpers for `lxml.etree` such as:

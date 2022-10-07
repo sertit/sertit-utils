@@ -21,6 +21,7 @@ You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 import logging
 import os
+import tempfile
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -1158,7 +1159,10 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
 
 def merge_vrt(
-    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+    crs_paths: list,
+    crs_merged_path: Union[str, CloudPath, Path],
+    abs_path: bool = False,
+    **kwargs,
 ) -> None:
     """
     Merge rasters as a VRT. Uses :code:`gdalbuildvrt`.
@@ -1185,8 +1189,14 @@ def merge_vrt(
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS)
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
+    if abs_path:
+        path_fct = files.to_abspath
+    else:
+        path_fct = files.real_rel_path
+
     # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
     crs_paths_cp = crs_paths.copy()
 
@@ -1208,20 +1218,32 @@ def merge_vrt(
     vrt_root = os.path.dirname(crs_merged_path)
     try:
         rel_paths = [
-            strings.to_cmd_string(str(files.real_rel_path(path, vrt_root)))
-            for path in crs_paths_cp
+            strings.to_cmd_string(path_fct(path, vrt_root)) for path in crs_paths_cp
         ]
-        rel_vrt = strings.to_cmd_string(
-            str(files.real_rel_path(crs_merged_path, vrt_root))
-        )
+        rel_vrt = strings.to_cmd_string(path_fct(crs_merged_path, vrt_root))
     except ValueError:
-        rel_paths = crs_paths_cp
-        rel_vrt = crs_merged_path
+        # ValueError when crs_merged_path and crs_paths are not on the same disk
+        rel_paths = [strings.to_cmd_string(str(path)) for path in crs_paths_cp]
+        rel_vrt = strings.to_cmd_string(str(crs_merged_path))
 
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
-    vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
-    misc.run_cli(vrt_cmd, cwd=vrt_root)
+    try:
+        vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
+        misc.run_cli(vrt_cmd, cwd=vrt_root)
+
+    except RuntimeError:
+        # Manage too long command line
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_file = os.path.join(tmp_dir, "list.txt")
+            with open(tmp_file, "w+") as f:
+                for path in rel_paths:
+                    path = path.replace('"', "")
+                    f.write(f"{path}\n")
+
+            vrt_cmd = ["gdalbuildvrt", "-input_file_list", tmp_file, rel_vrt, *arg_list]
+
+            misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
 def merge_gtiff(

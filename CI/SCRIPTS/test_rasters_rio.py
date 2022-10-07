@@ -180,6 +180,11 @@ def test_vrt():
         )
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
+        rasters_rio.merge_vrt(
+            [raster_path, raster_to_merge_path], raster_merged_vrt_out, abs_path=True
+        )
+        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+
 
 def test_dim():
     """Test on BEAM-DIMAP function"""

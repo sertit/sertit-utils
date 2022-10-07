@@ -973,7 +973,10 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
 
 
 def merge_vrt(
-    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+    crs_paths: list,
+    crs_merged_path: Union[str, CloudPath, Path],
+    abs_path: bool = False,
+    **kwargs,
 ) -> None:
     """
     Merge rasters as a VRT. Uses :code:`gdalbuildvrt`.
@@ -1000,9 +1003,10 @@ def merge_vrt(
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
-    return rasters_rio.merge_vrt(crs_paths, crs_merged_path, **kwargs)
+    return rasters_rio.merge_vrt(crs_paths, crs_merged_path, abs_path, **kwargs)
 
 
 def merge_gtiff(
