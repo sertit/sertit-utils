@@ -339,6 +339,9 @@ def test_vrt():
         raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
         rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+
+        os.remove(raster_merged_vrt_out)
+
         rasters.merge_vrt(
             [raster_path, raster_to_merge_path], raster_merged_vrt_out, abs_path=True
         )

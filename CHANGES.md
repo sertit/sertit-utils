@@ -1,5 +1,9 @@
 # Release History
 
+## 1.18.2 (2022-10-07)
+
+- FIX: Fixing absolute paths for non-existing files in `rasters(_rio).merge_vrt`
+
 ## 1.18.1 (2022-10-07)
 
 - FIX: Enabling the option of absolute or relative paths in `rasters(_rio).merge_vrt`

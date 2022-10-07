@@ -1192,11 +1192,6 @@ def merge_vrt(
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
-    if abs_path:
-        path_fct = files.to_abspath
-    else:
-        path_fct = files.real_rel_path
-
     # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
     crs_paths_cp = crs_paths.copy()
 
@@ -1217,19 +1212,29 @@ def merge_vrt(
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
     try:
-        rel_paths = [
-            strings.to_cmd_string(path_fct(path, vrt_root)) for path in crs_paths_cp
-        ]
-        rel_vrt = strings.to_cmd_string(path_fct(crs_merged_path, vrt_root))
+        if abs_path:
+            paths = [
+                strings.to_cmd_string(files.real_rel_path(path, vrt_root))
+                for path in crs_paths_cp
+            ]
+            vrt_path = strings.to_cmd_string(
+                files.real_rel_path(crs_merged_path, vrt_root)
+            )
+        else:
+            paths = [
+                strings.to_cmd_string(files.to_abspath(path)) for path in crs_paths_cp
+            ]
+            vrt_path = strings.to_cmd_string(crs_merged_path.resolve())
+
     except ValueError:
         # ValueError when crs_merged_path and crs_paths are not on the same disk
-        rel_paths = [strings.to_cmd_string(str(path)) for path in crs_paths_cp]
-        rel_vrt = strings.to_cmd_string(str(crs_merged_path))
+        paths = [strings.to_cmd_string(str(path)) for path in crs_paths_cp]
+        vrt_path = strings.to_cmd_string(str(crs_merged_path))
 
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
     try:
-        vrt_cmd = ["gdalbuildvrt", rel_vrt, *rel_paths, *arg_list]
+        vrt_cmd = ["gdalbuildvrt", vrt_path, *paths, *arg_list]
         misc.run_cli(vrt_cmd, cwd=vrt_root)
 
     except RuntimeError:
@@ -1237,11 +1242,17 @@ def merge_vrt(
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_file = os.path.join(tmp_dir, "list.txt")
             with open(tmp_file, "w+") as f:
-                for path in rel_paths:
+                for path in paths:
                     path = path.replace('"', "")
                     f.write(f"{path}\n")
 
-            vrt_cmd = ["gdalbuildvrt", "-input_file_list", tmp_file, rel_vrt, *arg_list]
+            vrt_cmd = [
+                "gdalbuildvrt",
+                "-input_file_list",
+                tmp_file,
+                vrt_path,
+                *arg_list,
+            ]
 
             misc.run_cli(vrt_cmd, cwd=vrt_root)
 
