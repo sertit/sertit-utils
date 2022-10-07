@@ -1214,17 +1214,17 @@ def merge_vrt(
     try:
         if abs_path:
             paths = [
+                strings.to_cmd_string(files.to_abspath(path)) for path in crs_paths_cp
+            ]
+            vrt_path = strings.to_cmd_string(crs_merged_path.resolve())
+        else:
+            paths = [
                 strings.to_cmd_string(files.real_rel_path(path, vrt_root))
                 for path in crs_paths_cp
             ]
             vrt_path = strings.to_cmd_string(
                 files.real_rel_path(crs_merged_path, vrt_root)
             )
-        else:
-            paths = [
-                strings.to_cmd_string(files.to_abspath(path)) for path in crs_paths_cp
-            ]
-            vrt_path = strings.to_cmd_string(crs_merged_path.resolve())
 
     except ValueError:
         # ValueError when crs_merged_path and crs_paths are not on the same disk
