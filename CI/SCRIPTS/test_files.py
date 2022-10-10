@@ -227,6 +227,9 @@ def test_get_file_name():
     file_name = files.get_filename(__file__ + "/")
     assert file_name == "test_files"
 
+    file = "/fkjzeh-r_éfertg.tar.gz"
+    assert file[1:] == files.get_filename(file) + "." + files.get_ext(file)
+
 
 def test_cp_rm():
     """Test CP/RM functions"""

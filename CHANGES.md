@@ -1,7 +1,9 @@
 # Release History
 
-## 1.18.4 (2022-10-10)
+## 1.19.0 (2022-10-10)
 
+- **ENH: Add a `files.get_ext` function to mirror `get_filename`**
+- **ENH: Add a `vectors.ogr2geojson` function to convert tricky vector files to GeoJSON using OGR fallbacks**
 - FIX: Handling GML CRS errors (i.e. with `urn:ogc:def:derivedCRSType`) with some GDAL versions
 
 ## 1.18.3 (2022-10-07)
@@ -19,7 +21,7 @@
 
 ## 1.18.0 (2022-09-28)
 
-- Add a `xml` folder grouping some helpers for `lxml.etree` such as:
+- **ENH: Add a `xml` folder grouping some helpers for `lxml.etree`** such as:
   - `read`
   - `read_archive`
   - `write`

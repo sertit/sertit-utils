@@ -690,6 +690,29 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
     return file_path.name.split(".")[0]
 
 
+def get_ext(file_path: Union[str, CloudPath, Path]) -> str:
+    """
+    Get file extension from file path, ie:
+    WITHOUT THE FIRST POINT
+
+    .. code-block:: python
+
+        >>> file_path = 'D:/path/to/filename.zip'
+        >>> get_file_name(file_path)
+        'zip'
+
+    Args:
+        file_path (Union[str, CloudPath, Path]): Absolute or relative file path (the file doesn't need to exist)
+
+    Returns:
+        str: File name (without extension)
+    """
+    file_path = AnyPath(file_path)
+
+    # We need to avoid splitext because of nested extensions such as .tar.gz
+    return ".".join(file_path.name.split(".")[1:])
+
+
 def remove(path: Union[str, CloudPath, Path]) -> None:
     """
     Deletes a file or a directory (recursively) using :code:`shutil.rmtree` or :code:`os.remove`.

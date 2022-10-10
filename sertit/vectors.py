@@ -525,7 +525,8 @@ def ogr2geojson(
         vect_path = str(path)
 
     vect_path_gj = os.path.join(
-        out_dir, os.path.basename(vect_path).replace(path.suffix, ".geojson")
+        out_dir,
+        os.path.basename(vect_path).replace(files.get_ext(vect_path), "geojson"),
     )
     cmd_line = [
         "ogr2ogr",
