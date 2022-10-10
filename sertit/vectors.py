@@ -33,6 +33,7 @@ import numpy as np
 import pandas as pd
 from cloudpathlib import AnyPath, CloudPath
 from cloudpathlib.exceptions import AnyPathTypeError
+from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 
 from sertit import files, misc, strings
@@ -448,35 +449,12 @@ def read(
 
             # Workaround for archived KML -> they may be empty
             # Convert KML to GeoJSON
-            if vect.empty and shutil.which("ogr2ogr"):  # Needs ogr2ogr here
+            # Needs ogr2ogr here
+            if vect.empty and shutil.which("ogr2ogr"):
+                # Open the geojson
                 if not tmp_dir:
                     tmp_dir = tempfile.TemporaryDirectory()
-                if path.suffix == ".zip":
-                    with zipfile.ZipFile(path, "r") as zip_ds:
-                        vect_path = zip_ds.extract(arch_vect_path, tmp_dir.name)
-                elif path.suffix == ".tar":
-                    with tarfile.open(path, "r") as tar_ds:
-                        tar_ds.extract(arch_vect_path, tmp_dir.name)
-                        vect_path = os.path.join(tmp_dir.name, arch_vect_path)
-
-                vect_path_gj = os.path.join(
-                    tmp_dir.name, os.path.basename(vect_path).replace("kml", "geojson")
-                )
-                cmd_line = [
-                    "ogr2ogr",
-                    "-fieldTypeToString DateTime",  # Disable warning
-                    "-f GeoJSON",
-                    strings.to_cmd_string(vect_path_gj),  # dst
-                    strings.to_cmd_string(vect_path),  # src
-                ]
-                try:
-                    misc.run_cli(cmd_line)
-                except RuntimeError as ex:
-                    raise RuntimeError(
-                        f"Something went wrong with ogr2ogr: {ex}"
-                    ) from ex
-
-                # Open the geojson
+                vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
                 vect = gpd.read_file(vect_path_gj)
             else:
                 vect.crs = WGS84  # Force set CRS to whole vector
@@ -494,12 +472,74 @@ def read(
         if "Null layer" not in str(ex):
             LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
+    except CPLE_AppDefinedError as ex:
+        # Needs ogr2ogr here
+        if shutil.which("ogr2ogr"):
+            # Open as geojson
+            if not tmp_dir:
+                tmp_dir = tempfile.TemporaryDirectory()
+            vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
+            vect = gpd.read_file(vect_path_gj)
+            vect.crs = None
+        else:
+            # Do not print warning for null layer
+            if "Null layer" not in str(ex):
+                LOGGER.warning(ex)
+            vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
     # Clean
     if tmp_dir:
         tmp_dir.cleanup()
 
     return vect
+
+
+def ogr2geojson(
+    path: Union[str, CloudPath, Path],
+    out_dir: Union[str, CloudPath, Path],
+    arch_vect_path: str = None,
+) -> str:
+    """
+    Wrapper of ogr2ogr function, converting the input vector to GeoJSON.
+
+    Args:
+        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        out_dir (Union[str, CloudPath, Path]): Output directory
+        arch_vect_path: If archived vector, archive path
+
+    Returns:
+        str: Converted file
+    """
+    assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
+
+    out_dir = str(out_dir)
+
+    if path.suffix == ".zip":
+        with zipfile.ZipFile(path, "r") as zip_ds:
+            vect_path = zip_ds.extract(arch_vect_path, out_dir)
+    elif path.suffix == ".tar":
+        with tarfile.open(path, "r") as tar_ds:
+            tar_ds.extract(arch_vect_path, out_dir)
+            vect_path = os.path.join(out_dir, arch_vect_path)
+    else:
+        vect_path = str(path)
+
+    vect_path_gj = os.path.join(
+        out_dir, os.path.basename(vect_path).replace(path.suffix, ".geojson")
+    )
+    cmd_line = [
+        "ogr2ogr",
+        "-fieldTypeToString DateTime",  # Disable warning
+        "-f GeoJSON",
+        strings.to_cmd_string(vect_path_gj),  # dst
+        strings.to_cmd_string(vect_path),  # src
+    ]
+    try:
+        misc.run_cli(cmd_line)
+    except RuntimeError as ex:
+        raise RuntimeError(f"Something went wrong with ogr2ogr: {ex}") from ex
+
+    return vect_path_gj
 
 
 def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:

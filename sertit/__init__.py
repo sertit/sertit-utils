@@ -20,7 +20,7 @@
 .. include:: ../README.md
 """
 
-__version__ = "1.18.3"
+__version__ = "1.18.4"
 __title__ = "sertit"
 __description__ = ("SERTIT python library for generic tools",)
 __author__ = "ICube-SERTIT"

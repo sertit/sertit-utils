@@ -1,5 +1,9 @@
 # Release History
 
+## 1.18.4 (2022-10-10)
+
+- FIX: Handling GML CRS errors (i.e. with `urn:ogc:def:derivedCRSType`) with some GDAL versions
+
 ## 1.18.3 (2022-10-07)
 
 - FIX: Fixing absolute paths for non-existing files in `rasters(_rio).merge_vrt` (again)

@@ -114,5 +114,5 @@ def test_gml():
     ci.assert_geom_equal(not_empty, not_empty_true)
 
     # Naive
-    naive = vectors.read(naive_gml, crs=None)
+    naive = vectors.read(naive_gml)
     assert naive.crs is None
