@@ -43,6 +43,7 @@ LOGGER = logging.getLogger(SU_NAME)
 def read(path: Union[str, Path, CloudPath]) -> _Element:
     """
     Read an XML file, even stored on the cloud
+
     Args:
         path (Union[str, Path, CloudPath]): Path to the XML file
 
@@ -104,7 +105,8 @@ def read_archive(path: Union[str, Path, CloudPath], regex: str = None) -> _Eleme
 
 def write(xml: _Element, path: str) -> None:
     """
-    Write an Element to didsk
+    Write an Element to disk
+
     Args:
         xml (_Element): XML root
         path (str): Path where to write the XML file
@@ -225,6 +227,7 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
 def df_to_xml(src_ds: Any) -> _Element:
     """
     Convert a pd.DataFrame or similar (which has a .to_xml() function) to a lxml _Element
+
     Args:
         src_ds:
 
@@ -234,8 +237,17 @@ def df_to_xml(src_ds: Any) -> _Element:
     return fromstring(bytes(src_ds.to_xml(index=False), UTF_8))
 
 
-def to_string(xml) -> str:
-    """"""
+def to_string(xml: _Element) -> str:
+    """
+    Convert XMl root to string
+
+    Args:
+        xml (_Element): Root XML
+
+    Returns:
+        str: XML as a string
+
+    """
     return tostring(
         xml, pretty_print=True, xml_declaration=True, encoding=UTF_8
     ).decode(UTF_8)
