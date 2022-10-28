@@ -374,6 +374,7 @@ def test_write():
             with rasterio.open(test_path) as ds:
                 assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
                 assert ds.meta["nodata"] == nodata_val
+                assert ds.read()[:, 0, 0] == nodata_val  # Check value
 
 
 def test_dim():

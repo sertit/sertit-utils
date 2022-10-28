@@ -1,5 +1,9 @@
 # Release History
 
+## 1.19.1 (2022-10-28)
+
+- FIX: Fixing nodata value in `rasters.write`
+
 ## 1.19.0 (2022-10-10)
 
 - **ENH: Add a `files.get_ext` function to mirror `get_filename`**

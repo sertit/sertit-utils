@@ -763,6 +763,7 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
         # Convert to numpy dtype
         if isinstance(dtype, str):
             dtype = getattr(np, dtype)
+        xds.encoding["dtype"] = dtype
 
         if dtype == np.uint8:
             xds.encoding["_FillValue"] = 255
@@ -776,6 +777,7 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
             raise ValueError(
                 f"Invalid dtype: {dtype}, should be convertible to numpy dtypes"
             )
+    xds = xds.copy(data=xds.fillna(xds.encoding["_FillValue"]))
 
     # Default compression to LZW
     if "compress" not in kwargs:
