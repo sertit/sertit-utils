@@ -751,20 +751,20 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
         path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
     """
+    if "dtype" in kwargs:
+        dtype = kwargs["dtype"]
+    else:
+        dtype = xds.dtype
+
+    # Convert to numpy dtype
+    if isinstance(dtype, str):
+        dtype = getattr(np, dtype)
+    xds.encoding["dtype"] = dtype
+
     if "nodata" in kwargs:
         xds.encoding["_FillValue"] = kwargs.pop("nodata")
     else:
         # Manage default nodata in function of dtype (default, for float = -9999)
-        if "dtype" in kwargs:
-            dtype = kwargs["dtype"]
-        else:
-            dtype = xds.dtype
-
-        # Convert to numpy dtype
-        if isinstance(dtype, str):
-            dtype = getattr(np, dtype)
-        xds.encoding["dtype"] = dtype
-
         if dtype == np.uint8:
             xds.encoding["_FillValue"] = 255
         elif dtype == np.int8:
