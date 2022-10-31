@@ -908,6 +908,15 @@ def write(
     # Compress to LZW by default
     out_meta["compress"] = kwargs.get("compress", "lzw")
 
+    if (
+        out_meta["compress"].lower() in ["lzw", "deflate", "zstd"]
+        and "predictor" not in out_meta  # noqa: W503
+    ):
+        if out_meta["dtype"] in [np.float32, np.float64, float]:
+            out_meta["predictor"] = "3"
+        else:
+            out_meta["predictor"] = "2"
+
     # Bigtiff if needed (more than 4Go)
     out_meta["BIGTIFF"] = bigtiff_value(raster_out)
 

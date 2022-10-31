@@ -783,6 +783,15 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     if "compress" not in kwargs:
         kwargs["compress"] = "lzw"
 
+    if (
+        kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
+        and "predictor" not in kwargs  # noqa: W503
+    ):
+        if xds.encoding["dtype"] in [np.float32, np.float64, float]:
+            kwargs["predictor"] = "3"
+        else:
+            kwargs["predictor"] = "2"
+
     # WORKAROUND: Pop _FillValue attribute
     if "_FillValue" in xds.attrs:
         xds.attrs.pop("_FillValue")
