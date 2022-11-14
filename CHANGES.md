@@ -1,5 +1,8 @@
 # Release History
 
+## 1.19.3 (2022-11-14)
+- FIX: Force vector conversion to dataset CRS in `rasters(_rio).rasterize`
+
 ## 1.19.2 (2022-10-31)
 
 - FIX: Add predictors for compression in `rasters(_rio).write`: 3 for floating point data, 2 for others. (see https://kokoalberti.com/articles/geotiff-compression-optimization-guide/)

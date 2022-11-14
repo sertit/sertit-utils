@@ -394,7 +394,9 @@ def rasterize(
         np.ma.masked_array, dict: Rasterized vector and its metadata
     """
     if not isinstance(vector, gpd.GeoDataFrame):
-        vector = vectors.read(vector)
+        vector = vectors.read(vector, crs=dst.crs)
+    else:
+        vector = vector.to_crs(crs=dst.crs)
 
     # Manage nodata
     if dst.nodata:
