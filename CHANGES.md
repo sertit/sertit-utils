@@ -1,6 +1,11 @@
 # Release History
 
+## 1.XX.Y (20YY-MM-DD)
+
+- DOC: Add a History page
+
 ## 1.19.3 (2022-11-14)
+
 - FIX: Force vector conversion to dataset CRS in `rasters(_rio).rasterize`
 
 ## 1.19.2 (2022-10-31)
@@ -34,16 +39,16 @@
 ## 1.18.0 (2022-09-28)
 
 - **ENH: Add a `xml` folder grouping some helpers for `lxml.etree`** such as:
-  - `read`
-  - `read_archive`
-  - `write`
-  - `add`
-  - `remove`
-  - `update_attrib`
-  - `update_txt`
-  - `update_txt_fct`
-  - `convert_to_xml`
-  - `df_to_xml`
+    - `read`
+    - `read_archive`
+    - `write`
+    - `add`
+    - `remove`
+    - `update_attrib`
+    - `update_txt`
+    - `update_txt_fct`
+    - `convert_to_xml`
+    - `df_to_xml`
 
 ## 1.17.1 (2022-09-12)
 
@@ -188,7 +193,8 @@
 
 - ENH: Making `add_to_zip` work with cloud zips
 - BREAKING CHANGE: `add_to_zip` outputs the completed path
-- FIX: `environment.yml` to respect the stricter use of `file:` syntax. See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
+- FIX: `environment.yml` to respect the stricter use of `file:` syntax.
+  See [here](https://stackoverflow.com/questions/68571543/using-a-pip-requirements-file-in-a-conda-yml-file-throws-attributeerror-fileno)
   for more information.
 - FIX: Use `numpy>=1.21.2` to avoid a bug in `rasterio.merge` with `min`/`max` options. See [here](https://github.com/mapbox/rasterio/issues/2245#issuecomment-900585934) for more information.
 - CI: Do not run pytests on tags and discard `except` keywords

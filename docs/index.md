@@ -19,3 +19,13 @@
     sertit
 ```
 
+```{eval-rst}
+.. toctree::
+   :maxdepth: 1
+   :caption: For Contributors
+   :hidden:
+
+   history
+   GitHub Repository <https://github.com/sertit/sertit-utils>
+```
+
