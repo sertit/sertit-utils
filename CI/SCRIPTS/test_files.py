@@ -45,7 +45,10 @@ def test_paths():
         assert abs_file == curr_file
 
         with pytest.raises(FileNotFoundError):
-            files.to_abspath("haha.txt")
+            files.to_abspath("haha.txt", raise_file_not_found=True)
+
+        # with not pytest.raises(FileNotFoundError):
+        files.to_abspath("haha.txt", raise_file_not_found=False)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = files.to_abspath(os.path.join(tmp_dir, "haha"))

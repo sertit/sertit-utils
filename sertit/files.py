@@ -95,7 +95,7 @@ def listdir_abspath(directory: Union[str, CloudPath, Path]) -> list:
 def to_abspath(
     path: Union[str, CloudPath, Path],
     create: bool = True,
-    raise_file_not_found: bool = False,
+    raise_file_not_found: bool = True,
 ) -> Union[CloudPath, Path]:
     """
     Return the absolute path of the specified path and check if it exists
