@@ -2,11 +2,10 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
-- DOC: Add a History page
-
 ## 1.19.3 (2022-11-14)
 
 - FIX: Force vector conversion to dataset CRS in `rasters(_rio).rasterize`
+- DOC: Add a History page
 
 ## 1.19.2 (2022-10-31)
 
