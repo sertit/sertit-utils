@@ -2,6 +2,10 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.19.5 (2022-11-21)
+
+- FIX: Fix `files.to_abspath` new feature...
+
 ## 1.19.4 (2022-11-21)
 
 - FIX: Allow the user to choose if `files.to_abspath` raise a FileNotFoundError if the file doesn't exist.

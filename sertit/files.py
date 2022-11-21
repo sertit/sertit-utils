@@ -125,12 +125,13 @@ def to_abspath(
     abs_path = AnyPath(path).resolve()
 
     if not abs_path.exists():
-        if raise_file_not_found and abs_path.suffix:
-            # If the path specifies a file (with extension), it raises an exception
-            raise FileNotFoundError(f"Non existing file: {abs_path}")
+        if abs_path.suffix:
+            if raise_file_not_found:
+                # If the path specifies a file (with extension), it raises an exception
+                raise FileNotFoundError(f"Non existing file: {abs_path}")
 
         # If the path specifies a folder, it creates it
-        if create:
+        elif create:
             abs_path.mkdir()
 
     return abs_path
