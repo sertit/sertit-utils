@@ -6,6 +6,7 @@
 
 - FIX: Force vector conversion to dataset CRS in `rasters(_rio).rasterize`
 - DOC: Add a History page
+- CI: Correct gitlab-ci file
 
 ## 1.19.2 (2022-10-31)
 
