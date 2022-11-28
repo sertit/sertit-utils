@@ -7,11 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@master
         with:
           args: "https://${{ secrets.GITLAB_HOSTNAME }}/sertit/sertit-utils"
-          fetch-depth: 0
         env:
           GITLAB_HOSTNAME: ${{ secrets.GITLAB_HOSTNAME }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
