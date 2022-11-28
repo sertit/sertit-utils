@@ -2,6 +2,11 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.19.6 (2022-11-28)
+
+- FIX: KML reading `vectors.read` has better log if `ogr2ogr` isn't available in user's PATH.
+- FIX: Added a fallback using geopandas raw rfeading of KML file if `ogr2ogr` isn't available in user's PATH.
+
 ## 1.19.5 (2022-11-21)
 
 - FIX: Fix `files.to_abspath` new feature...

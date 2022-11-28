@@ -424,40 +424,9 @@ def read(
         fiona_logger = logging.getLogger("fiona")
         fiona_logger.setLevel(logging.CRITICAL)
 
-        # Read mask
-
         # Manage KML driver
         if vect_path.endswith(".kml"):
-            set_kml_driver()
-            vect = gpd.GeoDataFrame()
-
-            # Document tags in KML file are separate layers for GeoPandas.
-            # When you try to get the KML content, you actually get the first layer.
-            # So you need for loop for iterating over layers.
-            # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
-            import fiona
-
-            for layer in fiona.listlayers(vect_path):
-                try:
-                    vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
-                    if not vect_layer.empty:
-                        # KML files are always in WGS84 (and does not contain this information)
-                        vect_layer.crs = WGS84
-                        vect = pd.concat([vect, vect_layer])
-                except ValueError:
-                    pass  # Except Null Layer
-
-            # Workaround for archived KML -> they may be empty
-            # Convert KML to GeoJSON
-            # Needs ogr2ogr here
-            if vect.empty and shutil.which("ogr2ogr"):
-                # Open the geojson
-                if not tmp_dir:
-                    tmp_dir = tempfile.TemporaryDirectory()
-                vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
-                vect = gpd.read_file(vect_path_gj)
-            else:
-                vect.crs = WGS84  # Force set CRS to whole vector
+            vect = _read_kml(vect_path, path, arch_vect_path, tmp_dir)
         else:
             vect = gpd.read_file(vect_path)
 
@@ -490,6 +459,69 @@ def read(
     # Clean
     if tmp_dir:
         tmp_dir.cleanup()
+
+    return vect
+
+
+def _read_kml(
+    vect_path: str,
+    path: Union[str, CloudPath, Path],
+    arch_vect_path: str = None,
+    tmp_dir=None,
+) -> gpd.GeoDataFrame:
+    """
+    Reader of KML data
+
+    Args:
+        vect_path (str): Resolved vector path (rteadable by geopandas, not on cloud etc.)
+        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        arch_vect_path: If archived vector, archive path
+        tmp_dir:
+
+    Returns:
+        gpd.GeoDataFrame: KML as a geopandas GeoDataFrame
+
+    """
+    set_kml_driver()
+    vect = gpd.GeoDataFrame()
+
+    # Document tags in KML file are separate layers for GeoPandas.
+    # When you try to get the KML content, you actually get the first layer.
+    # So you need for loop for iterating over layers.
+    # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
+    import fiona
+
+    for layer in fiona.listlayers(vect_path):
+        try:
+            vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
+            if not vect_layer.empty:
+                # KML files are always in WGS84 (and does not contain this information)
+                vect_layer.crs = WGS84
+                vect = pd.concat([vect, vect_layer])
+        except ValueError:
+            pass  # Except Null Layer
+
+    # Workaround for archived KML -> they may be empty
+    # Convert KML to GeoJSON
+    # Needs ogr2ogr here
+    if vect.empty:
+        if shutil.which("ogr2ogr"):
+            # Open the geojson
+            if not tmp_dir:
+                tmp_dir = tempfile.TemporaryDirectory()
+            vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
+            vect = gpd.read_file(vect_path_gj)
+        else:
+            # Try reading it in a basic manner
+            LOGGER.warning(
+                "Missing `ogr2ogr` in your PATH, your KML may be incomplete. "
+                "(KML files can contain unsupported data structures, nested folders etc.)"
+            )
+            try:
+                vect = gpd.read_file(vect_path)
+            except Exception:
+                # Force set CRS to empty vector
+                vect.crs = WGS84
 
     return vect
 
