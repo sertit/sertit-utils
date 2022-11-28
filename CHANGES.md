@@ -6,6 +6,7 @@
 
 - FIX: KML reading `vectors.read` has better log if `ogr2ogr` isn't available in user's PATH.
 - FIX: Added a fallback using geopandas raw rfeading of KML file if `ogr2ogr` isn't available in user's PATH.
+- CI: Using actions/checkout@v3
 
 ## 1.19.5 (2022-11-21)
 
