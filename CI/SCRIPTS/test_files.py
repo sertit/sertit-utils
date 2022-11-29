@@ -238,6 +238,20 @@ def test_get_file_name():
     file_name = files.get_filename(fn)
     assert file_name == "HLS.L30.T42RVR.2022240T055634.v2.0.B01"
 
+    fn = (
+        r"/test/S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004.SEN3.zip"
+    )
+    file_name = files.get_filename(fn)
+    assert "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004" == file_name
+
+    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.zip"
+    file_name = files.get_filename(fn)
+    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
+
+    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.tar.gz.zip"
+    file_name = files.get_filename(fn, other_exts=".gz.zip")
+    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
+
 
 def test_cp_rm():
     """Test CP/RM functions"""

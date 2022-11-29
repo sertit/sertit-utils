@@ -2,6 +2,11 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.20.2 (2022-11-29)
+
+- FIX: Add other double extensions to discard in `files.get_filename`
+- FIX: Add the possibility to use other double extensions in `files.get_filename`
+
 ## 1.20.1 (2022-11-29)
 
 - FIX: Get proper filename in `files.get_filename` for point-separated names of folder/files

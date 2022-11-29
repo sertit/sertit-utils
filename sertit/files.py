@@ -671,7 +671,9 @@ def add_to_zip(
     return zip_path
 
 
-def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
+def get_filename(
+    file_path: Union[str, CloudPath, Path], other_exts: Union[list, str] = None
+) -> str:
     """
     Get file name (without extension) from file path, ie:
 
@@ -683,6 +685,7 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
 
     Args:
         file_path (Union[str, CloudPath, Path]): Absolute or relative file path (the file doesn't need to exist)
+        other_exts (Union[list, str]): Other double extensions to discard
 
     Returns:
         str: File name (without extension)
@@ -690,7 +693,14 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
     file_path = AnyPath(file_path)
 
     # We need to avoid splitext because of nested extensions such as .tar.gz
-    multi_exts = [".tar.gz"]
+    multi_exts = [".tar.gz", ".SAFE.zip", ".SEN3.zip"]
+
+    if other_exts is not None:
+        if not isinstance(other_exts, list):
+            other_exts = [other_exts]
+
+        multi_exts += other_exts
+
     if any([str(file_path).endswith(ext) for ext in multi_exts]):
         return file_path.name.split(".")[0]
     else:
