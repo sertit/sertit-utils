@@ -122,8 +122,8 @@ def exponential_backoff(
         logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     for i in range(real_max_tries - 2):  # Avoids infinite loop
-        random_scale = rng.randint(0, 2 ** i - 1)
-        curr_wait_time = wait_time_slot * increase_factor ** random_scale
+        random_scale = rng.randint(0, 2**i - 1)
+        curr_wait_time = wait_time_slot * increase_factor**random_scale
 
         logger.info("Retrying action %s in %s seconds...", desc, curr_wait_time)
 

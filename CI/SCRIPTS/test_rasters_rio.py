@@ -208,7 +208,7 @@ def test_bit():
 
 @s3_env
 def test_dem_fct():
-    """ Test DEM fct, ie. slope and hillshade"""
+    """Test DEM fct, ie. slope and hillshade"""
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
     hlsd_path = rasters_path().joinpath("hillshade.tif")
@@ -246,7 +246,7 @@ def test_dem_fct():
 
 @s3_env
 def test_reproj():
-    """ Test reproject fct """
+    """Test reproject fct"""
     dem_path = rasters_path().joinpath(
         "Copernicus_DSM_10_N43_00_W003_00_DEM_resampled.tif"
     )
@@ -279,7 +279,7 @@ def test_reproj():
 
 @s3_env
 def test_rasterize():
-    """ Test rasterize fct """
+    """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_path = rasters_path().joinpath("raster.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")

@@ -422,7 +422,7 @@ def assert_geom_almost_equal(
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
             assert curr_geom_1.equals_exact(
-                curr_geom_2, tolerance=0.5 * 10 ** decimal
+                curr_geom_2, tolerance=0.5 * 10**decimal
             ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
 
 
@@ -463,7 +463,7 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:
-    """ Reduce verbosity for other loggers """
+    """Reduce verbosity for other loggers"""
     loggers = [
         "boto3",
         "botocore",

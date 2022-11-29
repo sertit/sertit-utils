@@ -80,7 +80,7 @@ def dask_env(function: Callable):
 
     @wraps(function)
     def dask_env_wrapper():
-        """ S3 environment wrapper """
+        """S3 environment wrapper"""
         try:
             from dask.distributed import Client, LocalCluster
 
@@ -108,7 +108,7 @@ def s3_env(function: Callable):
 
     @wraps(function)
     def s3_env_wrapper():
-        """ S3 environment wrapper """
+        """S3 environment wrapper"""
         os.environ[CI_SERTIT_S3] = "0"
         print("Using on disk files")
         function()

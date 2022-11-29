@@ -1451,7 +1451,7 @@ def hillshade(
 
     # Compute slope and aspect
     dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
-    x2_y2 = dx ** 2 + dy ** 2
+    x2_y2 = dx**2 + dy**2
     aspect = np.arctan2(dx, dy)
 
     # Compute hillshade (GDAL algo)
@@ -1510,7 +1510,7 @@ def slope(
 
     # Compute slope (on unmasked data)
     dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
-    x2_y2 = dx ** 2 + dy ** 2
+    x2_y2 = dx**2 + dy**2
 
     if in_pct:
         slope = 100 * (np.sqrt(x2_y2))

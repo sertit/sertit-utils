@@ -432,7 +432,7 @@ def test_bit():
 @s3_env
 @dask_env
 def test_xarray_fct():
-    """ Test xarray functions """
+    """Test xarray functions"""
     # Set nodata
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 0], [0, 0, 0]])
     nodata = xr.DataArray(
@@ -462,7 +462,7 @@ def test_xarray_fct():
 
 @dask_env
 def test_where():
-    """ Test overloading of xr.where function """
+    """Test overloading of xr.where function"""
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
     mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
 
@@ -475,7 +475,7 @@ def test_where():
 
 @s3_env
 def test_dem_fct():
-    """ Test DEM fct, ie. slope and hillshade"""
+    """Test DEM fct, ie. slope and hillshade"""
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
     hlsd_path = rasters_path().joinpath("hillshade.tif")
@@ -512,7 +512,7 @@ def test_dem_fct():
 
 @s3_env
 def test_rasterize():
-    """ Test rasterize fct """
+    """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_path = rasters_path().joinpath("raster.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
