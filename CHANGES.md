@@ -3,7 +3,10 @@
 ## 1.XX.Y (20YY-MM-DD)
 
 ## 1.20.0 (2022-11-29)
+
+- **ENH: Add a `xml.dict_to_xml` function**
 - CI: Updating versions of pre-commit hooks
+
 ## 1.19.6 (2022-11-28)
 
 - FIX: KML reading `vectors.read` has better log if `ogr2ogr` isn't available in user's PATH.

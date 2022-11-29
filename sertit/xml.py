@@ -186,7 +186,7 @@ def update_txt_fct(xml: _Element, field: str, fct: Callable) -> None:
 
 def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
     """
-    Convert any dataset containig the given atgtributes to an XML _Element
+    Convert any dataset containing the given attributes to an XML _Element
     (i.e. netcdf dataset)
 
     Args:
@@ -204,17 +204,67 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
             # Get it formatted
             val = getattr(src_ds, attr)
             if isinstance(val, ListEnum):
-                str_attr = val.value
+                str_val = val.value
             elif isinstance(val, datetime):
-                str_attr = val.isoformat()
+                str_val = val.isoformat()
             else:
                 try:
                     # gpd, pd...
                     val = val.iat[0]
                 except AttributeError:
                     pass
-                str_attr = str(val)
-            global_attr.append(E(attr, str_attr))
+                str_val = str(val)
+            global_attr.append(E(attr, str_val))
+
+    xml = E.data(*global_attr)
+    xml_el = fromstring(
+        tostring(xml, pretty_print=True, xml_declaration=True, encoding=UTF_8)
+    )
+
+    return xml_el
+
+
+def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
+    """
+    Convert any dict containing the given attributes to an XML _Element.
+
+    Replacements in keys:
+    - " " to "_"
+    - "(" to "_"
+    - ")" to ""
+
+    Args:
+        dict_to_cv (Any): Dict to convert into a XML
+        attributes(list): List of attributes to set in the wanted XML
+
+    Returns:
+        _Element: Wanted XML
+
+    """
+    # Create XML attributes
+    global_attr = []
+
+    if attributes is None:
+        attributes = dict_to_cv.keys()
+
+    for attr in attributes:
+        val = dict_to_cv.get(attr)
+        if val is not None:
+            # Get it formatted
+            if isinstance(val, ListEnum):
+                str_val = val.value
+            elif isinstance(val, datetime):
+                str_val = val.isoformat()
+            else:
+                try:
+                    # gpd, pd...
+                    val = val.iat[0]
+                except AttributeError:
+                    pass
+                str_val = str(val)
+            global_attr.append(
+                E(attr.replace(" ", "_").replace("(", "_").replace(")", ""), str_val)
+            )
 
     xml = E.data(*global_attr)
     xml_el = fromstring(
