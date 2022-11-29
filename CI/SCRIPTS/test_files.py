@@ -234,7 +234,7 @@ def test_get_file_name():
     assert file[1:] == files.get_filename(file) + "." + files.get_ext(file)
 
     # Multi point files
-    fn = r"D:\_EXTRACTEO\DATA\PRODS\HLS_S30_L30\HLS.L30.T42RVR.2022240T055634.v2.0\HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif"
+    fn = r"/test/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif"
     file_name = files.get_filename(fn)
     assert file_name == "HLS.L30.T42RVR.2022240T055634.v2.0.B01"
 
