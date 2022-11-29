@@ -2,6 +2,10 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.20.1 (2022-11-29)
+
+- FIX: Get proper filename in `files.get_filename` for point-separated names of folder/files
+
 ## 1.20.0 (2022-11-29)
 
 - **ENH: Add a `xml.dict_to_xml` function**

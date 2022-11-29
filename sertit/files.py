@@ -690,7 +690,12 @@ def get_filename(file_path: Union[str, CloudPath, Path]) -> str:
     file_path = AnyPath(file_path)
 
     # We need to avoid splitext because of nested extensions such as .tar.gz
-    return file_path.name.split(".")[0]
+    multi_exts = [".tar.gz"]
+    if any([str(file_path).endswith(ext) for ext in multi_exts]):
+        return file_path.name.split(".")[0]
+    else:
+        # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
+        return file_path.stem
 
 
 def get_ext(file_path: Union[str, CloudPath, Path]) -> str:
