@@ -26,7 +26,12 @@ import rasterio
 import shapely
 import xarray as xr
 
-from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
+from CI.SCRIPTS.script_utils import (
+    assert_xr_encoding_attrs,
+    dask_env,
+    rasters_path,
+    s3_env,
+)
 from sertit import ci, files, rasters, vectors
 
 ci.reduce_verbosity()
@@ -130,6 +135,12 @@ def test_rasters():
             np.testing.assert_array_equal(xda_1, xda_3)
             np.testing.assert_array_equal(xda, xda_dask)
 
+            assert_xr_encoding_attrs(xda, xda_1)
+            assert_xr_encoding_attrs(xda, xda_2)
+            assert_xr_encoding_attrs(xda, xda_3)
+            assert_xr_encoding_attrs(xda, xda_4)
+            assert_xr_encoding_attrs(xda, xda_dask)
+
             # ----------------------------------------------------------------------------------------------
             # -- Write
             # DataArray
@@ -155,15 +166,18 @@ def test_rasters():
             xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
             mask_xda = rasters.mask(xda, mask.geometry)
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
+            assert_xr_encoding_attrs(xda, mask_xda)
 
             # Dataset
             xds_masked = os.path.join(tmp_dir, "test_mask_xds.tif")
             mask_xds = rasters.mask(xds, mask)
             rasters.write(mask_xds, xds_masked, dtype=np.uint8)
+            assert_xr_encoding_attrs(xds, mask_xds)
 
             # With dask
             mask_xda_dask = rasters.mask(xda_dask, mask)
             np.testing.assert_array_equal(mask_xda, mask_xda_dask)
+            assert_xr_encoding_attrs(xda_dask, mask_xda_dask)
 
             # ----------------------------------------------------------------------------------------------
             # -- Paint
@@ -176,14 +190,18 @@ def test_rasters():
             paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
             rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
             rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
+            assert_xr_encoding_attrs(xda, paint_true_xda)
+            assert_xr_encoding_attrs(xda, paint_false_xda)
 
             # Dataset
             xds_paint_true = os.path.join(tmp_dir, "test_paint_true_xds.tif")
             xds_paint_false = os.path.join(tmp_dir, "test_paint_false_xds.tif")
-            paint_true_xds = rasters.paint(xda, mask, value=600, invert=True)
-            paint_false_xds = rasters.paint(xda, mask, value=600, invert=False)
+            paint_true_xds = rasters.paint(xds, mask, value=600, invert=True)
+            paint_false_xds = rasters.paint(xds, mask, value=600, invert=False)
             rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
             rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
+            assert_xr_encoding_attrs(xds, paint_true_xds)
+            assert_xr_encoding_attrs(xds, paint_false_xds)
 
             # With dask
             paint_true_xda_dask = rasters.paint(
@@ -194,6 +212,8 @@ def test_rasters():
             )
             np.testing.assert_array_equal(paint_true_xda, paint_true_xda_dask)
             np.testing.assert_array_equal(paint_false_xda, paint_false_xda_dask)
+            assert_xr_encoding_attrs(xda_dask, paint_true_xda_dask)
+            assert_xr_encoding_attrs(xda_dask, paint_false_xda_dask)
 
             # ----------------------------------------------------------------------------------------------
             # -- Crop
@@ -201,15 +221,18 @@ def test_rasters():
             xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
             crop_xda = rasters.crop(xda, mask.geometry)
             rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
+            assert_xr_encoding_attrs(xda, crop_xda)
 
             # Dataset
             xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
             crop_xds = rasters.crop(xds, mask)
             rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
+            assert_xr_encoding_attrs(xds, crop_xds)
 
             # With dask
             crop_xda_dask = rasters.crop(xda_dask, mask)
             np.testing.assert_array_equal(crop_xda, crop_xda_dask)
+            assert_xr_encoding_attrs(xda_dask, crop_xda_dask)
 
             # ----------------------------------------------------------------------------------------------
             # -- Sieve
@@ -217,31 +240,37 @@ def test_rasters():
             xda_sieved = os.path.join(tmp_dir, "test_sieved_xda.tif")
             sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
             rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
+            assert_xr_encoding_attrs(xda, sieve_xda)
 
             # Dataset
             xds_sieved = os.path.join(tmp_dir, "test_sieved_xds.tif")
             sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
             rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
+            assert_xr_encoding_attrs(xds, sieve_xds)
 
             # With dask
             sieve_xda_dask = rasters.sieve(xda_dask, sieve_thresh=20, connectivity=4)
             np.testing.assert_array_equal(sieve_xda, sieve_xda_dask)
+            assert_xr_encoding_attrs(xda_dask, sieve_xda_dask)
 
             # ----------------------------------------------------------------------------------------------
             # -- Collocate
             # DataArray
             coll_xda = rasters.collocate(xda, xda)  # Just hope that it doesnt crash
             xr.testing.assert_equal(coll_xda, xda)
+            assert_xr_encoding_attrs(xda, coll_xda)
 
             # Dataset
             coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesnt crash
             xr.testing.assert_equal(coll_xds, xds)
+            assert_xr_encoding_attrs(xds, coll_xds)
 
             # With dask
             coll_xda_dask = rasters.collocate(
                 xda_dask, xda_dask
             )  # Just hope that it doesnt crash
             xr.testing.assert_equal(coll_xda_dask, xda_dask)
+            assert_xr_encoding_attrs(xda_dask, coll_xda_dask)
 
             # ----------------------------------------------------------------------------------------------
             # -- Merge GTiff

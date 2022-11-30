@@ -129,6 +129,26 @@ def s3_env(function: Callable):
     return s3_env_wrapper
 
 
+def assert_xr_encoding_attrs(xda_1, xda_2):
+    try:
+        xda_1.attrs == xda_2.attrs
+    except AssertionError:
+        for key, val in xda_1.attrs:
+            if not key.stratswith("_"):
+                assert (
+                    xda_1.attrs[key] == xda_2.attrs[key]
+                ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+
+    try:
+        xda_1.encoding == xda_2.encoding
+    except AssertionError:
+        for key, val in xda_1.encoding:
+            if not key.stratswith("_"):
+                assert (
+                    xda_1.encoding[key] == xda_2.encoding[key]
+                ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+
+
 def rasters_path():
     return get_ci_data_path().joinpath("rasters")
 

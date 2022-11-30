@@ -538,6 +538,10 @@ def paint(
     painted_xds = xds.copy(data=arr)
     painted_xds = painted_xds.fillna(value)
 
+    # Keep all attrs after fillna
+    painted_xds.rio.update_attrs(xds.attrs, inplace=True)
+    painted_xds.rio.update_encoding(xds.encoding, inplace=True)
+
     # Set back nodata to keep the original nodata
     if xds.rio.encoded_nodata is not None:
         painted_xds = set_nodata(painted_xds, xds.rio.encoded_nodata)
@@ -594,6 +598,7 @@ def crop(
     if "from_disk" not in kwargs:
         kwargs["from_disk"] = True  # WAY FASTER
 
+    # Clip keeps encoding and attrs
     return xds_new.rio.clip(shapes, **kwargs)
 
 
@@ -719,7 +724,9 @@ def read(
 
 
 @path_xarr_dst
-def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
+def write(
+    xds: XDS_TYPE, path: Union[str, CloudPath, Path], tags: dict = None, **kwargs
+) -> None:
     """
     Write raster to disk.
     (encapsulation of :code:`rasterio`'s function, because for now :code:`rioxarray` to_raster doesn't work as expected)
@@ -807,7 +814,9 @@ def write(xds: XDS_TYPE, path: Union[str, CloudPath, Path], **kwargs) -> None:
     kwargs["driver"] = "GTiff"
 
     # Write on disk
-    xds.rio.to_raster(str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, **kwargs)
+    xds.rio.to_raster(
+        str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, tags=tags, **kwargs
+    )
 
 
 def collocate(
@@ -848,6 +857,11 @@ def collocate(
             "y": master_xds.y,
         }
     )  # Bug for now, tiny difference in coords
+
+    # Set back attributes and encoding
+    collocated_xds.rio.update_attrs(slave_xds.attrs, inplace=True)
+    collocated_xds.rio.update_encoding(slave_xds.encoding, inplace=True)
+
     return collocated_xds
 
 
@@ -1206,9 +1220,9 @@ def set_metadata(
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
-    naked_xda.encoding = mtd_xda.encoding
 
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
+    naked_xda.rio.update_encoding(mtd_xda.encoding, inplace=True)
     naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
 
     return naked_xda
@@ -1245,8 +1259,16 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     Returns:
         xr.DataArray: DataArray with nodata set
     """
+    encoding = xda.encoding
+    attrs = xda.attrs
+
     xda = xda.where(xda.data != nodata_val)
     xda.rio.write_nodata(nodata_val, encoded=True, inplace=True)
+
+    # Set back attributes and encoding
+    xda.rio.update_attrs(attrs, inplace=True)
+    xda.rio.update_encoding(encoding, inplace=True)
+
     return xda
 
 

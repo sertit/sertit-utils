@@ -2,6 +2,11 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.20.3 (2022-11-30)
+
+- FIX: Ensure that attributes and encoding are propagated through `rasters` functions
+- FIX: Allow the user to pass tags in `rasters(_rio).write`
+
 ## 1.20.2 (2022-11-29)
 
 - FIX: Add other double extensions to discard in `files.get_filename`

@@ -855,6 +855,7 @@ def write(
     raster: Union[np.ma.masked_array, np.ndarray],
     meta: dict,
     path: Union[str, CloudPath, Path],
+    tags: dict = None,
     **kwargs,
 ) -> None:
     """
@@ -879,6 +880,7 @@ def write(
         raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
         meta (dict): Basic metadata that will be copied and updated with raster's information
         path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
+        tags (dict): Tags to write to the GeoTiff
         **kwargs: Overloading metadata, ie :code:`nodata=255`
     """
     raster_out = raster.copy()
@@ -939,6 +941,8 @@ def write(
     # Write product
     with rasterio.open(str(path), "w", **out_meta) as dst:
         dst.write(raster_out)
+        if tags is not None:
+            dst.update_tags(**tags)
 
 
 def collocate(
