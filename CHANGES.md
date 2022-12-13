@@ -2,6 +2,10 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+### Other
+
+- DOC: Add latest DOI link
+
 ## 1.21.0 (2022-12-13)
 
 - **ENH: Add the possibility to load an image/geo window in `rasters(_rio).read`** ([#1](https://github.com/sertit/eoreader/issues/1))
