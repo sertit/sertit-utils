@@ -2,6 +2,10 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.21.0 (2022-12-13)
+
+- **ENH: Add the possibility to load an image/geo window in `rasters(_rio).read`** ([#1](https://github.com/sertit/eoreader/issues/1))
+
 ## 1.20.3 (2022-11-30)
 
 - FIX: Ensure that attributes and encoding are propagated through `rasters` functions

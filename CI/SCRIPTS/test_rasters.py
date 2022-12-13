@@ -70,6 +70,8 @@ def test_rasters():
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
+    raster_window_path = rasters_path().joinpath("window.tif")
+    raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
     # Vectors
     mask_path = rasters_path().joinpath("raster_mask.geojson")
@@ -140,6 +142,21 @@ def test_rasters():
             assert_xr_encoding_attrs(xda, xda_3)
             assert_xr_encoding_attrs(xda, xda_4)
             assert_xr_encoding_attrs(xda, xda_dask)
+
+            # ----------------------------------------------------------------------------------------------
+            # -- Read with window
+            xda_window_out = os.path.join(tmp_dir, "test_xda_window.tif")
+            xda_window = rasters.read(
+                raster_path,
+                window=mask_path,
+            )
+            rasters.write(xda_window, xda_window_out, dtype=np.uint8)
+            ci.assert_raster_equal(xda_window_out, raster_window_path)
+
+            xda_window_20_out = os.path.join(tmp_dir, "test_xda_20_window.tif")
+            xda_window_20 = rasters.read(raster_path, window=mask_path, resolution=20)
+            rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
+            ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
             # ----------------------------------------------------------------------------------------------
             # -- Write

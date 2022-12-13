@@ -40,6 +40,8 @@ def test_rasters_rio():
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
+    raster_window_path = rasters_path().joinpath("window.tif")
+    raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
     # Vectors
     mask_path = rasters_path().joinpath("raster_mask.geojson")
@@ -87,6 +89,22 @@ def test_rasters_rio():
             np.testing.assert_array_equal(raster_1, raster_2)
             np.testing.assert_array_equal(raster_1, raster_3)
             np.testing.assert_array_equal(raster, raster_4)  # 2D array
+
+            # -- Read with window
+            window_out = os.path.join(tmp_dir, "test_xda_window.tif")
+            window, w_mt = rasters_rio.read(
+                raster_path,
+                window=mask_path,
+            )
+            rasters_rio.write(window, w_mt, window_out)
+            ci.assert_raster_equal(window_out, raster_window_path)
+
+            window_20_out = os.path.join(tmp_dir, "test_xda_20_window.tif")
+            window_20, w_mt_20 = rasters_rio.read(
+                raster_path, window=mask_path, resolution=20
+            )
+            rasters_rio.write(window_20, w_mt_20, window_20_out)
+            ci.assert_raster_equal(window_20_out, raster_window_20_path)
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")

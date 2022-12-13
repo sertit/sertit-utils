@@ -28,6 +28,7 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
+from rasterio.windows import Window, from_bounds
 
 from sertit.logs import SU_NAME
 
@@ -94,13 +95,13 @@ def path_arr_dst(function: Callable) -> Callable:
 
         >>> # Create mock function
         >>> @path_or_dst
-        >>> def fct(dst):
-        >>>     read(dst)
+        >>> def fct(ds):
+        >>>     read(ds)
         >>>
         >>> # Test the two ways
         >>> read1 = fct("path/to/raster.tif")
-        >>> with rasterio.open("path/to/raster.tif") as dst:
-        >>>     read2 = fct(dst)
+        >>> with rasterio.open("path/to/raster.tif") as ds:
+        >>>     read2 = fct(ds)
         >>>
         >>> # Test
         >>> read1 == read2
@@ -128,14 +129,14 @@ def path_arr_dst(function: Callable) -> Callable:
             Any: regular output
         """
         if isinstance(path_or_arr_or_ds, (str, Path, CloudPath)):
-            with rasterio.open(str(path_or_arr_or_ds)) as dst:
-                out = function(dst, *args, **kwargs)
+            with rasterio.open(str(path_or_arr_or_ds)) as ds:
+                out = function(ds, *args, **kwargs)
         elif isinstance(path_or_arr_or_ds, tuple):
             arr, meta = path_or_arr_or_ds
             with MemoryFile() as memfile:
-                with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as dst:
-                    dst.write(arr)
-                    out = function(dst, *args, **kwargs)
+                with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
+                    ds.write(arr)
+                    out = function(ds, *args, **kwargs)
         else:
             out = None
             # Try if xarray is importable
@@ -157,13 +158,13 @@ def path_arr_dst(function: Callable) -> Callable:
                     with MemoryFile() as memfile:
                         with memfile.open(
                             **meta, BIGTIFF=bigtiff_value(path_or_arr_or_ds)
-                        ) as dst:
+                        ) as ds:
                             if path_or_arr_or_ds.rio.encoded_nodata is not None:
                                 path_or_arr_or_ds = path_or_arr_or_ds.fillna(
                                     path_or_arr_or_ds.rio.encoded_nodata
                                 )
-                            dst.write(path_or_arr_or_ds.data)
-                            out = function(dst, *args, **kwargs)
+                            ds.write(path_or_arr_or_ds.data)
+                            out = function(ds, *args, **kwargs)
             except ModuleNotFoundError:
                 out = None
 
@@ -176,22 +177,28 @@ def path_arr_dst(function: Callable) -> Callable:
 
 @path_arr_dst
 def get_new_shape(
-    dst: PATH_ARR_DS, resolution: Union[tuple, list, float], size: Union[tuple, list]
-) -> (int, int):
+    ds: PATH_ARR_DS,
+    resolution: Union[tuple, list, float],
+    size: Union[tuple, list],
+    window: Window = None,
+) -> (int, int, bool):
     """
     Get the new shape (height, width) of a resampled raster.
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        window (Window): Window to be read
 
     Returns:
-        (int, int): Height, width
+        (int, int, bool): Height, width, do resampling
 
     """
+    # By default do a resampling
+    do_resampling = True
 
-    def _get_new_dim(dim: int, res_old: float, res_new: float) -> int:
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -> (int, bool):
         """
         Get the new dimension in pixels
         Args:
@@ -200,21 +207,25 @@ def get_new_shape(
             res_new (float): New resolution
 
         Returns:
-            int: New dimension
+            (int, bool): New dimension, do resampling
         """
-        return int(np.round(dim * res_old / res_new))
+        new_dim = int(np.round(dim * res_old / res_new))
+        do_res = dim != new_dim
+        return new_dim, do_res
 
     # By default keep original shape
-    new_height = dst.height
-    new_width = dst.width
+    if window is None:
+        new_height = ds.height
+        new_width = ds.width
+    else:
+        new_height = window.height
+        new_width = window.width
 
     # Compute new shape
     if resolution is not None:
         if isinstance(resolution, (int, float)):
-            new_height = _get_new_dim(dst.height, dst.res[1], resolution)
-            new_width = _get_new_dim(dst.width, dst.res[0], resolution)
-        elif resolution is None:
-            pass
+            new_height, do_resampling = _get_new_dim(new_height, ds.res[1], resolution)
+            new_width, do_resampling = _get_new_dim(new_width, ds.res[0], resolution)
         else:
             try:
                 if len(resolution) != 2:
@@ -223,22 +234,31 @@ def get_new_shape(
                     )
 
                 if resolution[0] is not None:
-                    new_width = _get_new_dim(dst.width, dst.res[0], resolution[0])
+                    new_width, do_resampling = _get_new_dim(
+                        new_width, ds.res[0], resolution[0]
+                    )
 
                 if resolution[1] is not None:
-                    new_height = _get_new_dim(dst.height, dst.res[1], resolution[1])
+                    new_height, do_resampling = _get_new_dim(
+                        new_height, ds.res[1], resolution[1]
+                    )
             except (TypeError, KeyError):
                 raise ValueError(
                     f"Resolution should be None, 2 floats or a castable to a list: {resolution}"
                 )
     elif size is not None:
         try:
-            new_height = size[1]
-            new_width = size[0]
+            if new_height == size[1] or new_width == size[0]:
+                do_resampling = False
+            else:
+                new_height = size[1]
+                new_width = size[0]
         except (TypeError, KeyError):
             raise ValueError(f"Size should be None or a castable to a list: {size}")
+    else:
+        do_resampling = False
 
-    return new_height, new_width
+    return new_height, new_width, do_resampling
 
 
 def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
@@ -257,9 +277,9 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
     .. code-block:: python
 
         >>> raster_path = "path/to/raster.tif"
-        >>> with rasterio.open(raster_path) as dst:
-        >>>      meta = dst.meta
-        >>>      arr = dst.read()
+        >>> with rasterio.open(raster_path) as ds:
+        >>>      meta = ds.meta
+        >>>      arr = ds.read()
         >>> meta
         {
             'driver': 'GTiff',
@@ -369,7 +389,7 @@ def get_nodata_mask(
 
 @path_arr_dst
 def rasterize(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     vector: Union[gpd.GeoDataFrame, Path, CloudPath, str],
     value_field: str = None,
     default_nodata: int = 0,
@@ -384,7 +404,7 @@ def rasterize(
     See: https://pygis.io/docs/e_raster_rasterize.html
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         vector (Union[gpd.GeoDataFrame, Path, CloudPath, str]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary (`default_nodata`, `default_value`).
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
@@ -394,13 +414,13 @@ def rasterize(
         np.ma.masked_array, dict: Rasterized vector and its metadata
     """
     if not isinstance(vector, gpd.GeoDataFrame):
-        vector = vectors.read(vector, crs=dst.crs)
+        vector = vectors.read(vector, crs=ds.crs)
     else:
-        vector = vector.to_crs(crs=dst.crs)
+        vector = vector.to_crs(crs=ds.crs)
 
     # Manage nodata
-    if dst.nodata:
-        nodata = dst.nodata
+    if ds.nodata:
+        nodata = ds.nodata
     else:
         nodata = default_nodata
 
@@ -417,16 +437,16 @@ def rasterize(
     # Rasterize vector
     mask = features.rasterize(
         geom_value,
-        out_shape=(dst.height, dst.width),
+        out_shape=(ds.height, ds.width),
         fill=nodata,  # Outside vector
         default_value=default_value,  # Inside vector
-        transform=dst.transform,
+        transform=ds.transform,
         dtype=dtype,
         all_touched=kwargs.get("all_touched", True),
         **kwargs,
     )
 
-    meta = dst.meta.copy()
+    meta = ds.meta.copy()
     meta["dtype"] = dtype
     meta["nodata"] = nodata
 
@@ -435,7 +455,7 @@ def rasterize(
 
 @path_arr_dst
 def _vectorize(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
     dissolve: bool = False,
@@ -457,7 +477,7 @@ def _vectorize(
             - You will get a classified polygon with data (value=0)/nodata pixels.
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
@@ -467,11 +487,11 @@ def _vectorize(
         gpd.GeoDataFrame: Vector
     """
     # Get the shapes
-    array = dst.read(masked=True)
+    array = ds.read(masked=True)
 
     # Manage nodata value
-    has_nodata = dst.nodata is not None
-    nodata = dst.nodata if has_nodata else default_nodata
+    has_nodata = ds.nodata is not None
+    nodata = ds.nodata if has_nodata else default_nodata
 
     # Manage values
     if values is not None:
@@ -498,11 +518,11 @@ def _vectorize(
     shapes = features.shapes(
         nodata_mask if get_nodata else data,
         mask=None if get_nodata else nodata_mask,
-        transform=dst.transform,
+        transform=ds.transform,
     )
 
     # Convert to geodataframe
-    gdf = vectors.shapes_to_gdf(shapes, dst.crs)
+    gdf = vectors.shapes_to_gdf(shapes, ds.crs)
 
     # Return valid geometries
     gdf = vectors.make_valid(gdf)
@@ -516,7 +536,7 @@ def _vectorize(
 
 @path_arr_dst
 def vectorize(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
     dissolve: bool = False,
@@ -538,13 +558,13 @@ def vectorize(
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> vec1 = vectorize(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     vec2 = vectorize(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     vec2 = vectorize(ds)
         >>> vec1 == vec2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
@@ -553,7 +573,7 @@ def vectorize(
         gpd.GeoDataFrame: Classes Vector
     """
     return _vectorize(
-        dst,
+        ds,
         values=values,
         get_nodata=False,
         keep_values=keep_values,
@@ -563,7 +583,7 @@ def vectorize(
 
 
 @path_arr_dst
-def get_valid_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_valid_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster as a vector.
 
@@ -575,28 +595,26 @@ def get_valid_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     nodata2 = get_nodata_vec(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     nodata2 = get_nodata_vec(ds)
         >>> nodata1 == nodata2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(
-        dst, values=None, get_nodata=True, default_nodata=default_nodata
-    )
+    nodata = _vectorize(ds, values=None, get_nodata=True, default_nodata=default_nodata)
     return nodata[
         nodata.raster_val != 0
     ]  # 0 is the values of not nodata put there by rasterio
 
 
 @path_arr_dst
-def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -608,21 +626,19 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     nodata2 = get_nodata_vec(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     nodata2 = get_nodata_vec(ds)
         >>> nodata1 == nodata2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(
-        dst, values=None, get_nodata=True, default_nodata=default_nodata
-    )
+    nodata = _vectorize(ds, values=None, get_nodata=True, default_nodata=default_nodata)
     return nodata[
         nodata.raster_val == 0
     ]  # 0 is the values of not nodata put there by rasterio
@@ -630,7 +646,7 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 
 @path_arr_dst
 def _mask(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     do_crop: bool = False,
@@ -644,7 +660,7 @@ def _mask(
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
@@ -655,26 +671,26 @@ def _mask(
          (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
     if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        shapes = shapes.to_crs(dst.crs).geometry
+        shapes = shapes.to_crs(ds.crs).geometry
     elif not isinstance(shapes, list):
         shapes = [shapes]
 
     # Set nodata
     if not nodata:
-        if dst.nodata:
-            nodata = dst.nodata
+        if ds.nodata:
+            nodata = ds.nodata
         else:
             nodata = 0
 
     # Crop dataset
-    msk, trf = rmask.mask(dst, shapes, nodata=nodata, crop=do_crop, **kwargs)
+    msk, trf = rmask.mask(ds, shapes, nodata=nodata, crop=do_crop, **kwargs)
 
     # Create masked array
     nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
     mask_array = np.ma.masked_array(msk, nodata_mask, fill_value=nodata)
 
     # Update meta
-    out_meta = update_meta(mask_array, dst.meta)
+    out_meta = update_meta(mask_array, ds.meta)
     out_meta["transform"] = trf
 
     return mask_array, out_meta
@@ -682,7 +698,7 @@ def _mask(
 
 @path_arr_dst
 def mask(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
@@ -703,15 +719,15 @@ def mask(
         >>> shapes = gpd.read_file(shape_path)
         >>> masked_raster1, meta1 = mask(raster_path, shapes)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     masked_raster2, meta2 = mask(dst, shapes)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     masked_raster2, meta2 = mask(ds, shapes)
         >>> masked_raster1 == masked_raster2
         True
         >>> meta1 == meta2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
@@ -720,12 +736,12 @@ def mask(
     Returns:
          (np.ma.masked_array, dict): Masked array as a masked array and its metadata
     """
-    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)
+    return _mask(ds, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)
 
 
 @path_arr_dst
 def crop(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
@@ -748,15 +764,15 @@ def crop(
         >>> shapes = gpd.read_file(shape_path)
         >>> cropped_raster1, meta1 = crop(raster_path, shapes)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     cropped_raster2, meta2 = crop(dst, shapes)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     cropped_raster2, meta2 = crop(ds, shapes)
         >>> cropped_raster1 == cropped_raster2
         True
         >>> meta1 == meta2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
@@ -765,14 +781,60 @@ def crop(
     Returns:
          (np.ma.masked_array, dict): Cropped array as a masked array and its metadata
     """
-    return _mask(dst, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)
+    return _mask(ds, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)
+
+
+@path_arr_dst
+def get_window(ds: PATH_ARR_DS, window: Any):
+    """
+    Get a window from any type of input
+    Args:
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
+
+    Returns:
+        Window: Rasterio window
+
+    """
+    if window is not None:
+        if isinstance(window, gpd.GeoDataFrame):
+            window = from_bounds(*window.bounds.values[0], ds.transform)
+        elif isinstance(window, tuple):
+            window = from_bounds(*window, ds.transform)
+        else:
+            try:
+                window = from_bounds(
+                    *vectors.read(window).bounds.values[0], ds.transform
+                )
+            except Exception:
+                raise TypeError(
+                    "Window should either be a GeoDataFrame, tuple, Window, readable as a vector or set to None"
+                )
+
+    # Use rioxarray way to convert window to integer
+    (row_start, row_stop), (col_start, col_stop) = window.toranges()
+    row_start = 0 if row_start < 0 else np.floor(row_start)
+    row_stop = 0 if row_stop < 0 else np.ceil(row_stop)
+    col_start = 0 if col_start < 0 else np.floor(col_start)
+    col_stop = 0 if col_stop < 0 else np.ceil(col_stop)
+    row_slice = slice(int(row_start), int(row_stop))
+    col_slice = slice(int(col_start), int(col_stop))
+
+    window = Window.from_slices(
+        rows=row_slice,
+        cols=col_slice,
+        width=int(window.width),
+        height=int(window.height),
+    )
+    return window
 
 
 @path_arr_dst
 def read(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     resolution: Union[tuple, list, float] = None,
     size: Union[tuple, list] = None,
+    window: Any = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
     **kwargs,
@@ -794,27 +856,33 @@ def read(
         >>> raster_path = "path/to/raster.tif"
         >>> raster1, meta1 = read(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>    raster2, meta2 = read(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>    raster2, meta2 = read(ds)
         >>> raster1 == raster2
         True
         >>> meta1 == meta2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
         resampling (Resampling): Resampling method (nearest by default)
         masked (bool): Get a masked array, :code:`True` by default (whereas it is False by default in rasterio)
-        **kwargs: Other dst.read() arguments such as indexes.
+        **kwargs: Other ds.read() arguments such as indexes.
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its meta data
 
     """
+    dst_transform = None
+    if window is not None:
+        window = get_window(ds, window)
+        dst_transform = ds.window_transform(window)
+
     # Get new height and width
-    new_height, new_width = get_new_shape(dst, resolution, size)
+    new_height, new_width, _ = get_new_shape(ds, resolution, size, window)
 
     # Manage out_shape
     if "indexes" in kwargs:
@@ -823,28 +891,36 @@ def read(
         else:
             out_shape = (len(kwargs["indexes"]), new_height, new_width)
     else:
-        out_shape = (dst.count, new_height, new_width)
+        out_shape = (ds.count, new_height, new_width)
 
     # Read data
-    array = dst.read(
+    array = ds.read(
         out_shape=out_shape,
         resampling=resampling,
         masked=masked,
+        window=window,
         **kwargs,
     )
 
+    # Get destination transform
+    if dst_transform is None:
+        dst_transform = ds.transform * ds.transform.scale(
+            (ds.width / new_width), (ds.height / new_height)
+        )
+    if window is not None and resolution:
+        dst_transform = dst_transform * dst_transform.scale(
+            (window.width / new_width), (window.height / new_height)
+        )
+
     # Update meta
-    dst_transform = dst.transform * dst.transform.scale(
-        (dst.width / new_width), (dst.height / new_height)
-    )
-    dst_meta = dst.meta.copy()
+    dst_meta = ds.meta.copy()
     dst_meta.update(
         {
             "height": new_height,
             "width": new_width,
             "transform": dst_transform,
             "dtype": array.dtype,
-            "nodata": dst.nodata,
+            "nodata": ds.nodata,
         }
     )
 
@@ -939,10 +1015,10 @@ def write(
         raster_out = np.expand_dims(raster_out, axis=0)
 
     # Write product
-    with rasterio.open(str(path), "w", **out_meta) as dst:
-        dst.write(raster_out)
+    with rasterio.open(str(path), "w", **out_meta) as ds:
+        ds.write(raster_out)
         if tags is not None:
-            dst.update_tags(**tags)
+            ds.update_tags(**tags)
 
 
 def collocate(
@@ -1123,7 +1199,7 @@ def get_dim_img_path(
 
 
 @path_arr_dst
-def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
+def get_extent(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a :code:`geopandas.Geodataframe`.
 
@@ -1133,22 +1209,22 @@ def get_extent(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
         >>> extent1 = get_extent(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     extent2 = get_extent(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     extent2 = get_extent(ds)
         >>> extent1 == extent2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
 
     Returns:
         gpd.GeoDataFrame: Extent as a  :code:`geopandas.Geodataframe`
     """
-    return vectors.get_geodf(geometry=[*dst.bounds], crs=dst.crs)
+    return vectors.get_geodf(geometry=[*ds.bounds], crs=ds.crs)
 
 
 @path_arr_dst
-def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
+def get_footprint(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, in french == emprise utile)
 
@@ -1159,16 +1235,16 @@ def get_footprint(dst: PATH_ARR_DS) -> gpd.GeoDataFrame:
         >>> footprint1 = get_footprint(raster_path)
 
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     footprint2 = get_footprint(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     footprint2 = get_footprint(ds)
         >>> footprint1 == footprint2
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
     Returns:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
     """
-    footprint = get_valid_vector(dst)
+    footprint = get_valid_vector(ds)
 
     return vectors.get_wider_exterior(footprint)
 
@@ -1416,7 +1492,7 @@ def read_bit_array(
 
 @path_arr_dst
 def hillshade(
-    dst: PATH_ARR_DS, azimuth: float = 315, zenith: float = 45
+    ds: PATH_ARR_DS, azimuth: float = 315, zenith: float = 45
 ) -> (np.ma.masked_array, dict):
     """
      Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
@@ -1429,19 +1505,19 @@ def hillshade(
 
          - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
          - z_factor is fixed to 1.0
-         - scale managed by dst resolution
+         - scale managed by ds resolution
 
     `Reference <https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp>`_
 
      Args:
-         dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+         ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
          azimuth (float): Azimuth angle in degrees
          zenith (float): Zenith angle in degrees
 
      Returns:
          (np.ma.masked_array, dict): Hillshade and its metadata
     """
-    array = dst.read(masked=True)
+    array = ds.read(masked=True)
 
     # Squeeze if needed
     expand = False
@@ -1454,7 +1530,7 @@ def hillshade(
     alt_rad = (90 - zenith) * DEG_2_RAD
 
     # Compute slope and aspect
-    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
+    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *ds.res)
     x2_y2 = dx**2 + dy**2
     aspect = np.arctan2(dx, dy)
 
@@ -1469,17 +1545,17 @@ def hillshade(
         hillshade = np.expand_dims(hillshade, axis=0)
 
     # Convert to masked array
-    hillshade_msk = np.ma.masked_array(hillshade, array.mask, fill_value=dst.nodata)
+    hillshade_msk = np.ma.masked_array(hillshade, array.mask, fill_value=ds.nodata)
 
     # Meta
-    meta = update_meta(hillshade_msk, dst.meta)
+    meta = update_meta(hillshade_msk, ds.meta)
 
     return hillshade_msk, meta
 
 
 @path_arr_dst
 def slope(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     in_pct: bool = False,
     in_rad: bool = False,
 ) -> (np.ma.masked_array, dict):
@@ -1492,19 +1568,19 @@ def slope(
 
          - It uses a 2nd order gradient instead of Horn's or Zevenbergen & Thorne's formula
          - z_factor is fixed to 1.0
-         - scale managed by dst resolution
+         - scale managed by ds resolution
 
     `Reference <https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp>`_
 
      Args:
-         dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+         ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
          in_pct (bool): Outputs slope in percents
          in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 
      Returns:
          (np.ma.masked_array, dict): Slope and its metadata
     """
-    array = dst.read(masked=True)
+    array = ds.read(masked=True)
 
     # Squeeze if needed
     expand = False
@@ -1513,7 +1589,7 @@ def slope(
         expand = True
 
     # Compute slope (on unmasked data)
-    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *dst.res)
+    dx, dy = np.gradient(np.where(array.mask, 0.0, array.data), *ds.res)
     x2_y2 = dx**2 + dy**2
 
     if in_pct:
@@ -1530,10 +1606,10 @@ def slope(
         slope = np.expand_dims(slope, axis=0)
 
     # Convert to masked array
-    slope_msk = np.ma.masked_array(slope, array.mask, fill_value=dst.nodata)
+    slope_msk = np.ma.masked_array(slope, array.mask, fill_value=ds.nodata)
 
     # Meta
-    meta = update_meta(slope_msk, dst.meta)
+    meta = update_meta(slope_msk, ds.meta)
 
     return slope_msk, meta
 

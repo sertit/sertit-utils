@@ -30,7 +30,13 @@ from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
 from sertit.logs import SU_NAME
-from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, bigtiff_value, path_arr_dst
+from sertit.rasters_rio import (
+    MAX_CORES,
+    PATH_ARR_DS,
+    bigtiff_value,
+    get_window,
+    path_arr_dst,
+)
 
 try:
     import geopandas as gpd
@@ -69,13 +75,13 @@ def path_xarr_dst(function: Callable) -> Callable:
 
         >>> # Create mock function
         >>> @path_or_dst
-        >>> def fct(dst):
-        >>>     read(dst)
+        >>> def fct(ds):
+        >>>     read(ds)
         >>>
         >>> # Test the two ways
         >>> read1 = fct("path/to/raster.tif")
-        >>> with rasterio.open("path/to/raster.tif") as dst:
-        >>>     read2 = fct(dst)
+        >>> with rasterio.open("path/to/raster.tif") as ds:
+        >>>     read2 = fct(ds)
         >>>
         >>> # Test
         >>> read1 == read2
@@ -339,8 +345,8 @@ def vectorize(
         >>> raster_path = "path/to/raster.tif"
         >>> vec1 = vectorize(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     vec2 = vectorize(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     vec2 = vectorize(ds)
         >>> vec1 == vec2
         True
 
@@ -376,8 +382,8 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
         >>> raster_path = "path/to/raster.tif"
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     nodata2 = get_nodata_vec(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     nodata2 = get_nodata_vec(ds)
         >>> nodata1 == nodata2
         True
 
@@ -397,7 +403,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 
 
 @path_xarr_dst
-def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -409,21 +415,19 @@ def get_nodata_vector(dst: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     nodata2 = get_nodata_vec(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     nodata2 = get_nodata_vec(ds)
         >>> nodata1 == nodata2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non existing in file
     Returns:
         gpd.GeoDataFrame: Nodata Vector
 
     """
-    nodata = _vectorize(
-        dst, values=None, get_nodata=True, default_nodata=default_nodata
-    )
+    nodata = _vectorize(ds, values=None, get_nodata=True, default_nodata=default_nodata)
     return nodata[nodata.raster_val == 0]
 
 
@@ -452,8 +456,8 @@ def mask(
         >>> shapes = gpd.read_file(shape_path)
         >>> mask1 = mask(raster_path, shapes)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     mask2 = mask(dst, shapes)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     mask2 = mask(ds, shapes)
         >>> mask1 == mask2
         True
 
@@ -505,8 +509,8 @@ def paint(
         >>> shapes = gpd.read_file(shape_path)
         >>> paint1 = paint(raster_path, shapes, value=100)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     paint2 = paint(dst, shapes, value=100)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     paint2 = paint(ds, shapes, value=100)
         >>> paint1 == paint2
         True
 
@@ -572,8 +576,8 @@ def crop(
         >>> shapes = gpd.read_file(shape_path)
         >>> xds2 = crop(raster_path, shapes)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     xds2 = crop(dst, shapes)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     xds2 = crop(ds, shapes)
         >>> xds1 == xds2
         True
 
@@ -604,9 +608,10 @@ def crop(
 
 @path_arr_dst
 def read(
-    dst: PATH_ARR_DS,
+    ds: PATH_ARR_DS,
     resolution: Union[tuple, list, float] = None,
     size: Union[tuple, list] = None,
+    window: Any = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
     indexes: Union[int, list] = None,
@@ -637,15 +642,16 @@ def read(
         >>> raster_path = "path/to/raster.tif"
         >>> xds1 = read(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>    xds2 = read(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>    xds2 = read(ds)
         >>> xds1 == xds2
         True
 
     Args:
-        dst (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray
+        ds (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
         indexes (Union[int, list]): Indexes to load. Load the whole array if None. Starts at 1.
@@ -659,16 +665,27 @@ def read(
         Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
 
     """
+    if window is not None:
+        window = get_window(ds, window)
+
     # Get new height and width
-    new_height, new_width = rasters_rio.get_new_shape(dst, resolution, size)
+    new_height, new_width, do_resampling = rasters_rio.get_new_shape(
+        ds, resolution, size, window
+    )
 
     # Read data (and load it to discard lock)
     with xarray.set_options(keep_attrs=True):
         with rioxarray.set_options(export_grid_mapping=False):
             with rioxarray.open_rasterio(
-                dst, default_name=files.get_filename(dst.name), chunks=chunks, **kwargs
+                ds, default_name=files.get_filename(ds.name), chunks=chunks, **kwargs
             ) as xda:
                 orig_dtype = xda.dtype
+
+                # Windows
+                if window is not None:
+                    xda = xda.rio.isel_window(window).load()
+
+                # Indexes
                 if indexes is not None:
                     if not isinstance(indexes, list):
                         indexes = [indexes]
@@ -680,7 +697,7 @@ def read(
                     ok_indexes = np.isin(indexes, xda.band)
                     if any(~ok_indexes):
                         LOGGER.warning(
-                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {dst.name}"
+                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
                         )
 
                     xda = xda[np.isin(xda.band, indexes)]
@@ -696,9 +713,16 @@ def read(
                         pass
 
                 # Manage resampling
-                if new_height != dst.height or new_width != dst.width:
-                    factor_h = dst.height / new_height
-                    factor_w = dst.width / new_width
+                if do_resampling:
+                    if window is not None:
+                        factor_h = window.height / new_height
+                        factor_w = window.width / new_width
+                    else:
+                        factor_h = ds.height / new_height
+                        factor_w = ds.width / new_width
+
+                    # Manage 2 ways of resampling, coarsen being faster than reprojection
+                    # TODO: find a way to match rasterio's speed
                     if factor_h.is_integer() and factor_w.is_integer():
                         xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
                     else:
@@ -708,14 +732,16 @@ def read(
                             resampling=resampling,
                         )
 
+                # Convert to wanted type
                 if as_type:
                     # Modify the type as wanted by the user
                     # TODO: manage nodata and uint/int numbers
                     xda = xda.astype(as_type)
 
+                # Mask if necessary
                 if masked:
                     # Set nodata not in opening due to some performance issues
-                    xda = set_nodata(xda, dst.meta["nodata"])
+                    xda = set_nodata(xda, ds.meta["nodata"])
 
                 # Set original dtype
                 xda.encoding["dtype"] = orig_dtype
@@ -958,8 +984,8 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
 
         >>> extent1 = get_extent(raster_path)
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     extent2 = get_extent(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     extent2 = get_extent(ds)
         >>> extent1 == extent2
         True
 
@@ -984,8 +1010,8 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
         >>> footprint1 = get_footprint(raster_path)
 
         >>> # or
-        >>> with rasterio.open(raster_path) as dst:
-        >>>     footprint2 = get_footprint(dst)
+        >>> with rasterio.open(raster_path) as ds:
+        >>>     footprint2 = get_footprint(ds)
         >>> footprint1 == footprint2
 
     Args:
