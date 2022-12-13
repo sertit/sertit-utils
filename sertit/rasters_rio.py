@@ -248,7 +248,7 @@ def get_new_shape(
                 )
     elif size is not None:
         try:
-            if new_height == size[1] or new_width == size[0]:
+            if new_height == size[1] and new_width == size[0]:
                 do_resampling = False
             else:
                 new_height = size[1]

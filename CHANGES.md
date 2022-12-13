@@ -2,8 +2,9 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
-### Other
+## 1.21.1 (2022-12-13)
 
+- FIX: Fix new_shape retrieval when providing a size with height or width equal to the original dimension
 - DOC: Add latest DOI link
 
 ## 1.21.0 (2022-12-13)
