@@ -797,18 +797,20 @@ def get_window(ds: PATH_ARR_DS, window: Any):
 
     """
     if window is not None:
-        if isinstance(window, gpd.GeoDataFrame):
-            window = from_bounds(*window.bounds.values[0], ds.transform)
-        elif isinstance(window, tuple):
-            window = from_bounds(*window, ds.transform)
-        else:
+        if not isinstance(window, Window):
+            if isinstance(window, gpd.GeoDataFrame):
+                bounds = window.to_crs(ds.crs).bounds.values[0]
+            else:
+                try:
+                    bounds = vectors.read(window).to_crs(ds.crs).bounds.values[0]
+                except Exception:
+                    bounds = window
+
             try:
-                window = from_bounds(
-                    *vectors.read(window).bounds.values[0], ds.transform
-                )
+                window = from_bounds(*bounds, ds.transform)
             except Exception:
                 raise TypeError(
-                    "Window should either be a GeoDataFrame, tuple, Window, readable as a vector or set to None"
+                    "Window should either be a GeoDataFrame, tuple, list, Window, readable as a vector or set to None"
                 )
 
     # Use rioxarray way to convert window to integer

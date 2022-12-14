@@ -142,7 +142,7 @@ def _assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
     ), f"{field} incoherent:\n{dict_1[field]} != {dict_2[field]}"
 
 
-def _assert_meta(meta_1, meta_2):
+def assert_meta(meta_1, meta_2):
     """
     Compare rasterio metadata
 
@@ -192,7 +192,7 @@ def assert_raster_equal(
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
             # Metadata
-            _assert_meta(ds_1.meta, ds_2.meta)
+            assert_meta(ds_1.meta, ds_2.meta)
 
             # Assert equal
             np.testing.assert_array_equal(ds_1.read(), ds_2.read())
@@ -231,7 +231,7 @@ def assert_raster_almost_equal(
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
             # Metadata
-            _assert_meta(ds_1.meta, ds_2.meta)
+            assert_meta(ds_1.meta, ds_2.meta)
 
             # Assert almost equal
             np.testing.assert_almost_equal(ds_1.read(), ds_2.read(), decimal=decimal)
@@ -272,7 +272,7 @@ def assert_raster_max_mismatch(
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
             # Metadata
-            _assert_meta(ds_1.meta, ds_2.meta)
+            assert_meta(ds_1.meta, ds_2.meta)
 
             # Compute the number of mismatch
             nof_mismatch = np.count_nonzero(ds_1.read() != ds_2.read())

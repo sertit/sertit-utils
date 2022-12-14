@@ -2,6 +2,11 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+## 1.21.2 (2022-12-14)
+
+- FIX: Better handling of windows in `rasters(_rio).read`
+- FIX: Expose `ci.assert_meta`
+
 ## 1.21.1 (2022-12-13)
 
 - FIX: Fix new_shape retrieval when providing a size with height or width equal to the original dimension

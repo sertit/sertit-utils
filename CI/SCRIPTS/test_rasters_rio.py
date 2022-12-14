@@ -23,9 +23,11 @@ import numpy as np
 import pytest
 import rasterio
 import shapely
+from rasterio.windows import Window
 
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
+from sertit.vectors import WGS84
 
 ci.reduce_verbosity()
 
@@ -99,12 +101,31 @@ def test_rasters_rio():
             rasters_rio.write(window, w_mt, window_out)
             ci.assert_raster_equal(window_out, raster_window_path)
 
+            # Gdf
             window_20_out = os.path.join(tmp_dir, "test_xda_20_window.tif")
+            gdf = vectors.read(mask_path)
+            bounds = gdf.bounds.values[0]
             window_20, w_mt_20 = rasters_rio.read(
-                raster_path, window=mask_path, resolution=20
+                raster_path, window=gdf.to_crs(WGS84), resolution=20
             )
             rasters_rio.write(window_20, w_mt_20, window_20_out)
             ci.assert_raster_equal(window_20_out, raster_window_20_path)
+
+            # Bounds
+            window_20_2, w_mt_20_2 = rasters_rio.read(
+                raster_path, window=bounds, resolution=20
+            )
+            np.testing.assert_array_equal(window_20, window_20_2)
+            ci.assert_meta(w_mt_20, w_mt_20_2)
+
+            # Window
+            window_20_3, w_mt_20_3 = rasters_rio.read(
+                raster_path,
+                window=Window(col_off=57, row_off=0, width=363, height=321),
+                resolution=20,
+            )
+            np.testing.assert_array_equal(window_20, window_20_3)
+            ci.assert_meta(w_mt_20, w_mt_20_3)
 
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")

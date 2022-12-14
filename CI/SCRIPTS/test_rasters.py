@@ -33,6 +33,7 @@ from CI.SCRIPTS.script_utils import (
     s3_env,
 )
 from sertit import ci, files, rasters, vectors
+from sertit.vectors import WGS84
 
 ci.reduce_verbosity()
 
@@ -154,7 +155,8 @@ def test_rasters():
             ci.assert_raster_equal(xda_window_out, raster_window_path)
 
             xda_window_20_out = os.path.join(tmp_dir, "test_xda_20_window.tif")
-            xda_window_20 = rasters.read(raster_path, window=mask_path, resolution=20)
+            gdf = vectors.read(mask_path).to_crs(WGS84)
+            xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
             rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
             ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
