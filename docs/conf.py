@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2022, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #

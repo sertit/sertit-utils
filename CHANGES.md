@@ -2,6 +2,8 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+- DOC: Changing copyright from 2022 to 2023
+
 ## 1.21.2 (2022-12-14)
 
 - FIX: Better handling of windows in `rasters(_rio).read`
