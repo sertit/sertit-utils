@@ -20,9 +20,9 @@ from collections.abc import Callable
 from enum import unique
 from functools import wraps
 
-import rasterio
-from cloudpathlib import AnyPath, S3Client
+from cloudpathlib import AnyPath
 
+from sertit import ci
 from sertit.misc import ListEnum
 
 AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
@@ -42,12 +42,8 @@ class Polarization(ListEnum):
 
 
 def get_s3_ci_path():
-    client = S3Client(
-        endpoint_url=f"https://{AWS_S3_ENDPOINT}",
-        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-    )
-    client.set_as_default_client()
+    """Get S3 CI path"""
+    ci.define_s3_client()
     return AnyPath("s3://sertit-sertit-utils-ci")
 
 
@@ -96,59 +92,6 @@ def dask_env(function: Callable):
     return dask_env_wrapper
 
 
-def s3_env(function: Callable):
-    """
-    Create S3 compatible storage environment
-    Args:
-        function (Callable): Function to decorate
-
-    Returns:
-        Callable: decorated function
-    """
-
-    @wraps(function)
-    def s3_env_wrapper():
-        """S3 environment wrapper"""
-        os.environ[CI_SERTIT_S3] = "0"
-        print("Using on disk files")
-        function()
-
-        if os.getenv(AWS_SECRET_ACCESS_KEY) and sys.platform != "win32":
-            os.environ[CI_SERTIT_S3] = "1"
-            print("Using S3 files")
-            with rasterio.Env(
-                CPL_CURL_VERBOSE=False,
-                AWS_VIRTUAL_HOSTING=False,
-                AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-                GDAL_DISABLE_READDIR_ON_OPEN=False,
-            ):
-                function()
-
-            os.environ[CI_SERTIT_S3] = "0"
-
-    return s3_env_wrapper
-
-
-def assert_xr_encoding_attrs(xda_1, xda_2):
-    try:
-        xda_1.attrs == xda_2.attrs
-    except AssertionError:
-        for key, val in xda_1.attrs:
-            if not key.stratswith("_"):
-                assert (
-                    xda_1.attrs[key] == xda_2.attrs[key]
-                ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-
-    try:
-        xda_1.encoding == xda_2.encoding
-    except AssertionError:
-        for key, val in xda_1.encoding:
-            if not key.stratswith("_"):
-                assert (
-                    xda_1.encoding[key] == xda_2.encoding[key]
-                ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-
-
 def rasters_path():
     return get_ci_data_path().joinpath("rasters")
 
@@ -167,3 +110,7 @@ def display_path():
 
 def xml_path():
     return get_ci_data_path().joinpath("xml")
+
+
+def s3_env(function):
+    return ci.s3_env(function, use_s3_env_var=CI_SERTIT_S3)

@@ -581,6 +581,9 @@ def archive(
     archive_path = AnyPath(archive_path)
     folder_path = AnyPath(folder_path)
 
+    if isinstance(folder_path, CloudPath):
+        folder_path = AnyPath(folder_path.fspath)
+
     # Shutil make_archive needs a path without extension
     archive_base = os.path.splitext(archive_path)[0]
 

@@ -24,16 +24,25 @@ import logging
 import os
 import pprint
 from doctest import Example
+from functools import wraps
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import geopandas as gpd
 import numpy as np
-from cloudpathlib import AnyPath, CloudPath
+import xarray as xr
+from cloudpathlib import AnyPath, CloudPath, S3Client
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 
 from sertit import vectors
+from sertit.logs import SU_NAME
+
+AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
+AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+AWS_S3_ENDPOINT = "s3.unistra.fr"
+
+LOGGER = logging.getLogger(SU_NAME)
 
 
 def get_mnt_path() -> str:
@@ -128,7 +137,19 @@ def get_db4_path() -> str:
     return _get_db_path(4)
 
 
-def _assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
+def assert_val(val_1: Any, val_2: Any, field: str) -> None:
+    """
+    Compare two values corresponding to a field
+
+    Args:
+        val_1 (Any): Value 1
+        val_2 (Any): Value 2
+        field (str): Field to compare
+    """
+    assert val_1 == val_2, f"{field} incoherent:\n{val_1} != {val_2}"
+
+
+def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
     """
     Compare two fields of a dictionary
 
@@ -137,30 +158,29 @@ def _assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
         dict_2 (dict): Dict 2
         field (str): Field to compare
     """
-    assert (
-        dict_1[field] == dict_2[field]
-    ), f"{field} incoherent:\n{dict_1[field]} != {dict_2[field]}"
+    assert_val(dict_1[field], dict_2[field], field)
 
 
-def assert_meta(meta_1, meta_2):
+def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
     """
     Compare rasterio metadata
 
     Args:
         meta_1 (dict): Metadata 1
         meta_2 (dict): Metadata 2
+        tf_precision (float): Transform precision (in transform units)
     """
     # Driver
-    _assert_field(meta_1, meta_2, "driver")
-    _assert_field(meta_1, meta_2, "dtype")
-    _assert_field(meta_1, meta_2, "nodata")
-    _assert_field(meta_1, meta_2, "width")
-    _assert_field(meta_1, meta_2, "height")
-    _assert_field(meta_1, meta_2, "count")
-    _assert_field(meta_1, meta_2, "crs")
+    assert_field(meta_1, meta_2, "driver")
+    assert_field(meta_1, meta_2, "dtype")
+    assert_field(meta_1, meta_2, "nodata")
+    assert_field(meta_1, meta_2, "width")
+    assert_field(meta_1, meta_2, "height")
+    assert_field(meta_1, meta_2, "count")
+    assert_field(meta_1, meta_2, "crs")
 
     assert meta_1["transform"].almost_equals(
-        meta_2["transform"], precision=1e-9
+        meta_2["transform"], precision=tf_precision
     ), f'transform incoherent:\n{meta_1["transform"]}\n!=\n{meta_2["transform"]}'
 
 
@@ -231,10 +251,31 @@ def assert_raster_almost_equal(
     with rasterio.open(str(path_1)) as ds_1:
         with rasterio.open(str(path_2)) as ds_2:
             # Metadata
-            assert_meta(ds_1.meta, ds_2.meta)
+            assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
             # Assert almost equal
-            np.testing.assert_almost_equal(ds_1.read(), ds_2.read(), decimal=decimal)
+            errors = []
+            for i in range(ds_1.count):
+
+                desc = (
+                    f": {ds_1.descriptions[i]}"
+                    if ds_1.descriptions[i] is not None
+                    else ""
+                )
+                LOGGER.info(f"Checking Band {i + 1}{desc}")
+                try:
+                    marr_1 = ds_1.read(i + 1)
+                    marr_2 = ds_2.read(i + 1)
+                    np.testing.assert_array_almost_equal(
+                        marr_1, marr_2, decimal=decimal
+                    )
+                except AssertionError:
+                    text = f"Band {i + 1}{desc} failed"
+                    errors.append(text)
+                    LOGGER.error(text, exc_info=True)
+
+            if errors:
+                raise AssertionError(errors)
 
 
 def assert_raster_max_mismatch(
@@ -422,7 +463,7 @@ def assert_geom_almost_equal(
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
             assert curr_geom_1.equals_exact(
-                curr_geom_2, tolerance=0.5 * 10**decimal
+                curr_geom_2, tolerance=10**-decimal
             ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
 
 
@@ -462,6 +503,35 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
         raise AssertionError(message)
 
 
+def assert_xr_encoding_attrs(
+    xda_1: Union[xr.DataArray, xr.Dataset], xda_2: Union[xr.DataArray, xr.Dataset]
+):
+    """
+    Assert that the encoding attributes of xarray.DataArray/set are the same
+
+    Args:
+        xda_1 (Union[xr.DataArray, xr.Dataset]): First xarray
+        xda_2 (Union[xr.DataArray, xr.Dataset]): First xarray
+    """
+    try:
+        xda_1.attrs == xda_2.attrs
+    except AssertionError:
+        for key, val in xda_1.attrs:
+            if not key.stratswith("_"):
+                assert (
+                    xda_1.attrs[key] == xda_2.attrs[key]
+                ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+
+    try:
+        xda_1.encoding == xda_2.encoding
+    except AssertionError:
+        for key, val in xda_1.encoding:
+            if not key.stratswith("_"):
+                assert (
+                    xda_1.encoding[key] == xda_2.encoding[key]
+                ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+
+
 def reduce_verbosity(other_loggers: list = None) -> None:
     """Reduce verbosity for other loggers"""
     loggers = [
@@ -481,3 +551,54 @@ def reduce_verbosity(other_loggers: list = None) -> None:
     # Unique logger names
     for logger in list(set(loggers)):
         logging.getLogger(logger).setLevel(logging.WARNING)
+
+
+def s3_env(*args, **kwargs):
+    """
+    Create S3 compatible storage environment
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    """
+    import rasterio
+
+    use_s3 = kwargs["use_s3_env_var"]
+    function = args[0]
+
+    @wraps(function)
+    def s3_env_wrapper():
+        """S3 environment wrapper"""
+        if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
+            # Define S3 client for S3 paths
+            define_s3_client()
+            os.environ[use_s3] = "1"
+            LOGGER.info("Using S3 files")
+            with rasterio.Env(
+                CPL_CURL_VERBOSE=False,
+                AWS_VIRTUAL_HOSTING=False,
+                AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
+                GDAL_DISABLE_READDIR_ON_OPEN=False,
+            ):
+                function()
+
+        else:
+            os.environ[use_s3] = "0"
+            LOGGER.info("Using on disk files")
+            function()
+
+    return s3_env_wrapper
+
+
+def define_s3_client():
+    """
+    Define S3 client
+    """
+    # ON S3
+    client = S3Client(
+        endpoint_url=f"https://{AWS_S3_ENDPOINT}",
+        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
+        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+    )
+    client.set_as_default_client()

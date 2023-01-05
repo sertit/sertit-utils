@@ -2,6 +2,9 @@
 
 ## 1.XX.Y (20YY-MM-DD)
 
+- **ENH: Adding several CI functions: `ci.assert_val`, `ci.assert_xr_encoding_attrs`, `ci.s3_env`, `ci.define_s3_client`**
+- **ENH: Making public `ci.assert_field`**
+- FIX: factorizing some `ci` functions, better logs in other...
 - DOC: Changing copyright from 2022 to 2023
 
 ## 1.21.2 (2022-12-14)
