@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Union
 
-from cloudpathlib import CloudPath
+from cloudpathlib import AnyPath, CloudPath
 from lxml.etree import (
     ElementTree,
     XMLSyntaxError,
@@ -50,6 +50,7 @@ def read(path: Union[str, Path, CloudPath]) -> _Element:
     Returns:
         _Element: XML Root
     """
+    path = AnyPath(path)
     try:
         if isinstance(path, CloudPath):
             try:
