@@ -507,29 +507,49 @@ def assert_xr_encoding_attrs(
     xda_1: Union[xr.DataArray, xr.Dataset], xda_2: Union[xr.DataArray, xr.Dataset]
 ):
     """
-    Assert that the encoding attributes of xarray.DataArray/set are the same
+    Assert that the attributes and the encoding of xarray.DataArray/set are the same
 
     Args:
         xda_1 (Union[xr.DataArray, xr.Dataset]): First xarray
         xda_2 (Union[xr.DataArray, xr.Dataset]): First xarray
     """
+    # Attributes
     try:
-        xda_1.attrs == xda_2.attrs
+        assert xda_1.attrs == xda_2.attrs
     except AssertionError:
-        for key, val in xda_1.attrs:
-            if not key.stratswith("_"):
-                assert (
-                    xda_1.attrs[key] == xda_2.attrs[key]
-                ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+        try:
+            for key, val in xda_1.attrs.items():
+                if not key.startswith("_"):
+                    assert (
+                        xda_1.attrs[key] == xda_2.attrs[key]
+                    ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
 
+            for key, val in xda_2.attrs.items():
+                if not key.startswith("_"):
+                    assert (
+                        xda_1.attrs[key] == xda_2.attrs[key]
+                    ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+        except KeyError:
+            raise AssertionError
+
+    # Encoding
     try:
-        xda_1.encoding == xda_2.encoding
+        assert xda_1.encoding == xda_2.encoding
     except AssertionError:
-        for key, val in xda_1.encoding:
-            if not key.stratswith("_"):
-                assert (
-                    xda_1.encoding[key] == xda_2.encoding[key]
-                ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+        try:
+            for key, val in xda_1.encoding.items():
+                if not key.startswith("_"):
+                    assert (
+                        xda_1.encoding[key] == xda_2.encoding[key]
+                    ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+
+            for key, val in xda_2.encoding.items():
+                if not key.startswith("_"):
+                    assert (
+                        xda_1.encoding[key] == xda_2.encoding[key]
+                    ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+        except KeyError:
+            raise AssertionError
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:

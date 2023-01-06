@@ -23,9 +23,29 @@ from cloudpathlib import CloudPath
 from lxml import etree
 
 from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, misc, rasters_rio, vectors
+from sertit import ci, misc, rasters, rasters_rio, vectors
 
 ci.reduce_verbosity(other_loggers=["botocore"])
+
+
+@s3_env
+def test_assert_base():
+    """Test CI functions"""
+    # assert_val
+    ci.assert_val("a", "a", "same string")
+    with pytest.raises(AssertionError):
+        ci.assert_val("a", "b", "different string")
+
+    # assert_field
+    dict_1 = {
+        "a": 1,
+    }
+    dict_2 = {
+        "a": 2,
+    }
+    ci.assert_field(dict_1, dict_1, "a")
+    with pytest.raises(AssertionError):
+        ci.assert_field(dict_1, dict_2, "a")
 
 
 @s3_env
@@ -103,6 +123,14 @@ def test_assert_raster():
         ci.assert_raster_max_mismatch(raster_path, raster_path, max_mismatch_pct=0.001)
         with pytest.raises(AssertionError):
             ci.assert_raster_max_mismatch(raster_float_path, raster_almost_path)
+
+    # Test encoding
+    rast_1_xr = rasters.read(raster_path)
+    rast_2_xr = rasters.read(raster2_path)
+    rast_2_xr.encoding["add_field"] = True
+    ci.assert_xr_encoding_attrs(rast_1_xr, rast_1_xr)
+    with pytest.raises(AssertionError):
+        ci.assert_xr_encoding_attrs(rast_1_xr, rast_2_xr)
 
 
 @s3_env
