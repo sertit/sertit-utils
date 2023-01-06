@@ -831,18 +831,22 @@ def copy(
         Union[CloudPath, Path]: New path
     """
     src = AnyPath(src)
-    out = None
-    try:
-        if src.is_dir():
-            out = AnyPath(shutil.copytree(src, dst))
-        elif os.path.isfile(src):
-            out = AnyPath(shutil.copy2(src, dst))
-    except shutil.Error:
-        LOGGER.debug(exc_info=True)
-        out = src
-        # eg. source or destination doesn't exist
-    except IOError as ex:
-        raise IOError(f"Copy error: {ex.strerror}") from ex
+
+    if isinstance(src, CloudPath):
+        out = src.download_to(dst)
+    else:
+        out = None
+        try:
+            if src.is_dir():
+                out = AnyPath(shutil.copytree(src, dst))
+            elif os.path.isfile(src):
+                out = AnyPath(shutil.copy2(src, dst))
+        except shutil.Error:
+            LOGGER.debug(exc_info=True)
+            out = src
+            # eg. source or destination doesn't exist
+        except IOError as ex:
+            raise IOError(f"Copy error: {ex.strerror}") from ex
 
     return out
 

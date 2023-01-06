@@ -9,6 +9,7 @@
 - FIX: Fixing `ci.assert_dir_equal` if folders don't have files ordrered inside... (for some reason)
 - FIX: Add `distributed` in loggers removed by `ci.reduce_verbosity`
 - FIX: Use `sertit` LOGGER in `networks` module
+- FIX: Manage `CloudPath` in `files.copy` function
 - DOC: Changing copyright from 2022 to 2023
 - CI: Better handling of logging display for pytest
 
