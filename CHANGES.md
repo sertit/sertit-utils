@@ -1,6 +1,6 @@
 # Release History
 
-## 1.XX.Y (20YY-MM-DD)
+## 1.22.0 (2023-01-06)
 
 - **ENH: Adding several CI functions: `ci.assert_val`, `ci.assert_xr_encoding_attrs`, `ci.s3_env`, `ci.define_s3_client`**
 - **ENH: Making public `ci.assert_field`**
