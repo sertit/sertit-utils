@@ -6,6 +6,7 @@
 - **ENH: Making public `ci.assert_field`**
 - FIX: factorizing some `ci` functions, better logs in other...
 - FIX: Fixing `xml.read` with cloud path as str
+- FIX: Fixing `ci.assert_dir_equal` if folders don't have files ordrered inside... (for some reason)
 - DOC: Changing copyright from 2022 to 2023
 
 ## 1.21.2 (2022-12-14)

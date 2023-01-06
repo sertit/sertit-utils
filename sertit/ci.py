@@ -360,9 +360,16 @@ def assert_dir_equal(
     except FileNotFoundError:
         files_1 = [AnyPath(path).name for path in AnyPath(path_1).iterdir()]
         files_2 = [AnyPath(path).name for path in AnyPath(path_2).iterdir()]
-        assert (
-            files_1 == files_2
-        ), f"Files non equal!\n{pprint.pformat(files_1)} != {pprint.pformat(files_2)}"
+
+        for f1 in files_1:
+            assert (
+                f1 in files_2
+            ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+
+        for f2 in files_2:
+            assert (
+                f2 in files_1
+            ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
 
 
 def assert_geom_equal(
@@ -557,6 +564,8 @@ def reduce_verbosity(other_loggers: list = None) -> None:
     loggers = [
         "boto3",
         "botocore",
+        "botocore.hooks",
+        "botocore.auth",
         "shapely",
         "fiona",
         "rasterio",

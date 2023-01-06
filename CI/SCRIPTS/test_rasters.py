@@ -424,7 +424,7 @@ def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = rasters_path().joinpath("DIM.dim")
     dim_img_path = rasters.get_dim_img_path(dim_path)
-    assert dim_img_path.is_file()
+    assert dim_img_path.is_file(), f"{dim_img_path} is not a file!"
     assert dim_img_path == rasters_path().joinpath("DIM.data", "dim.img")
 
 
