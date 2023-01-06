@@ -27,26 +27,27 @@ from sertit.logs import LOGGING_FORMAT
 
 ci.reduce_verbosity()
 
-LOGGER = logging.getLogger("Test_logger")
-
 
 def test_log():
     """Testing log functions"""
+
     # -- INIT LOGGER --
     log_lvl = logging.WARNING
-    LOGGER.handlers.append(logging.StreamHandler())  # Handler to remove
-    logs.init_logger(LOGGER, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
+
+    logger = logging.getLogger("Test_logger")
+    logger.handlers.append(logging.StreamHandler())  # Handler to remove
+    logs.init_logger(logger, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
     logs.reset_logging()
-    assert LOGGER.handlers == []
-    assert LOGGER.filters == []
-    assert LOGGER.level == 0
+    assert logger.handlers == []
+    assert logger.filters == []
+    assert logger.level == 0
 
     # Re init logger
-    logs.init_logger(LOGGER, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
+    logs.init_logger(logger, log_lvl=log_lvl, log_format=LOGGING_FORMAT)
 
     # Test init
-    assert LOGGER.level == log_lvl
-    assert LOGGER.handlers[0].formatter._fmt == LOGGING_FORMAT
+    assert logger.level == log_lvl
+    assert logger.handlers[0].formatter._fmt == LOGGING_FORMAT
 
     # -- CREATE LOGGER --
     logger_test = logging.getLogger("test")
@@ -54,7 +55,7 @@ def test_log():
     stream_log_lvl = logging.DEBUG
     with tempfile.TemporaryDirectory() as tmp_dir:
         logs.create_logger(
-            LOGGER,
+            logger,
             file_log_level=file_log_lvl,
             stream_log_level=stream_log_lvl,
             output_folder=tmp_dir,
@@ -62,12 +63,12 @@ def test_log():
             other_loggers_names=["test"],
         )
 
-        LOGGER.info("Hey you!")
+        logger.info("Hey you!")
 
         # Test create
-        assert len(LOGGER.handlers) == 2  # File and stream
+        assert len(logger.handlers) == 2  # File and stream
         assert len(logger_test.handlers) == 2  # File and stream
-        for handler in LOGGER.handlers + logger_test.handlers:
+        for handler in logger.handlers + logger_test.handlers:
             if isinstance(handler, logging.FileHandler):
                 assert handler.level == file_log_lvl
                 log_file = handler.baseFilename
@@ -82,16 +83,16 @@ def test_log():
 
         logs.reset_logging()
         logs.create_logger(
-            LOGGER, stream_log_level=stream_log_lvl, other_loggers_names="test"
+            logger, stream_log_level=stream_log_lvl, other_loggers_names="test"
         )
 
-        LOGGER.info("Hi there!")
+        logger.info("Hi there!")
 
         # Test create
-        assert len(LOGGER.handlers) == 1  # Only stream
+        assert len(logger.handlers) == 1  # Only stream
         assert len(logger_test.handlers) == 1  # Only stream
         colored_fmt_cls = clog.ColoredFormatter
-        for handler in LOGGER.handlers + logger_test.handlers:
+        for handler in logger.handlers + logger_test.handlers:
             if isinstance(handler, logging.StreamHandler):
                 assert handler.level == stream_log_lvl
                 assert isinstance(handler.formatter, colored_fmt_cls)
@@ -107,17 +108,21 @@ def test_log():
         colorlog_sys = sys.modules["colorlog"]
         del colorlog
         sys.modules["colorlog"] = None
-        logs.create_logger(LOGGER, stream_log_level=stream_log_lvl)
+        logs.create_logger(logger, stream_log_level=stream_log_lvl)
 
-        LOGGER.info("Urk!")
+        logger.info("Urk!")
 
-        for handler in LOGGER.handlers:
+        for handler in logger.handlers:
             assert isinstance(handler.formatter, logging.Formatter)
 
         # Just in case
         sys.modules["colorlog"] = colorlog_sys
 
         # Cleanup
-        logs.shutdown_logger(
-            LOGGER
-        )  # If this fails, we will not be able to cleanup the tmp dir
+        logs.shutdown_logger(logger)
+        logs.shutdown_logger(logger_test)
+
+        logs.reset_logging()
+
+        # Reduce verbosity again after resetting
+        ci.reduce_verbosity()

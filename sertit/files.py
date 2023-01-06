@@ -581,8 +581,10 @@ def archive(
     archive_path = AnyPath(archive_path)
     folder_path = AnyPath(folder_path)
 
+    tmp_dir = None
     if isinstance(folder_path, CloudPath):
-        folder_path = AnyPath(folder_path.fspath)
+        tmp_dir = tempfile.TemporaryDirectory()
+        folder_path = folder_path.download_to(tmp_dir.name)
 
     # Shutil make_archive needs a path without extension
     archive_base = os.path.splitext(archive_path)[0]
@@ -594,6 +596,9 @@ def archive(
         root_dir=folder_path.parent,
         base_dir=folder_path.name,
     )
+
+    if tmp_dir is not None:
+        tmp_dir.cleanup()
 
     return AnyPath(archive_fn)
 

@@ -22,7 +22,9 @@ import time
 from random import Random
 from typing import Callable
 
-logger = logging.getLogger(__name__)
+from sertit.logs import SU_NAME
+
+LOGGER = logging.getLogger(SU_NAME)
 
 
 # pylint: disable=R0913
@@ -119,17 +121,17 @@ def exponential_backoff(
     try:
         return network_request()
     except Exception as ex:
-        logger.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
+        LOGGER.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
 
     for i in range(real_max_tries - 2):  # Avoids infinite loop
         random_scale = rng.randint(0, 2**i - 1)
         curr_wait_time = wait_time_slot * increase_factor**random_scale
 
-        logger.info("Retrying action %s in %s seconds...", desc, curr_wait_time)
+        LOGGER.info("Retrying action %s in %s seconds...", desc, curr_wait_time)
 
         cumulated_wait_time += curr_wait_time
         if cumulated_wait_time > max_wait:
-            logger.error(
+            LOGGER.error(
                 "Waited %s seconds : Maximum wait time (%s) reached\n !!! Aborting !!!",
                 cumulated_wait_time,
                 max_wait,
@@ -144,7 +146,7 @@ def exponential_backoff(
         try:
             return network_request()
         except Exception as ex:
-            logger.error(
+            LOGGER.error(
                 "Action '%s' failed with exception: %s", desc, ex, exc_info=True
             )
 

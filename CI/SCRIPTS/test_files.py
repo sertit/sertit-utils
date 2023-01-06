@@ -66,7 +66,7 @@ def test_paths():
             assert files.is_writable(tmp_dir)  # Writeable
 
         assert not files.is_writable(get_s3_ci_path())  # Not writable
-        assert not files.is_writable("cvfgbherth")  # Non existing
+        assert not files.is_writable("cvfgbherth")  # Non-existing
 
 
 def test_archive():

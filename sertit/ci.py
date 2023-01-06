@@ -567,6 +567,7 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "botocore.hooks",
         "botocore.auth",
         "shapely",
+        "shapely.geos",
         "fiona",
         "rasterio",
         "urllib3",
@@ -574,6 +575,8 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "pyproj",
         "matplotlib",
         "distributed",
+        "asyncio",
+        "bokeh",
     ]
     if other_loggers:
         loggers += other_loggers

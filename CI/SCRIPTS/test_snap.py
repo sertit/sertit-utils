@@ -16,7 +16,6 @@
 # limitations under the License.
 """ Script testing SNAP functions """
 
-import logging
 import shutil
 
 import pytest
@@ -24,8 +23,6 @@ import pytest
 from sertit import ci, snap
 
 ci.reduce_verbosity()
-
-LOGGER = logging.getLogger("Test_logger")
 
 
 def test_b2snap():

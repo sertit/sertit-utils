@@ -125,7 +125,7 @@ def create_logger(
 
     # Formatters
     basic_fmter = {
-        "format": "%(asctime)s - [%(levelname)s] - %(message)s",
+        "format": LOGGING_FORMAT,
     }
     try:
         # 'colorlog.ColoredFormatter' imported but unused
