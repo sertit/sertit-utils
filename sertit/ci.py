@@ -573,6 +573,7 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "s3transfer",
         "pyproj",
         "matplotlib",
+        "distributed",
     ]
     if other_loggers:
         loggers += other_loggers

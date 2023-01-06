@@ -7,6 +7,7 @@
 - FIX: factorizing some `ci` functions, better logs in other...
 - FIX: Fixing `xml.read` with cloud path as str
 - FIX: Fixing `ci.assert_dir_equal` if folders don't have files ordrered inside... (for some reason)
+- FIX: Add `distributed` in loggers removed by `ci.reduce_verbosity`
 - DOC: Changing copyright from 2022 to 2023
 
 ## 1.21.2 (2022-12-14)
