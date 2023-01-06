@@ -423,9 +423,9 @@ def test_write():
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = rasters_path().joinpath("DIM.dim")
-    assert rasters.get_dim_img_path(dim_path) == rasters_path().joinpath(
-        "DIM.data", "dim.img"
-    )
+    dim_img_path = rasters.get_dim_img_path(dim_path)
+    assert dim_img_path.is_file()
+    assert dim_img_path == rasters_path().joinpath("DIM.data", "dim.img")
 
 
 @dask_env
