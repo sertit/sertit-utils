@@ -171,6 +171,12 @@ def assert_files_equal(
         file_1 (str): Path to file 1
         file_2 (str): Path to file 2
     """
+    if isinstance(file_1, CloudPath):
+        file_1 = file_1.fspath
+
+    if isinstance(file_2, CloudPath):
+        file_2 = file_2.fspath
+
     with open(str(file_1), "r") as f1:
         with open(str(file_2), "r") as f2:
             assert files.hash_file_content(f1.read()) == files.hash_file_content(
