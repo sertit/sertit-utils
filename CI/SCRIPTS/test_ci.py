@@ -60,6 +60,17 @@ def test_assert_dir():
 
 
 @s3_env
+def test_assert_files():
+    """Test CI functions"""
+    ok_path = files_path().joinpath("productPreview.html")
+    false_path = files_path().joinpath("false.html")
+
+    ci.assert_files_equal(ok_path, ok_path)
+    with pytest.raises(AssertionError):
+        ci.assert_files_equal(ok_path, false_path)
+
+
+@s3_env
 def test_assert_vect():
     """Test CI functions"""
     # Vector

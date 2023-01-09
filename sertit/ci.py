@@ -35,7 +35,7 @@ from cloudpathlib import AnyPath, CloudPath, S3Client
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 
-from sertit import vectors
+from sertit import files, vectors
 from sertit.logs import SU_NAME
 
 AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
@@ -159,6 +159,23 @@ def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
         field (str): Field to compare
     """
     assert_val(dict_1[field], dict_2[field], field)
+
+
+def assert_files_equal(
+    file_1: Union[str, Path, CloudPath], file_2: Union[str, Path, CloudPath]
+):
+    """
+    Assert to files are equal by hashing its content
+
+    Args:
+        file_1 (str): Path to file 1
+        file_2 (str): Path to file 2
+    """
+    with open(str(file_1), "r") as f1:
+        with open(str(file_2), "r") as f2:
+            assert files.hash_file_content(f1.read()) == files.hash_file_content(
+                f2.read()
+            )
 
 
 def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
