@@ -1,6 +1,6 @@
 # Release History
 
-## 1.24.0 (2023-01-09)
+## 1.23.0 (2023-01-09)
 
 - **ENH: Adding `ci.assert_files_equal` function**
 
