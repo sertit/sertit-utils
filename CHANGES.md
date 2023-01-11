@@ -1,5 +1,9 @@
 # Release History
 
+## 1.YY.Z (2023-MM-DD)
+
+- CI: Don't run tests when only `__init__` or `__meta__` is updated
+
 ## 1.23.0 (2023-01-09)
 
 - **ENH: Adding `ci.assert_files_equal` function**

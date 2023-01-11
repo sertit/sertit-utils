@@ -7,6 +7,7 @@ stages:
 variables:
   EEO_DEPS: $REGISTRY_GITLAB/extracteo/extracteo_deps
   EO_CONTAINER: $REGISTRY_GITLAB/eo-containers/python
+  SU_CHANGES: sertit/[^_]*.{py,xml}
 
 lint:
   image: python:3.8-buster
@@ -35,7 +36,7 @@ pytest:
     - if: $CI_COMMIT_TAG
       when: never
     - changes:
-        - sertit/**/*.{py,xml}
+        - $SU_CHANGES
         - CI/**/*.{py,xml}
         - .gitlab-ci.yml
         - pytest.ini
