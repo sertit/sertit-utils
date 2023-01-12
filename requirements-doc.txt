@@ -1,4 +1,6 @@
 # Doc
+sphinx<6.0.0  # workaround
+ipython  # workaround
 sphinx
 sphinx-book-theme
 sphinx-copybutton
