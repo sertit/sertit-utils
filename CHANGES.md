@@ -2,7 +2,6 @@
 
 ## 1.YY.Z (2023-MM-DD)
 
-- OPTIM: `rasterio.open` accepts PathLike objects (since [1.3.0](https://github.com/rasterio/rasterio/pull/2231))
 - CI: Don't run tests when only `__init__` or `__meta__` is updated
 
 ## 1.23.0 (2023-01-09)

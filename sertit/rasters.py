@@ -133,6 +133,7 @@ def path_xarr_dst(function: Callable) -> Callable:
             # Get name
             if isinstance(path_or_ds, (str, Path, CloudPath)):
                 name = str(path_or_ds)
+                path_or_ds = str(path_or_ds)
             else:
                 name = path_or_ds.name
 

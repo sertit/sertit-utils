@@ -100,7 +100,7 @@ def test_rasters():
         truth_footprint = vectors.read(footprint_path)
         ci.assert_geom_equal(footprint, truth_footprint)
 
-        with rasterio.open(raster_path) as dst:
+        with rasterio.open(str(raster_path)) as dst:
             dst_dtype = dst.meta["dtype"]
 
             # ----------------------------------------------------------------------------------------------
