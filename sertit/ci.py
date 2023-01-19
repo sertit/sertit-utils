@@ -232,8 +232,8 @@ def assert_raster_equal(
             "Please install 'rasterio' to use assert_raster_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
+    with rasterio.open(path_1) as ds_1:
+        with rasterio.open(path_2) as ds_2:
             # Metadata
             assert_meta(ds_1.meta, ds_2.meta)
 
@@ -271,8 +271,8 @@ def assert_raster_almost_equal(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
+    with rasterio.open(path_1) as ds_1:
+        with rasterio.open(path_2) as ds_2:
             # Metadata
             assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
@@ -333,8 +333,8 @@ def assert_raster_max_mismatch(
             "Please install 'rasterio' to use assert_raster_max_mismatch."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
+    with rasterio.open(path_1) as ds_1:
+        with rasterio.open(path_2) as ds_2:
             # Metadata
             assert_meta(ds_1.meta, ds_2.meta)
 

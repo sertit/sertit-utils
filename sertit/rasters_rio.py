@@ -129,7 +129,7 @@ def path_arr_dst(function: Callable) -> Callable:
             Any: regular output
         """
         if isinstance(path_or_arr_or_ds, (str, Path, CloudPath)):
-            with rasterio.open(str(path_or_arr_or_ds)) as ds:
+            with rasterio.open(path_or_arr_or_ds) as ds:
                 out = function(ds, *args, **kwargs)
         elif isinstance(path_or_arr_or_ds, tuple):
             arr, meta = path_or_arr_or_ds
@@ -1017,7 +1017,7 @@ def write(
         raster_out = np.expand_dims(raster_out, axis=0)
 
     # Write product
-    with rasterio.open(str(path), "w", **out_meta) as ds:
+    with rasterio.open(path, "w", **out_meta) as ds:
         ds.write(raster_out)
         if tags is not None:
             ds.update_tags(**tags)
@@ -1381,7 +1381,7 @@ def merge_gtiff(
     crs_datasets = []
     try:
         for path in crs_paths:
-            crs_datasets.append(rasterio.open(str(path)))
+            crs_datasets.append(rasterio.open(path))
 
         # Merge all datasets
         merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)

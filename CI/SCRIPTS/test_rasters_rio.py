@@ -77,7 +77,7 @@ def test_rasters_rio():
 
         # Read
         raster, meta = rasters_rio.read(raster_path)
-        with rasterio.open(str(raster_path)) as dst:
+        with rasterio.open(raster_path) as dst:
             raster_1, meta1 = rasters_rio.read(dst, resolution=20)
             raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
             raster_3, _ = rasters_rio.read(dst, size=(meta1["width"], meta1["height"]))
@@ -292,8 +292,8 @@ def test_reproj():
     raster_path = rasters_path().joinpath("raster.tif")
     reproj_path = rasters_path().joinpath("reproj_out.tif")
 
-    with rasterio.open(str(dem_path)) as src:
-        with rasterio.open(str(raster_path)) as dst:
+    with rasterio.open(dem_path) as src:
+        with rasterio.open(raster_path) as dst:
             dst_arr, dst_meta = rasters_rio.reproject_match(
                 dst.meta, src.read(), src.meta
             )
