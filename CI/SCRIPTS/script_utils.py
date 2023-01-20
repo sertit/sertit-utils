@@ -53,7 +53,7 @@ def get_proj_path():
         return get_s3_ci_path()
     else:
         # ON DISK
-        return AnyPath(__file__).parent.parent.parent
+        return AnyPath(ci.get_db3_path())
 
 
 def get_ci_data_path():
@@ -61,7 +61,7 @@ def get_ci_data_path():
     if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
         return get_proj_path().joinpath("DATA")
     else:
-        return get_proj_path().joinpath("CI", "DATA")
+        return get_proj_path().joinpath("CI", "sertit_utils", "DATA")
 
 
 def dask_env(function: Callable):
