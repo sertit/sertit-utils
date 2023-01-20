@@ -56,6 +56,55 @@ LOGGER = logging.getLogger(SU_NAME)
 DEG_2_RAD = np.pi / 180
 
 
+# NODATAs
+UINT8_NODATA = 255
+""" UINT8 nodata: 255 """
+
+INT8_NODATA = -128
+""" INT8 nodata: -128 """
+
+UINT16_NODATA = 65535
+""" UINT16 nodata: 65535 """
+
+FLOAT_NODATA = -9999
+""" FLOAT nodata: -9999 """
+
+
+def get_nodata_value(dtype) -> int:
+    """
+    Get default nodata value:
+
+    .. code-block:: python
+            if dtype == np.uint8:
+                nodata = UINT8_NODATA
+            elif dtype == np.int8:
+                nodata = INT8_NODATA
+            elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
+                nodata = UINT16_NODATA
+            elif dtype in [np.int16, np.float32, np.float64, float]:
+                nodata = FLOAT_NODATA
+
+    Args:
+        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
+
+    Returns:
+        int: Nodata value
+    """
+    if dtype == np.uint8:
+        nodata = UINT8_NODATA
+    elif dtype == np.int8:
+        nodata = INT8_NODATA
+    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
+        nodata = UINT16_NODATA
+    elif dtype in [np.int16, np.float32, np.float64, float]:
+        nodata = FLOAT_NODATA
+    else:
+        LOGGER.warning(f"Not recognized dtype: {dtype}. Setting -9999 by default.")
+        nodata = FLOAT_NODATA
+
+    return nodata
+
+
 def bigtiff_value(arr: Any) -> str:
     """
     Returns YES if array is larger than 4 GB, IF_NEEDED otherwise.

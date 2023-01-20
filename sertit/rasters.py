@@ -62,6 +62,42 @@ XDS_TYPE = Union[xr.Dataset, xr.DataArray]
 Xarray types: xr.Dataset and xr.DataArray
 """  # fmt:skip
 
+# NODATAs
+UINT8_NODATA = rasters_rio.UINT8_NODATA
+""" UINT8 nodata: 255 """
+
+INT8_NODATA = rasters_rio.INT8_NODATA
+""" INT8 nodata: -128 """
+
+UINT16_NODATA = rasters_rio.UINT16_NODATA
+""" UINT16 nodata: 65535 """
+
+FLOAT_NODATA = rasters_rio.FLOAT_NODATA
+""" FLOAT nodata: -9999 """
+
+
+def get_nodata_value(dtype) -> int:
+    """
+    Get default nodata value:
+
+    .. code-block:: python
+            if dtype == np.uint8:
+                nodata = UINT8_NODATA
+            elif dtype == np.int8:
+                nodata = INT8_NODATA
+            elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
+                nodata = UINT16_NODATA
+            elif dtype in [np.int16, np.float32, np.float64, float]:
+                nodata = FLOAT_NODATA
+
+    Args:
+        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
+
+    Returns:
+        int: Nodata value
+    """
+    return rasters_rio.get_nodata_value(dtype)
+
 
 def path_xarr_dst(function: Callable) -> Callable:
     """
@@ -798,18 +834,8 @@ def write(
         xds.encoding["_FillValue"] = kwargs.pop("nodata")
     else:
         # Manage default nodata in function of dtype (default, for float = -9999)
-        if dtype == np.uint8:
-            xds.encoding["_FillValue"] = 255
-        elif dtype == np.int8:
-            xds.encoding["_FillValue"] = -128
-        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
-            xds.encoding["_FillValue"] = 65535
-        elif dtype in [np.int16, np.float32, np.float64, float]:
-            xds.encoding["_FillValue"] = -9999
-        else:
-            raise ValueError(
-                f"Invalid dtype: {dtype}, should be convertible to numpy dtypes"
-            )
+        xds.encoding["_FillValue"] = get_nodata_value(dtype)
+
     xds = xds.copy(data=xds.fillna(xds.encoding["_FillValue"]))
 
     # Default compression to LZW
