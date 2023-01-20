@@ -373,6 +373,8 @@ def test_rasters():
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():
+
+    # SAME CRS
     raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_path = rasters_path().joinpath("raster.tif")
@@ -389,6 +391,42 @@ def test_vrt():
             [raster_path, raster_to_merge_path], raster_merged_vrt_out, abs_path=True
         )
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+
+
+@s3_env
+@pytest.mark.skipif(
+    shutil.which("gdalbuildvrt") is None,
+    reason="Only works if gdalbuildvrt can be found.",
+)
+def test_merge_different_crs():
+    # DIFFERENT CRS
+    true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
+    true_tif_path = rasters_path().joinpath("merge_32-31.tif")
+
+    raster_1_path = rasters_path().joinpath(
+        "20220228T102849_S2_T31TGN_L2A_134712_RED.tif"
+    )
+    raster_2_path = rasters_path().joinpath(
+        "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Merge VRT
+        raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
+        rasters.merge_vrt([raster_1_path, raster_2_path], raster_merged_vrt_out)
+        ci.assert_raster_equal(raster_merged_vrt_out, true_vrt_path)
+
+        os.remove(raster_merged_vrt_out)
+
+        rasters.merge_vrt(
+            [raster_1_path, raster_2_path], raster_merged_vrt_out, abs_path=True
+        )
+        ci.assert_raster_equal(raster_merged_vrt_out, true_vrt_path)
+
+        # Merge GTiff
+        raster_merged_tif_out = os.path.join(tmp_dir, "test_merged.tif")
+        rasters.merge_vrt([raster_1_path, raster_2_path], raster_merged_tif_out)
+        ci.assert_raster_equal(raster_merged_tif_out, true_tif_path)
 
 
 @s3_env

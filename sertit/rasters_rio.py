@@ -28,6 +28,7 @@ from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from cloudpathlib import AnyPath, CloudPath
+from rasterio.vrt import WarpedVRT
 from rasterio.windows import Window, from_bounds
 
 from sertit.logs import SU_NAME
@@ -36,8 +37,10 @@ try:
     import geopandas as gpd
     import rasterio
     from rasterio import MemoryFile, features
-    from rasterio import mask as rmask
-    from rasterio import merge, warp
+    from rasterio import mask as rio_mask
+    from rasterio import merge
+    from rasterio import shutil as rio_shutil
+    from rasterio import warp
     from rasterio.enums import Resampling
     from shapely.geometry import Polygon
 except ModuleNotFoundError as ex:
@@ -732,7 +735,7 @@ def _mask(
             nodata = 0
 
     # Crop dataset
-    msk, trf = rmask.mask(ds, shapes, nodata=nodata, crop=do_crop, **kwargs)
+    msk, trf = rio_mask.mask(ds, shapes, nodata=nodata, crop=do_crop, **kwargs)
 
     # Create masked array
     nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
@@ -1337,19 +1340,34 @@ def merge_vrt(
     # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
     crs_paths_cp = crs_paths.copy()
 
-    for idp, path in enumerate(crs_paths_cp):
-        crs_paths_cp[idp] = path
-
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
     if isinstance(crs_merged_path, CloudPath):
         crs_merged_path = AnyPath(crs_merged_path.fspath)
 
+    first_crs = kwargs.get("crs")
     for i, crs_path in enumerate(crs_paths_cp):
-        path = AnyPath(crs_path)
-        if isinstance(path, CloudPath):
-            path = AnyPath(path.fspath)
-        crs_paths_cp[i] = path
+        crs_path = AnyPath(crs_path)
+        if isinstance(crs_path, CloudPath):
+            crs_path = AnyPath(crs_path.fspath)
+
+        with rasterio.open(str(crs_path)) as src:
+            if first_crs is None:
+                first_crs = src.crs
+            else:
+                # Reproject bands if needed
+                if first_crs != src.crs:
+                    crs_epsg = first_crs.to_epsg()
+                    with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
+                        # At this point 'vrt' is a full dataset with dimensions,
+                        # CRS, and spatial extent matching 'vrt_options'.
+                        crs_path = os.path.join(
+                            crs_merged_path.parent,
+                            files.get_filename(crs_path) + f"_{crs_epsg}.vrt",
+                        )
+                        rio_shutil.copy(vrt, crs_path, driver="vrt")
+
+        crs_paths_cp[i] = crs_path
 
     # Create relative paths
     vrt_root = os.path.dirname(crs_merged_path)
@@ -1427,10 +1445,30 @@ def merge_gtiff(
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
     # Open datasets for merging
+    tmp_dir = None
     crs_datasets = []
     try:
+        first_crs = kwargs.get("crs")
         for path in crs_paths:
-            crs_datasets.append(rasterio.open(str(path)))
+            src = rasterio.open(str(path))
+            if first_crs is None:
+                first_crs = src.crs
+            else:
+                # Reproject bands if needed
+                if first_crs != src.crs:
+                    tmp_dir = tempfile.TemporaryDirectory()
+                    with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
+                        # At this point 'vrt' is a full dataset with dimensions,
+                        # CRS, and spatial extent matching 'vrt_options'.
+                        path = os.path.join(
+                            tmp_dir.name, files.get_filename(path) + ".vrt"
+                        )
+                        rio_shutil.copy(vrt, path, driver="vrt")
+
+                    src.close()
+                    src = rasterio.open(str(path))
+
+            crs_datasets.append(src)
 
         # Merge all datasets
         merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
@@ -1445,8 +1483,12 @@ def merge_gtiff(
         )
     finally:
         # Close all datasets
+        src = None
         for dataset in crs_datasets:
             dataset.close()
+
+        if tmp_dir is not None:
+            tmp_dir.cleanup()
 
     # Save merge datasets
     write(merged_array, merged_meta, crs_merged_path)

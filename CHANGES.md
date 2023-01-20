@@ -1,8 +1,9 @@
 # Release History
 
-## 1.YY.Z (2023-MM-DD)
+## 1.24.0 (2023-01-XX)
 
 - **ENH: Adding NODATA formalizations in `rasters(_rio)`: function to get the value from a dtype (`get_nodata_value` and global variables for `uint8`, `int8`, `uint16`, `float`)**
+- **ENH: Allow to merge rasters with different projections**
 - CI: Don't run tests when only `__init__` or `__meta__` is updated
 - CI: Move data elsewhere than git
 
