@@ -1,6 +1,6 @@
 # Release History
 
-## 1.24.0 (2023-01-XX)
+## 1.24.0 (2023-01-23)
 
 - **ENH: Adding NODATA formalizations in `rasters(_rio)`: function to get the value from a dtype (`get_nodata_value` and global variables for `uint8`, `int8`, `uint16`, `float`)**
 - **ENH: Allow to merge rasters with different projections**
