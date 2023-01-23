@@ -248,7 +248,7 @@ def assert_raster_almost_equal(
     Assert that two rasters are almost equal.
     (everything is equal except the transform and the arrays that are almost equal)
 
-    Accepts an offset of :code:`1E{decimal}` on the array and a precision of 10^-9 on the transform
+    Accepts an offset of :code:`1E{decimal}` on the array and a precision of 10^-{decimal} on the transform
 
     Useful for pytests.
 
@@ -256,7 +256,7 @@ def assert_raster_almost_equal(
 
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
-        >>> assert_raster_equal(path, path2)
+        >>> assert_raster_almost_equal(path, path2)
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
@@ -301,6 +301,73 @@ def assert_raster_almost_equal(
                 raise AssertionError(errors)
 
 
+def assert_raster_almost_equal_magnitude(
+    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=2
+) -> None:
+    """
+    Assert that two rasters are almost equal, with the decimal taken on the scientif representation of the array.
+    (everything is equal except the transform and the arrays that are almost equal)
+
+    Accepts an offset of :code:`1E{decimal}` on the array divided by the order of magnitude of the array and a precision of 10^-{decimal} on the transform
+
+    i.e. `decimal=2, mean(array) = 15.2, true = 13.2687, false = 13.977, comparison: 1.32687, false <-> 1.3977 => false (2 != 9)`
+
+    Useful for pytests.
+
+    .. code-block:: python
+
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
+        >>> assert_raster_almost_equal_magnitude(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
+
+    Args:
+        path_1 (Union[str, CloudPath, Path]): Raster 1
+        path_2 (Union[str, CloudPath, Path]): Raster 2
+        decimal (int): Number of decimal
+    """
+    try:
+        import rasterio
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' to use assert_raster_almost_equal."
+        ) from ex
+
+    with rasterio.open(str(path_1)) as ds_1:
+        with rasterio.open(str(path_2)) as ds_2:
+            # Metadata
+            assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
+
+            # Assert almost equal
+            errors = []
+            for i in range(ds_1.count):
+
+                desc = (
+                    f": {ds_1.descriptions[i]}"
+                    if ds_1.descriptions[i] is not None
+                    else ""
+                )
+                LOGGER.info(f"Checking Band {i + 1}{desc}")
+                try:
+                    marr_1 = ds_1.read(i + 1)
+                    marr_2 = ds_2.read(i + 1)
+
+                    # Manage better the number of (decimals are for a magnitude of 0)
+                    magnitude = np.floor(np.log10(abs(np.nanmedian(marr_1))))
+                    np.testing.assert_array_almost_equal(
+                        marr_1 / 10**magnitude,
+                        marr_2 / 10**magnitude,
+                        decimal=decimal,
+                    )
+                except AssertionError:
+                    text = f"Band {i + 1}{desc} failed"
+                    errors.append(text)
+                    LOGGER.error(text, exc_info=True)
+
+            if errors:
+                raise AssertionError(errors)
+
+
 def assert_raster_max_mismatch(
     path_1: Union[str, CloudPath, Path],
     path_2: Union[str, CloudPath, Path],
@@ -318,7 +385,7 @@ def assert_raster_max_mismatch(
 
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
-        >>> assert_raster_equal(path, path2)
+        >>> assert_raster_max_mismatch(path, path2)
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
@@ -459,7 +526,7 @@ def assert_geom_almost_equal(
     .. code-block:: python
 
         >>> path = r"CI/DATA/vectors/aoi.geojson"
-        >>> assert_geom_equal(path, path)
+        >>> assert_geom_almost_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
 
     .. WARNING::
@@ -583,7 +650,13 @@ def assert_xr_encoding_attrs(
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:
-    """Reduce verbosity for other loggers"""
+    """
+    Reduce verbosity for other loggers (setting them to WARNING)
+
+        Args:
+            other_loggers (list): Other loggers to reduce verosity
+
+    """
     loggers = [
         "boto3",
         "botocore",

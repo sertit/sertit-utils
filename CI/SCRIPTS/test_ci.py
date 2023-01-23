@@ -117,6 +117,7 @@ def test_assert_raster():
         raster_almost_path = os.path.join(tmp, "raster_almost.tif")
         rasters_rio.write(arr, meta, raster_almost_path)
 
+        # Almost equal
         ci.assert_raster_almost_equal(raster_float_path, raster_almost_path)
         with pytest.raises(AssertionError):
             raster2_path = rasters_path().joinpath("raster_masked.tif")
@@ -134,6 +135,22 @@ def test_assert_raster():
         ci.assert_raster_max_mismatch(raster_path, raster_path, max_mismatch_pct=0.001)
         with pytest.raises(AssertionError):
             ci.assert_raster_max_mismatch(raster_float_path, raster_almost_path)
+
+        # Magnitude
+        ci.assert_raster_almost_equal_magnitude(raster_float_path, raster_almost_path)
+        with pytest.raises(AssertionError):
+            raster2_path = rasters_path().joinpath("raster_masked.tif")
+            ci.assert_raster_almost_equal_magnitude(raster_path, raster2_path)
+
+        with pytest.raises(AssertionError):
+            offset = 1e-02
+            arr += offset
+            meta["transform"].shear(offset, offset)
+            raster_too_much_path = os.path.join(tmp, "raster_too_much.tif")
+            rasters_rio.write(arr, meta, raster_too_much_path)
+            ci.assert_raster_almost_equal_magnitude(
+                raster_float_path, raster_too_much_path, decimal=3
+            )
 
     # Test encoding
     rast_1_xr = rasters.read(raster_path)
