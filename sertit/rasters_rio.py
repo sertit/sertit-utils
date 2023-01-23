@@ -1342,14 +1342,13 @@ def merge_vrt(
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     crs_merged_path = AnyPath(crs_merged_path)
-    if isinstance(crs_merged_path, CloudPath):
-        crs_merged_path = AnyPath(crs_merged_path.fspath)
 
     first_crs = kwargs.get("crs")
     for i, crs_path in enumerate(crs_paths_cp):
         crs_path = AnyPath(crs_path)
+        # Download file if VRT is needed
         if isinstance(crs_path, CloudPath):
-            crs_path = AnyPath(crs_path.fspath)
+            crs_path = crs_path.download_to(crs_merged_path.parent)
 
         with rasterio.open(str(crs_path)) as src:
             if first_crs is None:

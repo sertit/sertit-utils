@@ -425,7 +425,7 @@ def test_merge_different_crs():
 
         # Merge GTiff
         raster_merged_tif_out = os.path.join(tmp_dir, "test_merged.tif")
-        rasters.merge_vrt([raster_1_path, raster_2_path], raster_merged_tif_out)
+        rasters.merge_gtiff([raster_1_path, raster_2_path], raster_merged_tif_out)
         ci.assert_raster_equal(raster_merged_tif_out, true_tif_path)
 
 
