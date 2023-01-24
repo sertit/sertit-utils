@@ -354,6 +354,9 @@ def assert_raster_almost_equal_magnitude(
 
                     # Manage better the number of (decimals are for a magnitude of 0)
                     magnitude = np.floor(np.log10(abs(np.nanmedian(marr_1))))
+                    if np.isinf(magnitude):
+                        magnitude = 0
+
                     np.testing.assert_array_almost_equal(
                         marr_1 / 10**magnitude,
                         marr_2 / 10**magnitude,
