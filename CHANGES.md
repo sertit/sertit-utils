@@ -1,5 +1,9 @@
 # Release History
 
+## 1.24.2 (2023-01-25)
+
+- FIX: Allowing the users to open `\\DS2\database0x` directories from `ci.get_dbx_path`
+
 ## 1.24.1 (2023-01-24)
 
 - FIX: fixing infinite values in `ci.assert_raster_almost_equal_magnitude`

@@ -47,7 +47,7 @@ LOGGER = logging.getLogger(SU_NAME)
 
 def get_mnt_path() -> str:
     """
-    Return mounting directory :code::code:`/mnt`.
+    Return mounting directory :code:`/mnt`.
 
     .. WARNING::
         This won't work on Windows !
@@ -65,7 +65,7 @@ def get_mnt_path() -> str:
 
 def _get_db_path(db_nb=2) -> str:
     """
-    Return mounted directory :code::code:`/mnt/ds2_db2` which corresponds to :code::code:`/ds2/database02`.
+    Return mounted directory :code:`/mnt/ds2_db2` which corresponds to :code:`/ds2/database02`.
 
     .. WARNING::
         Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
@@ -78,17 +78,18 @@ def _get_db_path(db_nb=2) -> str:
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
     if not os.path.isdir(db_path):
-        raise NotADirectoryError(f"Directory not found: {db_path}")
+        db_path = rf"\\DS2\database0{db_nb}"
 
+    if not os.path.isdir(db_path):
+        raise NotADirectoryError(f"Impossible to open ds2/database0{db_nb}!")
     return db_path
 
 
 def get_db2_path() -> str:
     """
-    Return mounted directory :code::code:`/mnt/ds2_db2` which corresponds to :code::code:`/ds2/database02`.
-
-    .. WARNING::
-        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    Returns DS2 database02 path
+    - :code:`/mnt/ds2_db2` when mounted (docker...)
+    - :code:`\\ds2\database02` on windows
 
     .. code-block:: python
 
@@ -103,10 +104,9 @@ def get_db2_path() -> str:
 
 def get_db3_path() -> str:
     """
-    Return mounted directory :code::code:`/mnt/ds2_db3` which corresponds to :code::code:`/ds2/database03`.
-
-    .. WARNING::
-        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
+    Returns DS2 database03 path
+    - :code:`/mnt/ds2_db3` when mounted (docker...)
+    - :code:`\\ds2\database03` on windows
 
     .. code-block:: python
 
@@ -121,15 +121,9 @@ def get_db3_path() -> str:
 
 def get_db4_path() -> str:
     """
-    Return mounted directory :code:`/mnt/ds2_db4` which corresponds to :code:`/ds2/database04`.
-
-    .. WARNING::
-        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
-
-    .. code-block:: python
-
-        >>> get_db4_path()
-        '/mnt/ds2_db4'
+    Returns DS2 database04 path
+    - :code:`/mnt/ds2_db4` when mounted (docker...)
+    - :code:`\\ds2\database04` on windows
 
     Returns:
         str: Mounted directory

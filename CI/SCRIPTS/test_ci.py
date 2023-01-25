@@ -210,4 +210,4 @@ def test_mnt():
         pass
 
     with pytest.raises(NotADirectoryError):
-        ci._get_db_path(5)
+        ci._get_mnt_db_path(5)
