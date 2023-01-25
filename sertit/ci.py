@@ -65,15 +65,9 @@ def get_mnt_path() -> str:
 
 def _get_db_path(db_nb=2) -> str:
     """
-    Return mounted directory :code:`/mnt/ds2_db2` which corresponds to :code:`/ds2/database02`.
-
-    .. WARNING::
-        Use it carefully (OK in CI) as this directory may not exist ! This won't work on Windows !
-
-    .. code-block:: python
-
-        >>> get_db_path(db_nb=2)
-        '/mnt/ds2_db2'
+    Returns DSx database0x path
+    - :code:`/mnt/ds2_dbx` when mounted (docker...)
+    - :code:`\\ds2\database0x` on windows
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
