@@ -66,6 +66,7 @@ def get_mnt_path() -> str:
 def _get_db_path(db_nb=2) -> str:
     """
     Returns DSx database0x path
+
     - :code:`/mnt/ds2_dbx` when mounted (docker...)
     - :code:`\\ds2\database0x` on windows
     """
@@ -82,6 +83,7 @@ def _get_db_path(db_nb=2) -> str:
 def get_db2_path() -> str:
     """
     Returns DS2 database02 path
+
     - :code:`/mnt/ds2_db2` when mounted (docker...)
     - :code:`\\ds2\database02` on windows
 
@@ -99,6 +101,7 @@ def get_db2_path() -> str:
 def get_db3_path() -> str:
     """
     Returns DS2 database03 path
+
     - :code:`/mnt/ds2_db3` when mounted (docker...)
     - :code:`\\ds2\database03` on windows
 
@@ -116,6 +119,7 @@ def get_db3_path() -> str:
 def get_db4_path() -> str:
     """
     Returns DS2 database04 path
+
     - :code:`/mnt/ds2_db4` when mounted (docker...)
     - :code:`\\ds2\database04` on windows
 
