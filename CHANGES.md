@@ -1,5 +1,9 @@
 # Release History
 
+## 1.24.3 (2023-01-27)
+
+- DEPS: Fixing deps (xarray is requiered by default)
+
 ## 1.24.2 (2023-01-25)
 
 - FIX: Allowing the users to open `\\DS2\database0x` directories from `ci.get_dbx_path`

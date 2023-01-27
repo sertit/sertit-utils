@@ -29,20 +29,19 @@ setuptools.setup(
         "psutil",
         "geopandas>=0.11.0",
         "cloudpathlib[all]",
+        "xarray>=0.18.0",
     ],
     extras_require={
         "colorlog": ["colorlog"],
         "full": [
-            "xarray>=0.18.0",
             "rasterio>=1.3.0",
             "rioxarray>=0.4.0",
             "colorlog",
             "dask[complete]",
         ],
         "rasters_rio": ["rasterio>=1.3.0"],
-        "rasters": ["xarray>=0.18.0", "rasterio>=1.3.0", "rioxarray>=0.4.0"],
+        "rasters": ["rasterio>=1.3.0", "rioxarray>=0.4.0"],
         "dask": [
-            "xarray>=0.18.0",
             "rasterio[s3]>=1.3.0",
             "rioxarray>=0.4.0",
             "dask[complete]",
