@@ -1,5 +1,11 @@
 # Release History
 
+## 1.24.4 (2023-03-07)
+
+- OPTIM: Allowing the user to change SNAP tile size with the environment variable `SERTIT_UTILS_SNAP_TILE_SIZE`.
+- OPTIM: Allowing the user to change SNAP  max cores with the environment variable `SERTIT_UTILS_MAX_CORES`.
+- DOC: Document the usable environment variables
+
 ## 1.24.3 (2023-01-27)
 
 - DEPS: Fixing deps (xarray is requiered by default)

@@ -25,9 +25,24 @@ import psutil
 from sertit import misc, strings
 from sertit.logs import SU_NAME
 
-MAX_CORES = os.cpu_count() - 2
+MAX_CORES = int(os.getenv("SERTIT_UTILS_MAX_CORES", os.cpu_count() - 2))
+"""
+Maximum core to use, default is total of your CPU minus 2.
+ You can update it with the environment variable :code:`SERTIT_UTILS_MAX_CORES`.
+"""
+
 MAX_MEM = int(os.environ.get("JAVA_OPTS_XMX", 0.95 * psutil.virtual_memory().total))
-TILE_SIZE = 2048
+"""
+Maximum memory to use, default is 95% of the total virtual memory.
+You can update it with the environment variable :code:`JAVA_OPTS_XMX`.
+"""
+
+TILE_SIZE = int(os.getenv("SERTIT_UTILS_SNAP_TILE_SIZE", 512))
+"""
+SNAP tile size, 512 by default.
+You can update it with the environment variable :code:`SERTIT_UTILS_SNAP_TILE_SIZE`.
+"""
+
 LOGGER = logging.getLogger(SU_NAME)
 
 
