@@ -21,6 +21,7 @@ import shutil
 import pytest
 
 from sertit import ci, snap
+from sertit.snap import TILE_SIZE
 
 ci.reduce_verbosity()
 
@@ -41,9 +42,9 @@ def test_snap():
         '"graph_path"',
         "-q",
         "-J-Dsnap.log.level=WARNING",
-        "-J-Dsnap.jai.defaultTileSize=2048",
-        "-J-Dsnap.dataio.reader.tileWidth=2048",
-        "-J-Dsnap.dataio.reader.tileHeight=2048",
+        f"-J-Dsnap.jai.defaultTileSize={TILE_SIZE}",
+        f"-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}",
+        f"-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}",
         "-J-Dsnap.jai.prefetchTiles=true",
     ]
 
