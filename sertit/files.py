@@ -724,7 +724,7 @@ def get_ext(file_path: Union[str, CloudPath, Path]) -> str:
     .. code-block:: python
 
         >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_file_name(file_path)
+        >>> get_ext(file_path)
         'zip'
 
     Args:
