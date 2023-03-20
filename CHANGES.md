@@ -1,5 +1,9 @@
 # Release History
 
+## 1.24.5 (2023-YY-ZZ)
+
+- OPTIM: Better nodata management in `rasters.write`
+
 ## 1.24.4 (2023-03-07)
 
 - OPTIM: Allowing the user to change SNAP tile size with the environment variable `SERTIT_UTILS_SNAP_TILE_SIZE`.

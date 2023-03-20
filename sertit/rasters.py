@@ -820,23 +820,25 @@ def write(
         path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
     """
+    # Manage dtype
     if "dtype" in kwargs:
         dtype = kwargs["dtype"]
     else:
         dtype = xds.dtype
 
-    # Convert to numpy dtype
     if isinstance(dtype, str):
+        # Convert to numpy dtype
         dtype = getattr(np, dtype)
     xds.encoding["dtype"] = dtype
 
-    if "nodata" in kwargs:
-        xds.encoding["_FillValue"] = kwargs.pop("nodata")
-    else:
-        # Manage default nodata in function of dtype (default, for float = -9999)
-        xds.encoding["_FillValue"] = get_nodata_value(dtype)
+    # Write nodata
+    xds.rio.write_nodata(
+        kwargs.pop("nodata", get_nodata_value(dtype)), encoded=True, inplace=True
+    )
 
-    xds = xds.copy(data=xds.fillna(xds.encoding["_FillValue"]))
+    # WORKAROUND: Pop _FillValue attribute (if existing)
+    if "_FillValue" in xds.attrs:
+        xds.attrs.pop("_FillValue")
 
     # Default compression to LZW
     if "compress" not in kwargs:
@@ -850,10 +852,6 @@ def write(
             kwargs["predictor"] = "3"
         else:
             kwargs["predictor"] = "2"
-
-    # WORKAROUND: Pop _FillValue attribute
-    if "_FillValue" in xds.attrs:
-        xds.attrs.pop("_FillValue")
 
     # Bigtiff if needed
     bigtiff = bigtiff_value(xds)
