@@ -3,6 +3,7 @@
 ## 1.24.5 (2023-YY-ZZ)
 
 - OPTIM: Better nodata management in `rasters.write`
+- DEPS: Allow last versions of Dask
 
 ## 1.24.4 (2023-03-07)
 
