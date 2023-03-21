@@ -690,7 +690,7 @@ def read(
         window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
-        indexes (Union[int, list]): Indexes to load. Load the whole array if None. Starts at 1.
+        indexes (Union[int, list]): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
         chunks (int, tuple or dict): Chunk sizes along each dimension, e.g., 5, (5, 5) or {'x': 5, 'y': 5}.
             If chunks is provided, it used to load the new DataArray into a dask array.
             Chunks can also be set to True or "auto" to choose sensible chunk sizes
