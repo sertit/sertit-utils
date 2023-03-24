@@ -286,3 +286,18 @@ def reset_logging() -> None:
                 finally:
                     handler.release()
                 logger.removeHandler(handler)
+
+
+def deprecation_warning(msg: str) -> None:
+    """
+    Create a depreciation warning.
+
+    Args:
+        msg (str): Deprecation warning
+    """
+    from warnings import warn
+
+    warn(
+        msg,
+        category=DeprecationWarning,
+    )

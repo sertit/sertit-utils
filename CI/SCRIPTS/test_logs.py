@@ -126,3 +126,8 @@ def test_log():
 
         # Reduce verbosity again after resetting
         ci.reduce_verbosity()
+
+
+def test_deprecation_warning():
+    # Just test this doesn't throw an error
+    logs.deprecation_warning("This is deprecated.")

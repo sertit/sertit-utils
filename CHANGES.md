@@ -1,7 +1,8 @@
 # Release History
 
-## 1.24.5 (2023-YY-ZZ)
+## 1.25.0 (2023-03-24)
 
+- **ENH: Add a wrapper to add deprecation warnings in `logs`**
 - OPTIM: Better nodata management in `rasters.write`
 - DEPS: Allow last versions of Dask
 - DOC: Update README
