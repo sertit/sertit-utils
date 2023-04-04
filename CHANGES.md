@@ -1,5 +1,9 @@
 # Release History
 
+## 1.26.0 (2023-04-04)
+
+- **ENH: Add a function simplifying footprints**
+
 ## 1.25.0 (2023-03-24)
 
 - **ENH: Add a wrapper to add deprecation warnings in `logs`**

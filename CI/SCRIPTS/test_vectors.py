@@ -116,3 +116,23 @@ def test_gml():
     # Naive
     naive = vectors.read(naive_gml)
     assert naive.crs is None
+
+
+@s3_env
+def test_simplify_footprint():
+    """Test simplify footprint"""
+    complicated_footprint_path = vectors_path().joinpath(
+        "complicated_footprint_spot6.geojson"
+    )
+    max_nof_vertices = 40
+    complicated_footprint = vectors.read(complicated_footprint_path)
+    ok_footprint = vectors.simplify_footprint(
+        complicated_footprint, resolution=1.5, max_nof_vertices=max_nof_vertices
+    )
+    assert len(ok_footprint.geometry.exterior.iat[0].coords) < max_nof_vertices
+
+    # Just to test
+    nof_vertices_complicated = len(
+        complicated_footprint.explode().geometry.exterior.iat[0].coords
+    )
+    assert nof_vertices_complicated > max_nof_vertices

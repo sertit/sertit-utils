@@ -600,3 +600,48 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         )
 
     return gdf
+
+
+def simplify_footprint(
+    footprint: gpd.GeoDataFrame, resolution: float, max_nof_vertices: int = 50
+) -> gpd.GeoDataFrame:
+    """
+    Simplify footprint.
+
+    Set a number of maximum vertices and this function will try to simplify the footprint to have less than this number of vertices.
+    The tolerance will grow to try to respect this number of vertices.
+
+    This function will loop over a number of pixels of tolerence [1, 2, 4, 8, 16, 32, 64] (tolerance of gpd.simplify == resolution * tol_pix)
+    If in the end, the number of vertices is still too high, a warning will be emitted.
+
+    Args:
+        footprint (gpd.GeoDataFrame): Footprint to be simplified
+        resolution (float): Corresponding resolution
+        max_nof_vertices (int): Maximum number of vertices of the wanted footprint
+
+    Returns:
+        gpd.GeoDataFrame: Simplified footprint
+    """
+    # Number of pixels of tolerance
+    tolerance = [1, 2, 4, 8, 16, 32, 64]
+
+    # Process only if given footprint is too complex (too many vertices)
+    def simplify_geom(value):
+        nof_vertices = len(value.exterior.coords)
+        if nof_vertices > max_nof_vertices:
+            for tol in tolerance:
+                # Simplify footprint
+                value = value.simplify(
+                    tolerance=tol * resolution, preserve_topology=True
+                )
+
+                # Check if OK
+                nof_vertices = len(value.exterior.coords)
+                if nof_vertices <= max_nof_vertices:
+                    break
+        return value
+
+    footprint = footprint.explode()
+    footprint.geometry = footprint.geometry.apply(simplify_geom)
+
+    return footprint

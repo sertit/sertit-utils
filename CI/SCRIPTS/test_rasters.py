@@ -602,7 +602,9 @@ def test_rasterize():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Binary vector
         out_bin_path = os.path.join(tmp_dir, "out_bin.tif")
-        rast_bin = rasters.rasterize(raster_path, vec_path)
+        rast_bin = rasters.rasterize(
+            rasters.read(raster_path, chunks=[1, 2048, 2048]), vec_path
+        )
         rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
         ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
