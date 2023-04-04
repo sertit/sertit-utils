@@ -174,7 +174,10 @@ def path_xarr_dst(function: Callable) -> Callable:
                 name = path_or_ds.name
 
             with rioxarray.open_rasterio(
-                path_or_ds, masked=True, default_name=name, chunks=True
+                path_or_ds,
+                masked=True,
+                default_name=name,
+                chunks=kwargs.pop("chunks", True),
             ) as xds:
                 out = function(xds, *args, **kwargs)
         return out
