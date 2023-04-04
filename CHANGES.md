@@ -1,12 +1,9 @@
 # Release History
 
-## 1.26.0 (2023-04-04)
+## 1.25.0 (2023-04-04)
 
 - **ENH: Add a function simplifying footprints**
 - **ENH: Pass the `chunks` keyword to `open_rasterio` in `@path_xarr_dst`**
-
-## 1.25.0 (2023-03-24)
-
 - **ENH: Add a wrapper to add deprecation warnings in `logs`**
 - OPTIM: Better nodata management in `rasters.write`
 - DEPS: Allow last versions of Dask
