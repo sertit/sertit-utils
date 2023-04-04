@@ -15,6 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing vector functions """
+import os
+import tempfile
+
 import pytest
 from shapely import wkt
 
@@ -33,6 +36,10 @@ def test_vectors():
     wkt_path = vectors_path().joinpath("aoi.wkt")
     utm_path = vectors_path().joinpath("aoi.geojson")
     ci.assert_geom_equal(shp_path, utm_path)  # Test shp
+
+    # Test 3D vectors
+    with pytest.raises(AssertionError):
+        ci.assert_geom_equal(shp_path, utm_path, ignore_z=False)
 
     # KML
     vectors.set_kml_driver()  # An error will occur afterwards if this fails (we are attempting to open a KML file)
@@ -136,3 +143,21 @@ def test_simplify_footprint():
         complicated_footprint.explode().geometry.exterior.iat[0].coords
     )
     assert nof_vertices_complicated > max_nof_vertices
+
+
+@s3_env
+def test_write():
+    vect_paths = [
+        vectors_path().joinpath("aoi.shp"),
+        vectors_path().joinpath("aoi.kml"),
+        vectors_path().joinpath("aoi.geojson"),
+    ]
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        for vect_path in vect_paths:
+            vect = vectors.read(vect_path)
+            vect_out_path = os.path.join(tmp_dir, os.path.basename(vect_path))
+            vectors.write(vect, vect_out_path)
+            vect_out = vectors.read(vect_out_path)
+
+            ci.assert_geom_equal(vect_out, vect)

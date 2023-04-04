@@ -53,6 +53,14 @@ LOGGER = logging.getLogger(SU_NAME)
 
 WGS84 = "EPSG:4326"
 
+EXT_TO_DRIVER = {
+    ".shp": "ESRI Shapefile",
+    ".kml": "KML",
+    ".json": "GeoJSON",
+    ".geojson": "GeoJSON",
+    ".gml": "GML",
+}
+
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
@@ -336,6 +344,25 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     gdf = make_valid(gdf)
 
     return gdf
+
+
+def write(gdf: gpd.GeoDataFrame, path: Union[str, CloudPath, Path], **kwargs) -> None:
+    """
+    Write vector to disk, managing the common drivers automatically.
+
+    Args:
+        gdf (gpd.GeoDataFrame): GeoDataFrame to write on disk
+        path (Union[str, CloudPath, Path]): Where to write on disk.
+    """
+    path = AnyPath(path)
+
+    driver = kwargs.pop("driver", None)
+    if not driver:
+        driver = EXT_TO_DRIVER.get(path.suffix)
+        if driver == "KML":
+            set_kml_driver()
+
+    gdf.to_file(str(path), driver=driver, **kwargs)
 
 
 def read(

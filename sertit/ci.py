@@ -34,6 +34,8 @@ import xarray as xr
 from cloudpathlib import AnyPath, CloudPath, S3Client
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
+from shapely import force_2d
+from shapely.testing import assert_geometries_equal
 
 from sertit import files, vectors
 from sertit.logs import SU_NAME
@@ -460,6 +462,7 @@ def assert_dir_equal(
 def assert_geom_equal(
     geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
     geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
+    ignore_z=True,
 ) -> None:
     """
     Assert that two geometries are equal
@@ -482,6 +485,7 @@ def assert_geom_equal(
     Args:
         geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
         geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
+        ignore_z (bool): Ignore Z coordinate
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
@@ -500,17 +504,26 @@ def assert_geom_equal(
         curr_geom_1 = geom_1.geometry.iat[idx]
         curr_geom_2 = geom_2.geometry.iat[idx]
 
+        if ignore_z:
+            curr_geom_1 = force_2d(curr_geom_1)
+            curr_geom_2 = force_2d(curr_geom_2)
+
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
-            assert curr_geom_1.equals(
-                curr_geom_2
-            ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+            assert_geometries_equal(
+                curr_geom_1,
+                curr_geom_2,
+                equal_none=False,
+                equal_nan=False,
+                normalize=True,
+            )
 
 
 def assert_geom_almost_equal(
     geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
     geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
     decimal=9,
+    ignore_z=True,
 ) -> None:
     """
     Assert that two geometries are equal
@@ -534,6 +547,7 @@ def assert_geom_almost_equal(
         geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
         geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
         decimal (int): Number of decimal
+        ignore_z (bool): Ignore Z coordinate
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
@@ -552,11 +566,20 @@ def assert_geom_almost_equal(
         curr_geom_1 = geom_1.geometry.iat[idx]
         curr_geom_2 = geom_2.geometry.iat[idx]
 
+        if ignore_z:
+            curr_geom_1 = force_2d(curr_geom_1)
+            curr_geom_2 = force_2d(curr_geom_2)
+
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
-            assert curr_geom_1.equals_exact(
-                curr_geom_2, tolerance=10**-decimal
-            ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+            assert_geometries_equal(
+                curr_geom_1,
+                curr_geom_2,
+                tolerance=10**-decimal,
+                equal_none=False,
+                equal_nan=False,
+                normalize=True,
+            )
 
 
 def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
