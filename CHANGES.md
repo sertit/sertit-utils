@@ -3,6 +3,7 @@
 ## 1.26.0 (2023-MM-DD)
 
 - **ENH: Add a `vectors.write` function to automatically detect the driver from the filename (and add the KML driver if needed)**
+- **ENH: Add shapely 2.0 functions in `ci.assert_geom_xxx` to handle more cases (2D/3D vectors, geomtry written in another way)**
 - DEPS: Pin Shapely >= 2.0
 
 ## 1.25.0 (2023-04-04)
