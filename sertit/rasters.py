@@ -602,7 +602,7 @@ def crop(
 ) -> (np.ma.masked_array, dict):
     """
     Cropping a dataset:
-    setting nodata outside of the given shapes AND cropping the raster to the shapes extent.
+    setting nodata outside the given shapes AND cropping the raster to the shapes extent.
 
     Overload of
     `rioxarray.clip <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip>`_
@@ -631,9 +631,7 @@ def crop(
          XDS_TYPE: Cropped array as a xarray
     """
     if nodata:
-        xds_new = xds.rio.write_nodata(nodata)
-    else:
-        xds_new = xds
+        xds = set_nodata(xds, nodata)
 
     if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
         shapes = shapes.to_crs(xds.rio.crs).geometry
@@ -642,7 +640,7 @@ def crop(
         kwargs["from_disk"] = True  # WAY FASTER
 
     # Clip keeps encoding and attrs
-    return xds_new.rio.clip(shapes, **kwargs)
+    return xds.rio.clip(shapes, **kwargs)
 
 
 @path_arr_dst

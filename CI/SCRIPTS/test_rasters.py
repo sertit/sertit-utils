@@ -239,7 +239,7 @@ def test_rasters():
 
             # Dataset
             xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
-            crop_xds = rasters.crop(xds, mask)
+            crop_xds = rasters.crop(xds, mask, nodata=xda.rio.encoded_nodata)
             rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
             ci.assert_xr_encoding_attrs(xds, crop_xds)
 
