@@ -20,7 +20,7 @@ lint:
     - tags
 
 pytest:
-  image: $EEO_DEPS:39
+  image: $EEO_DEPS:latest
   stage: test
   variables:
     CI_SERTIT_USE_S3: "0"
@@ -45,7 +45,7 @@ pytest:
   needs: [ "lint" ]
 
 pytest_s3:
-  image: $EEO_DEPS:39
+  image: $EEO_DEPS:latest
   stage: test
   before_script:
     - python -m pip install --upgrade pip
