@@ -6,6 +6,7 @@
 - **ENH: Add shapely 2.0 functions in `ci.assert_geom_xxx` to handle more cases (2D/3D vectors, geomtry written in another way)**
 - FIX: Use our own function for setting the nodata instead of using rioxarray's in `rasters.crop`
 - DEPS: Pin Shapely >= 2.0
+- DEPS: Dropping support of Python 3.8
 
 ## 1.25.0 (2023-04-04)
 

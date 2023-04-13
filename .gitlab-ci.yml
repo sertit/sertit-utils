@@ -10,7 +10,7 @@ variables:
   SU_CHANGES: sertit/[^_]*.{py,xml}
 
 lint:
-  image: python:3.8-buster
+  image: python:3.9-buster
   stage: lint
   script:
     - python -m pip install --upgrade pip
@@ -20,7 +20,7 @@ lint:
     - tags
 
 pytest:
-  image: $EEO_DEPS:38
+  image: $EEO_DEPS:39
   stage: test
   variables:
     CI_SERTIT_USE_S3: "0"
@@ -45,7 +45,7 @@ pytest:
   needs: [ "lint" ]
 
 pytest_s3:
-  image: $EEO_DEPS:38
+  image: $EEO_DEPS:39
   stage: test
   before_script:
     - python -m pip install --upgrade pip
@@ -66,46 +66,3 @@ pytest_s3:
         - .gitlab-ci.yml
         - pytest.ini
   needs: [ "lint" ]
-
-tox-linux-3.8:on-schedule:
-  image: $EO_CONTAINER:3.8
-  stage: weekly_tests
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install tox
-  script:
-    - tox -c tox.ini -e py38
-  tags:
-    - sertit
-    - linux
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: always
-
-tox-linux-3.9:on-schedule:
-  image: $EO_CONTAINER:3.9
-  stage: weekly_tests
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install tox
-  script:
-    - tox -c tox.ini -e py39
-  tags:
-    - sertit
-    - linux
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: always
-
-tox-windows:on-schedule:
-  stage: weekly_tests
-  before_script:
-    - pip install tox
-  script:
-    - tox -c tox-conda.ini
-  tags:
-    - sertit
-    - windows
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: always
