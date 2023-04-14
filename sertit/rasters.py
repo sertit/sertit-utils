@@ -751,12 +751,8 @@ def read(
 
                 # Manage resampling
                 if do_resampling:
-                    if window is not None:
-                        factor_h = window.height / new_height
-                        factor_w = window.width / new_width
-                    else:
-                        factor_h = ds.height / new_height
-                        factor_w = ds.width / new_width
+                    factor_h = xda.rio.height / new_height
+                    factor_w = xda.rio.width / new_width
 
                     # Manage 2 ways of resampling, coarsen being faster than reprojection
                     # TODO: find a way to match rasterio's speed
