@@ -140,7 +140,7 @@ def test_simplify_footprint():
 
     # Just to test
     nof_vertices_complicated = len(
-        complicated_footprint.explode().geometry.exterior.iat[0].coords
+        complicated_footprint.explode(index_parts=True).geometry.exterior.iat[0].coords
     )
     assert nof_vertices_complicated > max_nof_vertices
 

@@ -668,7 +668,7 @@ def simplify_footprint(
                     break
         return value
 
-    footprint = footprint.explode()
+    footprint = footprint.explode(index_parts=True)
     footprint.geometry = footprint.geometry.apply(simplify_geom)
 
     return footprint
