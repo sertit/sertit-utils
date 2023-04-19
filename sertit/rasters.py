@@ -867,47 +867,47 @@ def write(
 
 
 def collocate(
-    master_xds: XDS_TYPE,
-    slave_xds: XDS_TYPE,
+    reference_xds: XDS_TYPE,
+    other_xds: XDS_TYPE,
     resampling: Resampling = Resampling.nearest,
 ) -> XDS_TYPE:
     """
     Collocate two georeferenced arrays:
-    forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
+    forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
 
     .. code-block:: python
 
-        >>> master_path = "path/to/master.tif"
-        >>> slave_path = "path/to/slave.tif"
+        >>> reference_path = "path/to/reference.tif"
+        >>> other_path = "path/to/other.tif"
         >>> col_path = "path/to/collocated.tif"
 
-        >>> # Collocate the slave to the master
-        >>> col_xds = collocate(read(master_path), read(slave_path), Resampling.bilinear)
+        >>> # Collocate the other to the reference
+        >>> col_xds = collocate(read(reference_path), read(other_path), Resampling.bilinear)
 
         >>> # Write it
         >>> write(col_xds, col_path)
 
     Args:
-        master_xds (XDS_TYPE): Master xarray
-        slave_xds (XDS_TYPE): Slave xarray
+        reference_xds (XDS_TYPE): Reference xarray
+        other_xds (XDS_TYPE): Other xarray
         resampling (Resampling): Resampling method
 
     Returns:
         XDS_TYPE: Collocated xarray
 
     """
-    collocated_xds = slave_xds.rio.reproject_match(master_xds, resampling=resampling)
+    collocated_xds = other_xds.rio.reproject_match(reference_xds, resampling=resampling)
     collocated_xds = collocated_xds.assign_coords(
         {
-            "x": master_xds.x,
-            "y": master_xds.y,
+            "x": reference_xds.x,
+            "y": reference_xds.y,
         }
     )  # Bug for now, tiny difference in coords
 
     # Set back attributes and encoding
-    collocated_xds.rio.update_attrs(slave_xds.attrs, inplace=True)
-    collocated_xds.rio.update_encoding(slave_xds.encoding, inplace=True)
+    collocated_xds.rio.update_attrs(other_xds.attrs, inplace=True)
+    collocated_xds.rio.update_encoding(other_xds.encoding, inplace=True)
 
     return collocated_xds
 

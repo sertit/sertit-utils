@@ -1,5 +1,9 @@
 # Release History
 
+## 1.2y.z (2023-MM-DD)
+
+- FIX: Changes names to reference/other objects in `rasters(_rio).collocate`
+
 ## 1.26.0 (2023-04-17)
 
 - **ENH: Add a `vectors.write` function to automatically detect the driver from the filename (and add the KML driver if needed)**

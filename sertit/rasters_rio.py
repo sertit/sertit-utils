@@ -1076,39 +1076,39 @@ def write(
 
 
 def collocate(
-    master_meta: dict,
-    slave_arr: Union[np.ma.masked_array, np.ndarray],
-    slave_meta: dict,
+    reference_meta: dict,
+    other_arr: Union[np.ma.masked_array, np.ndarray],
+    other_meta: dict,
     resampling: Resampling = Resampling.nearest,
 ) -> (Union[np.ma.masked_array, np.ndarray], dict):
     """
     Collocate two georeferenced arrays:
-    forces the *slave* raster to be exactly georeferenced onto the *master* raster by reprojection.
+    forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
     .. code-block:: python
 
-        >>> master_path = "path/to/master.tif"
-        >>> slave_path = "path/to/slave.tif"
+        >>> reference_path = "path/to/reference.tif"
+        >>> other_path = "path/to/other.tif"
         >>> col_path = "path/to/collocated.tif"
 
         >>> # Just open the master data
-        >>> with rasterio.open(master_path) as master_dst:
-        >>>     # Read slave
-        >>>     slave, slave_meta = read(slave_path)
+        >>> with rasterio.open(reference_path) as reference_dst:
+        >>>     # Read other
+        >>>     other, other_meta = read(other_path)
 
-        >>>     # Collocate the slave to the master
-        >>>     col_arr, col_meta = collocate(master_dst.meta,
-        >>>                                   slave,
-        >>>                                   slave_meta,
+        >>>     # Collocate the other to the reference
+        >>>     col_arr, col_meta = collocate(reference_dst.meta,
+        >>>                                   other,
+        >>>                                   other_meta,
         >>>                                   Resampling.bilinear)
 
         >>> # Write it
         >>> write(col_arr, col_path, col_meta)
 
     Args:
-        master_meta (dict): Master metadata
-        slave_arr (np.ma.masked_array): Slave array to be collocated
-        slave_meta (dict): Slave metadata
+        reference_meta (dict): Reference metadata
+        other_arr (np.ma.masked_array): Other array to be collocated
+        other_meta (dict): Other metadata
         resampling (Resampling): Resampling method
 
     Returns:
@@ -1116,34 +1116,34 @@ def collocate(
 
     """
     collocated_arr = np.zeros(
-        (master_meta["count"], master_meta["height"], master_meta["width"]),
-        dtype=master_meta["dtype"],
+        (reference_meta["count"], reference_meta["height"], reference_meta["width"]),
+        dtype=reference_meta["dtype"],
     )
     warp.reproject(
-        source=slave_arr,
+        source=other_arr,
         destination=collocated_arr,
-        src_transform=slave_meta["transform"],
-        src_crs=slave_meta["crs"],
-        dst_transform=master_meta["transform"],
-        dst_crs=master_meta["crs"],
-        src_nodata=slave_meta["nodata"],
-        dst_nodata=slave_meta["nodata"],
+        src_transform=other_meta["transform"],
+        src_crs=other_meta["crs"],
+        dst_transform=reference_meta["transform"],
+        dst_crs=reference_meta["crs"],
+        src_nodata=other_meta["nodata"],
+        dst_nodata=other_meta["nodata"],
         resampling=resampling,
         num_threads=MAX_CORES,
     )
 
-    meta = master_meta.copy()
+    meta = reference_meta.copy()
     meta.update(
         {
-            "dtype": slave_meta["dtype"],
-            "driver": slave_meta["driver"],
-            "nodata": slave_meta["nodata"],
+            "dtype": other_meta["dtype"],
+            "driver": other_meta["driver"],
+            "nodata": other_meta["nodata"],
         }
     )
 
-    if isinstance(slave_arr, np.ma.masked_array):
+    if isinstance(other_arr, np.ma.masked_array):
         collocated_arr = np.ma.masked_array(
-            collocated_arr, slave_arr.mask, fill_value=slave_meta["nodata"]
+            collocated_arr, other_arr.mask, fill_value=other_meta["nodata"]
         )
 
     return collocated_arr, meta
