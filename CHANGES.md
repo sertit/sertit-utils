@@ -2,6 +2,7 @@
 
 ## 1.2y.z (2023-MM-DD)
 
+- **ENH: Add a `misc.unique` function to retrieve unique elements of a list while keeping the original order**
 - FIX: Changes names to reference/other objects in `rasters(_rio).collocate`
 
 ## 1.26.0 (2023-04-17)
@@ -10,7 +11,7 @@
 - **ENH: Add shapely 2.0 functions in `ci.assert_geom_xxx` to handle more cases (2D/3D vectors, geomtry written in another way)**
 - FIX: Use our own function for setting the nodata instead of using rioxarray's in `rasters.crop`
 - FIX: Fix GeoPandas FutureWarning in `explode`: `Currently, index_parts defaults to True, but in the future, it will default to False to be consistent with Pandas.`
-- INTERNAL: Simplify rasters.read
+- INTERNAL: Simplify `rasters.read`
 - DEPS: Pin Shapely >= 2.0
 - DEPS: Dropping support of Python 3.8
 

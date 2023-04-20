@@ -96,3 +96,10 @@ def test_enum():
         Polarization.vv,
         Polarization.hv,
     ]
+
+
+def test_unique():
+    """Test unique function"""
+    non_unique = [1, 2, 20, 6, 210, 2, 1]
+    unique = [1, 2, 20, 6, 210]
+    assert unique == misc.unique(non_unique)

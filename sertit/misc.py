@@ -134,6 +134,21 @@ class ListEnum(Enum):
         return enums
 
 
+def unique(sequence: list):
+    """
+    Keep only unique values from a .
+
+    Option to preserve the original order of the list.
+
+    Args:
+        sequence (list): List from which to keep only the
+
+    Returns:
+        list: List containing only unique values
+    """
+    return list(dict.fromkeys(sequence))
+
+
 def remove_empty_values(list_with_empty_values: list) -> list:
     """
     Remove empty values from list:
