@@ -1,5 +1,9 @@
 # Release History
 
+## 1.27.1 (2023-MM-DD)
+
+- FIX: Rename `reference_arr` into `reference` in `rasters.collocate`
+
 ## 1.27.0 (2023-04-24)
 
 - **ENH: Add a `misc.unique` function to retrieve unique elements of a list while keeping the original order**

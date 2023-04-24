@@ -867,7 +867,7 @@ def write(
 
 
 def collocate(
-    reference_arr: XDS_TYPE,
+    reference: XDS_TYPE,
     other: XDS_TYPE,
     resampling: Resampling = Resampling.nearest,
 ) -> XDS_TYPE:
@@ -889,7 +889,7 @@ def collocate(
         >>> write(col_xds, col_path)
 
     Args:
-        reference_arr (XDS_TYPE): Reference xarray
+        reference (XDS_TYPE): Reference xarray
         other (XDS_TYPE): Other xarray
         resampling (Resampling): Resampling method
 
@@ -899,13 +899,13 @@ def collocate(
     """
     nof_bands = len(other.coords["band"])
 
-    collocated_xds = other.rio.reproject_match(reference_arr, resampling=resampling)
+    collocated_xds = other.rio.reproject_match(reference, resampling=resampling)
 
     # Bug for now, tiny difference in coords
     collocated_xds = collocated_xds.assign_coords(
         {
-            "x": reference_arr.x,
-            "y": reference_arr.y,
+            "x": reference.x,
+            "y": reference.y,
             "band": np.arange(start=1, stop=nof_bands + 1, dtype=int),
         }
     )
