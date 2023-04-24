@@ -897,8 +897,6 @@ def collocate(
         XDS_TYPE: Collocated xarray
 
     """
-    nof_bands = len(other.coords["band"])
-
     collocated_xds = other.rio.reproject_match(reference, resampling=resampling)
 
     # Bug for now, tiny difference in coords
@@ -906,7 +904,6 @@ def collocate(
         {
             "x": reference.x,
             "y": reference.y,
-            "band": np.arange(start=1, stop=nof_bands + 1, dtype=int),
         }
     )
 

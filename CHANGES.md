@@ -2,6 +2,7 @@
 
 ## 1.27.1 (2023-MM-DD)
 
+- FIX: Don't manage `band` coordinate in `rasters.collocate`: keep as is
 - FIX: Rename `reference_arr` into `reference` in `rasters.collocate`
 
 ## 1.27.0 (2023-04-24)
