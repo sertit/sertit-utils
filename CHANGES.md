@@ -1,6 +1,6 @@
 # Release History
 
-## 1.2y.z (2023-MM-DD)
+## 1.27.0 (2023-04-24)
 
 - **ENH: Add a `misc.unique` function to retrieve unique elements of a list while keeping the original order**
 - FIX: Fix the correct number of bands (in the coordinates of the xr.DataArray) in `rasters.collocate`
