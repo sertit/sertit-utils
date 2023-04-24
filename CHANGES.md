@@ -3,6 +3,7 @@
 ## 1.2y.z (2023-MM-DD)
 
 - **ENH: Add a `misc.unique` function to retrieve unique elements of a list while keeping the original order**
+- FIX: Fix the correct number of bands (in the coordinates of the xr.DataArray) in `rasters.collocate`
 - FIX: Changes names to reference/other objects in `rasters(_rio).collocate`
 
 ## 1.26.0 (2023-04-17)
