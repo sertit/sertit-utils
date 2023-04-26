@@ -29,7 +29,7 @@ pytest:
     - pip install --ignore-installed PyYAML
     - pip install -e .[full]
   script:
-    - pytest -v --durations=0 --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS --cov-config=.coveragerc --log-cli-level DEBUG --capture=sys
+    - python -m pytest -v --durations=0 --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS --cov-config=.coveragerc --log-cli-level DEBUG --capture=sys
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - sertit
@@ -52,7 +52,7 @@ pytest_s3:
     - pip install --ignore-installed PyYAML
     - pip install -e .[full]
   script:
-    - pytest -v --durations=0 --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS --cov-config=.coveragerc --log-cli-level DEBUG --capture=sys
+    - python -m pytest -v --durations=0 --cov-report term --cov-report xml:cov.xml --cov=sertit CI/SCRIPTS --cov-config=.coveragerc --log-cli-level DEBUG --capture=sys
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - sertit
