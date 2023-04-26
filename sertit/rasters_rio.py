@@ -921,7 +921,9 @@ def read(
         ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
-        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
+        window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
+            In case of an iterable, assumption is made it corresponds to geographic bounds.
+            For pixel, please provide a rasterio.Window directly.
         resampling (Resampling): Resampling method (nearest by default)
         masked (bool): Get a masked array, :code:`True` by default (whereas it is False by default in rasterio)
         **kwargs: Other ds.read() arguments such as indexes.
