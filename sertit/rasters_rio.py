@@ -852,11 +852,10 @@ def get_window(ds: PATH_ARR_DS, window: Any):
         if not isinstance(window, Window):
             if isinstance(window, gpd.GeoDataFrame):
                 bounds = window.to_crs(ds.crs).bounds.values[0]
+            elif isinstance(window, (str, Path, CloudPath)):
+                bounds = vectors.read(window).to_crs(ds.crs).bounds.values[0]
             else:
-                try:
-                    bounds = vectors.read(window).to_crs(ds.crs).bounds.values[0]
-                except Exception:
-                    bounds = window
+                bounds = window
 
             try:
                 window = from_bounds(*bounds, ds.transform)

@@ -127,6 +127,12 @@ def test_rasters_rio():
             np.testing.assert_array_equal(window_20, window_20_3)
             ci.assert_meta(w_mt_20, w_mt_20_3)
 
+            with pytest.raises(FileNotFoundError):
+                rasters_rio.read(
+                    raster_path,
+                    window=rasters_path().joinpath("non_existing_window.kml"),
+                )
+
             # Write
             raster_out = os.path.join(tmp_dir, "test.tif")
             rasters_rio.write(raster, meta, raster_out)

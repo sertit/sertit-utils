@@ -155,6 +155,12 @@ def test_rasters():
             rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
             ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
+            with pytest.raises(FileNotFoundError):
+                rasters.read(
+                    raster_path,
+                    window=rasters_path().joinpath("non_existing_window.kml"),
+                )
+
             # ----------------------------------------------------------------------------------------------
             # -- Write
             # DataArray

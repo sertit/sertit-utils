@@ -1,5 +1,9 @@
 # Release History
 
+## 1.27.2 (2023-MM-DD)
+
+- FIX: Better manage non-existing file given as a window `rasters(_rio).read`
+
 ## 1.27.1 (2023-04-24)
 
 - FIX: Don't manage `band` coordinate in `rasters.collocate`: keep as is
