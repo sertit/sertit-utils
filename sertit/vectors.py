@@ -56,6 +56,7 @@ WGS84 = "EPSG:4326"
 EXT_TO_DRIVER = {
     ".shp": "ESRI Shapefile",
     ".kml": "KML",
+    ".kmz": "KMZ",
     ".json": "GeoJSON",
     ".geojson": "GeoJSON",
     ".gml": "GML",
@@ -361,6 +362,8 @@ def write(gdf: gpd.GeoDataFrame, path: Union[str, CloudPath, Path], **kwargs) ->
         driver = EXT_TO_DRIVER.get(path.suffix)
         if driver == "KML":
             set_kml_driver()
+        elif driver == "KMZ":
+            raise NotImplementedError("Impossible to write a KMZ for now.")
 
     gdf.to_file(str(path), driver=driver, **kwargs)
 
@@ -452,7 +455,7 @@ def read(
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Manage KML driver
-        if vect_path.endswith(".kml"):
+        if vect_path.endswith(".kml") or vect_path.endswith(".kmz"):
             vect = _read_kml(vect_path, path, arch_vect_path, tmp_dir)
         else:
             vect = gpd.read_file(vect_path)

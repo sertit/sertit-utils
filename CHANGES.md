@@ -1,7 +1,8 @@
 # Release History
 
-## 1.27.2 (2023-MM-DD)
+## 1.27.2 (2023-06-07)
 
+- FIX: Allow users to read KMZ vectors (as it is now handled by fiona with LIBKML)
 - FIX: Better manage non-existing file given as a window `rasters(_rio).read`
 
 ## 1.27.1 (2023-04-24)

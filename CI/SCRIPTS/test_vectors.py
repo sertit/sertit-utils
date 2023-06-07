@@ -103,6 +103,20 @@ def test_vectors():
 
 
 @s3_env
+def test_kmz():
+    """Test KMZ files"""
+    kmz_path = vectors_path().joinpath("AOI.kmz")
+    gj_path = vectors_path().joinpath("AOI.geojson")
+
+    # Read vectors
+    kmz = vectors.read(kmz_path)
+    gj = vectors.read(gj_path)
+
+    # Check if equivalent
+    assert all(gj.geometry.geom_almost_equals(kmz.to_crs(gj.crs).geometry))
+
+
+@s3_env
 def test_gml():
     """Test GML functions"""
     empty_gml = vectors_path().joinpath("empty.GML")
