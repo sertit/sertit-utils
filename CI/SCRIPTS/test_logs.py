@@ -21,6 +21,7 @@ import sys
 import tempfile
 
 import colorlog as clog
+import pytest
 
 from sertit import ci, logs
 from sertit.logs import LOGGING_FORMAT
@@ -130,4 +131,6 @@ def test_log():
 
 def test_deprecation_warning():
     # Just test this doesn't throw an error
-    logs.deprecation_warning("This is deprecated.")
+    with pytest.deprecated_call():
+        # a = 1
+        logs.deprecation_warning("This is deprecated.")

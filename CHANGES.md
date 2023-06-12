@@ -1,5 +1,10 @@
 # Release History
 
+## 1.27.3 (2023-06-12)
+
+- FIX: Add `stacklevel=3` when throwing deprecation warnings
+- CI: Add a test to check if the deprecation warning is thrown
+
 ## 1.27.2 (2023-06-07)
 
 - FIX: Allow users to read KMZ vectors (as it is now handled by fiona with LIBKML)
