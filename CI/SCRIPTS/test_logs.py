@@ -132,5 +132,4 @@ def test_log():
 def test_deprecation_warning():
     # Just test this doesn't throw an error
     with pytest.deprecated_call():
-        # a = 1
         logs.deprecation_warning("This is deprecated.")
