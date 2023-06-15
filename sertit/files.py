@@ -842,7 +842,7 @@ def copy(
             elif os.path.isfile(src):
                 out = AnyPath(shutil.copy2(src, dst))
         except shutil.Error:
-            LOGGER.debug(exc_info=True)
+            LOGGER.debug("Error in copy!", exc_info=True)
             out = src
             # eg. source or destination doesn't exist
         except IOError as ex:

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.28.0 (2023-06-DD)
+
+- FIX: Fix debug message in `files.copy`
+
 ## 1.27.3 (2023-06-12)
 
 - FIX: Add `stacklevel=3` when throwing deprecation warnings
