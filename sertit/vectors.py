@@ -62,6 +62,8 @@ EXT_TO_DRIVER = {
     ".gml": "GML",
 }
 
+SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
+
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
@@ -366,6 +368,37 @@ def write(gdf: gpd.GeoDataFrame, path: Union[str, CloudPath, Path], **kwargs) ->
             raise NotImplementedError("Impossible to write a KMZ for now.")
 
     gdf.to_file(str(path), driver=driver, **kwargs)
+
+
+def copy(
+    src_path: Union[str, Path, CloudPath], dst_path: Union[str, Path, CloudPath]
+) -> Union[Path, CloudPath]:
+    """
+     Copy vector (handles shapefiles additional files)
+
+    Args:
+        src_path (Union[str, Path, CloudPath]): Source Path
+        dst_path (Union[str, Path, CloudPath]): Destination Path (file or folder)
+
+    Returns:
+        Union[Path, CloudPath]: Path to copied vector
+    """
+    src_path = AnyPath(src_path)
+    dst_path = AnyPath(dst_path)
+
+    if not dst_path.is_file():
+        dst_path = files.copy(src_path, dst_path)
+
+        # Add files that come with shape
+        shp_co_files = [
+            file
+            for file in src_path.parent.glob(f"{files.get_filename(src_path)}.*")
+            if file.suffix in SHP_CO_FILES
+        ]
+        for co_file in shp_co_files:
+            files.copy(co_file, dst_path.with_suffix(co_file.suffix))
+
+    return dst_path
 
 
 def read(

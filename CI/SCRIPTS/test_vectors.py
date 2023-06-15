@@ -18,11 +18,13 @@
 import os
 import tempfile
 
+import geopandas as gpd
 import pytest
+from fiona.errors import DriverError
 from shapely import wkt
 
 from CI.SCRIPTS.script_utils import s3_env, vectors_path
-from sertit import ci, vectors
+from sertit import ci, files, vectors
 from sertit.vectors import WGS84
 
 ci.reduce_verbosity()
@@ -175,3 +177,16 @@ def test_write():
             vect_out = vectors.read(vect_out_path)
 
             ci.assert_geom_equal(vect_out, vect)
+
+
+@s3_env
+def test_copy():
+    shpfile = vectors_path().joinpath("aoi.shp")
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Assert normal copy will fail
+        with pytest.raises(DriverError):
+            gpd.read_file(files.copy(shpfile, tmp_dir))
+
+        # Assert vector copy will open in geopandas
+        gpd.read_file(vectors.copy(shpfile, tmp_dir))
