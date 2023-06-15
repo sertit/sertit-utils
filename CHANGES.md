@@ -1,6 +1,6 @@
 # Release History
 
-## 1.28.0 (2023-06-DD)
+## 1.28.0 (2023-06-15)
 
 - **ENH: Add a `vectors.copy` function to handle the copy of shapefiles**
 - FIX: Fix debug message in `files.copy`
