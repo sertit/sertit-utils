@@ -1534,9 +1534,12 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
         xshape = list(array.shape)
         array = array.reshape([-1, 1])
         msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-        unpacked = (
-            (array & msk).astype(bool).astype(np.uint8).reshape(xshape + [nof_bits])
-        )
+        uint8_packed = (array & msk).astype(bool).astype(np.uint8)
+        try:
+            unpacked = uint8_packed.reshape(xshape + [nof_bits])
+        except IndexError:
+            # Workaround for weird bug in reshape with dask
+            unpacked = uint8_packed.compute().reshape(xshape + [nof_bits])
 
     return unpacked
 

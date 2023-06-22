@@ -1,5 +1,9 @@
 # Release History
 
+## 1.28.1 (2023-06-22)
+
+- FIX: Add a workaround for a weird bug with dask's `reshape`
+
 ## 1.28.0 (2023-06-15)
 
 - **ENH: Add a `vectors.copy` function to handle the copy of shapefiles**
