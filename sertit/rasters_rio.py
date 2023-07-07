@@ -1365,15 +1365,22 @@ def merge_vrt(
                         new_crs_path = os.path.join(merged_path.parent, new_crs_name)
                         rio_shutil.copy(vrt, new_crs_path, driver="vrt")
 
-                        # Set to relative
-                        # This is clearly a hack, but GDAL doesn't handle any copy with relative path
-                        # See https://github.com/rasterio/rasterio/discussions/2720
-                        vrt_root = xml.read(new_crs_path)
-                        xml.update_attrib(
-                            vrt_root, "SourceDataset", "relativeToVRT", "1"
-                        )
-                        xml.update_txt(vrt_root, "SourceDataset", crs_path.name)
-                        xml.write(vrt_root, new_crs_path)
+                        try:
+                            # Set to relative
+                            # This is clearly a hack, but GDAL doesn't handle any copy with relative path
+                            # See https://github.com/rasterio/rasterio/discussions/2720
+                            vrt_root = xml.read(new_crs_path)
+                            xml.update_attrib(
+                                vrt_root, "SourceDataset", "relativeToVRT", "1"
+                            )
+                            xml.update_txt(
+                                vrt_root,
+                                "SourceDataset",
+                                crs_path.relative_to(merged_path.parent),
+                            )
+                            xml.write(vrt_root, new_crs_path)
+                        except ValueError as ex:
+                            LOGGER.warning(f"Your VRT will be absolute as {str(ex)}")
 
                         # Add in place
                         crs_path = new_crs_path
