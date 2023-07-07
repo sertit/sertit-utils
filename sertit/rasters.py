@@ -899,12 +899,15 @@ def collocate(
         XDS_TYPE: Collocated xarray
 
     """
-    old_dtype = other.dtype
-    collocated_xds = (
-        other.astype(reference.dtype)
-        .rio.reproject_match(reference, resampling=resampling)
-        .astype(old_dtype)
-    )
+    if isinstance(other, xr.DataArray):
+        old_dtype = other.dtype
+        collocated_xds = (
+            other.astype(reference.dtype)
+            .rio.reproject_match(reference, resampling=resampling)
+            .astype(old_dtype)
+        )
+    else:
+        collocated_xds = other.rio.reproject_match(reference, resampling=resampling)
 
     # Bug for now, tiny difference in coords
     collocated_xds = collocated_xds.assign_coords(
