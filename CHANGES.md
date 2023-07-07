@@ -1,5 +1,9 @@
 # Release History
 
+## 1.28.2 (2023-07-xx)
+
+- FIX: Allow collocating rasters from different dtypes
+
 ## 1.28.1 (2023-06-22)
 
 - FIX: Add a workaround for a weird bug with dask's `reshape`
