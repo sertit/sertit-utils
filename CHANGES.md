@@ -1,6 +1,6 @@
 # Release History
 
-## 1.28.2 (2023-07-xx)
+## 1.28.2 (2023-07-07)
 
 - FIX: Allow collocating rasters (only if they are given as DataArrays) from different dtypes
 - FIX: Make VRT relative in `merge_vrt` if possible
