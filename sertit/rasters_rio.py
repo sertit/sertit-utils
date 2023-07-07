@@ -48,7 +48,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import files, misc, strings, vectors
+from sertit import files, misc, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -1305,8 +1305,8 @@ def get_footprint(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
 
 def merge_vrt(
-    crs_paths: list,
-    crs_merged_path: Union[str, CloudPath, Path],
+    paths: list,
+    merged_path: Union[str, CloudPath, Path],
     abs_path: bool = False,
     **kwargs,
 ) -> None:
@@ -1317,8 +1317,8 @@ def merge_vrt(
 
     Creates VRT with relative paths !
 
-    .. WARNING::
-        They should have the same CRS otherwise the mosaic will be false !
+    This function handles files of different projection by create intermediate VRT used for warping.
+    All VRTs will be written with relative paths.
 
     .. code-block:: python
 
@@ -1333,23 +1333,23 @@ def merge_vrt(
         >>> merge_vrt(paths_utm32631, mosaic_32631, {"-srcnodata":255, "-vrtnodata":0})
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        paths (list): Path of the rasters to be merged with the same CRS)
+        merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
     # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
-    crs_paths_cp = crs_paths.copy()
+    crs_paths_cp = paths.copy()
 
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
-    crs_merged_path = AnyPath(crs_merged_path)
+    merged_path = AnyPath(merged_path)
 
     first_crs = kwargs.get("crs")
     for i, crs_path in enumerate(crs_paths_cp):
         crs_path = AnyPath(crs_path)
         # Download file if VRT is needed
         if isinstance(crs_path, CloudPath):
-            crs_path = crs_path.download_to(crs_merged_path.parent)
+            crs_path = crs_path.download_to(merged_path.parent)
 
         with rasterio.open(str(crs_path)) as src:
             if first_crs is None:
@@ -1361,40 +1361,51 @@ def merge_vrt(
                     with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
                         # At this point 'vrt' is a full dataset with dimensions,
                         # CRS, and spatial extent matching 'vrt_options'.
-                        crs_path = os.path.join(
-                            crs_merged_path.parent,
-                            files.get_filename(crs_path) + f"_{crs_epsg}.vrt",
+                        new_crs_name = files.get_filename(crs_path) + f"_{crs_epsg}.vrt"
+                        new_crs_path = os.path.join(merged_path.parent, new_crs_name)
+                        rio_shutil.copy(vrt, new_crs_path, driver="vrt")
+
+                        # Set to relative
+                        # This is clearly a hack, but GDAL doesn't handle any copy with relative path
+                        # See https://github.com/rasterio/rasterio/discussions/2720
+                        vrt_root = xml.read(new_crs_path)
+                        xml.update_attrib(
+                            vrt_root, "SourceDataset", "relativeToVRT", "1"
                         )
-                        rio_shutil.copy(vrt, crs_path, driver="vrt")
+                        xml.update_txt(vrt_root, "SourceDataset", crs_path.name)
+                        xml.write(vrt_root, new_crs_path)
+
+                        # Add in place
+                        crs_path = new_crs_path
 
         crs_paths_cp[i] = crs_path
 
     # Create relative paths
-    vrt_root = os.path.dirname(crs_merged_path)
+    vrt_root = os.path.dirname(merged_path)
     try:
         if abs_path:
             paths = [
                 strings.to_cmd_string(files.to_abspath(path)) for path in crs_paths_cp
             ]
-            vrt_path = strings.to_cmd_string(crs_merged_path.resolve())
+            merged_path = strings.to_cmd_string(merged_path.resolve())
         else:
             paths = [
                 strings.to_cmd_string(files.real_rel_path(path, vrt_root))
                 for path in crs_paths_cp
             ]
-            vrt_path = strings.to_cmd_string(
-                files.real_rel_path(crs_merged_path, vrt_root)
+            merged_path = strings.to_cmd_string(
+                files.real_rel_path(merged_path, vrt_root)
             )
 
     except ValueError:
         # ValueError when crs_merged_path and crs_paths are not on the same disk
         paths = [strings.to_cmd_string(str(path)) for path in crs_paths_cp]
-        vrt_path = strings.to_cmd_string(str(crs_merged_path))
+        merged_path = strings.to_cmd_string(str(merged_path))
 
     # Run cmd
     arg_list = [val for item in kwargs.items() for val in item]
     try:
-        vrt_cmd = ["gdalbuildvrt", vrt_path, *paths, *arg_list]
+        vrt_cmd = ["gdalbuildvrt", merged_path, *paths, *arg_list]
         misc.run_cli(vrt_cmd, cwd=vrt_root)
 
     except RuntimeError:
@@ -1410,7 +1421,7 @@ def merge_vrt(
                 "gdalbuildvrt",
                 "-input_file_list",
                 tmp_file,
-                vrt_path,
+                merged_path,
                 *arg_list,
             ]
 
@@ -1418,7 +1429,7 @@ def merge_vrt(
 
 
 def merge_gtiff(
-    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
+    paths: list, merged_path: Union[str, CloudPath, Path], **kwargs
 ) -> None:
     """
     Merge rasters as a GeoTiff.
@@ -1439,8 +1450,8 @@ def merge_gtiff(
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS)
-        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        paths (list): Path of the rasters to be merged with the same CRS)
+        merged_path (Union[str, CloudPath, Path]): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
@@ -1449,7 +1460,7 @@ def merge_gtiff(
     crs_datasets = []
     try:
         first_crs = kwargs.get("crs")
-        for path in crs_paths:
+        for path in paths:
             src = rasterio.open(str(path))
             if first_crs is None:
                 first_crs = src.crs
@@ -1491,7 +1502,7 @@ def merge_gtiff(
             tmp_dir.cleanup()
 
     # Save merge datasets
-    write(merged_array, merged_meta, crs_merged_path)
+    write(merged_array, merged_meta, merged_path)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
