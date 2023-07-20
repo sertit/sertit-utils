@@ -424,6 +424,7 @@ def get_archived_rio_path(
     Returns:
         Union[list, str]: Band path that can be read by rasterio
     """
+    archive_path = AnyPath(archive_path)
     if archive_path.suffix in [".tar", ".zip"]:
         prefix = archive_path.suffix[-3:]
     elif archive_path.suffix == ".tar.gz":
@@ -442,8 +443,11 @@ def get_archived_rio_path(
             f"{prefix}+file+{archive_path}!{path}" for path in archived_band_paths
         ]
     else:
+        # archived_band_paths = [
+        #     f"{prefix}+file://{archive_path}!{path}" for path in archived_band_paths
+        # ]
         archived_band_paths = [
-            f"{prefix}+file://{archive_path}!{path}" for path in archived_band_paths
+            f"/vsi{prefix}/{archive_path}/{path}" for path in archived_band_paths
         ]
 
     # Convert to str if needed

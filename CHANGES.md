@@ -1,5 +1,9 @@
 # Release History
 
+## 1.28.3 (2023-07-20)
+
+- FIX: Fixing Windows archived rasterio path (switching to `vsizip`/`vsitar` for all platform)
+
 ## 1.28.2 (2023-07-07)
 
 - FIX: Allow collocating rasters (only if they are given as DataArrays) from different dtypes
