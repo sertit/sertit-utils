@@ -36,7 +36,7 @@ from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 
-from sertit import files, misc, strings
+from sertit import files, logs, misc, strings
 
 try:
     import geopandas as gpd
@@ -69,6 +69,9 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
     Find the EPSG code of the UTM projection from a lon/lat in WGS84.
 
+    DEPRECATED: use :code:`estimate_utm_crs` instead.
+    https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html
+
     .. code-block:: python
 
         >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
@@ -85,6 +88,9 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     # EPSG code begins with 32
     # Then 6 if north, 7 if south -> (np.sign(lat) + 1) / 2 * 100 == 1 if lat > 0 (north), 0 if lat < 0 (south)
     # Then EPSG code with usual formula np.floor((180 + lon) / 6) + 1)
+    logs.deprecation_warning(
+        "Deprecated, use geopandas' 'estimate_utm_crs' instead (see https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)."
+    )
     epsg = int(32700 - (np.sign(lat) + 1) / 2 * 100 + np.floor((180 + lon) / 6) + 1)
     return f"EPSG:{epsg}"
 

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.YY.Z (2023-MM-DD)
+
+- DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)
+
 ## 1.28.3 (2023-07-20)
 
 - FIX: Fixing Windows archived rasterio path (switching to `vsizip`/`vsitar` for all platform)

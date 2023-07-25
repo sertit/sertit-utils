@@ -73,9 +73,11 @@ def test_vectors():
 
     # UTM and bounds
     aoi = vectors.read(kml_path)
-    assert "EPSG:32638" == vectors.corresponding_utm_projection(
-        aoi.centroid.x, aoi.centroid.y
-    )
+    with pytest.deprecated_call():
+        assert "EPSG:32638" == vectors.corresponding_utm_projection(
+            aoi.centroid.x, aoi.centroid.y
+        )
+
     env = aoi.envelope[0]
     from_env = vectors.from_bounds_to_polygon(*vectors.from_polygon_to_bounds(env))
     assert env.bounds == from_env.bounds
