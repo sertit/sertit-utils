@@ -26,6 +26,7 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator, Union
 
@@ -714,3 +715,33 @@ def simplify_footprint(
     footprint.geometry = footprint.geometry.apply(simplify_geom)
 
     return footprint
+
+
+@contextmanager
+def utm_crs(gdf: gpd.GeoDataFrame) -> None:
+    """
+    Change temporary the CRS of a vector, ie when computing area based statistics / features (centroid....) which need a meter-based CRS.
+
+    WARNING: the modifications (other than CRS) on the yielded GeoDataFrame will be kept!
+
+    .. code-block:: python
+
+        >>> vect = vectors.read(vectors_path().joinpath("aoi.kml"))
+        >>> with vectors.utm_crs(vect) as utm_vect:
+        >>>     utm_centroid = utm_vect.centroid
+        >>>     utm_vect["centroid_utm"] = utm_centroid
+        >>> vect["centroid_utm"].equals(c2)
+        True
+
+    Args:
+        newdir (str): New directory
+    """
+    src_crs = None
+    if not gdf.crs.is_projected:
+        src_crs = gdf.crs
+        gdf.to_crs(gdf.estimate_utm_crs(), inplace=True)
+    try:
+        yield gdf
+    finally:
+        if src_crs is not None:
+            gdf.to_crs(src_crs, inplace=True)

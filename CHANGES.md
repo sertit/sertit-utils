@@ -1,7 +1,8 @@
 # Release History
 
-## 1.YY.Z (2023-MM-DD)
+## 1.29.0 (2023-MM-DD)
 
+- **ENH: Add a `vectors.utm_crs` context manager allowing the user to compute seamlessly geographic-based operation (such as centroids, area computation...)**
 - DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)
 
 ## 1.28.3 (2023-07-20)

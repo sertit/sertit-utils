@@ -17,6 +17,7 @@
 """ Script testing vector functions """
 import os
 import tempfile
+import warnings
 
 import geopandas as gpd
 import pytest
@@ -192,3 +193,40 @@ def test_copy():
 
         # Assert vector copy will open in geopandas
         gpd.read_file(vectors.copy(shpfile, tmp_dir))
+
+
+@s3_env
+def test_utm_context_manager():
+    warning_msg = r"Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect.*$"
+
+    # Open a geographic vector
+    vect = vectors.read(vectors_path().joinpath("aoi.kml"))
+
+    # Check the vector is geographic
+    assert vect.crs.is_geographic
+
+    # Check that centroid function warns possible issues
+    with pytest.warns(UserWarning, match=warning_msg):
+        c = vect.centroid
+        assert c.crs.is_geographic
+
+    # Convert it
+    with vectors.utm_crs(vect) as utm_vect:
+        # Check the vector is projected
+        assert utm_vect.crs.is_projected
+
+        # Check no warning is now launched
+        # https://docs.pytest.org/en/7.0.x/how-to/capture-warnings.html#additional-use-cases-of-warnings-in-tests
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            c2 = utm_vect.centroid
+            assert c2.crs.is_projected
+
+        # Add the centroid as a new column
+        utm_vect["centroid_utm"] = c2
+
+    # Check the CRS is back to normal
+    assert vect.crs.is_geographic
+
+    # Assert the column still exists
+    assert vect["centroid_utm"].equals(c2)
