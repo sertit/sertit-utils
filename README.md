@@ -6,13 +6,15 @@
 [![Apache](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/sertit/eoreader/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5082060.svg)](https://doi.org/10.5281/zenodo.5082060)
 
+# Sertit-Utils
+
 Library gathering functions for all SERTIT's projects.
 
 Find the API documentation [**here**](https://sertit-utils.readthedocs.io/en/latest/).
 
-# Installing
+## Installing
 
-## Pip
+### Pip
 For installing this library to your environment, please type this: `pip install sertit[full]`
 
 `[full]` will allow you to use the whole library, but you will need to install also `rioxarray` and `geopandas`
@@ -27,7 +29,7 @@ However, if you do not need everything, you can type instead:
 - `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
 - `[dask]`: `pip install sertit[dask] --extra-index-url ...` to have `dask` installed
 
-## Conda
+### Conda
 
 You can install it via conda (but you will automatically have the full version):
 
@@ -35,9 +37,9 @@ You can install it via conda (but you will automatically have the full version):
 
 `conda install -c conda-forge sertit`
 
-# What is in it ?
+## What is in it ?
 
-## Files
+### Files
 
 Helpers for files, i.e. :
 
@@ -52,14 +54,14 @@ Helpers for files, i.e. :
 - hash
 - ...
 
-## Logs
+### Logs
 Helpers for logs, i.e. :
 - Init simple logger
 - Create complex logger (file and stream + color)
 - Shutdown and reset logger
 - ...
 
-## Misc
+### Misc
 Helpers of all sort, i.e. :
 - Function on lists: convert a list to a dict, remove empty values...
 - Function on dicts: nested set, check mandatory keys, find by key
@@ -69,14 +71,14 @@ Helpers of all sort, i.e. :
 - Change current directory (`cd`) as a context manager
 - ...
 
-## Strings
+### Strings
 Helpers for string manipulation, i.e. :
 - Conversion from string to bool, logging level, list, list of dates...
 - Convert the string to be usable in command line
 - Case conversion (`snake_case` to/from `CamelCase`)
 - ...
 
-## Vectors
+### Vectors
 Helpers for vector functions, i.e. :
 
 - Read vectors from disk or on the cloud
@@ -86,7 +88,7 @@ Helpers for vector functions, i.e. :
 - Get `geopandas.Geodataframe` from polygon and CRS
 - ...
 
-## Rasters and rasters_rio
+### Rasters and rasters_rio
 Helpers for rasters functions, i.e. :
 
 - Get extent and footprint of a raster
@@ -104,34 +106,34 @@ Helpers for rasters functions, i.e. :
 The main difference between the two is that `rasters` outputs one `xarray` variable
 when `rasters_rio` outputs `numpy.ma.masked_arrays` + `dict` for the raster array and its metadata.
 
-## Network
+### Network
 - Standard [Exponential Backoff](https://en.wikipedia.org/wiki/Exponential_backoff) algorithm
 - ...
 
-## SNAP
+### SNAP
 
 Helpers for SNAP, such as creating a GPT command line with optimizations
 
-## XML
+### XML
 
 Helpers for handling XMLs objects (lxml.etree Elements), i.e.:
 - Read and write elements
 - Add, update and remove nodes
 - ...
 
-## CI
+### CI
 
 Helpers for CI with function asserting equality between rasters, geometry, files, XML...
 
-## arcpy
+### arcpy
 
 Helpers for arcpy integration, i.e. a logger class designed to work with ArcGis logs.
 
-## display
+### display
 
 Helpers scaling images for display purposes.
 
-# Documentation
+## Documentation
 
 An HTML documentation is provided to document the code.
 It can be found:
