@@ -409,7 +409,10 @@ def copy(
 
 
 def read(
-    path: Union[str, CloudPath, Path], crs: Any = None, archive_regex: str = None
+    path: Union[str, CloudPath, Path],
+    crs: Any = None,
+    archive_regex: str = None,
+    **kwargs,
 ) -> gpd.GeoDataFrame:
     """
     Read any vector:
@@ -437,6 +440,7 @@ def read(
         path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
+        **kwargs: Additional arguments used in gpd.read_file
 
     Returns:
         gpd.GeoDataFrame: Read vector as a GeoDataFrame
@@ -496,9 +500,9 @@ def read(
 
         # Manage KML driver
         if vect_path.endswith(".kml") or vect_path.endswith(".kmz"):
-            vect = _read_kml(vect_path, path, arch_vect_path, tmp_dir)
+            vect = _read_kml(vect_path, path, arch_vect_path, tmp_dir, **kwargs)
         else:
-            vect = gpd.read_file(vect_path)
+            vect = gpd.read_file(vect_path, **kwargs)
 
         # Manage naive geometries
         if vect.crs and crs:
@@ -518,7 +522,7 @@ def read(
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
             vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
-            vect = gpd.read_file(vect_path_gj)
+            vect = gpd.read_file(vect_path_gj, **kwargs)
             vect.crs = None
         else:
             # Do not print warning for null layer
@@ -538,6 +542,7 @@ def _read_kml(
     path: Union[str, CloudPath, Path],
     arch_vect_path: str = None,
     tmp_dir=None,
+    **kwargs,
 ) -> gpd.GeoDataFrame:
     """
     Reader of KML data
@@ -546,7 +551,8 @@ def _read_kml(
         vect_path (str): Resolved vector path (rteadable by geopandas, not on cloud etc.)
         path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
         arch_vect_path: If archived vector, archive path
-        tmp_dir:
+        tmp_dir: Temporary directory
+        **kwargs: Additional arguments used in gpd.read_file
 
     Returns:
         gpd.GeoDataFrame: KML as a geopandas GeoDataFrame
@@ -563,7 +569,7 @@ def _read_kml(
 
     for layer in fiona.listlayers(vect_path):
         try:
-            vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer)
+            vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer, **kwargs)
             if not vect_layer.empty:
                 # KML files are always in WGS84 (and does not contain this information)
                 vect_layer.crs = WGS84
@@ -580,7 +586,7 @@ def _read_kml(
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
             vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
-            vect = gpd.read_file(vect_path_gj)
+            vect = gpd.read_file(vect_path_gj, **kwargs)
         else:
             # Try reading it in a basic manner
             LOGGER.warning(
@@ -588,7 +594,7 @@ def _read_kml(
                 "(KML files can contain unsupported data structures, nested folders etc.)"
             )
             try:
-                vect = gpd.read_file(vect_path)
+                vect = gpd.read_file(vect_path, **kwargs)
             except Exception:
                 # Force set CRS to empty vector
                 vect.crs = WGS84

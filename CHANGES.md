@@ -4,6 +4,7 @@
 
 - **ENH: Add a `vectors.utm_crs` context manager allowing the user to compute seamlessly geographic-based operation (such as centroids, area computation...)**
 - **ENH: Add a `sertit.types` containing aliases to common typings**
+- **ENH: Add **kwargs in `vectors.read`**
 - DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)
 
 ## 1.28.3 (2023-07-20)
