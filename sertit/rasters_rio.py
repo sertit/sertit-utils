@@ -48,7 +48,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import files, misc, strings, vectors, xml
+from sertit import files, geometry, misc, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -577,7 +577,7 @@ def _vectorize(
     gdf = vectors.shapes_to_gdf(shapes, ds.crs)
 
     # Return valid geometries
-    gdf = vectors.make_valid(gdf)
+    gdf = geometry.make_valid(gdf)
 
     # Dissolve if needed
     if dissolve:
@@ -1194,12 +1194,12 @@ def sieve(
 
     # Get nodata mask
     if isinstance(array, np.ma.masked_array):
-        mask = ~array.mask
+        msk = ~array.mask
     else:
-        mask = np.ones_like(array)
+        msk = np.ones_like(array)
 
     if expand:
-        mask = np.squeeze(mask)
+        msk = np.squeeze(msk)
 
     # Convert to np.uint8 if needed
     dtype = np.uint8
@@ -1211,7 +1211,7 @@ def sieve(
     # Sieve
     result_array = np.empty(array.shape, dtype=array.dtype)
     features.sieve(
-        array, size=sieve_thresh, out=result_array, connectivity=connectivity, mask=mask
+        array, size=sieve_thresh, out=result_array, connectivity=connectivity, mask=msk
     )
 
     # Use this trick to get the array back to 'normal'
@@ -1275,7 +1275,7 @@ def get_extent(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Extent as a  :code:`geopandas.Geodataframe`
     """
-    return vectors.get_geodf(geometry=[*ds.bounds], crs=ds.crs)
+    return vectors.get_geodf(geom=[*ds.bounds], crs=ds.crs)
 
 
 @path_arr_dst
@@ -1301,7 +1301,7 @@ def get_footprint(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
     """
     footprint = get_valid_vector(ds)
 
-    return vectors.get_wider_exterior(footprint)
+    return geometry.get_wider_exterior(footprint)
 
 
 def merge_vrt(
@@ -1649,17 +1649,17 @@ def hillshade(
     aspect = np.arctan2(dx, dy)
 
     # Compute hillshade (GDAL algo)
-    hillshade = (
+    hshade = (
         np.sin(alt_rad) + np.cos(alt_rad) * np.sqrt(x2_y2) * np.sin(aspect - az_rad)
     ) / np.sqrt(1 + x2_y2)
-    hillshade = np.where(hillshade <= 0, 1.0, 254.0 * hillshade + 1)
+    hshade = np.where(hshade <= 0, 1.0, 254.0 * hshade + 1)
 
     # Use this trick to get the array back to 'normal'
     if expand:
-        hillshade = np.expand_dims(hillshade, axis=0)
+        hshade = np.expand_dims(hshade, axis=0)
 
     # Convert to masked array
-    hillshade_msk = np.ma.masked_array(hillshade, array.mask, fill_value=ds.nodata)
+    hillshade_msk = np.ma.masked_array(hshade, array.mask, fill_value=ds.nodata)
 
     # Meta
     meta = update_meta(hillshade_msk, ds.meta)
@@ -1707,25 +1707,25 @@ def slope(
     x2_y2 = dx**2 + dy**2
 
     if in_pct:
-        slope = 100 * (np.sqrt(x2_y2))
+        slp = 100 * (np.sqrt(x2_y2))
     else:
-        slope = np.arctan(np.sqrt(x2_y2))
+        slp = np.arctan(np.sqrt(x2_y2))
 
         # Convert into degrees
         if not in_rad:
-            slope = slope / DEG_2_RAD
+            slp = slp / DEG_2_RAD
 
     # Use this trick to get the array back to 'normal'
     if expand:
-        slope = np.expand_dims(slope, axis=0)
+        slp = np.expand_dims(slp, axis=0)
 
     # Convert to masked array
-    slope_msk = np.ma.masked_array(slope, array.mask, fill_value=ds.nodata)
+    slp_msk = np.ma.masked_array(slp, array.mask, fill_value=ds.nodata)
 
     # Meta
-    meta = update_meta(slope_msk, ds.meta)
+    meta = update_meta(slp_msk, ds.meta)
 
-    return slope_msk, meta
+    return slp_msk, meta
 
 
 def reproject_match(

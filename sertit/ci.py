@@ -635,33 +635,43 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
 
 
 def assert_xr_encoding_attrs(
-    xda_1: Union[xr.DataArray, xr.Dataset], xda_2: Union[xr.DataArray, xr.Dataset]
+    xda_1: Union[xr.DataArray, xr.Dataset],
+    xda_2: Union[xr.DataArray, xr.Dataset],
+    unchecked_attr: Union[list, str] = None,
 ):
     """
     Assert that the attributes and the encoding of xarray.DataArray/set are the same
 
     Args:
         xda_1 (Union[xr.DataArray, xr.Dataset]): First xarray
-        xda_2 (Union[xr.DataArray, xr.Dataset]): First xarray
+        xda_2 (Union[xr.DataArray, xr.Dataset]): Second xarray
+        unchecked_attr (Union[list, str]): Don't check this list of attributes
     """
+    if unchecked_attr is None:
+        unchecked_attr = []
+    elif not isinstance(unchecked_attr, list):
+        unchecked_attr = [unchecked_attr]
+
     # Attributes
     try:
         assert xda_1.attrs == xda_2.attrs
     except AssertionError:
         try:
             for key, val in xda_1.attrs.items():
-                if not key.startswith("_"):
+                if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.attrs[key] == xda_2.attrs[key]
                     ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
 
             for key, val in xda_2.attrs.items():
-                if not key.startswith("_"):
+                if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.attrs[key] == xda_2.attrs[key]
                     ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-        except KeyError:
-            raise AssertionError
+        except KeyError as ex:
+            raise AssertionError(
+                f"Missing key {ex} in attributes of one DataArray/Dataset"
+            )
 
     # Encoding
     try:
@@ -669,18 +679,20 @@ def assert_xr_encoding_attrs(
     except AssertionError:
         try:
             for key, val in xda_1.encoding.items():
-                if not key.startswith("_"):
+                if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.encoding[key] == xda_2.encoding[key]
                     ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
 
             for key, val in xda_2.encoding.items():
-                if not key.startswith("_"):
+                if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.encoding[key] == xda_2.encoding[key]
                     ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-        except KeyError:
-            raise AssertionError
+        except KeyError as ex:
+            raise AssertionError(
+                f"Missing key {ex} in attributes of one DataArray/Dataset"
+            )
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:

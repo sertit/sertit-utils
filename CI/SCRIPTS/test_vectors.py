@@ -80,8 +80,6 @@ def test_vectors():
         )
 
     env = aoi.envelope[0]
-    from_env = vectors.from_bounds_to_polygon(*vectors.from_polygon_to_bounds(env))
-    assert env.bounds == from_env.bounds
 
     # GeoDataFrame
     geodf = vectors.get_geodf(env, aoi.crs)  # GeoDataFrame from Polygon
@@ -98,14 +96,6 @@ def test_vectors():
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2], aoi.crs)
 
-    # Test make_valid
-    broken_geom_path = vectors_path().joinpath("broken_geom.shp")
-    broken_geom = vectors.read(broken_geom_path)
-    assert len(broken_geom[~broken_geom.is_valid]) == 1
-    valid = vectors.make_valid(broken_geom, verbose=True)
-    assert len(valid[~valid.is_valid]) == 0
-    assert len(valid) == len(broken_geom)
-
 
 @s3_env
 def test_kmz():
@@ -118,7 +108,11 @@ def test_kmz():
     gj = vectors.read(gj_path)
 
     # Check if equivalent
-    assert all(gj.geometry.geom_almost_equals(kmz.to_crs(gj.crs).geometry))
+    assert all(
+        gj.geometry.geom_equals_exact(
+            kmz.to_crs(gj.crs).geometry, tolerance=0.5 * 10**-6
+        )
+    )
 
 
 @s3_env
@@ -142,26 +136,6 @@ def test_gml():
     # Naive
     naive = vectors.read(naive_gml)
     assert naive.crs is None
-
-
-@s3_env
-def test_simplify_footprint():
-    """Test simplify footprint"""
-    complicated_footprint_path = vectors_path().joinpath(
-        "complicated_footprint_spot6.geojson"
-    )
-    max_nof_vertices = 40
-    complicated_footprint = vectors.read(complicated_footprint_path)
-    ok_footprint = vectors.simplify_footprint(
-        complicated_footprint, resolution=1.5, max_nof_vertices=max_nof_vertices
-    )
-    assert len(ok_footprint.geometry.exterior.iat[0].coords) < max_nof_vertices
-
-    # Just to test
-    nof_vertices_complicated = len(
-        complicated_footprint.explode(index_parts=True).geometry.exterior.iat[0].coords
-    )
-    assert nof_vertices_complicated > max_nof_vertices
 
 
 @s3_env

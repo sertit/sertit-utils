@@ -51,7 +51,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' and 'geopandas' to use the 'rasters' package."
     ) from ex
 
-from sertit import files, rasters_rio, vectors
+from sertit import files, geometry, rasters_rio, vectors
 
 MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
@@ -351,7 +351,7 @@ def _vectorize(
     gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
 
     # Return valid geometries
-    gdf = vectors.make_valid(gdf)
+    gdf = geometry.make_valid(gdf)
 
     # Dissolve if needed
     if dissolve:
@@ -1028,7 +1028,7 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Extent as a :code:`geopandas.Geodataframe`
     """
-    return vectors.get_geodf(geometry=[*xds.rio.bounds()], crs=xds.rio.crs)
+    return vectors.get_geodf(geom=[*xds.rio.bounds()], crs=xds.rio.crs)
 
 
 @path_xarr_dst
@@ -1053,7 +1053,7 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
     """
     footprint = get_valid_vector(xds)
-    return vectors.get_wider_exterior(footprint)
+    return geometry.get_wider_exterior(footprint)
 
 
 def merge_vrt(

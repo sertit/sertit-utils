@@ -37,12 +37,12 @@ from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 
-from sertit import files, logs, misc, strings
+from sertit import files, geometry, logs, misc, strings
 
 try:
     import geopandas as gpd
     from shapely import wkt
-    from shapely.geometry import MultiPolygon, Polygon, box
+    from shapely.geometry import Polygon
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
         "Please install 'geopandas' to use the rasters package."
@@ -96,63 +96,7 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
     return f"EPSG:{epsg}"
 
 
-def from_polygon_to_bounds(
-    polygon: Union[Polygon, MultiPolygon]
-) -> (float, float, float, float):
-    """
-    Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
-
-    .. code-block:: python
-
-        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
-        >>> from_polygon_to_bounds(poly)
-        (0.0, 0.0, 1.0, 1.0)
-
-    Args:
-        polygon (MultiPolygon): polygon to convert
-
-    Returns:
-        (float, float, float, float): left, bottom, right, top
-    """
-    left = polygon.bounds[0]  # xmin
-    bottom = polygon.bounds[1]  # ymin
-    right = polygon.bounds[2]  # xmax
-    top = polygon.bounds[3]  # ymax
-
-    assert left < right
-    assert bottom < top
-
-    return left, bottom, right, top
-
-
-def from_bounds_to_polygon(
-    left: float, bottom: float, right: float, top: float
-) -> Polygon:
-    """
-    Convert the bounds to a :code:`shapely.polygon`.
-
-    .. code-block:: python
-
-        >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
-        >>> print(poly)
-        'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
-
-    Args:
-        left (float): Left coordinates
-        bottom (float): Bottom coordinates
-        right (float): Right coordinates
-        top (float): Top coordinates
-
-    Returns:
-        Polygon: Polygon corresponding to the bounds
-
-    """
-    return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
-
-
-def get_geodf(
-    geometry: Union[Polygon, list, gpd.GeoSeries], crs: str
-) -> gpd.GeoDataFrame:
+def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
 
@@ -165,30 +109,30 @@ def get_geodf(
         0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
 
     Args:
-        geometry (Union[Polygon, list]): List of Polygons, or Polygon or bounds
+        geom (Union[Polygon, list]): List of Polygons, or Polygon or bounds
         crs (str): CRS of the polygon
 
     Returns:
         gpd.GeoDataFrame: Geometry as a geodataframe
     """
-    if isinstance(geometry, list):
-        if isinstance(geometry[0], Polygon):
+    if isinstance(geom, list):
+        if isinstance(geom[0], Polygon):
             pass
         else:
             try:
-                geometry = [from_bounds_to_polygon(*geometry)]
+                geom = [geometry.from_bounds_to_polygon(*geom)]
             except TypeError as ex:
                 raise TypeError(
                     "Give the extent as 'left', 'bottom', 'right', and 'top'"
                 ) from ex
-    elif isinstance(geometry, Polygon):
-        geometry = [geometry]
-    elif isinstance(geometry, gpd.GeoSeries):
-        geometry = geometry.geometry
+    elif isinstance(geom, Polygon):
+        geom = [geom]
+    elif isinstance(geom, gpd.GeoSeries):
+        geom = geom.geometry
     else:
         raise TypeError("geometry should be a list or a Polygon.")
 
-    return gpd.GeoDataFrame(geometry=geometry, crs=crs)
+    return gpd.GeoDataFrame(geometry=geom, crs=crs)
 
 
 def set_kml_driver() -> None:
@@ -285,51 +229,6 @@ def get_aoi_wkt(
     return aoi
 
 
-def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """
-    Get the wider exterior of a MultiPolygon as a Polygon
-
-    Args:
-        vector (gpd.GeoDataFrame): Polygon to simplify
-
-    Returns:
-        vector: gpd.GeoDataFrame: Wider exterior
-    """
-
-    # Get the footprint max (discard small holes stored in other polygons)
-    wider = vector[vector.area == np.max(vector.area)]
-
-    # Only select the exterior of this footprint(sometimes some holes persist)
-    if not wider.empty:
-        poly = Polygon(list(wider.exterior.iat[0].coords))
-        wider = gpd.GeoDataFrame(geometry=[poly], crs=wider.crs)
-
-        # Resets index as we only got one polygon left which should have index 0
-        wider.reset_index(inplace=True)
-
-    return wider
-
-
-def _to_polygons(val: Any) -> Polygon:
-    """
-    Convert to polygon (to be used in pandas) -> convert the geometry column
-
-    Args:
-        val (Any): Pandas value that has a "coordinates" field
-
-    Returns:
-        Polygon: Pandas value as a Polygon
-    """
-    # Donut cases
-    if len(val["coordinates"]) > 1:
-        poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
-    else:
-        poly = Polygon(val["coordinates"][0])
-        pass
-
-    return poly
-
-
 def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     """
     Convert rasterio shapes to geodataframe
@@ -340,6 +239,26 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Shapes as a GeoDataFrame
     """
+
+    def _to_polygons(val: Any) -> Polygon:
+        """
+        Convert to polygon (to be used in pandas) -> convert the geometry column
+
+        Args:
+            val (Any): Pandas value that has a "coordinates" field
+
+        Returns:
+            Polygon: Pandas value as a Polygon
+        """
+        # Donut cases
+        if len(val["coordinates"]) > 1:
+            poly = Polygon(val["coordinates"][0], val["coordinates"][1:])
+        else:
+            poly = Polygon(val["coordinates"][0])
+            pass
+
+        return poly
+
     # Convert results to pandas (because of invalid geometries) and save it
     pd_results = pd.DataFrame(shapes, columns=["geometry", "raster_val"])
 
@@ -351,7 +270,7 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     gdf = gpd.GeoDataFrame(pd_results, geometry=pd_results.geometry, crs=crs)
 
     # Return valid geometries
-    gdf = make_valid(gdf)
+    gdf = geometry.make_valid(gdf)
 
     return gdf
 
@@ -651,78 +570,6 @@ def ogr2geojson(
     return vect_path_gj
 
 
-def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
-    try:
-        geos_logger = logging.getLogger("shapely.geos")
-        previous_level = geos_logger.level
-        if verbose:
-            logging.debug("Invalid geometries:\n" f"\t{gdf[~gdf.is_valid]}")
-        else:
-            geos_logger.setLevel(logging.CRITICAL)
-
-        # Discard self-intersection and null geometries
-        from shapely.validation import make_valid
-
-        gdf.geometry = gdf.geometry.apply(make_valid)
-
-        if not verbose:
-            geos_logger.setLevel(previous_level)
-    except ImportError:
-        import shapely
-
-        LOGGER.warning(
-            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
-            f"The obtained vector may be broken !"
-        )
-
-    return gdf
-
-
-def simplify_footprint(
-    footprint: gpd.GeoDataFrame, resolution: float, max_nof_vertices: int = 50
-) -> gpd.GeoDataFrame:
-    """
-    Simplify footprint.
-
-    Set a number of maximum vertices and this function will try to simplify the footprint to have less than this number of vertices.
-    The tolerance will grow to try to respect this number of vertices.
-
-    This function will loop over a number of pixels of tolerence [1, 2, 4, 8, 16, 32, 64] (tolerance of gpd.simplify == resolution * tol_pix)
-    If in the end, the number of vertices is still too high, a warning will be emitted.
-
-    Args:
-        footprint (gpd.GeoDataFrame): Footprint to be simplified
-        resolution (float): Corresponding resolution
-        max_nof_vertices (int): Maximum number of vertices of the wanted footprint
-
-    Returns:
-        gpd.GeoDataFrame: Simplified footprint
-    """
-    # Number of pixels of tolerance
-    tolerance = [1, 2, 4, 8, 16, 32, 64]
-
-    # Process only if given footprint is too complex (too many vertices)
-    def simplify_geom(value):
-        nof_vertices = len(value.exterior.coords)
-        if nof_vertices > max_nof_vertices:
-            for tol in tolerance:
-                # Simplify footprint
-                value = value.simplify(
-                    tolerance=tol * resolution, preserve_topology=True
-                )
-
-                # Check if OK
-                nof_vertices = len(value.exterior.coords)
-                if nof_vertices <= max_nof_vertices:
-                    break
-        return value
-
-    footprint = footprint.explode(index_parts=True)
-    footprint.geometry = footprint.geometry.apply(simplify_geom)
-
-    return footprint
-
-
 @contextmanager
 def utm_crs(gdf: gpd.GeoDataFrame) -> None:
     """
@@ -740,7 +587,7 @@ def utm_crs(gdf: gpd.GeoDataFrame) -> None:
         True
 
     Args:
-        newdir (str): New directory
+        gdf (str): GeoDataFrame to copnvert
     """
     src_crs = None
     if not gdf.crs.is_projected:

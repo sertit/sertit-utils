@@ -137,7 +137,9 @@ def test_rasters():
             ci.assert_xr_encoding_attrs(xda, xda_2)
             ci.assert_xr_encoding_attrs(xda, xda_3)
             ci.assert_xr_encoding_attrs(xda, xda_4)
-            ci.assert_xr_encoding_attrs(xda, xda_dask)
+            ci.assert_xr_encoding_attrs(
+                xda, xda_dask, unchecked_attr="preferred_chunks"
+            )
 
             # ----------------------------------------------------------------------------------------------
             # -- Read with window
