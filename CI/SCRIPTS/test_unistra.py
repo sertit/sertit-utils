@@ -16,7 +16,7 @@
 # limitations under the License.
 """ Script testing the CI """
 import pytest
-from cloudpathlib import AnyPath
+from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3, s3_env
@@ -34,7 +34,7 @@ from sertit.unistra import (
 def test_unistra_s3():
     with tempenv.TemporaryEnvironment({SU_USE_S3: "1", CI_SERTIT_S3: "1"}):
         # Test s3_env and define_s3_client (called inside)
-        def without_s3():
+        def base_fct():
             raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
                 "DATA", "rasters", "raster.tif"
             )
@@ -45,7 +45,11 @@ def test_unistra_s3():
 
         @s3_env
         def with_s3():
-            without_s3()
+            base_fct()
+
+        def without_s3():
+            S3Client().set_as_default_client()
+            base_fct()
 
         with pytest.raises(AssertionError):
             without_s3()
