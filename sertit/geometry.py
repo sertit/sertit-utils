@@ -20,14 +20,15 @@ Geometry tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 import logging
-from typing import Union
 
 import numpy as np
 from tqdm import tqdm
 
+from sertit.types import AnyPolygonType
+
 try:
     import geopandas as gpd
-    from shapely.geometry import MultiPolygon, Polygon, box
+    from shapely.geometry import Polygon, box
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
         "Please install 'geopandas' to use the rasters package."
@@ -39,9 +40,7 @@ from sertit.logs import SU_NAME
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def from_polygon_to_bounds(
-    polygon: Union[Polygon, MultiPolygon]
-) -> (float, float, float, float):
+def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, float):
     """
     Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
 

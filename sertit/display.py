@@ -17,15 +17,12 @@
 """
 Display tools
 """
-from typing import Union
-
 import numpy as np
-import numpy.ma
+
+from sertit.types import AnyNumpyArray
 
 
-def scale(
-    array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2
-) -> Union[np.ndarray, numpy.ma.masked_array]:
+def scale(array: AnyNumpyArray, perc: int = 2) -> AnyNumpyArray:
     """
     Scale a raster given as a np.ndarray between 0 and 1.
 
@@ -35,7 +32,7 @@ def scale(
         If 3D, the raster should be in rasterio's convention: :code:`(count, height, width)`
 
     Args:
-        array (Union[np.ndarray, numpy.ma.masked_array]): Matrix to be scaled
+        array (AnyNumpyArray): Matrix to be scaled
         perc (int): Percentile to cut. 0 = min/max, 2 by default
 
     Returns:
@@ -86,9 +83,7 @@ def scale(
     return f_arr
 
 
-def scale_to_uint8(
-    array: Union[np.ndarray, numpy.ma.masked_array], perc: int = 2
-) -> Union[np.ndarray, numpy.ma.masked_array]:
+def scale_to_uint8(array: AnyNumpyArray, perc: int = 2) -> AnyNumpyArray:
     """
     Rescale array (read as rasterio arrays, which means the bands are the first dimension) to uint8.
     0 will be the nodata.

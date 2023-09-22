@@ -23,7 +23,7 @@ from cloudpathlib import CloudPath
 from lxml import etree
 
 from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, misc, rasters, rasters_rio, vectors
+from sertit import ci, rasters, rasters_rio, vectors
 
 ci.reduce_verbosity()
 
@@ -197,17 +197,3 @@ def test_assert_html():
         ci.assert_xml_equal(html_ok, html_ok)
         with pytest.raises(AssertionError):
             ci.assert_xml_equal(html_ok, html_nok)
-
-
-@pytest.mark.skipif(not misc.in_docker(), reason="Only works in docker")
-def test_mnt():
-    """Test mounted directories"""
-    try:
-        assert ci.get_db2_path() == "/mnt/ds2_db2"
-        assert ci.get_db3_path() == "/mnt/ds2_db3"
-        assert ci.get_db4_path() == "/mnt/ds2_db4"
-    except NotADirectoryError:
-        pass
-
-    with pytest.raises(NotADirectoryError):
-        ci._get_db_path(5)

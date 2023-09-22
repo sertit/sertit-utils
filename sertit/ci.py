@@ -21,114 +21,33 @@ You can use :code:`assert_raster_equal` only if you have installed sertit[full] 
 """
 import filecmp
 import logging
-import os
 import pprint
 from doctest import Example
-from functools import wraps
-from pathlib import Path
 from typing import Any, Union
 
 import geopandas as gpd
 import numpy as np
-import xarray as xr
-from cloudpathlib import AnyPath, CloudPath, S3Client
+from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d
 from shapely.testing import assert_geometries_equal
 
-from sertit import files, vectors
+from sertit import files, unistra, vectors
 from sertit.logs import SU_NAME
+from sertit.types import AnyPathStrType, AnyXrDataStructure
 
-AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
-AWS_S3_ENDPOINT = "s3.unistra.fr"
+# Alias for compatibility (don't deprecate them)
+AWS_ACCESS_KEY_ID = unistra.AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = unistra.AWS_SECRET_ACCESS_KEY
+AWS_S3_ENDPOINT = unistra.AWS_S3_ENDPOINT
+s3_env = unistra.s3_env
+define_s3_client = unistra.define_s3_client
+get_db2_path = unistra.get_db2_path
+get_db3_path = unistra.get_db3_path
+get_db4_path = unistra.get_db4_path
 
 LOGGER = logging.getLogger(SU_NAME)
-
-
-def get_mnt_path() -> str:
-    """
-    Return mounting directory :code:`/mnt`.
-
-    .. WARNING::
-        This won't work on Windows !
-
-    .. code-block:: python
-
-        >>> get_mnt_path()
-        '/mnt'
-
-    Returns:
-        str: Mounting directory
-    """
-    return r"/mnt"
-
-
-def _get_db_path(db_nb=2) -> str:
-    """
-    Returns DSx database0x path
-
-    - :code:`/mnt/ds2_dbx` when mounted (docker...)
-    - :code:`\\ds2\database0x` on windows
-    """
-    db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
-
-    if not os.path.isdir(db_path):
-        db_path = rf"\\DS2\database0{db_nb}"
-
-    if not os.path.isdir(db_path):
-        raise NotADirectoryError(f"Impossible to open ds2/database0{db_nb}!")
-    return db_path
-
-
-def get_db2_path() -> str:
-    """
-    Returns DS2 database02 path
-
-    - :code:`/mnt/ds2_db2` when mounted (docker...)
-    - :code:`\\ds2\database02` on windows
-
-    .. code-block:: python
-
-        >>> get_db2_path()
-        '/mnt/ds2_db2'
-
-    Returns:
-        str: Mounted directory
-    """
-    return _get_db_path(2)
-
-
-def get_db3_path() -> str:
-    """
-    Returns DS2 database03 path
-
-    - :code:`/mnt/ds2_db3` when mounted (docker...)
-    - :code:`\\ds2\database03` on windows
-
-    .. code-block:: python
-
-        >>> get_db3_path()
-        '/mnt/ds2_db3'
-
-    Returns:
-        str: Mounted directory
-    """
-    return _get_db_path(3)
-
-
-def get_db4_path() -> str:
-    """
-    Returns DS2 database04 path
-
-    - :code:`/mnt/ds2_db4` when mounted (docker...)
-    - :code:`\\ds2\database04` on windows
-
-    Returns:
-        str: Mounted directory
-    """
-    return _get_db_path(4)
 
 
 def assert_val(val_1: Any, val_2: Any, field: str) -> None:
@@ -155,9 +74,7 @@ def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
     assert_val(dict_1[field], dict_2[field], field)
 
 
-def assert_files_equal(
-    file_1: Union[str, Path, CloudPath], file_2: Union[str, Path, CloudPath]
-):
+def assert_files_equal(file_1: AnyPathStrType, file_2: AnyPathStrType):
     """
     Assert to files are equal by hashing its content
 
@@ -201,9 +118,7 @@ def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
     ), f'transform incoherent:\n{meta_1["transform"]}\n!=\n{meta_2["transform"]}'
 
 
-def assert_raster_equal(
-    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
-) -> None:
+def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two rasters are equal.
 
@@ -216,8 +131,8 @@ def assert_raster_equal(
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
-        path_1 (Union[str, CloudPath, Path]): Raster 1
-        path_2 (Union[str, CloudPath, Path]): Raster 2
+        path_1 (AnyPathStrType): Raster 1
+        path_2 (AnyPathStrType): Raster 2
     """
     try:
         import rasterio
@@ -236,7 +151,7 @@ def assert_raster_equal(
 
 
 def assert_raster_almost_equal(
-    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=7
+    path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=7
 ) -> None:
     """
     Assert that two rasters are almost equal.
@@ -254,8 +169,8 @@ def assert_raster_almost_equal(
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
-        path_1 (Union[str, CloudPath, Path]): Raster 1
-        path_2 (Union[str, CloudPath, Path]): Raster 2
+        path_1 (AnyPathStrType): Raster 1
+        path_2 (AnyPathStrType): Raster 2
         decimal (int): Number of decimal
     """
     try:
@@ -296,7 +211,7 @@ def assert_raster_almost_equal(
 
 
 def assert_raster_almost_equal_magnitude(
-    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path], decimal=2
+    path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=2
 ) -> None:
     """
     Assert that two rasters are almost equal, with the decimal taken on the scientif representation of the array.
@@ -316,8 +231,8 @@ def assert_raster_almost_equal_magnitude(
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
-        path_1 (Union[str, CloudPath, Path]): Raster 1
-        path_2 (Union[str, CloudPath, Path]): Raster 2
+        path_1 (AnyPathStrType): Raster 1
+        path_2 (AnyPathStrType): Raster 2
         decimal (int): Number of decimal
     """
     try:
@@ -366,8 +281,8 @@ def assert_raster_almost_equal_magnitude(
 
 
 def assert_raster_max_mismatch(
-    path_1: Union[str, CloudPath, Path],
-    path_2: Union[str, CloudPath, Path],
+    path_1: AnyPathStrType,
+    path_2: AnyPathStrType,
     max_mismatch_pct=0.5,
 ) -> None:
     """
@@ -386,8 +301,8 @@ def assert_raster_max_mismatch(
         >>> # Raises AssertionError if sth goes wrong
 
     Args:
-        path_1 (Union[str, CloudPath, Path]): Raster 1
-        path_2 (Union[str, CloudPath, Path]): Raster 2
+        path_1 (AnyPathStrType): Raster 1
+        path_2 (AnyPathStrType): Raster 2
         max_mismatch_pct (float): Maximum of element mismatch in %
     """
     try:
@@ -413,9 +328,7 @@ def assert_raster_max_mismatch(
             )
 
 
-def assert_dir_equal(
-    path_1: Union[str, CloudPath, Path], path_2: Union[str, CloudPath, Path]
-) -> None:
+def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two directories are equal.
 
@@ -460,8 +373,8 @@ def assert_dir_equal(
 
 
 def assert_geom_equal(
-    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
-    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
+    geom_1: Union[AnyPathStrType, "gpd.GeoDataFrame"],
+    geom_2: Union[AnyPathStrType, "gpd.GeoDataFrame"],
     ignore_z=True,
 ) -> None:
     """
@@ -483,8 +396,8 @@ def assert_geom_equal(
          - CRS
 
     Args:
-        geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
-        geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
+        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
+        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
         ignore_z (bool): Ignore Z coordinate
     """
 
@@ -530,8 +443,8 @@ def assert_geom_equal(
 
 
 def assert_geom_almost_equal(
-    geom_1: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
-    geom_2: Union[str, CloudPath, Path, "gpd.GeoDataFrame"],
+    geom_1: Union[AnyPathStrType, "gpd.GeoDataFrame"],
+    geom_2: Union[AnyPathStrType, "gpd.GeoDataFrame"],
     decimal=9,
     ignore_z=True,
 ) -> None:
@@ -554,8 +467,8 @@ def assert_geom_almost_equal(
          - CRS
 
     Args:
-        geom_1 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 1
-        geom_2 (Union[str, CloudPath, Path, "gpd.GeoDataFrame"]): Geometry 2
+        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
+        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
         decimal (int): Number of decimal
         ignore_z (bool): Ignore Z coordinate
     """
@@ -635,16 +548,16 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
 
 
 def assert_xr_encoding_attrs(
-    xda_1: Union[xr.DataArray, xr.Dataset],
-    xda_2: Union[xr.DataArray, xr.Dataset],
+    xda_1: AnyXrDataStructure,
+    xda_2: AnyXrDataStructure,
     unchecked_attr: Union[list, str] = None,
 ):
     """
     Assert that the attributes and the encoding of xarray.DataArray/set are the same
 
     Args:
-        xda_1 (Union[xr.DataArray, xr.Dataset]): First xarray
-        xda_2 (Union[xr.DataArray, xr.Dataset]): Second xarray
+        xda_1 (AnyXrDataStructure): First xarray
+        xda_2 (AnyXrDataStructure): Second xarray
         unchecked_attr (Union[list, str]): Don't check this list of attributes
     """
     if unchecked_attr is None:
@@ -726,54 +639,3 @@ def reduce_verbosity(other_loggers: list = None) -> None:
     # Unique logger names
     for logger in list(set(loggers)):
         logging.getLogger(logger).setLevel(logging.WARNING)
-
-
-def s3_env(*args, **kwargs):
-    """
-    Create S3 compatible storage environment
-    Args:
-        function (Callable): Function to decorate
-
-    Returns:
-        Callable: decorated function
-    """
-    import rasterio
-
-    use_s3 = kwargs["use_s3_env_var"]
-    function = args[0]
-
-    @wraps(function)
-    def s3_env_wrapper():
-        """S3 environment wrapper"""
-        if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
-            # Define S3 client for S3 paths
-            define_s3_client()
-            os.environ[use_s3] = "1"
-            LOGGER.info("Using S3 files")
-            with rasterio.Env(
-                CPL_CURL_VERBOSE=False,
-                AWS_VIRTUAL_HOSTING=False,
-                AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-                GDAL_DISABLE_READDIR_ON_OPEN=False,
-            ):
-                function()
-
-        else:
-            os.environ[use_s3] = "0"
-            LOGGER.info("Using on disk files")
-            function()
-
-    return s3_env_wrapper
-
-
-def define_s3_client():
-    """
-    Define S3 client
-    """
-    # ON S3
-    client = S3Client(
-        endpoint_url=f"https://{AWS_S3_ENDPOINT}",
-        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-    )
-    client.set_as_default_client()

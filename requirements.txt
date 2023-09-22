@@ -7,12 +7,10 @@ coverage
 pytest-cov
 flake8
 pylint
+tempenv
 
 # Deploy
 twine
-
-# Doc
-pdoc3
 
 # Libs for all platforms
 cloudpathlib[all]>=0.10.0

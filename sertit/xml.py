@@ -17,8 +17,7 @@
 """ Tools concerning XML management, simplifying lxml.etree """
 import logging
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from cloudpathlib import AnyPath, CloudPath
 from lxml.etree import (
@@ -34,18 +33,19 @@ from lxml.html.builder import E
 from sertit import files
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
+from sertit.types import AnyPathStrType
 
 UTF_8 = "UTF-8"
 
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def read(path: Union[str, Path, CloudPath]) -> _Element:
+def read(path: AnyPathStrType) -> _Element:
     """
     Read an XML file, even stored on the cloud
 
     Args:
-        path (Union[str, Path, CloudPath]): Path to the XML file
+        path (AnyPathStrType): Path to the XML file
 
     Returns:
         _Element: XML Root
@@ -74,7 +74,7 @@ def read(path: Union[str, Path, CloudPath]) -> _Element:
     return root
 
 
-def read_archive(path: Union[str, Path, CloudPath], regex: str = None) -> _Element:
+def read_archive(path: AnyPathStrType, regex: str = None) -> _Element:
     """
     Read an XML file from inside an archive (zip or tar)
     Convenient duplicate of :code:`files.read_archived_xml`
@@ -84,7 +84,7 @@ def read_archive(path: Union[str, Path, CloudPath], regex: str = None) -> _Eleme
     - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :code:`files.read_archived_xml`
 
     Args:
-        path (Union[str, Path, CloudPath]): Path to the XML file, stored inside an archive or path to the archive itself
+        path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
         regex (str): Optional. If specified, the path should be the archive path and the regex should be the key to find the XML file inside the archive.
 
     Returns:
@@ -174,7 +174,7 @@ def update_txt_fct(xml: _Element, field: str, fct: Callable) -> None:
     Args:
         xml (_Element): Root XML
         field (str): Field to update
-        value (Callable): Function to apply
+        fct (Callable): Function to apply
     """
     try:
         elem = xml.find(f".//{field}")

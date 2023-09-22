@@ -32,6 +32,7 @@ from rasterio.vrt import WarpedVRT
 from rasterio.windows import Window, from_bounds
 
 from sertit.logs import SU_NAME
+from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType
 
 try:
     import geopandas as gpd
@@ -313,7 +314,7 @@ def get_new_shape(
     return new_height, new_width, do_resampling
 
 
-def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
+def update_meta(arr: AnyNumpyArray, meta: dict) -> dict:
     """
     Basic metadata update from a numpy array. Updates everything that we can find in the array:
 
@@ -363,7 +364,7 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
         }
 
     Args:
-        arr (Union[np.ndarray, np.ma.masked_array]): Array from which to update the metadata
+        arr (AnyNumpyArray): Array from which to update the metadata
         meta (dict): Metadata to update
 
     Returns:
@@ -390,7 +391,7 @@ def update_meta(arr: Union[np.ndarray, np.ma.masked_array], meta: dict) -> dict:
 
 
 def get_nodata_mask(
-    array: Union[np.ma.masked_array, np.ndarray],
+    array: AnyNumpyArray,
     has_nodata: bool,
     default_nodata: int = 0,
 ) -> np.ndarray:
@@ -442,7 +443,7 @@ def get_nodata_mask(
 @path_arr_dst
 def rasterize(
     ds: PATH_ARR_DS,
-    vector: Union[gpd.GeoDataFrame, Path, CloudPath, str],
+    vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
     default_value: int = 1,
@@ -457,7 +458,7 @@ def rasterize(
 
     Args:
         ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        vector (Union[gpd.GeoDataFrame, Path, CloudPath, str]): Vector to be rasterized
+        vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary (`default_nodata`, `default_value`).
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
         default_value (int): Used as value for all geometries, if `value_field` not provided
@@ -980,9 +981,9 @@ def read(
 
 
 def write(
-    raster: Union[np.ma.masked_array, np.ndarray],
+    raster: AnyNumpyArray,
     meta: dict,
-    path: Union[str, CloudPath, Path],
+    path: AnyPathStrType,
     tags: dict = None,
     **kwargs,
 ) -> None:
@@ -1005,9 +1006,9 @@ def write(
         >>> write(raster, meta, raster_out)
 
     Args:
-        raster (Union[np.ma.masked_array, np.ndarray]): Raster to save on disk
+        raster (AnyNumpyArray): Raster to save on disk
         meta (dict): Basic metadata that will be copied and updated with raster's information
-        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
+        path (AnyPathStrType): Path where to save it (directories should be existing)
         tags (dict): Tags to write to the GeoTiff
         **kwargs: Overloading metadata, ie :code:`nodata=255`
     """
@@ -1075,10 +1076,10 @@ def write(
 
 def collocate(
     reference_meta: dict,
-    other_arr: Union[np.ma.masked_array, np.ndarray],
+    other_arr: AnyNumpyArray,
     other_meta: dict,
     resampling: Resampling = Resampling.nearest,
-) -> (Union[np.ma.masked_array, np.ndarray], dict):
+) -> (AnyNumpyArray, dict):
     """
     Collocate two georeferenced arrays:
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
@@ -1148,11 +1149,11 @@ def collocate(
 
 
 def sieve(
-    array: Union[np.ma.masked_array, np.ndarray],
+    array: AnyNumpyArray,
     out_meta: dict,
     sieve_thresh: int,
     connectivity: int = 4,
-) -> (Union[np.ma.masked_array, np.ndarray], dict):
+) -> (AnyNumpyArray, dict):
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -1173,13 +1174,13 @@ def sieve(
         >>> write(sieved, raster_out, sieved_meta)
 
     Args:
-        array (Union[np.ma.masked_array, np.ndarray]): Array to sieve
+        array (AnyNumpyArray): Array to sieve
         out_meta (dict): Metadata to update
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
 
     Returns:
-        (Union[np.ma.masked_array, np.ndarray], dict): Sieved array and updated meta
+        (AnyNumpyArray, dict): Sieved array and updated meta
     """
     assert connectivity in [4, 8]
 
@@ -1218,9 +1219,7 @@ def sieve(
     return result_array, meta
 
 
-def get_dim_img_path(
-    dim_path: Union[str, CloudPath, Path], img_name: str = "*"
-) -> Union[CloudPath, Path]:
+def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathType:
     """
     Get the image path from a :code:`BEAM-DIMAP` data.
 
@@ -1235,11 +1234,11 @@ def get_dim_img_path(
         >>> raster, meta = read(img_path)
 
     Args:
-        dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
+        dim_path (AnyPathStrType): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        Union[CloudPath, Path]: .img file
+        AnyPathType: .img file
     """
     dim_path = AnyPath(dim_path)
     if dim_path.suffix == ".dim":
@@ -1303,7 +1302,7 @@ def get_footprint(ds: PATH_ARR_DS) -> gpd.GeoDataFrame:
 
 def merge_vrt(
     paths: list,
-    merged_path: Union[str, CloudPath, Path],
+    merged_path: AnyPathStrType,
     abs_path: bool = False,
     **kwargs,
 ) -> None:
@@ -1331,7 +1330,7 @@ def merge_vrt(
 
     Args:
         paths (list): Path of the rasters to be merged with the same CRS)
-        merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        merged_path (AnyPathStrType): Path to the merged raster
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
@@ -1432,9 +1431,7 @@ def merge_vrt(
             misc.run_cli(vrt_cmd, cwd=vrt_root)
 
 
-def merge_gtiff(
-    paths: list, merged_path: Union[str, CloudPath, Path], **kwargs
-) -> None:
+def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
@@ -1455,7 +1452,7 @@ def merge_gtiff(
 
     Args:
         paths (list): Path of the rasters to be merged with the same CRS)
-        merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        merged_path (AnyPathStrType): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
@@ -1727,11 +1724,11 @@ def slope(
 
 def reproject_match(
     dst_meta: dict,
-    src_arr: Union[np.ma.masked_array, np.ndarray],
+    src_arr: AnyNumpyArray,
     src_meta: dict,
     resampling: Resampling = Resampling.nearest,
     **kwargs,
-) -> (Union[np.ma.masked_array, np.ndarray], dict):
+) -> (AnyNumpyArray, dict):
     """
     Reproject a raster to match the resolution, projection, and region of another raster.
 
@@ -1739,13 +1736,13 @@ def reproject_match(
 
     Args:
         dst_meta (dict): Destination metadata
-        src_arr (Union[np.ma.masked_array, np.ndarray]): Source raster's array
+        src_arr (AnyNumpyArray): Source raster's array
         src_meta (dict): Source metadata
         resampling (Resampling): Resampling method
         **kwargs: Passing other kwargs to `calculate_default_transform` and `reproject`
 
     Returns:
-        Union[np.ma.masked_array, np.ndarray], dict: Reprojected array and its metadata
+        AnyNumpyArray, dict: Reprojected array and its metadata
     """
 
     # Source metadata

@@ -27,7 +27,6 @@ import tarfile
 import tempfile
 import zipfile
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, Generator, Union
 
 import numpy as np
@@ -38,6 +37,7 @@ from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 
 from sertit import files, geometry, logs, misc, strings
+from sertit.types import AnyPathStrType, AnyPathType
 
 try:
     import geopandas as gpd
@@ -162,9 +162,7 @@ def set_kml_driver() -> None:
         drivers["KML"] = "rw"
 
 
-def get_aoi_wkt(
-    aoi_path: Union[str, CloudPath, Path], as_str: bool = True
-) -> Union[str, Polygon]:
+def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -185,7 +183,7 @@ def get_aoi_wkt(
         34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
 
     Args:
-        aoi_path (Union[str, CloudPath, Path]): Absolute or relative path to an AOI.
+        aoi_path (AnyPathStrType): Absolute or relative path to an AOI.
             Its format should be WKT or any format read by Fiona, like shapefiles.
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
@@ -275,13 +273,13 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     return gdf
 
 
-def write(gdf: gpd.GeoDataFrame, path: Union[str, CloudPath, Path], **kwargs) -> None:
+def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
     """
     Write vector to disk, managing the common drivers automatically.
 
     Args:
         gdf (gpd.GeoDataFrame): GeoDataFrame to write on disk
-        path (Union[str, CloudPath, Path]): Where to write on disk.
+        path (AnyPathStrType): Where to write on disk.
     """
     path = AnyPath(path)
 
@@ -296,18 +294,16 @@ def write(gdf: gpd.GeoDataFrame, path: Union[str, CloudPath, Path], **kwargs) ->
     gdf.to_file(str(path), driver=driver, **kwargs)
 
 
-def copy(
-    src_path: Union[str, Path, CloudPath], dst_path: Union[str, Path, CloudPath]
-) -> Union[Path, CloudPath]:
+def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
     """
      Copy vector (handles shapefiles additional files)
 
     Args:
-        src_path (Union[str, Path, CloudPath]): Source Path
-        dst_path (Union[str, Path, CloudPath]): Destination Path (file or folder)
+        src_path (AnyPathStrType): Source Path
+        dst_path (AnyPathStrType): Destination Path (file or folder)
 
     Returns:
-        Union[Path, CloudPath]: Path to copied vector
+        AnyPathType: Path to copied vector
     """
     src_path = AnyPath(src_path)
     dst_path = AnyPath(dst_path)
@@ -328,7 +324,7 @@ def copy(
 
 
 def read(
-    path: Union[str, CloudPath, Path],
+    path: AnyPathStrType,
     crs: Any = None,
     archive_regex: str = None,
     **kwargs,
@@ -356,7 +352,7 @@ def read(
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 
     Args:
-        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         **kwargs: Additional arguments used in gpd.read_file
@@ -458,7 +454,7 @@ def read(
 
 def _read_kml(
     vect_path: str,
-    path: Union[str, CloudPath, Path],
+    path: AnyPathStrType,
     arch_vect_path: str = None,
     tmp_dir=None,
     **kwargs,
@@ -468,7 +464,7 @@ def _read_kml(
 
     Args:
         vect_path (str): Resolved vector path (rteadable by geopandas, not on cloud etc.)
-        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
+        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         arch_vect_path: If archived vector, archive path
         tmp_dir: Temporary directory
         **kwargs: Additional arguments used in gpd.read_file
@@ -522,16 +518,16 @@ def _read_kml(
 
 
 def ogr2geojson(
-    path: Union[str, CloudPath, Path],
-    out_dir: Union[str, CloudPath, Path],
+    path: AnyPathStrType,
+    out_dir: AnyPathStrType,
     arch_vect_path: str = None,
 ) -> str:
     """
     Wrapper of ogr2ogr function, converting the input vector to GeoJSON.
 
     Args:
-        path (Union[str, CloudPath, Path]): Path to vector to read. In case of archive, path to the archive.
-        out_dir (Union[str, CloudPath, Path]): Output directory
+        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        out_dir (AnyPathStrType): Output directory
         arch_vect_path: If archived vector, archive path
 
     Returns:

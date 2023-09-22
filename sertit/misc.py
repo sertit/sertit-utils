@@ -23,12 +23,12 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from enum import Enum, unique
-from pathlib import Path
 from typing import Any, Union
 
-from cloudpathlib import AnyPath, CloudPath
+from cloudpathlib import AnyPath
 
 from sertit.logs import SU_NAME
+from sertit.types import AnyPathStrType
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -415,7 +415,7 @@ def in_docker() -> bool:
 
 
 @contextmanager
-def chdir(newdir: Union[str, CloudPath, Path]) -> None:
+def chdir(newdir: AnyPathStrType) -> None:
     """
     Change current directory, used as a context manager, ie:
 

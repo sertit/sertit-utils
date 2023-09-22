@@ -7,6 +7,8 @@
 - **ENH: Add a `sertit.types` containing aliases to common typings**
 - **ENH: Add \*\*kwargs in `vectors.read`**
 - **ENH: Handles unchecked attributes in `ci.assert_xr_encoding_attrs`**
+- **ENH: Add more types**
+- **ENH: Add a new module `unistra` used to handle functions referring to Unistra's environment**
 - FIX: Return an AssertionError text in `ci.assert_xr_encoding_attrs`
 - FIX: Fix `display.scale_to_uint8` with numpy masked arrays
 - DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)

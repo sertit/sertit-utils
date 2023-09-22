@@ -37,6 +37,7 @@ from sertit.rasters_rio import (
     get_window,
     path_arr_dst,
 )
+from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
 try:
     import geopandas as gpd
@@ -54,13 +55,8 @@ except ModuleNotFoundError as ex:
 from sertit import files, geometry, rasters_rio, vectors
 
 MAX_CORES = MAX_CORES
-PATH_XARR_DS = Union[str, xr.DataArray, xr.Dataset, rasterio.DatasetReader]
+PATH_XARR_DS = Union[str, AnyXrDataStructure, rasterio.DatasetReader]
 LOGGER = logging.getLogger(SU_NAME)
-
-XDS_TYPE = Union[xr.Dataset, xr.DataArray]
-"""
-Xarray types: xr.Dataset and xr.DataArray
-"""  # fmt:skip
 
 # NODATAs
 UINT8_NODATA = rasters_rio.UINT8_NODATA
@@ -185,7 +181,7 @@ def path_xarr_dst(function: Callable) -> Callable:
     return path_or_xarr_or_dst_wrapper
 
 
-def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
+def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
     """
     Get nodata mask from a xarray.
 
@@ -205,7 +201,7 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
                [0, 0, 1]], dtype=uint8)
 
     Args:
-        xds (XDS_TYPE): Array to evaluate
+        xds (AnyXrDataStructure): Array to evaluate
 
     Returns:
         np.ndarray: Pixelwise nodata array
@@ -230,11 +226,11 @@ def get_nodata_mask(xds: XDS_TYPE) -> np.ndarray:
 @path_xarr_dst
 def rasterize(
     xds: PATH_XARR_DS,
-    vector: Union[gpd.GeoDataFrame, Path, CloudPath, str],
+    vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
     **kwargs,
-) -> XDS_TYPE:
+) -> AnyXrDataStructure:
     """
     Rasterize a vector into raster format.
 
@@ -244,12 +240,12 @@ def rasterize(
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
-        vector (Union[gpd.GeoDataFrame, Path, CloudPath, str]): Vector to be rasterized
+        vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
 
     Returns:
-        XDS_TYPE: Rasterized vector
+        AnyXrDataStructure: Rasterized vector
     """
     # Use classic option
     arr, meta = rasters_rio.rasterize(
@@ -476,7 +472,7 @@ def mask(
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
-) -> XDS_TYPE:
+) -> AnyXrDataStructure:
     """
     Masking a dataset:
     setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
@@ -508,7 +504,7 @@ def mask(
         **kwargs: Other rasterio.mask options
 
     Returns:
-         XDS_TYPE: Masked array as a xarray
+         AnyXrDataStructure: Masked array as a xarray
     """
     # Use classic option
     arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
@@ -529,7 +525,7 @@ def paint(
     value: int,
     invert: bool = False,
     **kwargs,
-) -> XDS_TYPE:
+) -> AnyXrDataStructure:
     """
     Painting a dataset: setting values inside the given shapes. To set outside the shape, set invert=True.
     Pay attention that this behavior is the opposite of the :code:`rasterio.mask` function.
@@ -562,7 +558,7 @@ def paint(
         **kwargs: Other rasterio.mask options
 
     Returns:
-         XDS_TYPE: Painted array as a xarray
+         AnyXrDataStructure: Painted array as a xarray
     """
     # Fill na values in order to not interfere with the mask function
     if xds.rio.encoded_nodata is not None:
@@ -628,7 +624,7 @@ def crop(
         **kwargs: Other rioxarray.clip options
 
     Returns:
-         XDS_TYPE: Cropped array as a xarray
+         AnyXrDataStructure: Cropped array as a xarray
     """
     if nodata:
         xds = set_nodata(xds, nodata)
@@ -655,7 +651,7 @@ def read(
     chunks: Union[int, tuple, dict] = None,
     as_type: Any = None,
     **kwargs,
-) -> XDS_TYPE:
+) -> AnyXrDataStructure:
     """
     Read a raster dataset from a :
 
@@ -701,7 +697,7 @@ def read(
         as_type (Any): Type in which to load the array
         **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
     Returns:
-        Union[XDS_TYPE]: Masked xarray corresponding to the raster data and its meta data
+        Union[AnyXrDataStructure]: Masked xarray corresponding to the raster data and its meta data
 
     """
     if window is not None:
@@ -786,7 +782,7 @@ def read(
 
 @path_xarr_dst
 def write(
-    xds: XDS_TYPE, path: Union[str, CloudPath, Path], tags: dict = None, **kwargs
+    xds: AnyXrDataStructure, path: AnyPathStrType, tags: dict = None, **kwargs
 ) -> None:
     """
     Write raster to disk.
@@ -815,8 +811,8 @@ def write(
         >>> write(xds, raster_out)
 
     Args:
-        xds (XDS_TYPE): Path to the raster or a rasterio dataset or a xarray
-        path (Union[str, CloudPath, Path]): Path where to save it (directories should be existing)
+        xds (AnyXrDataStructure): Path to the raster or a rasterio dataset or a xarray
+        path (AnyPathStrType): Path where to save it (directories should be existing)
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
     """
     # Manage dtype
@@ -869,10 +865,10 @@ def write(
 
 
 def collocate(
-    reference: XDS_TYPE,
-    other: XDS_TYPE,
+    reference: AnyXrDataStructure,
+    other: AnyXrDataStructure,
     resampling: Resampling = Resampling.nearest,
-) -> XDS_TYPE:
+) -> AnyXrDataStructure:
     """
     Collocate two georeferenced arrays:
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
@@ -891,12 +887,12 @@ def collocate(
         >>> write(col_xds, col_path)
 
     Args:
-        reference (XDS_TYPE): Reference xarray
-        other (XDS_TYPE): Other xarray
+        reference (AnyXrDataStructure): Reference xarray
+        other (AnyXrDataStructure): Other xarray
         resampling (Resampling): Resampling method
 
     Returns:
-        XDS_TYPE: Collocated xarray
+        AnyXrDataStructure: Collocated xarray
 
     """
     if isinstance(other, xr.DataArray):
@@ -925,7 +921,9 @@ def collocate(
 
 
 @path_xarr_dst
-def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TYPE:
+def sieve(
+    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4
+) -> AnyXrDataStructure:
     """
     Sieving, overloads rasterio function with raster shaped like (1, h, w).
 
@@ -949,7 +947,7 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TY
         connectivity (int): Connectivity, either 4 or 8
 
     Returns:
-        (XDS_TYPE): Sieved xarray
+        (AnyXrDataStructure): Sieved xarray
     """
     assert connectivity in [4, 8]
 
@@ -980,9 +978,7 @@ def sieve(xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4) -> XDS_TY
     return sieved_xds
 
 
-def get_dim_img_path(
-    dim_path: Union[str, CloudPath, Path], img_name: str = "*"
-) -> Union[CloudPath, Path]:
+def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathType:
     """
     Get the image path from a :code:`BEAM-DIMAP` data.
 
@@ -997,11 +993,11 @@ def get_dim_img_path(
         >>> raster, meta = read(img_path)
 
     Args:
-        dim_path (Union[str, CloudPath, Path]): DIM path (.dim or .data)
+        dim_path (AnyPathStrType): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
 
     Returns:
-        Union[CloudPath, Path]: .img file
+        AnyPathType: .img file
     """
     return rasters_rio.get_dim_img_path(dim_path, img_name)
 
@@ -1058,7 +1054,7 @@ def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
 
 def merge_vrt(
     crs_paths: list,
-    crs_merged_path: Union[str, CloudPath, Path],
+    crs_merged_path: AnyPathStrType,
     abs_path: bool = False,
     **kwargs,
 ) -> None:
@@ -1086,16 +1082,14 @@ def merge_vrt(
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        crs_merged_path (AnyPathStrType): Path to the merged raster
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
         kwargs: Other gdlabuildvrt arguments
     """
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, abs_path, **kwargs)
 
 
-def merge_gtiff(
-    crs_paths: list, crs_merged_path: Union[str, CloudPath, Path], **kwargs
-) -> None:
+def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
@@ -1116,7 +1110,7 @@ def merge_gtiff(
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (Union[str, CloudPath, Path]): Path to the merged raster
+        crs_merged_path (AnyPathStrType): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>_
     """
@@ -1389,7 +1383,9 @@ def where(
 
 
 @path_xarr_dst
-def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XDS_TYPE:
+def hillshade(
+    xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45
+) -> AnyXrDataStructure:
     """
     Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
 
@@ -1408,7 +1404,7 @@ def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XD
         zenith (float): Zenith angle in degrees
 
     Returns:
-        XDS_TYPE: Hillshade
+        AnyXrDataStructure: Hillshade
     """
     # Use classic option
     arr, meta = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
@@ -1417,7 +1413,9 @@ def hillshade(xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45) -> XD
 
 
 @path_xarr_dst
-def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_TYPE:
+def slope(
+    xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False
+) -> AnyXrDataStructure:
     """
     Compute the slope of a DEM (in degrees).
 
@@ -1429,7 +1427,7 @@ def slope(xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False) -> XDS_
         in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 
     Returns:
-        XDS_TYPE: Slope
+        AnyXrDataStructure: Slope
     """
     # Use classic option
     arr, meta = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
