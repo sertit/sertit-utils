@@ -5,7 +5,7 @@
 - **BREAKING CHANGE**: Creating a `geometry` module where following `vectors` have been transferred: `from_polygon_to_bounds`, `from_bounds_to_polygon`, `get_wider_exterior`, `make_valid`. The function `fill_polygon_holes` has been created.
 - **ENH: Add a `vectors.utm_crs` context manager allowing the user to compute seamlessly geographic-based operation (such as centroids, area computation...)**
 - **ENH: Add a `sertit.types` containing aliases to common typings**
-- **ENH: Add **kwargs in `vectors.read`**
+- **ENH: Add \*\*kwargs in `vectors.read`**
 - **ENH: Handles unchecked attributes in `ci.assert_xr_encoding_attrs`**
 - FIX: Return an AssertionError text in `ci.assert_xr_encoding_attrs`
 - DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)

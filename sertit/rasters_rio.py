@@ -573,11 +573,8 @@ def _vectorize(
         transform=ds.transform,
     )
 
-    # Convert to geodataframe
+    # Convert to geodataframe (with valid geometries)
     gdf = vectors.shapes_to_gdf(shapes, ds.crs)
-
-    # Return valid geometries
-    gdf = geometry.make_valid(gdf)
 
     # Dissolve if needed
     if dissolve:
