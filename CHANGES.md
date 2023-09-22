@@ -8,6 +8,7 @@
 - **ENH: Add \*\*kwargs in `vectors.read`**
 - **ENH: Handles unchecked attributes in `ci.assert_xr_encoding_attrs`**
 - FIX: Return an AssertionError text in `ci.assert_xr_encoding_attrs`
+- FIX: Fix `display.scale_to_uint8` with numpy masked arrays
 - DEPR: Deprecation of `vectors.corresponding_utm_projection` in favor to [geopandas' `estimate_utm_crs`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)
 
 ## 1.28.3 (2023-07-20)

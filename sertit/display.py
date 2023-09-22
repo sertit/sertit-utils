@@ -101,9 +101,9 @@ def scale_to_uint8(
     """
     # Convert it to uint8
     scaled_arr = (scale(array) * 254 + 1).astype(np.uint8)
-    scaled_arr = np.where(array.mask, 0, scaled_arr)
 
     if isinstance(array, np.ma.masked_array):
+        scaled_arr = np.where(array.mask, 0, scaled_arr)
         scaled_arr = np.ma.masked_array(scaled_arr, mask=array.mask, fill_value=0)
 
     return scaled_arr
