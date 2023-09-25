@@ -16,16 +16,28 @@
 # limitations under the License.
 """ Script testing vector functions """
 
-from CI.SCRIPTS.script_utils import s3_env, vectors_path
+from CI.SCRIPTS.script_utils import geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
+from sertit.geometry import fill_polygon_holes, get_wider_exterior
 
 ci.reduce_verbosity()
 
 
 @s3_env
+def test_get_wider_exterior():
+    """Test get_wider_exterior"""
+    footprint_raw_path = geometry_path().joinpath("footprint_raw.geojson")
+    footprint_path = geometry_path().joinpath("footprint.geojson")
+    ci.assert_geom_equal(
+        get_wider_exterior(vectors.read(footprint_raw_path)),
+        vectors.read(footprint_path),
+    )
+
+
+@s3_env
 def test_simplify_footprint():
     """Test simplify footprint"""
-    complicated_footprint_path = vectors_path().joinpath(
+    complicated_footprint_path = geometry_path().joinpath(
         "complicated_footprint_spot6.geojson"
     )
     max_nof_vertices = 40
@@ -51,9 +63,10 @@ def test_geometry_fct():
     assert env.bounds == from_env.bounds
 
 
+@s3_env
 def test_make_valid():
     """Test make valid"""
-    broken_geom_path = vectors_path().joinpath("broken_geom.shp")
+    broken_geom_path = geometry_path().joinpath("broken_geom.shp")
     broken_geom = vectors.read(broken_geom_path)
     assert len(broken_geom[~broken_geom.is_valid]) == 1
     valid = geometry.make_valid(broken_geom, verbose=True)
@@ -61,6 +74,17 @@ def test_make_valid():
     assert len(valid) == len(broken_geom)
 
 
-# Missing:
-# - get_wider_exterior
-# - fill_polygon_holes
+@s3_env
+def test_fill_polygon_holes():
+    """Test fill_polygon_holes"""
+    water_path = geometry_path().joinpath("water.geojson")
+    water_none_path = geometry_path().joinpath("water_filled_none.geojson")
+    water_0_path = geometry_path().joinpath("water_filled_0.geojson")
+    water_1000_path = geometry_path().joinpath("water_filled_1000.geojson")
+    water = vectors.read(water_path)
+
+    ci.assert_geom_equal(fill_polygon_holes(water), vectors.read(water_none_path))
+    ci.assert_geom_equal(fill_polygon_holes(water, 0), vectors.read(water_0_path))
+    ci.assert_geom_equal(
+        fill_polygon_holes(water, threshold=1000), vectors.read(water_1000_path)
+    )

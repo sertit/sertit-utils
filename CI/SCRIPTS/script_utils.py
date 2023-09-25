@@ -100,6 +100,10 @@ def vectors_path():
     return get_ci_data_path().joinpath("vectors")
 
 
+def geometry_path():
+    return get_ci_data_path().joinpath("geometry")
+
+
 def files_path():
     return get_ci_data_path().joinpath("files")
 

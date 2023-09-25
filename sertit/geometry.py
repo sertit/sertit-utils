@@ -102,6 +102,7 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Returns:
         vector: gpd.GeoDataFrame: Wider exterior
     """
+    vector = vector.explode(index_parts=True)
 
     # Get the footprint max (discard small holes stored in other polygons)
     wider = vector[vector.area == np.max(vector.area)]
@@ -193,14 +194,15 @@ def fill_polygon_holes(
     gpd_results: gpd.GeoDataFrame, threshold: float = None
 ) -> gpd.GeoDataFrame:
     """
-    Fill holes over a given threshold for all polygons of a GeoDataFrame
+    Fill holes over a given threshold on the hole area (in meters) for all polygons of a GeoDataFrame.
+    If the threshold is set to None, every hole is filled.
 
     Args:
         gpd_results (gpd.GeoDataFrame): Geodataframe filled whith drilled polygons
-        threshold (float): Holes threshold
+        threshold (float): Holes area threshold, in meters. If set to None, every hole is filled.
 
     Returns:
-        gpd.GeoDataFrame: GeoDataFrame updated
+        gpd.GeoDataFrame: GeoDataFrame with filled holes
     """
 
     def _fill_polygon(polygon: Polygon, threshold: float = None):
@@ -221,7 +223,7 @@ def fill_polygon_holes(
             return Polygon(polygon.exterior)
 
     # Ensure the geometries are valid
-    gpd_results.geometry = gpd_results.geometry.apply(make_valid)
+    gpd_results = make_valid(gpd_results)
 
     # Check if vector is projected, if not convert it
     with vectors.utm_crs(gpd_results) as utm_results:

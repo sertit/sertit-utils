@@ -100,8 +100,8 @@ def test_vectors():
 @s3_env
 def test_kmz():
     """Test KMZ files"""
-    kmz_path = vectors_path().joinpath("AOI.kmz")
-    gj_path = vectors_path().joinpath("AOI.geojson")
+    kmz_path = vectors_path().joinpath("AOI_kmz.kmz")
+    gj_path = vectors_path().joinpath("AOI_kmz.geojson")
 
     # Read vectors
     kmz = vectors.read(kmz_path)
