@@ -1,6 +1,6 @@
 # Release History
 
-## 1.29.0 (2023-MM-DD)
+## 1.29.0 (2023-09-25)
 
 - **BREAKING CHANGE**: Creating a `geometry` module where following `vectors` have been transferred: `from_polygon_to_bounds`, `from_bounds_to_polygon`, `get_wider_exterior`, `make_valid`. The function `fill_polygon_holes` has been created.
 - **ENH: Add a `vectors.utm_crs` context manager allowing the user to compute seamlessly geographic-based operation (such as centroids, area computation...)**
