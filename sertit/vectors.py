@@ -29,20 +29,19 @@ import zipfile
 from contextlib import contextmanager
 from typing import Any, Generator, Union
 
-import numpy as np
 import pandas as pd
 from cloudpathlib import AnyPath, CloudPath
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
+from rasterio import CRS
 
 from sertit import files, geometry, logs, misc, strings
 from sertit.types import AnyPathStrType, AnyPathType
 
 try:
     import geopandas as gpd
-    from shapely import wkt
-    from shapely.geometry import Polygon
+    from shapely import Polygon, wkt
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
         "Please install 'geopandas' to use the rasters package."
@@ -66,34 +65,83 @@ EXT_TO_DRIVER = {
 SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 
-def corresponding_utm_projection(lon: float, lat: float) -> str:
+def to_utm_crs(lon: float, lat: float) -> CRS:
     """
-    Find the EPSG code of the UTM projection from a lon/lat in WGS84.
+    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
     DEPRECATED: use :code:`estimate_utm_crs` instead.
     https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html
 
     .. code-block:: python
 
-        >>> corresponding_utm_projection(lon=7.8, lat=48.6)  # Strasbourg
-        'EPSG:32632'
+        >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
+        <Derived Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984 ensemble
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
 
     Args:
-        lon (float): Longitude (WGS84)
-        lat (float): Latitude (WGS84)
+        lon (float): Longitude (WGS84, epsg:4326)
+        lat (float): Latitude (WGS84, epsg:4326)
 
     Returns:
-        str: EPSG string
+        CRS: UTM CRS
 
     """
-    # EPSG code begins with 32
-    # Then 6 if north, 7 if south -> (np.sign(lat) + 1) / 2 * 100 == 1 if lat > 0 (north), 0 if lat < 0 (south)
-    # Then EPSG code with usual formula np.floor((180 + lon) / 6) + 1)
+    # Manage the case with centroids etc. that are already written as arrays
+    try:
+        point = gpd.points_from_xy([lon], [lat])
+    except ValueError:
+        point = gpd.points_from_xy(lon, lat)
+
+    return gpd.GeoDataFrame(geometry=point, crs=WGS84).estimate_utm_crs()
+
+
+def corresponding_utm_projection(lon: float, lat: float) -> str:
+    """
+    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
+
+    DEPRECATED: use :code:`estimate_utm_crs` instead.
+    https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html
+
+    .. code-block:: python
+
+        >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
+        <Derived Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984 ensemble
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+    Args:
+        lon (float): Longitude (WGS84, epsg:4326)
+        lat (float): Latitude (WGS84, epsg:4326)
+
+    Returns:
+        CRS: UTM CRS
+
+    """
     logs.deprecation_warning(
-        "Deprecated, use geopandas' 'estimate_utm_crs' instead (see https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html)."
+        "Deprecated, use 'to_utm_crs' instead, which directly returs a CRS instead of a string."
     )
-    epsg = int(32700 - (np.sign(lat) + 1) / 2 * 100 + np.floor((180 + lon) / 6) + 1)
-    return f"EPSG:{epsg}"
+    return to_utm_crs(lon, lat).to_string()
 
 
 def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:

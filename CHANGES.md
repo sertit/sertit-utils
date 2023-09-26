@@ -1,5 +1,9 @@
 # Release History
 
+## 1.29.1 (2023-09-26)
+
+- **ENH: Add a function covering `vectors.corresponding_utm_projection`'s usecase (converting lat/lon to UTM CRS): `vectors.to_utm_crs`. Returns directly a CRS instead of a string. Keep the deprecation for `corresponding_utm_projection` but not for the same reason.**
+
 ## 1.29.0 (2023-09-25)
 
 - **BREAKING CHANGE**: Creating a `geometry` module where following `vectors` have been transferred: `from_polygon_to_bounds`, `from_bounds_to_polygon`, `get_wider_exterior`, `make_valid`. The function `fill_polygon_holes` has been created.

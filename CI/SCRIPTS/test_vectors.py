@@ -22,6 +22,7 @@ import warnings
 import geopandas as gpd
 import pytest
 from fiona.errors import DriverError
+from rasterio import CRS
 from shapely import wkt
 
 from CI.SCRIPTS.script_utils import s3_env, vectors_path
@@ -76,6 +77,9 @@ def test_vectors():
     aoi = vectors.read(kml_path)
     with pytest.deprecated_call():
         assert "EPSG:32638" == vectors.corresponding_utm_projection(
+            aoi.centroid.x, aoi.centroid.y
+        )
+        assert CRS.from_string("EPSG:32638") == vectors.to_utm_crs(
             aoi.centroid.x, aoi.centroid.y
         )
 
