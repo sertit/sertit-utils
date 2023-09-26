@@ -119,6 +119,16 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
+    """
+    Repair geometries from a dataframe.
+
+    Args:
+        gdf (gpd.GeoDataFrame): GeoDataFrame to repair
+        verbose (bool): Verbose invalid geometries
+
+    Returns:
+        gpd.GeoDataFrame: Repaired geometries
+    """
     try:
         geos_logger = logging.getLogger("shapely.geos")
         previous_level = geos_logger.level
