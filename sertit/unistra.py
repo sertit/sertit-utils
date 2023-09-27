@@ -52,7 +52,7 @@ def s3_env(*args, **kwargs):
     function = args[0]
 
     @wraps(function)
-    def s3_env_wrapper():
+    def s3_env_wrapper(*_args, **_kwargs):
         """S3 environment wrapper"""
         if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
             # Define S3 client for S3 paths
@@ -65,12 +65,12 @@ def s3_env(*args, **kwargs):
                 AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
                 GDAL_DISABLE_READDIR_ON_OPEN=False,
             ):
-                function()
+                function(*_args, **_kwargs)
 
         else:
             os.environ[use_s3] = "0"
             LOGGER.info("Using on disk files")
-            function()
+            function(*_args, **_kwargs)
 
     return s3_env_wrapper
 

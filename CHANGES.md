@@ -2,6 +2,7 @@
 
 ## 1.29.2 (2023-MM-DD)
 
+- FIX: Allow `unistra.s3_env` to wrap functions with arguments
 - CI: Better testing of kwargs handling in `vectors.read`
 
 ## 1.29.1 (2023-09-26)
