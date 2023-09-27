@@ -1,5 +1,9 @@
 # Release History
 
+## 1.29.2 (2023-MM-DD)
+
+- CI: Better testing of kwargs handling in `vectors.read`
+
 ## 1.29.1 (2023-09-26)
 
 - **ENH: Add a function covering `vectors.corresponding_utm_projection`'s usecase (converting lat/lon to UTM CRS): `vectors.to_utm_crs`. Returns directly a CRS instead of a string. Keep the deprecation for `corresponding_utm_projection` but not for the same reason.**

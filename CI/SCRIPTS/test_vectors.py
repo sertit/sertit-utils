@@ -85,6 +85,10 @@ def test_vectors():
 
     env = aoi.envelope[0]
 
+    # Test kwargs (should be slightly not equal toi AOI to prove bbox does sth)
+    with pytest.raises(AssertionError):
+        ci.assert_geom_equal(vectors.read(kml_path, bbox=env).geometry, aoi.envelope)
+
     # GeoDataFrame
     geodf = vectors.get_geodf(env, aoi.crs)  # GeoDataFrame from Polygon
     ci.assert_geom_equal(geodf.geometry, aoi.envelope)
