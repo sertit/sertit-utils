@@ -15,77 +15,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Unistra S3 tools
+Unistra tools
 """
 import logging
 import os
-from functools import wraps
 
-from cloudpathlib import AnyPath, S3Client
+from cloudpathlib import AnyPath
 
+from sertit import s3
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
 
-AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
-AWS_S3_ENDPOINT = "s3.unistra.fr"
-SU_USE_S3 = "SERTIT_UTILS_USE_S3"
+UNISTRA_S3_ENPOINT = "s3.unistra.fr"
 """
-Environment variable used to tell Sertit Utils to use Unistra's S3 bucket.
+Unistra S3 compatible storage endpoint: s3.unistra.fr
 """
 
 
 def s3_env(*args, **kwargs):
     """
-    Create S3 compatible storage environment
+    Create Unistra's S3 compatible storage environment
+
     Args:
         function (Callable): Function to decorate
 
     Returns:
         Callable: decorated function
     """
-    import rasterio
-
-    use_s3 = kwargs["use_s3_env_var"]
-    function = args[0]
-
-    @wraps(function)
-    def s3_env_wrapper(*_args, **_kwargs):
-        """S3 environment wrapper"""
-        if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
-            # Define S3 client for S3 paths
-            define_s3_client()
-            os.environ[use_s3] = "1"
-            LOGGER.info("Using S3 files")
-            with rasterio.Env(
-                CPL_CURL_VERBOSE=False,
-                AWS_VIRTUAL_HOSTING=False,
-                AWS_S3_ENDPOINT=AWS_S3_ENDPOINT,
-                GDAL_DISABLE_READDIR_ON_OPEN=False,
-            ):
-                function(*_args, **_kwargs)
-
-        else:
-            os.environ[use_s3] = "0"
-            LOGGER.info("Using on disk files")
-            function(*_args, **_kwargs)
-
-    return s3_env_wrapper
+    return s3.s3_env(default_endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
 
 
 def define_s3_client():
     """
-    Define S3 client
+    Define Unistra's S3 client
     """
-    # ON S3
-    client = S3Client(
-        endpoint_url=f"https://{AWS_S3_ENDPOINT}",
-        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-    )
-    client.set_as_default_client()
+    return s3.define_s3_client(default_endpoint=UNISTRA_S3_ENPOINT)
 
 
 def get_geodatastore() -> AnyPathType:
@@ -95,9 +61,9 @@ def get_geodatastore() -> AnyPathType:
     Returns:
         AnyPathType: Database directory
     """
-    if int(os.getenv(SU_USE_S3, 0)):
+    if int(os.getenv(s3.USE_S3_STORAGE, 0)):
         # Define S3 client for S3 paths
-        define_s3_client()
+        s3.define_s3_client()
         return AnyPath("s3://sertit-geodatastore")
     else:
         # on the DS2

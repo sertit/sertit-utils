@@ -22,12 +22,10 @@ from functools import wraps
 
 from cloudpathlib import AnyPath
 
-from sertit import ci
+from sertit import s3, unistra
 from sertit.misc import ListEnum
+from sertit.unistra import UNISTRA_S3_ENPOINT
 
-AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
-AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
-AWS_S3_ENDPOINT = "s3.unistra.fr"
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
 
 
@@ -43,7 +41,7 @@ class Polarization(ListEnum):
 
 def get_s3_ci_path():
     """Get S3 CI path"""
-    ci.define_s3_client()
+    unistra.define_s3_client()
     return AnyPath("s3://sertit-sertit-utils-ci")
 
 
@@ -53,7 +51,7 @@ def get_proj_path():
         return get_s3_ci_path()
     else:
         # ON DISK
-        return AnyPath(ci.get_db3_path())
+        return AnyPath(unistra.get_db3_path())
 
 
 def get_ci_data_path():
@@ -117,4 +115,6 @@ def xml_path():
 
 
 def s3_env(function):
-    return ci.s3_env(function, use_s3_env_var=CI_SERTIT_S3)
+    return s3.s3_env(default_endpoint=UNISTRA_S3_ENPOINT, use_s3_env_var=CI_SERTIT_S3)(
+        function
+    )

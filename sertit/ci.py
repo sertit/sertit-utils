@@ -33,19 +33,50 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d
 from shapely.testing import assert_geometries_equal
 
-from sertit import files, unistra, vectors
-from sertit.logs import SU_NAME
+from sertit import files, s3, unistra, vectors
+from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
 # Alias for compatibility (don't deprecate them)
-AWS_ACCESS_KEY_ID = unistra.AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY = unistra.AWS_SECRET_ACCESS_KEY
-AWS_S3_ENDPOINT = unistra.AWS_S3_ENDPOINT
-s3_env = unistra.s3_env
-define_s3_client = unistra.define_s3_client
-get_db2_path = unistra.get_db2_path
-get_db3_path = unistra.get_db3_path
-get_db4_path = unistra.get_db4_path
+AWS_ACCESS_KEY_ID = s3.AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = s3.AWS_SECRET_ACCESS_KEY
+AWS_S3_ENDPOINT = s3.AWS_S3_ENDPOINT
+
+
+def s3_env(*args, **kwargs):
+    deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
+    )
+    return unistra.s3_env(*args, **kwargs)
+
+
+def define_s3_client():
+    deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
+    )
+    return unistra.define_s3_client()
+
+
+def get_db2_path():
+    deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
+    )
+    return unistra.get_db2_path()
+
+
+def get_db3_path():
+    deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
+    )
+    return unistra.get_db3_path()
+
+
+def get_db4_path():
+    deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
+    )
+    return unistra.get_db4_path()
+
 
 LOGGER = logging.getLogger(SU_NAME)
 

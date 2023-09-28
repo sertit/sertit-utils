@@ -20,19 +20,12 @@ from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3
-from sertit import misc, s3
-from sertit.unistra import (
-    _get_db_path,
-    get_db2_path,
-    get_db3_path,
-    get_db4_path,
-    get_geodatastore,
-    s3_env,
-)
+from sertit.s3 import USE_S3_STORAGE, s3_env
+from sertit.unistra import UNISTRA_S3_ENPOINT
 
 
-def test_unistra_s3():
-    with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}):
+def test_s3():
+    with tempenv.TemporaryEnvironment({USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}):
         # Test s3_env and define_s3_client (called inside)
         def base_fct(value):
             raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
@@ -43,7 +36,7 @@ def test_unistra_s3():
             )
             assert raster_path.is_file()
 
-        @s3_env
+        @s3_env(default_endpoint=UNISTRA_S3_ENPOINT, use_s3_env_var=CI_SERTIT_S3)
         def with_s3():
             base_fct(1)
 
@@ -55,24 +48,3 @@ def test_unistra_s3():
             without_s3()
 
         with_s3()
-
-        # Test get_geodatastore with s3
-        assert str(get_geodatastore()) == "s3://sertit-geodatastore"
-
-    # Test get_geodatastore without s3
-    with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):
-        assert str(get_geodatastore()).endswith("BASES_DE_DONNEES")
-
-
-@pytest.mark.skipif(not misc.in_docker(), reason="Only works in docker")
-def test_mnt():
-    """Test mounted directories"""
-    try:
-        assert get_db2_path() == "/mnt/ds2_db2"
-        assert get_db3_path() == "/mnt/ds2_db3"
-        assert get_db4_path() == "/mnt/ds2_db4"
-    except NotADirectoryError:
-        pass
-
-    with pytest.raises(NotADirectoryError):
-        _get_db_path(5)

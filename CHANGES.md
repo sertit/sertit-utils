@@ -1,7 +1,8 @@
 # Release History
 
-## 1.29.2 (2023-MM-DD)
+## 1.30.0 (2023-MM-DD)
 
+- **ENH: Add a `s3` modules handling other endpoints than Unistra's**
 - FIX: Allow `unistra.s3_env` to wrap functions with arguments
 - CI: Better testing of kwargs handling in `vectors.read`
 - Update README
