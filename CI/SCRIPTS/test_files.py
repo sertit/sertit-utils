@@ -25,48 +25,10 @@ import pytest
 from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 
-from CI.SCRIPTS.script_utils import Polarization, files_path, get_s3_ci_path, s3_env
-from sertit import ci, files, misc, vectors
+from CI.SCRIPTS.script_utils import Polarization, files_path, s3_env
+from sertit import ci, files, path, vectors
 
 ci.reduce_verbosity()
-
-
-def test_paths():
-    """Test path functions"""
-    curr_file = AnyPath(__file__).resolve()
-    curr_dir = curr_file.parent
-    with misc.chdir(curr_dir):
-        # Relative path
-        curr_rel_path = files.real_rel_path(curr_file, curr_dir)
-        assert curr_rel_path == AnyPath(os.path.join(".", os.path.basename(__file__)))
-
-        # Abspath
-        abs_file = files.to_abspath(curr_rel_path)
-        assert abs_file == curr_file
-
-        with pytest.raises(FileNotFoundError):
-            files.to_abspath("haha.txt", raise_file_not_found=True)
-
-        # with not pytest.raises(FileNotFoundError):
-        files.to_abspath("haha.txt", raise_file_not_found=False)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp = files.to_abspath(os.path.join(tmp_dir, "haha"))
-            assert os.path.isdir(tmp)
-
-        # Listdir abspath
-        list_abs = files.listdir_abspath(curr_dir)
-        assert curr_file in list_abs
-
-        # Root path
-        assert str(abs_file).startswith(str(files.get_root_path()))
-
-        # Writeable
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            assert files.is_writable(tmp_dir)  # Writeable
-
-        assert not files.is_writable(get_s3_ci_path())  # Not writable
-        assert not files.is_writable("cvfgbherth")  # Non-existing
 
 
 def test_archive():
@@ -102,7 +64,7 @@ def test_archive():
                 ci.assert_dir_equal(core_dir, out)
             else:
                 # For tar and tar.gz, an additional folder is created because these formats dont have any file tree
-                out_dir = files.listdir_abspath(out)[0]
+                out_dir = path.listdir_abspath(out)[0]
                 ci.assert_dir_equal(core_dir, out_dir)
 
             # Remove out directory in order to avoid any interferences
@@ -121,7 +83,7 @@ def test_archive():
         files.extract_file(zip_out, unzip_out)
 
         # Test
-        unzip_dirs = files.listdir_abspath(unzip_out)
+        unzip_dirs = path.listdir_abspath(unzip_out)
 
         assert len(unzip_dirs) == 2
         ci.assert_dir_equal(unzip_dirs[0], unzip_dirs[1])
@@ -135,23 +97,6 @@ def test_archived_files():
     tar_file = files_path().joinpath(f"{landsat_name}.tar")
     targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
     sz_file = files_path().joinpath(f"{landsat_name}.7z")
-
-    # Archive file
-    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
-    tif_ok = f"{ok_folder.name}/{tif_name}"
-    tif_regex = f".*{tif_name}"
-    assert tif_ok == files.get_archived_path(zip_file, tif_regex)
-    assert tif_ok == files.get_archived_path(zip_file, tif_regex, as_list=True)[0]
-    assert tif_ok == files.get_archived_path(tar_file, ".*RADSAT")
-
-    # RASTERIO
-    tif_zip = files.get_archived_rio_path(zip_file, tif_regex)
-    tif_list = files.get_archived_rio_path(zip_file, tif_regex, as_list=True)
-    tif_tar = files.get_archived_rio_path(tar_file, ".*RADSAT")
-    tif_ok = ok_folder.joinpath(tif_name)
-    ci.assert_raster_equal(tif_ok, tif_zip)
-    ci.assert_raster_equal(tif_ok, tif_list[0])
-    ci.assert_raster_equal(tif_ok, tif_tar)
 
     # VECTORS
     vect_name = "map-overlay.kml"
@@ -208,49 +153,11 @@ def test_archived_files():
 
         # ERRORS
         with pytest.raises(TypeError):
-            files.get_archived_rio_path(targz_file, tif_regex)
-        with pytest.raises(TypeError):
-            files.get_archived_rio_path(sz_file, tif_regex)
-        with pytest.raises(FileNotFoundError):
-            files.get_archived_rio_path(zip_file, "cdzeferf")
-        with pytest.raises(TypeError):
             files.read_archived_file(targz_file, xml_regex)
         with pytest.raises(TypeError):
             files.read_archived_file(sz_file, xml_regex)
         with pytest.raises(FileNotFoundError):
             files.read_archived_file(zip_file, "cdzeferf")
-
-
-def test_get_file_name():
-    """Test get_file_name"""
-    file_name = files.get_filename(__file__)
-    assert file_name == "test_files"
-    file_name = files.get_filename(__file__ + "\\")
-    assert file_name == "test_files"
-    file_name = files.get_filename(__file__ + "/")
-    assert file_name == "test_files"
-
-    file = "/fkjzeh-r_éfertg.tar.gz"
-    assert file[1:] == files.get_filename(file) + "." + files.get_ext(file)
-
-    # Multi point files
-    fn = r"/test/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif"
-    file_name = files.get_filename(fn)
-    assert file_name == "HLS.L30.T42RVR.2022240T055634.v2.0.B01"
-
-    fn = (
-        r"/test/S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004.SEN3.zip"
-    )
-    file_name = files.get_filename(fn)
-    assert "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004" == file_name
-
-    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.zip"
-    file_name = files.get_filename(fn)
-    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
-
-    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.tar.gz.zip"
-    file_name = files.get_filename(fn, other_exts=".gz.zip")
-    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
 
 
 def test_cp_rm():
@@ -284,19 +191,6 @@ def test_cp_rm():
 
         # Assert tempfile is empty
         assert os.listdir(tmp_dir) == empty_tmp
-
-
-def test_find_files():
-    """Test find_files"""
-    names = os.path.basename(__file__)
-    root_paths = AnyPath(__file__).parent
-    max_nof_files = 1
-    get_as_str = True
-
-    # Test
-    path = files.find_files(names, root_paths, max_nof_files, get_as_str)
-
-    assert path == AnyPath(__file__)
 
 
 def test_json():
@@ -354,28 +248,6 @@ def test_pickle():
 
         # Test (couldn't compare the dicts as they contain numpy arrays)
         np.testing.assert_equal(obj, test_dict)
-
-
-def test_get_file_in_dir():
-    """Test get_file_in_dir"""
-    # Get parent dir
-    folder = os.path.dirname(os.path.realpath(__file__))
-
-    # Test
-    file = files.get_file_in_dir(
-        folder, "file", ".py", filename_only=False, get_list=True, exact_name=False
-    )
-    filename = files.get_file_in_dir(
-        folder,
-        files.get_filename(__file__),
-        "py",
-        filename_only=True,
-        get_list=False,
-        exact_name=True,
-    )
-
-    assert file[0] == AnyPath(__file__)
-    assert filename == os.path.basename(__file__)
 
 
 def test_hash_file_content():

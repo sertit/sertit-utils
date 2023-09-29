@@ -27,7 +27,7 @@ import shapely
 import xarray as xr
 
 from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
-from sertit import ci, files, rasters, vectors
+from sertit import ci, path, rasters, vectors
 from sertit.vectors import WGS84
 
 ci.reduce_verbosity()
@@ -120,7 +120,7 @@ def test_rasters():
                 rasters.read(dst, resolution=[20, 20, 20])
 
             # Create xr.Dataset
-            name = files.get_filename(dst.name)
+            name = path.get_filename(dst.name)
             xds = xr.Dataset({name: xda})
 
             # Test dataset integrity

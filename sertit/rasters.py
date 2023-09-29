@@ -52,7 +52,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' and 'geopandas' to use the 'rasters' package."
     ) from ex
 
-from sertit import files, geometry, rasters_rio, vectors
+from sertit import geometry, path, rasters_rio, vectors
 
 MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, AnyXrDataStructure, rasterio.DatasetReader]
@@ -712,7 +712,7 @@ def read(
     with xarray.set_options(keep_attrs=True):
         with rioxarray.set_options(export_grid_mapping=False):
             with rioxarray.open_rasterio(
-                ds, default_name=files.get_filename(ds.name), chunks=chunks, **kwargs
+                ds, default_name=path.get_filename(ds.name), chunks=chunks, **kwargs
             ) as xda:
                 orig_dtype = xda.dtype
 

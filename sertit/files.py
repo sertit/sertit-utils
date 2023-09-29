@@ -16,12 +16,10 @@
 # limitations under the License.
 """ Tools for paths and files """
 
-import errno
 import hashlib
 import json
 import logging
 import os
-import pprint
 import re
 import shutil
 import tarfile
@@ -39,7 +37,7 @@ from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import misc
+from sertit import logs, misc, path
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -59,7 +57,10 @@ def get_root_path() -> AnyPathType:
         "/" on Linux
         "C:/" on Windows (if you run this code from the C: drive)
     """
-    return AnyPath(os.path.abspath(os.sep))
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_root_path()
 
 
 def listdir_abspath(directory: AnyPathStrType) -> list:
@@ -88,13 +89,14 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
     Returns:
         str: Absolute path of all files in the given directory
     """
-    dirpath = AnyPath(directory)
-
-    return list(dirpath.iterdir())
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.listdir_abspath(directory)
 
 
 def to_abspath(
-    path: AnyPathStrType,
+    raw_path: AnyPathStrType,
     create: bool = True,
     raise_file_not_found: bool = True,
 ) -> AnyPathType:
@@ -117,28 +119,19 @@ def to_abspath(
                                 type=to_abspath)
 
     Args:
-        path (AnyPathStrType): Path as a string (relative or absolute)
+        raw_path (AnyPathStrType): Path as a string (relative or absolute)
         create (bool): Create directory if not existing
 
     Returns:
         AnyPathType: Absolute path
     """
-    abs_path = AnyPath(path).resolve()
-
-    if not abs_path.exists():
-        if abs_path.suffix:
-            if raise_file_not_found:
-                # If the path specifies a file (with extension), it raises an exception
-                raise FileNotFoundError(f"Non existing file: {abs_path}")
-
-        # If the path specifies a folder, it creates it
-        elif create:
-            abs_path.mkdir()
-
-    return abs_path
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.to_abspath(raw_path, create, raise_file_not_found)
 
 
-def real_rel_path(path: AnyPathStrType, start: AnyPathStrType) -> AnyPathType:
+def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathType:
     """
     Gives the real relative path from a starting folder.
     (and not just adding :code:`../..` between the start and the target)
@@ -151,20 +144,16 @@ def real_rel_path(path: AnyPathStrType, start: AnyPathStrType) -> AnyPathType:
         'sertit-utils/sertit'
 
     Args:
-        path (AnyPathStrType): Path to make relative
+        raw_path (AnyPathStrType): Path to make relative
         start (AnyPathStrType): Start, the path being relative from this folder.
 
     Returns:
         Relative path
     """
-    path = AnyPath(path)
-    start = AnyPath(start)
-    if not isinstance(path, CloudPath) and not isinstance(start, CloudPath):
-        rel_path = AnyPath(os.path.relpath(path.parent, start), path.name)
-    else:
-        rel_path = path
-
-    return rel_path
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.real_rel_path(raw_path, start)
 
 
 def extract_file(
@@ -203,10 +192,10 @@ def extract_file(
     if file_path.suffix == ".zip":
         # Manage the case with several directories inside one zipfile
         arch = zipfile.ZipFile(file_path, "r")
-        extr_names = list({path.split("/")[0] for path in arch.namelist()})
+        extr_names = list({p.split("/")[0] for p in arch.namelist()})
     elif file_path.suffix == ".tar" or file_path.suffixes == [".tar", ".gz"]:
         # Tar files have no subdirectories, so create one
-        extr_names = [get_filename(file_path)]
+        extr_names = [path.get_filename(file_path)]
         arch = tarfile.open(file_path, "r")
     else:
         raise TypeError(
@@ -325,19 +314,10 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     Returns:
         list: All files contained in the given archive
     """
-    archive_path = AnyPath(archive_path)
-    if archive_path.suffix == ".zip":
-        with zipfile.ZipFile(archive_path) as zip_ds:
-            file_list = [f.filename for f in zip_ds.filelist]
-    else:
-        try:
-            with tarfile.open(archive_path) as tar_ds:
-                tar_mb = tar_ds.getmembers()
-                file_list = [mb.name for mb in tar_mb]
-        except tarfile.ReadError as ex:
-            raise TypeError(f"Impossible to open archive: {archive_path}") from ex
-
-    return file_list
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_archived_file_list(archive_path)
 
 
 def get_archived_path(
@@ -366,23 +346,10 @@ def get_archived_path(
     Returns:
         Union[list, str]: Path from inside the zipfile
     """
-    # Get file list
-    archive_path = AnyPath(archive_path)
-    file_list = get_archived_file_list(archive_path)
-
-    # Search for file
-    regex = re.compile(file_regex)
-    archived_band_paths = list(filter(regex.match, file_list))
-    if not archived_band_paths:
-        raise FileNotFoundError(
-            f"Impossible to find file {file_regex} in {get_filename(archive_path)}"
-        )
-
-    # Convert to str if needed
-    if not as_list:
-        archived_band_paths = archived_band_paths[0]
-
-    return archived_band_paths
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_archived_path(archive_path, file_regex, as_list)
 
 
 def get_archived_rio_path(
@@ -399,7 +366,7 @@ def get_archived_rio_path(
     for more information.
 
     .. WARNING::
-        It wont be readable by pandas, geopandas or xmltree !
+        It won't be readable by pandas, geopandas or xmltree !
 
     .. WARNING::
         If :code:`as_list` is :code:`False`, it will only return the first file matched !
@@ -423,37 +390,10 @@ def get_archived_rio_path(
     Returns:
         Union[list, str]: Band path that can be read by rasterio
     """
-    archive_path = AnyPath(archive_path)
-    if archive_path.suffix in [".tar", ".zip"]:
-        prefix = archive_path.suffix[-3:]
-    elif archive_path.suffix == ".tar.gz":
-        raise TypeError(
-            ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
-        )
-    else:
-        raise TypeError("Only .zip and .tar files can be read from inside its archive.")
-
-    # Search for file
-    archived_band_paths = get_archived_path(archive_path, file_regex, as_list=True)
-
-    # Convert to rio path
-    if isinstance(archive_path, CloudPath):
-        archived_band_paths = [
-            f"{prefix}+file+{archive_path}!{path}" for path in archived_band_paths
-        ]
-    else:
-        # archived_band_paths = [
-        #     f"{prefix}+file://{archive_path}!{path}" for path in archived_band_paths
-        # ]
-        archived_band_paths = [
-            f"/vsi{prefix}/{archive_path}/{path}" for path in archived_band_paths
-        ]
-
-    # Convert to str if needed
-    if not as_list:
-        archived_band_paths = archived_band_paths[0]
-
-    return archived_band_paths
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_archived_path(archive_path, file_regex, as_list)
 
 
 def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
@@ -499,7 +439,7 @@ def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
             )
     except IndexError:
         raise FileNotFoundError(
-            f"Impossible to find file {regex} in {get_filename(archive_path)}"
+            f"Impossible to find file {regex} in {path.get_filename(archive_path)}"
         )
 
     return file_str
@@ -695,22 +635,10 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
     Returns:
         str: File name (without extension)
     """
-    file_path = AnyPath(file_path)
-
-    # We need to avoid splitext because of nested extensions such as .tar.gz
-    multi_exts = [".tar.gz", ".SAFE.zip", ".SEN3.zip"]
-
-    if other_exts is not None:
-        if not isinstance(other_exts, list):
-            other_exts = [other_exts]
-
-        multi_exts += other_exts
-
-    if any([str(file_path).endswith(ext) for ext in multi_exts]):
-        return file_path.name.split(".")[0]
-    else:
-        # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
-        return file_path.stem
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_filename(file_path, other_exts)
 
 
 def get_ext(file_path: AnyPathStrType) -> str:
@@ -730,10 +658,10 @@ def get_ext(file_path: AnyPathStrType) -> str:
     Returns:
         str: File name (without extension)
     """
-    file_path = AnyPath(file_path)
-
-    # We need to avoid splitext because of nested extensions such as .tar.gz
-    return ".".join(file_path.name.split(".")[1:])
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_ext(file_path)
 
 
 def remove(path: AnyPathStrType) -> None:
@@ -886,43 +814,10 @@ def find_files(
     Returns:
         list: File name
     """
-    paths = []
-
-    # Transform to list
-    if not isinstance(names, list):
-        names = [names]
-
-    if not isinstance(root_paths, list):
-        root_paths = [root_paths]
-
-    try:
-        for root_path in root_paths:
-            root_path = AnyPath(root_path)
-            for name in names:
-                paths += list(root_path.glob(f"**/*{name}*"))
-
-    except StopIteration:
-        pass
-
-    # Check if found
-    if not paths:
-        raise FileNotFoundError(f"Files {names} not found in {root_paths}")
-
-    if max_nof_files > 0:
-        paths = paths[:max_nof_files]
-
-    LOGGER.debug(
-        "Paths found in %s for filenames %s:\n%s",
-        root_paths,
-        names,
-        pprint.pformat(paths),
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
     )
-
-    # Get str if needed
-    if len(paths) == 1 and get_as_str:
-        paths = paths[0]
-
-    return paths
+    return path.find_files(names, root_paths, max_nof_files, get_as_str)
 
 
 # subclass JSONDecoder
@@ -1195,18 +1090,7 @@ def is_writable(dir_path: AnyPathStrType):
     Returns:
         bool: True if the directory is writable
     """
-    try:
-        testfile = tempfile.TemporaryFile(dir=str(dir_path))
-        testfile.close()
-    except (OSError, IOError, FileNotFoundError) as e:
-        if e.errno in [
-            errno.EACCES,
-            errno.EEXIST,
-            errno.EROFS,
-            errno.ENOENT,
-            errno.EINVAL,
-        ]:  # 2, 13, 17, 30, 22
-            return False
-        e.filename = dir_path
-        raise
-    return True
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.is_writable(dir_path)

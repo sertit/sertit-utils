@@ -36,7 +36,7 @@ from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 from rasterio import CRS
 
-from sertit import files, geometry, logs, misc, strings
+from sertit import files, geometry, logs, misc, path, strings
 from sertit.types import AnyPathStrType, AnyPathType
 
 try:
@@ -362,7 +362,7 @@ def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
         # Add files that come with shape
         shp_co_files = [
             file
-            for file in src_path.parent.glob(f"{files.get_filename(src_path)}.*")
+            for file in src_path.parent.glob(f"{path.get_filename(src_path)}.*")
             if file.suffix in SHP_CO_FILES
         ]
         for co_file in shp_co_files:
@@ -372,7 +372,7 @@ def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
 
 
 def read(
-    path: AnyPathStrType,
+    vector_path: AnyPathStrType,
     crs: Any = None,
     archive_regex: str = None,
     **kwargs,
@@ -400,7 +400,7 @@ def read(
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
 
     Args:
-        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         **kwargs: Additional arguments used in gpd.read_file
@@ -412,48 +412,50 @@ def read(
     arch_vect_path = None
 
     try:
-        path = AnyPath(path)
+        vector_path = AnyPath(vector_path)
 
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-        if isinstance(path, CloudPath):
+        if isinstance(vector_path, CloudPath):
             tmp_dir = tempfile.TemporaryDirectory()
-            if path.suffix == ".shp":
+            if vector_path.suffix == ".shp":
                 # Download everything to disk
-                for shp_file in path.parent.glob(path.with_suffix(".*").name):
+                for shp_file in vector_path.parent.glob(
+                    vector_path.with_suffix(".*").name
+                ):
                     cached_path = shp_file.download_to(tmp_dir.name)
                     if cached_path.suffix == ".shp":
-                        path = cached_path
+                        vector_path = cached_path
             else:
-                path = AnyPath(path.fspath)
+                vector_path = AnyPath(vector_path.fspath)
 
         # Manage archive case
-        if path.suffix in [".tar", ".zip"]:
-            prefix = path.suffix[-3:]
-            file_list = files.get_archived_file_list(path)
+        if vector_path.suffix in [".tar", ".zip"]:
+            prefix = vector_path.suffix[-3:]
+            file_list = path.get_archived_file_list(vector_path)
 
             try:
                 regex = re.compile(archive_regex)
                 arch_vect_path = list(filter(regex.match, file_list))[0]
 
-                if isinstance(path, CloudPath):
-                    vect_path = f"{prefix}+{path}!{arch_vect_path}"
+                if isinstance(vector_path, CloudPath):
+                    vect_path = f"{prefix}+{vector_path}!{arch_vect_path}"
                 else:
-                    vect_path = f"{prefix}://{path}!{arch_vect_path}"
+                    vect_path = f"{prefix}://{vector_path}!{arch_vect_path}"
             except IndexError:
                 raise FileNotFoundError(
-                    f"Impossible to find vector {archive_regex} in {files.get_filename(path)}"
+                    f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
                 )
-        elif path.suffixes == [".tar", ".gz"]:
+        elif vector_path.suffixes == [".tar", ".gz"]:
             raise TypeError(
                 ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )
         else:
-            vect_path = str(path)
+            vect_path = str(vector_path)
     except AnyPathTypeError:
-        vect_path = str(path)
+        vect_path = str(vector_path)
 
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f"Non existing file: {path}")
+    if not os.path.isfile(vector_path):
+        raise FileNotFoundError(f"Non existing file: {vector_path}")
 
     # Open vector
     try:
@@ -463,7 +465,7 @@ def read(
 
         # Manage KML driver
         if vect_path.endswith(".kml") or vect_path.endswith(".kmz"):
-            vect = _read_kml(vect_path, path, arch_vect_path, tmp_dir, **kwargs)
+            vect = _read_kml(vect_path, vector_path, arch_vect_path, tmp_dir, **kwargs)
         else:
             vect = gpd.read_file(vect_path, **kwargs)
 
@@ -484,7 +486,7 @@ def read(
             # Open as geojson
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
-            vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
+            vect_path_gj = ogr2geojson(vector_path, tmp_dir.name, arch_vect_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
             vect.crs = None
         else:
@@ -566,7 +568,7 @@ def _read_kml(
 
 
 def ogr2geojson(
-    path: AnyPathStrType,
+    vector_path: AnyPathStrType,
     out_dir: AnyPathStrType,
     arch_vect_path: str = None,
 ) -> str:
@@ -574,7 +576,7 @@ def ogr2geojson(
     Wrapper of ogr2ogr function, converting the input vector to GeoJSON.
 
     Args:
-        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         out_dir (AnyPathStrType): Output directory
         arch_vect_path: If archived vector, archive path
 
@@ -585,19 +587,19 @@ def ogr2geojson(
 
     out_dir = str(out_dir)
 
-    if path.suffix == ".zip":
-        with zipfile.ZipFile(path, "r") as zip_ds:
+    if vector_path.suffix == ".zip":
+        with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
-    elif path.suffix == ".tar":
-        with tarfile.open(path, "r") as tar_ds:
+    elif vector_path.suffix == ".tar":
+        with tarfile.open(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
-        vect_path = str(path)
+        vect_path = str(vector_path)
 
     vect_path_gj = os.path.join(
         out_dir,
-        os.path.basename(vect_path).replace(files.get_ext(vect_path), "geojson"),
+        os.path.basename(vect_path).replace(path.get_ext(vect_path), "geojson"),
     )
     cmd_line = [
         "ogr2ogr",

@@ -49,7 +49,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import files, geometry, misc, strings, vectors, xml
+from sertit import files, geometry, misc, path, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -1357,7 +1357,7 @@ def merge_vrt(
                     with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
                         # At this point 'vrt' is a full dataset with dimensions,
                         # CRS, and spatial extent matching 'vrt_options'.
-                        new_crs_name = files.get_filename(crs_path) + f"_{crs_epsg}.vrt"
+                        new_crs_name = path.get_filename(crs_path) + f"_{crs_epsg}.vrt"
                         new_crs_path = os.path.join(merged_path.parent, new_crs_name)
                         rio_shutil.copy(vrt, new_crs_path, driver="vrt")
 
@@ -1387,22 +1387,20 @@ def merge_vrt(
     vrt_root = os.path.dirname(merged_path)
     try:
         if abs_path:
-            paths = [
-                strings.to_cmd_string(files.to_abspath(path)) for path in crs_paths_cp
-            ]
+            paths = [strings.to_cmd_string(path.to_abspath(p)) for p in crs_paths_cp]
             merged_path = strings.to_cmd_string(merged_path.resolve())
         else:
             paths = [
-                strings.to_cmd_string(files.real_rel_path(path, vrt_root))
-                for path in crs_paths_cp
+                strings.to_cmd_string(path.real_rel_path(p, vrt_root))
+                for p in crs_paths_cp
             ]
             merged_path = strings.to_cmd_string(
-                files.real_rel_path(merged_path, vrt_root)
+                path.real_rel_path(merged_path, vrt_root)
             )
 
     except ValueError:
         # ValueError when crs_merged_path and crs_paths are not on the same disk
-        paths = [strings.to_cmd_string(str(path)) for path in crs_paths_cp]
+        paths = [strings.to_cmd_string(str(p)) for p in crs_paths_cp]
         merged_path = strings.to_cmd_string(str(merged_path))
 
     # Run cmd
@@ -1416,9 +1414,9 @@ def merge_vrt(
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_file = os.path.join(tmp_dir, "list.txt")
             with open(tmp_file, "w+") as f:
-                for path in paths:
-                    path = path.replace('"', "")
-                    f.write(f"{path}\n")
+                for p in paths:
+                    p = p.replace('"', "")
+                    f.write(f"{p}\n")
 
             vrt_cmd = [
                 "gdalbuildvrt",
@@ -1461,8 +1459,8 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     crs_datasets = []
     try:
         first_crs = kwargs.get("crs")
-        for path in paths:
-            src = rasterio.open(str(path))
+        for tile_path in paths:
+            src = rasterio.open(str(tile_path))
             if first_crs is None:
                 first_crs = src.crs
             else:
@@ -1472,13 +1470,13 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
                     with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
                         # At this point 'vrt' is a full dataset with dimensions,
                         # CRS, and spatial extent matching 'vrt_options'.
-                        path = os.path.join(
-                            tmp_dir.name, files.get_filename(path) + ".vrt"
+                        tile_path = os.path.join(
+                            tmp_dir.name, path.get_filename(tile_path) + ".vrt"
                         )
-                        rio_shutil.copy(vrt, path, driver="vrt")
+                        rio_shutil.copy(vrt, tile_path, driver="vrt")
 
                     src.close()
-                    src = rasterio.open(str(path))
+                    src = rasterio.open(str(tile_path))
 
             crs_datasets.append(src)
 
