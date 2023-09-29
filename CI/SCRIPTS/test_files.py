@@ -22,11 +22,10 @@ from datetime import date, datetime
 
 import numpy as np
 import pytest
-from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 
 from CI.SCRIPTS.script_utils import Polarization, files_path, s3_env
-from sertit import ci, files, path, vectors
+from sertit import AnyPath, ci, files, path, vectors
 
 ci.reduce_verbosity()
 
@@ -71,7 +70,7 @@ def test_archive():
             files.remove(out)
 
         # Add to zip
-        if isinstance(zip2_file, CloudPath):
+        if path.is_cloud_path(zip2_file):
             zip_out = zip2_file
         else:
             zip_out = archive_base + ".zip"
@@ -114,7 +113,7 @@ def test_archived_files():
         # XML
         xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
         xml_ok_path = ok_folder.joinpath(xml_name)
-        if isinstance(files_path(), CloudPath):
+        if path.is_cloud_path(files_path()):
             xml_ok_path = str(xml_ok_path.download_to(tmp_dir))
         else:
             xml_ok_path = str(xml_ok_path)
@@ -131,7 +130,7 @@ def test_archived_files():
         html_tar_file = files_path().joinpath("productPreview.tar")
         html_name = "productPreview.html"
         html_ok_path = files_path().joinpath(html_name)
-        if isinstance(files_path(), CloudPath):
+        if path.is_cloud_path(files_path()):
             html_ok_path = str(html_ok_path.download_to(tmp_dir))
         else:
             html_ok_path = str(html_ok_path)

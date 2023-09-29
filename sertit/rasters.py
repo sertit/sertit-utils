@@ -21,12 +21,10 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 """
 import logging
 from functools import wraps
-from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import xarray
-from cloudpathlib import CloudPath
 from rioxarray.exceptions import MissingCRS
 
 from sertit.logs import SU_NAME
@@ -163,7 +161,7 @@ def path_xarr_dst(function: Callable) -> Callable:
                     raise TypeError("Function not available for xarray.Dataset") from ex
         else:
             # Get name
-            if isinstance(path_or_ds, (str, Path, CloudPath)):
+            if path.is_path(path_or_ds):
                 name = str(path_or_ds)
                 path_or_ds = str(path_or_ds)
             else:

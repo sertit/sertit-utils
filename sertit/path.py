@@ -24,10 +24,9 @@ import re
 import tarfile
 import tempfile
 import zipfile
-from typing import Union
+from typing import Any, Union
 
-from cloudpathlib import AnyPath, CloudPath
-
+from sertit import AnyPath
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -147,7 +146,7 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
     """
     raw_path = AnyPath(raw_path)
     start = AnyPath(start)
-    if not isinstance(raw_path, CloudPath) and not isinstance(start, CloudPath):
+    if not is_cloud_path(raw_path) and not is_cloud_path(start):
         rel_path = AnyPath(os.path.relpath(raw_path.parent, start), raw_path.name)
     else:
         rel_path = raw_path
@@ -283,7 +282,7 @@ def get_archived_rio_path(
     archived_band_paths = get_archived_path(archive_path, file_regex, as_list=True)
 
     # Convert to rio path
-    if isinstance(archive_path, CloudPath):
+    if is_cloud_path(archive_path):
         archived_band_paths = [
             f"{prefix}+file+{archive_path}!{path}" for path in archived_band_paths
         ]
@@ -487,7 +486,7 @@ def get_file_in_dir(
         exact_name (bool): Get the exact name (without adding :code:`*` before and after the given pattern)
 
     Returns:
-        Union[CloudPath, Path, list]: File
+        Union[AnyPathType, list]: File
     """
     directory = AnyPath(directory)
 
@@ -564,4 +563,23 @@ def is_cloud_path(path: AnyPathStrType):
     Returns:
         bool: True if the file is store on the cloud.
     """
+    from cloudpathlib import CloudPath
+
     return isinstance(AnyPath(path), CloudPath)
+
+
+def is_path(path: Any) -> bool:
+    """
+    Determine whether the path corresponds to a file stored on the cloud or not.
+
+    Args:
+        path (AnyPathStrType): File path
+
+    Returns:
+        bool: True if the file is store on the cloud.
+    """
+    from pathlib import Path
+
+    from cloudpathlib import CloudPath
+
+    return isinstance(path, (str, Path, CloudPath))

@@ -23,11 +23,9 @@ import logging
 import os
 import tempfile
 from functools import wraps
-from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
-from cloudpathlib import AnyPath, CloudPath
 from rasterio.vrt import WarpedVRT
 from rasterio.windows import Window, from_bounds
 
@@ -49,7 +47,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import files, geometry, misc, path, strings, vectors, xml
+from sertit import AnyPath, files, geometry, misc, path, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -181,7 +179,7 @@ def path_arr_dst(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        if isinstance(path_or_arr_or_ds, (str, Path, CloudPath)):
+        if path.is_path(path_or_arr_or_ds):
             with rasterio.open(str(path_or_arr_or_ds)) as ds:
                 out = function(ds, *args, **kwargs)
         elif isinstance(path_or_arr_or_ds, tuple):
@@ -850,7 +848,7 @@ def get_window(ds: PATH_ARR_DS, window: Any):
         if not isinstance(window, Window):
             if isinstance(window, gpd.GeoDataFrame):
                 bounds = window.to_crs(ds.crs).bounds.values[0]
-            elif isinstance(window, (str, Path, CloudPath)):
+            elif path.is_path(window):
                 bounds = vectors.read(window).to_crs(ds.crs).bounds.values[0]
             else:
                 bounds = window
@@ -1344,7 +1342,7 @@ def merge_vrt(
     for i, crs_path in enumerate(crs_paths_cp):
         crs_path = AnyPath(crs_path)
         # Download file if VRT is needed
-        if isinstance(crs_path, CloudPath):
+        if path.is_cloud_path(crs_path):
             crs_path = crs_path.download_to(merged_path.parent)
 
         with rasterio.open(str(crs_path)) as src:

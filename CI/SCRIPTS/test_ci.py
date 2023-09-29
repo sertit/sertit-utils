@@ -19,11 +19,10 @@ import os
 import tempfile
 
 import pytest
-from cloudpathlib import CloudPath
 from lxml import etree
 
 from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, rasters, rasters_rio, vectors
+from sertit import ci, path, rasters, rasters_rio, vectors
 
 ci.reduce_verbosity()
 
@@ -168,7 +167,7 @@ def test_assert_xml():
     xml_path = xml_folder.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
     xml_bad_path = xml_folder.joinpath("false_xml.xml")
 
-    if isinstance(files_path(), CloudPath):
+    if path.is_cloud_path(files_path()):
         xml_path = xml_path.fspath
         xml_bad_path = xml_bad_path.fspath
 
@@ -187,7 +186,7 @@ def test_assert_html():
     html_bad_path = files_path().joinpath("false.html")
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        if isinstance(files_path(), CloudPath):
+        if path.is_cloud_path(files_path()):
             html_path = html_path.download_to(tmp_dir)
             html_bad_path = html_bad_path.download_to(tmp_dir)
 

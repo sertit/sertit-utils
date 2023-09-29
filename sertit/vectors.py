@@ -30,13 +30,12 @@ from contextlib import contextmanager
 from typing import Any, Generator, Union
 
 import pandas as pd
-from cloudpathlib import AnyPath, CloudPath
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
 from rasterio import CRS
 
-from sertit import files, geometry, logs, misc, path, strings
+from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.types import AnyPathStrType, AnyPathType
 
 try:
@@ -415,7 +414,7 @@ def read(
         vector_path = AnyPath(vector_path)
 
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-        if isinstance(vector_path, CloudPath):
+        if path.is_cloud_path(vector_path):
             tmp_dir = tempfile.TemporaryDirectory()
             if vector_path.suffix == ".shp":
                 # Download everything to disk
@@ -437,7 +436,7 @@ def read(
                 regex = re.compile(archive_regex)
                 arch_vect_path = list(filter(regex.match, file_list))[0]
 
-                if isinstance(vector_path, CloudPath):
+                if path.is_cloud_path(vector_path):
                     vect_path = f"{prefix}+{vector_path}!{arch_vect_path}"
                 else:
                     vect_path = f"{prefix}://{vector_path}!{arch_vect_path}"

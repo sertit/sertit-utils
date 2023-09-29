@@ -15,26 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-**Source Code**: https://github.com/sertit/sertit-utils
-
-.. include:: ../README.md
+Sertit Utils library
 """
-try:
-    from cloudpathlib import AnyPath
-
-    AnyPath = AnyPath
-except ImportError:
-    pass
-
-# flake8: noqa
-from .__meta__ import (
-    __author__,
-    __author_email__,
-    __copyright__,
-    __description__,
-    __documentation__,
-    __license__,
-    __title__,
-    __url__,
-    __version__,
-)
+__version__ = "1.29.1"
+__title__ = "sertit"
+__description__ = ("SERTIT python library for generic tools",)
+__author__ = "ICube-SERTIT"
+__author_email__ = "dev-sertit@unistra.fr"
+__url__ = "https://github.com/sertit/sertit-utils"
+__license__ = "Apache 2.0"
+__copyright__ = "Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/"
+__documentation__ = "https://sertit-utils.readthedocs.io/en/latest/"

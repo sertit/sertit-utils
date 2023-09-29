@@ -33,11 +33,10 @@ from typing import Any, Union
 
 import dill
 import numpy as np
-from cloudpathlib import AnyPath, CloudPath
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import logs, misc, path
+from sertit import AnyPath, logs, misc, path
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -521,7 +520,7 @@ def archive(
     folder_path = AnyPath(folder_path)
 
     tmp_dir = None
-    if isinstance(folder_path, CloudPath):
+    if path.is_cloud_path(folder_path):
         tmp_dir = tempfile.TemporaryDirectory()
         folder_path = folder_path.download_to(tmp_dir.name)
 
@@ -566,7 +565,7 @@ def add_to_zip(
     zip_path = AnyPath(zip_path)
 
     # If the zip is on the cloud, cache it (zipfile doesn't like cloud paths)
-    if isinstance(zip_path, CloudPath):
+    if path.is_cloud_path(zip_path):
         zip_path = AnyPath(zip_path.fspath)
 
     # Check if existing zipfile
@@ -585,7 +584,7 @@ def add_to_zip(
             # Just to be sure, use str instead of Paths
             if isinstance(dir_to_add_path, Path):
                 dir_to_add = str(dir_to_add_path)
-            elif isinstance(dir_to_add_path, CloudPath):
+            elif path.is_cloud_path(dir_to_add_path):
                 dir_to_add = dir_to_add_path.fspath
             else:
                 dir_to_add = dir_to_add_path
@@ -755,7 +754,7 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
     """
     src = AnyPath(src)
 
-    if isinstance(src, CloudPath):
+    if path.is_cloud_path(src):
         out = src.download_to(dst)
     else:
         out = None
@@ -871,7 +870,7 @@ class CustomEncoder(JSONEncoder):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
-        elif isinstance(obj, (CloudPath, Path)):
+        elif isinstance(obj, Path) or path.is_cloud_path(obj):
             out = str(obj)
         else:
             out = json.JSONEncoder.default(self, obj)
@@ -1015,7 +1014,7 @@ def get_file_in_dir(
         exact_name (bool): Get the exact name (without adding :code:`*` before and after the given pattern)
 
     Returns:
-        Union[CloudPath, Path, list]: File
+        Union[AnyPathType, list]: File
     """
     directory = AnyPath(directory)
 

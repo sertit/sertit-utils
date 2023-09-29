@@ -19,7 +19,6 @@ import logging
 from datetime import datetime
 from typing import Any, Callable
 
-from cloudpathlib import AnyPath, CloudPath
 from lxml.etree import (
     ElementTree,
     XMLSyntaxError,
@@ -30,7 +29,7 @@ from lxml.etree import (
 )
 from lxml.html.builder import E
 
-from sertit import files
+from sertit import AnyPath, files, path
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
@@ -40,7 +39,7 @@ UTF_8 = "UTF-8"
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def read(path: AnyPathStrType) -> _Element:
+def read(xml_path: AnyPathStrType) -> _Element:
     """
     Read an XML file, even stored on the cloud
 
@@ -50,26 +49,26 @@ def read(path: AnyPathStrType) -> _Element:
     Returns:
         _Element: XML Root
     """
-    path = AnyPath(path)
+    xml_path = AnyPath(xml_path)
     try:
-        if isinstance(path, CloudPath):
+        if path.is_cloud_path(xml_path):
             try:
                 # Try using read_text (faster)
-                root = fromstring(path.read_text())
+                root = fromstring(xml_path.read_text())
             except ValueError:
                 # Try using read_bytes
                 # Slower but works with:
                 # {ValueError}Unicode strings with encoding declaration are not supported.
                 # Please use bytes input or XML fragments without declaration.
-                root = fromstring(path.read_bytes())
+                root = fromstring(xml_path.read_bytes())
         else:
             # pylint: disable=I1101:
             # Module 'lxml.etree' has no 'parse' member, but source is unavailable.
-            xml_tree = parse(str(path))
+            xml_tree = parse(str(xml_path))
             root = xml_tree.getroot()
 
     except XMLSyntaxError:
-        raise ValueError(f"Invalid metadata XML for {path}!")
+        raise ValueError(f"Invalid metadata XML for {xml_path}!")
 
     return root
 
