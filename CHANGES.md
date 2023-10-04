@@ -1,6 +1,6 @@
 # Release History
 
-## 1.30.0 (2023-MM-DD)
+## 1.30.0 (2023-10-04)
 
 - **BREAKING CHANGE**: Creating a `path` module where following `files` functions have been transferred (original have been deprecated): `get_root_path`, `listdir_abspath`, `to_abspath`, `real_rel_path`, `get_archived_file_list`, `get_archived_path`, `get_archived_rio_path`, `get_filename`, `get_ext`, `find_files`, `get_file_in_dir`, `is_writable`.
 - **ENH: Add a `s3` modules handling other endpoints than Unistra's**
@@ -19,7 +19,7 @@
 - **BREAKING CHANGE**: Creating a `geometry` module where following `vectors` functions have been transferred: `from_polygon_to_bounds`, `from_bounds_to_polygon`, `get_wider_exterior`, `make_valid`. The function `fill_polygon_holes` has been created.
 - **ENH: Add a `vectors.utm_crs` context manager allowing the user to compute seamlessly geographic-based operation (such as centroids, area computation...)**
 - **ENH: Add a `sertit.types` containing aliases to common typings**
-- **ENH: Add \*\*kwargs in `vectors.read`**
+- **ENH: Add kwargs in `vectors.read`**
 - **ENH: Handles unchecked attributes in `ci.assert_xr_encoding_attrs`**
 - **ENH: Add more types**
 - **ENH: Add a new module `unistra` used to handle functions referring to Unistra's environment**
