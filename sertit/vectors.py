@@ -413,6 +413,12 @@ def read(
     try:
         vector_path = AnyPath(vector_path)
 
+        # Manage formatted archive file (fsspec style for example)
+        if "!" in str(vector_path):
+            split_vect = str(vector_path).split("!")
+            archive_regex = ".*{0}".format(split_vect[1].replace(".", r"\."))
+            vector_path = AnyPath(split_vect[0])
+
         # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
         if path.is_cloud_path(vector_path):
             tmp_dir = tempfile.TemporaryDirectory()

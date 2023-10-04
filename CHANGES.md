@@ -6,6 +6,7 @@
 - **ENH: Add a `s3` modules handling other endpoints than Unistra's**
 - **ENH: Add deprecation for `ci` functions handled in other modules (such as `s3_env`, `define_s3_client`, `get_db2_path`, `get_db2_path`, `get_db2_path`)**
 - FIX: Allow `unistra.s3_env` to wrap functions with arguments
+- FIX: Manage the case with fsspec path given to `vectors.read`
 - CI: Better testing of kwargs handling in `vectors.read`
 - Update README
 
