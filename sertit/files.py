@@ -1016,42 +1016,12 @@ def get_file_in_dir(
     Returns:
         Union[AnyPathType, list]: File
     """
-    directory = AnyPath(directory)
-
-    # Glob pattern
-    if exact_name:
-        glob_pattern = pattern_str
-    else:
-        glob_pattern = "*" + pattern_str + "*"
-    if extension:
-        if not extension.startswith("."):
-            extension = "." + extension
-        glob_pattern += extension
-
-    # Search for the pattern in the directory
-    file_list = list(directory.glob(glob_pattern))
-
-    if len(file_list) == 0:
-        raise FileNotFoundError(
-            f"File with pattern {glob_pattern} not found in {directory}"
-        )
-
-    # Return list, file path or file name
-    if get_list:
-        file = file_list
-    else:
-        if len(file_list) > 1:
-            LOGGER.warning(
-                "More than one file corresponding to the pattern %s has been found here %s. "
-                "Only the first item will be returned.",
-                glob_pattern,
-                directory,
-            )
-        file = file_list[0]
-        if filename_only:
-            file = file.name
-
-    return file
+    logs.deprecation_warning(
+        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
+    )
+    return path.get_file_in_dir(
+        directory, pattern_str, extension, filename_only, get_list, exact_name
+    )
 
 
 # pylint: disable=E1121

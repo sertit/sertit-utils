@@ -36,6 +36,8 @@ from sertit import AnyPath, files, path, s3, unistra, vectors
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
+LOGGER = logging.getLogger(SU_NAME)
+
 # Alias for compatibility (don't deprecate them)
 AWS_ACCESS_KEY_ID = s3.AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY = s3.AWS_SECRET_ACCESS_KEY
@@ -75,9 +77,6 @@ def get_db4_path():
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
     return unistra.get_db4_path()
-
-
-LOGGER = logging.getLogger(SU_NAME)
 
 
 def assert_val(val_1: Any, val_2: Any, field: str) -> None:

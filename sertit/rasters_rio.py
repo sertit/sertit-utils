@@ -47,7 +47,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, files, geometry, misc, path, strings, vectors, xml
+from sertit import AnyPath, geometry, misc, path, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -1244,7 +1244,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
 
     assert dim_path.suffix == ".data" and dim_path.is_dir()
 
-    return files.get_file_in_dir(dim_path, img_name, extension="img", exact_name=True)
+    return path.get_file_in_dir(dim_path, img_name, extension="img", exact_name=True)
 
 
 @path_arr_dst
