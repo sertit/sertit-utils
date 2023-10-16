@@ -3,6 +3,7 @@
 ## 1.30.1 (2023-MM-DD)
 
 - FIX: Reorder raster in `rasters.read` whith the given indexes order
+- FIX: Create proper variables for environment variables in `snap`
 
 ## 1.30.0 (2023-10-04)
 
