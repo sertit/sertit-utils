@@ -854,7 +854,7 @@ def write(
         kwargs["tiled"] = True
 
     # Force GTiff
-    kwargs["driver"] = "GTiff"
+    kwargs["driver"] = kwargs.get("driver", "GTiff")
 
     # Write on disk
     xds.rio.to_raster(

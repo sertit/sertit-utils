@@ -1034,7 +1034,7 @@ def write(
     out_meta["nodata"] = nodata
 
     # Force compression and driver (but can be overwritten by kwargs)
-    out_meta["driver"] = "GTiff"
+    out_meta["driver"] = kwargs.get("driver", "GTiff")
 
     # Compress to LZW by default
     out_meta["compress"] = kwargs.get("compress", "lzw")
