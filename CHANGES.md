@@ -1,5 +1,9 @@
 # Release History
 
+## 1.30.1 (2023-MM-DD)
+
+- FIX: Reorder raster in `rasters.read` whith the given indexes order
+
 ## 1.30.0 (2023-10-04)
 
 - **BREAKING CHANGE**: Creating a `path` module where following `files` functions have been transferred (original have been deprecated): `get_root_path`, `listdir_abspath`, `to_abspath`, `real_rel_path`, `get_archived_file_list`, `get_archived_path`, `get_archived_rio_path`, `get_filename`, `get_ext`, `find_files`, `get_file_in_dir`, `is_writable`.
