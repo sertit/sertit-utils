@@ -5,6 +5,7 @@
 - FIX: Reorder raster in `rasters.read` whith the given indexes order
 - FIX: Allow to write with any driver in `rasters(_rio).write`
 - FIX: Create proper variables for environment variables in `snap`
+- FIX: Normalize geometries before testing within `ci`
 
 ## 1.30.0 (2023-10-04)
 

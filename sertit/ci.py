@@ -29,7 +29,7 @@ import geopandas as gpd
 import numpy as np
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
-from shapely import force_2d
+from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
 from sertit import AnyPath, files, path, s3, unistra, vectors
@@ -431,9 +431,9 @@ def assert_geom_equal(
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = vectors.read(geom_1)
+        geom_1 = normalize(vectors.read(geom_1))
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = vectors.read(geom_2)
+        geom_2 = normalize(vectors.read(geom_2))
 
     assert len(geom_1) == len(
         geom_2
@@ -503,9 +503,9 @@ def assert_geom_almost_equal(
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = vectors.read(geom_1)
+        geom_1 = normalize(vectors.read(geom_1))
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = vectors.read(geom_2)
+        geom_2 = normalize(vectors.read(geom_2))
 
     assert len(geom_1) == len(
         geom_2
