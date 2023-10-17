@@ -733,7 +733,7 @@ def read(
                             f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
                         )
 
-                    xda = xda.isel(band=indexes)
+                    xda = xda.isel(band=[idx - 1 for idx in ok_indexes])
 
                     try:
                         # Set new long name: Bands nb are idx + 1
