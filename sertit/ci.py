@@ -431,9 +431,9 @@ def assert_geom_equal(
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = normalize(vectors.read(geom_1))
+        geom_1 = vectors.read(geom_1)
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = normalize(vectors.read(geom_2))
+        geom_2 = vectors.read(geom_2)
 
     assert len(geom_1) == len(
         geom_2
@@ -443,8 +443,8 @@ def assert_geom_equal(
     ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
 
     for idx in range(len(geom_1)):
-        curr_geom_1 = geom_1.geometry.iat[idx]
-        curr_geom_2 = geom_2.geometry.iat[idx]
+        curr_geom_1 = normalize(geom_1.geometry.iat[idx])
+        curr_geom_2 = normalize(geom_2.geometry.iat[idx])
 
         if ignore_z:
             curr_geom_1 = force_2d(curr_geom_1)
@@ -503,9 +503,9 @@ def assert_geom_almost_equal(
     """
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = normalize(vectors.read(geom_1))
+        geom_1 = vectors.read(geom_1)
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = normalize(vectors.read(geom_2))
+        geom_2 = vectors.read(geom_2)
 
     assert len(geom_1) == len(
         geom_2
@@ -515,8 +515,8 @@ def assert_geom_almost_equal(
     ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
 
     for idx in range(len(geom_1)):
-        curr_geom_1 = geom_1.geometry.iat[idx]
-        curr_geom_2 = geom_2.geometry.iat[idx]
+        curr_geom_1 = normalize(geom_1.geometry.iat[idx])
+        curr_geom_2 = normalize(geom_2.geometry.iat[idx])
 
         if ignore_z:
             curr_geom_1 = force_2d(curr_geom_1)
