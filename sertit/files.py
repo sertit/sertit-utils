@@ -392,7 +392,7 @@ def get_archived_rio_path(
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
     )
-    return path.get_archived_path(archive_path, file_regex, as_list)
+    return path.get_archived_rio_path(archive_path, file_regex, as_list)
 
 
 def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
