@@ -20,9 +20,7 @@ from collections.abc import Callable
 from enum import unique
 from functools import wraps
 
-from cloudpathlib import AnyPath
-
-from sertit import s3, unistra
+from sertit import AnyPath, s3, unistra
 from sertit.misc import ListEnum
 from sertit.unistra import UNISTRA_S3_ENPOINT
 

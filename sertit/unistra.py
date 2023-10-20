@@ -20,9 +20,7 @@ Unistra tools
 import logging
 import os
 
-from cloudpathlib import AnyPath
-
-from sertit import s3
+from sertit import AnyPath, s3
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathType
 

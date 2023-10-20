@@ -20,10 +20,9 @@ import shutil
 import tempfile
 
 import pytest
-from cloudpathlib import AnyPath
 
 from CI.SCRIPTS.script_utils import files_path, get_s3_ci_path, s3_env
-from sertit import ci, misc, path, vectors
+from sertit import AnyPath, ci, misc, path, vectors
 
 ci.reduce_verbosity()
 

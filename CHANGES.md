@@ -1,5 +1,9 @@
 # Release History
 
+## 1.30.2 (2023-MM-DD)
+
+- DEPS: Remove as many mention as possible to `cloudpathlib`
+
 ## 1.30.1 (2023-10-20)
 
 - FIX: Reorder raster in `rasters.read` whith the given indexes order

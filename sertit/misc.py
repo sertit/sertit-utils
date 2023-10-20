@@ -25,8 +25,7 @@ from contextlib import contextmanager
 from enum import Enum, unique
 from typing import Any, Union
 
-from cloudpathlib import AnyPath
-
+from sertit import AnyPath
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType
 
