@@ -1,12 +1,12 @@
 # Release History
 
-## 1.30.1 (2023-MM-DD)
+## 1.30.1 (2023-10-20)
 
 - FIX: Reorder raster in `rasters.read` whith the given indexes order
 - FIX: Allow to write with any driver in `rasters(_rio).write`
 - FIX: Create proper variables for environment variables in `snap`
 - FIX: Normalize geometries before testing within `ci`
-- FIX: `files.get_archived_rio_path_` returns the result of `path.get_archived_rio_path` instead of incorrect one.
+- FIX: `files.get_archived_rio_path` returns the result of `path.get_archived_rio_path` instead of incorrect one.
 - CI: Update pre-commit hooks
 
 ## 1.30.0 (2023-10-04)
