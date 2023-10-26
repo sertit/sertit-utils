@@ -33,7 +33,6 @@ import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import UnsupportedGeometryTypeError
-from rasterio import CRS
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.types import AnyPathStrType, AnyPathType
@@ -64,7 +63,7 @@ EXT_TO_DRIVER = {
 SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 
-def to_utm_crs(lon: float, lat: float) -> CRS:
+def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     """
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
