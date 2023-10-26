@@ -32,7 +32,7 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, files, path, s3, unistra, vectors
+from sertit import AnyPath, files, path, s3, unistra
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
@@ -217,7 +217,6 @@ def assert_raster_almost_equal(
             # Assert almost equal
             errors = []
             for i in range(ds_1.count):
-
                 desc = (
                     f": {ds_1.descriptions[i]}"
                     if ds_1.descriptions[i] is not None
@@ -279,7 +278,6 @@ def assert_raster_almost_equal_magnitude(
             # Assert almost equal
             errors = []
             for i in range(ds_1.count):
-
                 desc = (
                     f": {ds_1.descriptions[i]}"
                     if ds_1.descriptions[i] is not None
@@ -429,6 +427,12 @@ def assert_geom_equal(
         geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
         ignore_z (bool): Ignore Z coordinate
     """
+    try:
+        from sertit import vectors
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
+        ) from ex
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)
@@ -501,6 +505,12 @@ def assert_geom_almost_equal(
         decimal (int): Number of decimal
         ignore_z (bool): Ignore Z coordinate
     """
+    try:
+        from sertit import vectors
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
+        ) from ex
 
     if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_1 = vectors.read(geom_1)

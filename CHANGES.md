@@ -2,6 +2,7 @@
 
 ## 1.30.2 (2023-MM-DD)
 
+- DEPS : only import `vectors` inside functions for `ci` module (in order not to have to install rasterio if these functions are not needed)
 - DEPS: Remove as many mention as possible to `cloudpathlib`
 
 ## 1.30.1 (2023-10-20)
