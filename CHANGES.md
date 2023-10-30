@@ -1,6 +1,6 @@
 # Release History
 
-## 1.31.0 (2023-MM-DD)
+## 1.31.0 (2023-10-30)
 
 - **ENH: Add `s3.temp_s3` and `unistra.unistra_s3` context managers to manage s3 environments inside Python code**
 - FIX: Fix `rasters.read` whith given indexes order
