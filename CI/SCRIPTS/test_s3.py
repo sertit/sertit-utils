@@ -20,6 +20,7 @@ from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3
+from sertit import rasters
 from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
 from sertit.unistra import UNISTRA_S3_ENPOINT
 
@@ -30,6 +31,7 @@ def base_fct(value):
     )
     assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
     assert raster_path.is_file()
+    assert rasters.read(raster_path).rio.count == 1
 
 
 @s3_env(default_endpoint=UNISTRA_S3_ENPOINT, use_s3_env_var=CI_SERTIT_S3)
@@ -54,6 +56,7 @@ def test_s3():
                 raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
             )
             assert raster_path.is_file()
+            assert rasters.read(raster_path).rio.count == 1
 
         with pytest.raises(AssertionError):
             without_s3()
