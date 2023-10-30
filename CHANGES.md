@@ -1,7 +1,8 @@
 # Release History
 
-## 1.30.2 (2023-MM-DD)
+## 1.31.0 (2023-MM-DD)
 
+- **ENH: Add `s3.temp_s3` and `unistra.unistra_s3` context managers to manage s3 environments inside Python code**
 - FIX: Fix `rasters.read` whith given indexes order
 - DEPS : only import `vectors` inside functions for `ci` module (in order not to have to install rasterio if these functions are not needed)
 - DEPS : don't import anything from `rasterio` inside `vectors` module (in order not to have to install rasterio if these functions are not needed)

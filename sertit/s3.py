@@ -19,6 +19,7 @@ S3 tools
 """
 import logging
 import os
+from contextlib import contextmanager
 from functools import wraps
 
 from cloudpathlib import S3Client
@@ -87,6 +88,30 @@ def s3_env(*args, **kwargs):
         return s3_env_wrapper
 
     return decorator
+
+
+@contextmanager
+def temp_s3(default_endpoint: str = None) -> None:
+    """
+    Initialize a temporary S3 environment as a context manager
+
+    Args:
+        default_endpoint (str):Default Endpoint to look for
+    """
+    import rasterio
+
+    # Define S3 client for S3 paths
+    try:
+        with rasterio.Env(
+            CPL_CURL_VERBOSE=False,
+            AWS_VIRTUAL_HOSTING=False,
+            AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
+            GDAL_DISABLE_READDIR_ON_OPEN=False,
+        ):
+            yield define_s3_client(default_endpoint)
+    finally:
+        # Clean env
+        S3Client().set_as_default_client()
 
 
 def define_s3_client(default_endpoint=None):

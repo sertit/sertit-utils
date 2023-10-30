@@ -19,9 +19,11 @@ Unistra tools
 """
 import logging
 import os
+from contextlib import contextmanager
 
 from sertit import AnyPath, s3
 from sertit.logs import SU_NAME
+from sertit.s3 import temp_s3
 from sertit.types import AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -43,6 +45,21 @@ def s3_env(*args, **kwargs):
         Callable: decorated function
     """
     return s3.s3_env(default_endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
+
+
+@contextmanager
+def unistra_s3() -> None:
+    """
+    Initialize a temporary S3 environment as a context manager, with Unistra endpoint
+
+    Args:
+        default_endpoint (str):Default Endpoint to look for
+    """
+    try:
+        with temp_s3(default_endpoint=UNISTRA_S3_ENPOINT):
+            yield
+    finally:
+        pass
 
 
 def define_s3_client():
