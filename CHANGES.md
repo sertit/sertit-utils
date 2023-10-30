@@ -2,6 +2,7 @@
 
 ## 1.30.2 (2023-MM-DD)
 
+- FIX: Fix `rasters.read` whith given indexes order
 - DEPS : only import `vectors` inside functions for `ci` module (in order not to have to install rasterio if these functions are not needed)
 - DEPS : don't import anything from `rasterio` inside `vectors` module (in order not to have to install rasterio if these functions are not needed)
 - DEPS: Remove as many mention as possible to `cloudpathlib`

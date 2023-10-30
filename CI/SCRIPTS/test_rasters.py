@@ -37,17 +37,20 @@ def test_indexes(caplog):
     @s3_env
     @dask_env
     def test_core():
-        raster_path = rasters_path().joinpath("raster.tif")
-        xda_1 = rasters.read(raster_path)
-        xda_5 = rasters.read(raster_path, indexes=1)
+        raster_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
+        xda_raw = rasters.read(raster_path)
+        xda_idx = rasters.read(raster_path, indexes=1)
+        np.testing.assert_array_equal(xda_raw[[0], :], xda_idx)
+
+        xda_idx2 = rasters.read(raster_path, indexes=[3, 2])
+        xda_raw2 = np.concatenate((xda_raw.data[[2], :], xda_raw.data[[1], :]))
+        np.testing.assert_array_equal(xda_raw2, xda_idx2)
 
         with pytest.raises(ValueError):
             rasters.read(raster_path, indexes=0)
 
-        np.testing.assert_array_equal(xda_1, xda_5)
-
         with caplog.at_level(logging.WARNING):
-            idx = [2, 3]
+            idx = [4, 5]
             rasters.read(raster_path, indexes=idx)
             assert f"Non available index: {idx}" in caplog.text
 
@@ -381,7 +384,6 @@ def test_rasters():
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt():
-
     # SAME CRS
     raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
