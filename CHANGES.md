@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.0 (2023-MM-DD)
+
+- FIX: Use `EPSG_4326` instead of `WGS84` for sake of naming accuracy (this is not the same thing!) (`WGS84` stays available though)
+
 ## 1.31.0 (2023-10-30)
 
 - **ENH: Add `s3.temp_s3` and `unistra.unistra_s3` context managers to manage s3 environments inside Python code**

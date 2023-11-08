@@ -27,7 +27,7 @@ from shapely import wkt
 
 from CI.SCRIPTS.script_utils import files_path, s3_env, vectors_path
 from sertit import ci, files, vectors
-from sertit.vectors import WGS84
+from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
 
@@ -132,9 +132,9 @@ def test_gml():
     not_empty_true_path = vectors_path().joinpath("not_empty_true.geojson")
 
     # Empty
-    empty_gdf = vectors.read(empty_gml, crs=WGS84)
+    empty_gdf = vectors.read(empty_gml, crs=EPSG_4326)
     assert empty_gdf.empty
-    assert empty_gdf.crs == WGS84
+    assert empty_gdf.crs == EPSG_4326
 
     # Not empty
     not_empty_true = vectors.read(not_empty_true_path)

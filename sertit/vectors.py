@@ -49,7 +49,8 @@ from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 
-WGS84 = "EPSG:4326"
+EPSG_4326 = "EPSG:4326"
+WGS84 = EPSG_4326
 
 EXT_TO_DRIVER = {
     ".shp": "ESRI Shapefile",
@@ -101,7 +102,7 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     except ValueError:
         point = gpd.points_from_xy(lon, lat)
 
-    return gpd.GeoDataFrame(geometry=point, crs=WGS84).estimate_utm_crs()
+    return gpd.GeoDataFrame(geometry=point, crs=EPSG_4326).estimate_utm_crs()
 
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:
@@ -249,7 +250,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
     else:
         try:
             # Open file
-            aoi_file = read(aoi_path, crs=WGS84)
+            aoi_file = read(aoi_path, crs=EPSG_4326)
 
             # Get envelope polygon
             geom = aoi_file["geometry"]
@@ -541,7 +542,7 @@ def _read_kml(
             vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer, **kwargs)
             if not vect_layer.empty:
                 # KML files are always in WGS84 (and does not contain this information)
-                vect_layer.crs = WGS84
+                vect_layer.crs = EPSG_4326
                 vect = pd.concat([vect, vect_layer])
         except ValueError:
             pass  # Except Null Layer
@@ -566,7 +567,7 @@ def _read_kml(
                 vect = gpd.read_file(vect_path, **kwargs)
             except Exception:
                 # Force set CRS to empty vector
-                vect.crs = WGS84
+                vect.crs = EPSG_4326
 
     return vect
 

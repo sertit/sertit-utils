@@ -27,7 +27,7 @@ from rasterio.windows import Window
 
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
-from sertit.vectors import WGS84
+from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
 
@@ -106,7 +106,7 @@ def test_rasters_rio():
             gdf = vectors.read(mask_path)
             bounds = gdf.bounds.values[0]
             window_20, w_mt_20 = rasters_rio.read(
-                raster_path, window=gdf.to_crs(WGS84), resolution=20
+                raster_path, window=gdf.to_crs(EPSG_4326), resolution=20
             )
             rasters_rio.write(window_20, w_mt_20, window_20_out)
             ci.assert_raster_equal(window_20_out, raster_window_20_path)
