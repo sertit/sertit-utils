@@ -69,7 +69,7 @@ def s3_env(*args, **kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
                 # Define S3 client for S3 paths
-                define_s3_client(default_endpoint)
+                define_s3_client(default_endpoint, **_kwargs)
                 os.environ[use_s3] = "1"
                 LOGGER.info("Using S3 files")
                 with rasterio.Env(
@@ -91,7 +91,7 @@ def s3_env(*args, **kwargs):
 
 
 @contextmanager
-def temp_s3(default_endpoint: str = None) -> None:
+def temp_s3(default_endpoint: str = None, **kwargs) -> None:
     """
     Initialize a temporary S3 environment as a context manager
 
@@ -108,13 +108,13 @@ def temp_s3(default_endpoint: str = None) -> None:
             AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
             GDAL_DISABLE_READDIR_ON_OPEN=False,
         ):
-            yield define_s3_client(default_endpoint)
+            yield define_s3_client(default_endpoint, **kwargs)
     finally:
         # Clean env
         S3Client().set_as_default_client()
 
 
-def define_s3_client(default_endpoint=None):
+def define_s3_client(default_endpoint=None, **kwargs):
     """
     Define S3 client
     """
@@ -123,5 +123,6 @@ def define_s3_client(default_endpoint=None):
         endpoint_url=f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}",
         aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
         aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+        extra_args=kwargs,
     )
     client.set_as_default_client()

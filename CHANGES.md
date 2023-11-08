@@ -2,6 +2,7 @@
 
 ## 1.32.0 (2023-MM-DD)
 
+- **ENH: Allow to pass \*\*kwargs for S3 environments, in order to add options such as _requester pays_**
 - FIX: Use `EPSG_4326` instead of `WGS84` for sake of naming accuracy (this is not the same thing!) (`WGS84` stays available though)
 
 ## 1.31.0 (2023-10-30)
