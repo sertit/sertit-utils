@@ -907,7 +907,7 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
     return data
 
 
-def save_json(output_json: AnyPathStrType, json_dict: dict) -> None:
+def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     """
     Save a JSON file, with datetime, numpy types and Enum management.
 
@@ -918,15 +918,25 @@ def save_json(output_json: AnyPathStrType, json_dict: dict) -> None:
         >>> save_json(output_json, json_dict)
 
     Args:
-        output_json (AnyPathStrType): Output file
         json_dict (dict): Json dictionary
+        output_json (AnyPathStrType): Output file
+        **kwargs: Other arguments
     """
+    if isinstance(output_json, dict):
+        # Old order. Swap the variables.
+        logs.deprecation_warning(
+            "The order of the function has changed. Please set json_dict in first!"
+        )
+        output_json, json_dict = json_dict, output_json
+
+    kwargs["indent"] = kwargs.get("indent", 3)
+    kwargs["cls"] = kwargs.get("cls", CustomEncoder)
 
     with open(output_json, "w") as output_config_file:
-        json.dump(json_dict, output_config_file, indent=3, cls=CustomEncoder)
+        json.dump(json_dict, output_config_file, **kwargs)
 
 
-def save_obj(obj: Any, path: AnyPathStrType) -> None:
+def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
     """
     Save an object as a pickle (can save any Python objects).
 
@@ -943,7 +953,7 @@ def save_obj(obj: Any, path: AnyPathStrType) -> None:
         path (AnyPathStrType): Path where to write the pickle
     """
     with open(path, "wb+") as file:
-        dill.dump(obj, file)
+        dill.dump(obj, file, **kwargs)
 
 
 def load_obj(path: AnyPathStrType) -> Any:

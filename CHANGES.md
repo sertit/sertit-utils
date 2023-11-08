@@ -2,6 +2,8 @@
 
 ## 1.32.0 (2023-MM-DD)
 
+- **BREAKING CHANGE**: Change the order of `files.save_json` function to fit `files.save_obj`. Older order is deprecated.
+- **ENH: Allow to pass \*\*kwargs in `files.save_json` and `files.save_obj`**
 - **ENH: Allow to pass \*\*kwargs for S3 environments, in order to add options such as _requester pays_**
 - FIX: Use `EPSG_4326` instead of `WGS84` for sake of naming accuracy (this is not the same thing!) (`WGS84` stays available though)
 

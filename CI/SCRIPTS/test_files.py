@@ -209,10 +209,10 @@ def test_json():
     with tempfile.TemporaryDirectory() as tmp_dir:
         json_file = os.path.join(tmp_dir, "test.json")
 
-        # Save pickle
-        files.save_json(json_file, test_dict)
+        # Save JSON
+        files.save_json(test_dict, json_file)
 
-        # Load pickle
+        # Load JSON
         obj = files.read_json(json_file)
 
         assert (
@@ -223,6 +223,10 @@ def test_json():
             test_dict.pop("H")
         )  # Enum are stored following their value
         assert obj == test_dict
+
+        # Test deprecation
+        with pytest.deprecated_call():
+            files.save_json(json_file, test_dict)
 
 
 def test_pickle():
