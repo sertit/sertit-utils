@@ -537,9 +537,10 @@ def _read_kml(
     # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
     import fiona
 
+    driver = "KML" if vect_path.endswith(".kml") else "KMZ"
     for layer in fiona.listlayers(vect_path):
         try:
-            vect_layer = gpd.read_file(vect_path, driver="KML", layer=layer, **kwargs)
+            vect_layer = gpd.read_file(vect_path, driver=driver, layer=layer, **kwargs)
             if not vect_layer.empty:
                 # KML files are always in WGS84 (and does not contain this information)
                 vect_layer.crs = EPSG_4326

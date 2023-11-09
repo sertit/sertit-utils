@@ -8,6 +8,7 @@
 - FIX: Use `EPSG_4326` instead of `WGS84` for sake of naming accuracy (this is not the same thing!) (`WGS84` stays available though)
 - FIX: Return `False` instead of failin in `path.is_cloud_path` if it cannot be converted to `AnyPath`
 - FIX: Fix the custom JSON encoder to handle sets
+- FIX: Handles correctly multi-layered KMZ in `vectors.read`
 
 ## 1.31.0 (2023-10-30)
 
