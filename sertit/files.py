@@ -870,6 +870,8 @@ class CustomEncoder(JSONEncoder):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
+        elif isinstance(obj, set):
+            out = str(obj)
         elif isinstance(obj, Path) or path.is_cloud_path(obj):
             out = str(obj)
         else:
@@ -927,13 +929,15 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
         logs.deprecation_warning(
             "The order of the function has changed. Please set json_dict in first!"
         )
-        output_json, json_dict = json_dict, output_json
+        tmp = output_json
+        output_json = json_dict
+        json_dict = tmp
 
     kwargs["indent"] = kwargs.get("indent", 3)
     kwargs["cls"] = kwargs.get("cls", CustomEncoder)
 
-    with open(output_json, "w") as output_config_file:
-        json.dump(json_dict, output_config_file, **kwargs)
+    with open(output_json, "w") as output_file:
+        json.dump(json_dict, output_file, **kwargs)
 
 
 def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
