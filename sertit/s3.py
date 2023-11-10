@@ -123,6 +123,7 @@ def define_s3_client(default_endpoint=None, **kwargs):
         endpoint_url=f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}",
         aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
         aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-        extra_args=kwargs,
+        extra_args=kwargs.pop("extra_args"),
+        **kwargs,
     )
     client.set_as_default_client()
