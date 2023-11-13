@@ -1,6 +1,6 @@
 # Release History
 
-## 1.32.0 (2023-MM-DD)
+## 1.32.0 (2023-11-13)
 
 - **BREAKING CHANGE**: Change the order of `files.save_json` function to fit `files.save_obj`. Older order is deprecated.
 - **ENH: Allow to pass \*\*kwargs in `files.save_json` and `files.save_obj`**
