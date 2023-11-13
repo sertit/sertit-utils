@@ -62,6 +62,7 @@ def s3_env(*args, **kwargs):
 
     use_s3 = kwargs.get("use_s3_env_var", USE_S3_STORAGE)
     default_endpoint = kwargs.get("default_endpoint")
+    requester_pays = kwargs.get("requester_pays")
 
     def decorator(function):
         @wraps(function)
@@ -69,7 +70,9 @@ def s3_env(*args, **kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
                 # Define S3 client for S3 paths
-                define_s3_client(default_endpoint, **_kwargs)
+                define_s3_client(
+                    default_endpoint, requester_pays=requester_pays, **_kwargs
+                )
                 os.environ[use_s3] = "1"
                 LOGGER.info("Using S3 files")
                 with rasterio.Env(
@@ -77,6 +80,7 @@ def s3_env(*args, **kwargs):
                     AWS_VIRTUAL_HOSTING=False,
                     AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
                     GDAL_DISABLE_READDIR_ON_OPEN=False,
+                    AWS_REQUEST_PAYER="requester" if requester_pays else None,
                 ):
                     function(*_args, **_kwargs)
 
@@ -91,7 +95,9 @@ def s3_env(*args, **kwargs):
 
 
 @contextmanager
-def temp_s3(default_endpoint: str = None, **kwargs) -> None:
+def temp_s3(
+    default_endpoint: str = None, requester_pays: bool = False, **kwargs
+) -> None:
     """
     Initialize a temporary S3 environment as a context manager
 
@@ -107,23 +113,30 @@ def temp_s3(default_endpoint: str = None, **kwargs) -> None:
             AWS_VIRTUAL_HOSTING=False,
             AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
             GDAL_DISABLE_READDIR_ON_OPEN=False,
+            AWS_REQUEST_PAYER="requester" if requester_pays else None,
         ):
-            yield define_s3_client(default_endpoint, **kwargs)
+            yield define_s3_client(
+                default_endpoint, requester_pays=requester_pays, **kwargs
+            )
     finally:
         # Clean env
         S3Client().set_as_default_client()
 
 
-def define_s3_client(default_endpoint=None, **kwargs):
+def define_s3_client(default_endpoint=None, requester_pays: bool = False, **kwargs):
     """
     Define S3 client
     """
+    extra_args = kwargs.pop("extra_args", {})
+    if requester_pays:
+        extra_args.update({"RequestPayer": "requester"})
+
     # ON S3
     client = S3Client(
         endpoint_url=f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}",
         aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
         aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
-        extra_args=kwargs.pop("extra_args", None),
+        extra_args=extra_args,
         **kwargs,
     )
     client.set_as_default_client()
