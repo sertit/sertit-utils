@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.1 (2023-11-14)
+
+- FIX: Add the support of `no_sign_request` in `s3` functions
+
 ## 1.32.0 (2023-11-13)
 
 - **BREAKING CHANGE**: Change the order of `files.save_json` function to fit `files.save_obj`. Older order is deprecated.

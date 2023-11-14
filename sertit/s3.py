@@ -63,6 +63,7 @@ def s3_env(*args, **kwargs):
     use_s3 = kwargs.get("use_s3_env_var", USE_S3_STORAGE)
     default_endpoint = kwargs.get("default_endpoint")
     requester_pays = kwargs.get("requester_pays")
+    no_sign_request = kwargs.get("no_sign_request")
 
     def decorator(function):
         @wraps(function)
@@ -80,6 +81,7 @@ def s3_env(*args, **kwargs):
                     AWS_VIRTUAL_HOSTING=False,
                     AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
                     GDAL_DISABLE_READDIR_ON_OPEN=False,
+                    AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
                     AWS_REQUEST_PAYER="requester" if requester_pays else None,
                 ):
                     function(*_args, **_kwargs)
@@ -96,13 +98,18 @@ def s3_env(*args, **kwargs):
 
 @contextmanager
 def temp_s3(
-    default_endpoint: str = None, requester_pays: bool = False, **kwargs
+    default_endpoint: str = None,
+    requester_pays: bool = False,
+    no_sign_request: bool = False,
+    **kwargs,
 ) -> None:
     """
     Initialize a temporary S3 environment as a context manager
 
     Args:
-        default_endpoint (str):Default Endpoint to look for
+        default_endpoint (str): Default Endpoint to look for
+        requester_pays (bool): True if the endpoint says 'requester pays'
+        no_sign_request (bool): True if the endpoint is open access
     """
     import rasterio
 
@@ -113,19 +120,33 @@ def temp_s3(
             AWS_VIRTUAL_HOSTING=False,
             AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
             GDAL_DISABLE_READDIR_ON_OPEN=False,
+            AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
             AWS_REQUEST_PAYER="requester" if requester_pays else None,
         ):
             yield define_s3_client(
-                default_endpoint, requester_pays=requester_pays, **kwargs
+                default_endpoint,
+                requester_pays=requester_pays,
+                no_sign_request=no_sign_request,
+                **kwargs,
             )
     finally:
         # Clean env
         S3Client().set_as_default_client()
 
 
-def define_s3_client(default_endpoint=None, requester_pays: bool = False, **kwargs):
+def define_s3_client(
+    default_endpoint=None,
+    requester_pays: bool = False,
+    no_sign_request: bool = False,
+    **kwargs,
+):
     """
     Define S3 client
+
+    Args:
+        default_endpoint (str): Default Endpoint to look for
+        requester_pays (bool): True if the endpoint says 'requester pays'
+        no_sign_request (bool): True if the endpoint is open access
     """
     extra_args = kwargs.pop("extra_args", {})
     if requester_pays:
@@ -136,6 +157,7 @@ def define_s3_client(default_endpoint=None, requester_pays: bool = False, **kwar
         endpoint_url=f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}",
         aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
         aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+        no_sign_request=no_sign_request,
         extra_args=extra_args,
         **kwargs,
     )

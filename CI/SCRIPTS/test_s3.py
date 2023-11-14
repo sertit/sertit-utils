@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Script testing the CI """
 import pytest
+import rasterio
 from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
@@ -62,3 +63,16 @@ def test_s3():
             without_s3()
 
         with_s3()
+
+
+def test_no_sign_request():
+    with tempenv.TemporaryEnvironment(
+        {"AWS_S3_ENDPOINT": "s3.us-west-2.amazonaws.com"}
+    ):
+        with temp_s3(no_sign_request=True):
+            path = AnyPath(
+                "s3://sentinel-cogs/sentinel-s2-l2a-cogs/40/V/DR/2023/11/S2A_40VDR_20231114_0_L2A"
+            )
+            assert path.exists()
+            with rasterio.open(str(path / "B12.tif")) as ds:
+                assert ds.meta["dtype"] == "uint16"
