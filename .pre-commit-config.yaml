@@ -3,6 +3,8 @@ exclude: |
       docs/.*
   )$
 fail_fast: false
+ci:
+    autoupdate_schedule: monthly
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks.git

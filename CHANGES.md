@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.2 (2023-MM-DD)
+
+- CI: Enabling pre-commit.ci and dependabot bots
+
 ## 1.32.1 (2023-11-14)
 
 - FIX: Add the support of `no_sign_request` in `s3` functions
