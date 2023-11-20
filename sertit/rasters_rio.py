@@ -195,7 +195,6 @@ def path_arr_dst(function: Callable) -> Callable:
                 import xarray as xr
 
                 if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
-
                     meta = {
                         "driver": "GTiff",
                         "dtype": path_or_arr_or_ds.dtype,

@@ -19,6 +19,7 @@ from sertit import arcpy, ci
 
 ci.reduce_verbosity()
 
+
 # flake8: noqa
 def test_arcpy():
     """Test CI functions"""
