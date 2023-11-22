@@ -44,6 +44,7 @@ def base_fct(value):
 @s3_env
 def with_s3():
     base_fct(1)
+    return 1
 
 
 def without_s3():
@@ -67,7 +68,7 @@ def test_unistra_s3():
         with pytest.raises(AssertionError):
             without_s3()
 
-        with_s3()
+        assert with_s3() == 1
 
         # Test get_geodatastore with s3
         assert str(get_geodatastore()) == "s3://sertit-geodatastore"

@@ -33,16 +33,17 @@ def base_fct(value):
     assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
     assert raster_path.is_file()
     assert rasters.read(raster_path).rio.count == 1
+    return 1
 
 
 @s3_env(default_endpoint=UNISTRA_S3_ENPOINT, use_s3_env_var=CI_SERTIT_S3)
 def with_s3():
-    base_fct(1)
+    return base_fct(1)
 
 
 def without_s3():
     S3Client().set_as_default_client()
-    base_fct(None)
+    return base_fct(None)
 
 
 def test_s3():
@@ -62,7 +63,7 @@ def test_s3():
         with pytest.raises(AssertionError):
             without_s3()
 
-        with_s3()
+        assert with_s3() == 1
 
 
 def test_no_sign_request():

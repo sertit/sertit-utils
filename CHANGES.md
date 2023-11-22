@@ -1,7 +1,7 @@
 # Release History
 
-## 1.32.2 (2023-MM-DD)
 
+- FIX: Fixing the return of s3 environment decorators
 - CI: Enabling pre-commit.ci and dependabot bots
 
 ## 1.32.1 (2023-11-14)

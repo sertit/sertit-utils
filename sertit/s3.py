@@ -84,12 +84,12 @@ def s3_env(*args, **kwargs):
                     AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
                     AWS_REQUEST_PAYER="requester" if requester_pays else None,
                 ):
-                    function(*_args, **_kwargs)
+                    return function(*_args, **_kwargs)
 
             else:
                 os.environ[use_s3] = "0"
                 LOGGER.info("Using on disk files")
-                function(*_args, **_kwargs)
+                return function(*_args, **_kwargs)
 
         return s3_env_wrapper
 
