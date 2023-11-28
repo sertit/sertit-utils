@@ -37,7 +37,7 @@ def base_fct(value):
 
 
 @s3_env(default_endpoint=UNISTRA_S3_ENPOINT, use_s3_env_var=CI_SERTIT_S3)
-def with_s3():
+def with_s3(variable_1, variable_2):
     return base_fct(1)
 
 
@@ -62,8 +62,7 @@ def test_s3():
 
         with pytest.raises(AssertionError):
             without_s3()
-
-        assert with_s3() == 1
+        assert with_s3(1, 2) == 1
 
 
 def test_no_sign_request():

@@ -44,7 +44,7 @@ def s3_env(*args, **kwargs):
     Returns:
         Callable: decorated function
     """
-    return s3.s3_env(default_endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
+    return s3.s3_env(endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
 
 
 @contextmanager
@@ -56,7 +56,7 @@ def unistra_s3() -> None:
         default_endpoint (str):Default Endpoint to look for
     """
     try:
-        with temp_s3(default_endpoint=UNISTRA_S3_ENPOINT):
+        with temp_s3(endpoint=UNISTRA_S3_ENPOINT):
             yield
     finally:
         pass
@@ -66,7 +66,7 @@ def define_s3_client():
     """
     Define Unistra's S3 client
     """
-    return s3.define_s3_client(default_endpoint=UNISTRA_S3_ENPOINT)
+    return s3.define_s3_client(endpoint=UNISTRA_S3_ENPOINT)
 
 
 def get_geodatastore() -> AnyPathType:

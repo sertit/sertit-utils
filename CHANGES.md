@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.3 (2023-11-28)
+
+- FIX: Fixing additional arguments passed to the `s3` decorator
+
 ## 1.32.2 (2023-11-22)
 
 - FIX: Fixing the return of s3 environment decorators

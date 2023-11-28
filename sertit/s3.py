@@ -52,8 +52,6 @@ Environment variable created to use Unistra's S3 bucket.
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
-    Args:
-        function (Callable): Function to decorate
 
     Returns:
         Callable: decorated function
@@ -64,6 +62,7 @@ def s3_env(*args, **kwargs):
     default_endpoint = kwargs.get("default_endpoint")
     requester_pays = kwargs.get("requester_pays")
     no_sign_request = kwargs.get("no_sign_request")
+    endpoint = kwargs.get("endpoint", os.getenv(AWS_S3_ENDPOINT, default_endpoint))
 
     def decorator(function):
         @wraps(function)
@@ -72,14 +71,16 @@ def s3_env(*args, **kwargs):
             if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
                 # Define S3 client for S3 paths
                 define_s3_client(
-                    default_endpoint, requester_pays=requester_pays, **_kwargs
+                    endpoint_url=f"https://{endpoint}",
+                    requester_pays=requester_pays,
+                    **_kwargs,
                 )
                 os.environ[use_s3] = "1"
                 LOGGER.info("Using S3 files")
                 with rasterio.Env(
                     CPL_CURL_VERBOSE=False,
                     AWS_VIRTUAL_HOSTING=False,
-                    AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
+                    AWS_S3_ENDPOINT=endpoint,
                     GDAL_DISABLE_READDIR_ON_OPEN=False,
                     AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
                     AWS_REQUEST_PAYER="requester" if requester_pays else None,
@@ -98,6 +99,7 @@ def s3_env(*args, **kwargs):
 
 @contextmanager
 def temp_s3(
+    endpoint=None,
     default_endpoint: str = None,
     requester_pays: bool = False,
     no_sign_request: bool = False,
@@ -113,18 +115,21 @@ def temp_s3(
     """
     import rasterio
 
+    if not endpoint:
+        endpoint = os.getenv(AWS_S3_ENDPOINT, default_endpoint)
+
     # Define S3 client for S3 paths
     try:
         with rasterio.Env(
             CPL_CURL_VERBOSE=False,
             AWS_VIRTUAL_HOSTING=False,
-            AWS_S3_ENDPOINT=os.getenv(AWS_S3_ENDPOINT, default_endpoint),
+            AWS_S3_ENDPOINT=endpoint,
             GDAL_DISABLE_READDIR_ON_OPEN=False,
             AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
             AWS_REQUEST_PAYER="requester" if requester_pays else None,
         ):
             yield define_s3_client(
-                default_endpoint,
+                endpoint_url=f"https://{endpoint}",
                 requester_pays=requester_pays,
                 no_sign_request=no_sign_request,
                 **kwargs,
@@ -135,6 +140,7 @@ def temp_s3(
 
 
 def define_s3_client(
+    endpoint_url=None,
     default_endpoint=None,
     requester_pays: bool = False,
     no_sign_request: bool = False,
@@ -148,17 +154,40 @@ def define_s3_client(
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
     """
-    extra_args = kwargs.pop("extra_args", {})
+    if not endpoint_url:
+        endpoint_url = kwargs.pop(
+            "endpoint_url", f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}"
+        )
+
+    aws_access_key_id = kwargs.pop("aws_access_key_id", os.getenv(AWS_ACCESS_KEY_ID))
+    aws_secret_access_key = kwargs.pop(
+        "aws_secret_access_key", os.getenv(AWS_SECRET_ACCESS_KEY)
+    )
+    if not no_sign_request:
+        no_sign_request = kwargs.pop("no_sign_request", False)
+
+    s3_client_args = [
+        "aws_session_token",
+        "botocore_session",
+        "profile_name",
+        "boto3_session",
+        "file_cache_mode",
+        "local_cache_dir",
+        "boto3_transfer_config",
+        "content_type_method",
+        "extra_args",
+    ]
+    s3_client_kwargs = {key: kwargs.get(key) for key in s3_client_args if key in kwargs}
+
     if requester_pays:
-        extra_args.update({"RequestPayer": "requester"})
+        s3_client_kwargs.update({"RequestPayer": "requester"})
 
     # ON S3
     client = S3Client(
-        endpoint_url=f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}",
-        aws_access_key_id=os.getenv(AWS_ACCESS_KEY_ID),
-        aws_secret_access_key=os.getenv(AWS_SECRET_ACCESS_KEY),
+        endpoint_url=endpoint_url,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
         no_sign_request=no_sign_request,
-        extra_args=extra_args,
-        **kwargs,
+        **s3_client_kwargs,
     )
     client.set_as_default_client()
