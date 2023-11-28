@@ -846,9 +846,9 @@ def get_window(ds: PATH_ARR_DS, window: Any):
     if window is not None:
         if not isinstance(window, Window):
             if isinstance(window, gpd.GeoDataFrame):
-                bounds = window.to_crs(ds.crs).bounds.values[0]
+                bounds = window.to_crs(ds.crs).total_bounds
             elif path.is_path(window):
-                bounds = vectors.read(window).to_crs(ds.crs).bounds.values[0]
+                bounds = vectors.read(window).to_crs(ds.crs).total_bounds
             else:
                 bounds = window
 

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.4 (2023-MM-DD)
+
+- FIX: Use `total_bounds` when computing the window in `rasters(_rio).read()`
+
 ## 1.32.3 (2023-11-28)
 
 - FIX: Fixing additional arguments passed to the `s3` decorator
