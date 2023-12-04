@@ -5,8 +5,7 @@ stages:
   - weekly_tests
 
 variables:
-  EEO_DEPS: $REGISTRY_GITLAB/extracteo/extracteo_deps
-  EO_CONTAINER: $REGISTRY_GITLAB/eo-containers/python
+  EO_CONTAINERS: $REGISTRY_GITLAB/eo-containers
   SU_CHANGES: sertit/[^_]*.{py,xml}
 
 lint:
@@ -20,7 +19,7 @@ lint:
     - tags
 
 pytest:
-  image: $EEO_DEPS:latest
+  image: $EO_CONTAINERS:geo_latest
   stage: test
   variables:
     CI_SERTIT_USE_S3: "0"
@@ -45,7 +44,7 @@ pytest:
   needs: [ "lint" ]
 
 pytest_s3:
-  image: $EEO_DEPS:latest
+  image: $EO_CONTAINERS:geo_latest
   stage: test
   before_script:
     - python -m pip install --upgrade pip
