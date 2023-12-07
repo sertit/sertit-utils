@@ -1,6 +1,6 @@
 # Release History
 
-## 1.32.4 (2023-MM-DD)
+## 1.32.4 (2023-12-07)
 
 - FIX: Fix requester_pays option in `s3` module
 - FIX: Use `total_bounds` when computing the window in `rasters(_rio).read()`
