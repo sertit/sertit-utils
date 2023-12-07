@@ -2,6 +2,7 @@
 
 ## 1.32.4 (2023-MM-DD)
 
+- FIX: Fix requester_pays option in `s3` module
 - FIX: Use `total_bounds` when computing the window in `rasters(_rio).read()`
 
 ## 1.32.3 (2023-11-28)

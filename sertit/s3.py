@@ -180,7 +180,10 @@ def define_s3_client(
     s3_client_kwargs = {key: kwargs.get(key) for key in s3_client_args if key in kwargs}
 
     if requester_pays:
-        s3_client_kwargs.update({"RequestPayer": "requester"})
+        if "extra_args" in s3_client_kwargs:
+            s3_client_kwargs["extra_args"].update({"RequestPayer": "requester"})
+        else:
+            s3_client_kwargs["extra_args"] = {"RequestPayer": "requester"}
 
     # ON S3
     client = S3Client(

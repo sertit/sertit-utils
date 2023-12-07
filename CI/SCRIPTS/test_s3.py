@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing the CI """
+import os
+
 import pytest
 import rasterio
 from cloudpathlib import AnyPath, S3Client
@@ -66,13 +68,23 @@ def test_s3():
 
 
 def test_no_sign_request():
+    with temp_s3(endpoint="s3.us-west-2.amazonaws.com", no_sign_request=True):
+        path = AnyPath(
+            "s3://sentinel-cogs/sentinel-s2-l2a-cogs/40/V/DR/2023/11/S2A_40VDR_20231114_0_L2A"
+        )
+        assert path.exists()
+        with rasterio.open(str(path / "B12.tif")) as ds:
+            assert ds.meta["dtype"] == "uint16"
+
+
+def test_requester_pays():
     with tempenv.TemporaryEnvironment(
-        {"AWS_S3_ENDPOINT": "s3.us-west-2.amazonaws.com"}
-    ):
-        with temp_s3(no_sign_request=True):
-            path = AnyPath(
-                "s3://sentinel-cogs/sentinel-s2-l2a-cogs/40/V/DR/2023/11/S2A_40VDR_20231114_0_L2A"
-            )
-            assert path.exists()
-            with rasterio.open(str(path / "B12.tif")) as ds:
-                assert ds.meta["dtype"] == "uint16"
+        {
+            "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_S3_AWS_SECRET_ACCESS_KEY"),
+            "AWS_ACCESS_KEY_ID": os.getenv("AWS_S3_AWS_ACCESS_KEY_ID"),
+        }
+    ), temp_s3(endpoint="s3.eu-central-1.amazonaws.com", requester_pays=True):
+        path = AnyPath("s3://sentinel-s2-l1c/tiles/29/H/NA/2023/11/14/0/")
+        assert path.exists()
+        with rasterio.open(str(path / "B12.jp2")) as ds:
+            assert ds.meta["dtype"] == "uint16"
