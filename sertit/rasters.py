@@ -868,6 +868,7 @@ def collocate(
     reference: AnyXrDataStructure,
     other: AnyXrDataStructure,
     resampling: Resampling = Resampling.nearest,
+    **kwargs,
 ) -> AnyXrDataStructure:
     """
     Collocate two georeferenced arrays:
@@ -903,7 +904,9 @@ def collocate(
             .astype(old_dtype)
         )
     else:
-        collocated_xds = other.rio.reproject_match(reference, resampling=resampling)
+        collocated_xds = other.rio.reproject_match(
+            reference, resampling=resampling, **kwargs
+        )
 
     # Bug for now, tiny difference in coords
     collocated_xds = collocated_xds.assign_coords(

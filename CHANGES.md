@@ -1,5 +1,9 @@
 # Release History
 
+## 1.32.5 (2023-MM-DD)
+
+- FIX: Allow kwargs in `rasters.collocate`
+
 ## 1.32.4 (2023-12-07)
 
 - FIX: Fix requester_pays option in `s3` module
