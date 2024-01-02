@@ -4,6 +4,7 @@
 
 - **ENH: Mirror `window` in `vectors.read` (from `rasters.read`), enhancing `gpd.read_file(bbox=...)`**
 - FIX: Allow kwargs in `rasters.collocate`
+- FIX: Update copyright to 2024
 
 ## 1.32.4 (2023-12-07)
 
