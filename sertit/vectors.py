@@ -29,6 +29,7 @@ import zipfile
 from contextlib import contextmanager
 from typing import Any, Generator, Union
 
+import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
@@ -374,6 +375,7 @@ def read(
     vector_path: AnyPathStrType,
     crs: Any = None,
     archive_regex: str = None,
+    window: Any = None,
     **kwargs,
 ) -> gpd.GeoDataFrame:
     """
@@ -402,6 +404,8 @@ def read(
         vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
+        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
+            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
         **kwargs: Additional arguments used in gpd.read_file
 
     Returns:
@@ -409,6 +413,18 @@ def read(
     """
     tmp_dir = None
     arch_vect_path = None
+
+    if window is not None:
+        try:
+            bbox = read(window)
+        except (FileNotFoundError, TypeError):
+            # Convert ndarray to tuple
+            if isinstance(window, np.ndarray):
+                bbox = tuple(window)
+            else:
+                bbox = window
+
+        kwargs["bbox"] = bbox
 
     try:
         vector_path = AnyPath(vector_path)
@@ -481,8 +497,10 @@ def read(
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
     except (ValueError, UnsupportedGeometryTypeError) as ex:
+        if "Use a.any() or a.all()" in str(ex):
+            raise
         # Do not print warning for null layer
-        if "Null layer" not in str(ex):
+        elif "Null layer" not in str(ex):
             LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
     except CPLE_AppDefinedError as ex:

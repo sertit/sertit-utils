@@ -237,3 +237,27 @@ def test_read_archived():
         map_overlay_extracted,
         vectors.read(tar_landsat, archive_regex=map_overlay_regex),
     )
+
+
+def test_window():
+    """Test read with window"""
+    aoi_path = vectors_path() / "areaOfInterestA.geojson"
+    vect_path = vectors_path() / "hydrographyA.geojson"
+
+    aoi = vectors.read(aoi_path)
+    vect = vectors.read(vect_path)
+    vect_aoi = vectors.read(vect_path, window=aoi)
+    vect_aoi_path = vectors.read(vect_path, window=aoi_path)
+    vect_aoi_bounds = vectors.read(vect_path, window=aoi.total_bounds)
+    vect_aoi_bbox = vectors.read(vect_path, bbox=tuple(aoi.total_bounds))
+
+    # Tests
+    ci.assert_geom_equal(vect_aoi, vect_aoi_path)
+    ci.assert_geom_equal(vect_aoi, vect_aoi_bounds)
+    ci.assert_geom_equal(vect_aoi, vect_aoi_bbox)
+
+    with pytest.raises(AssertionError):
+        ci.assert_geom_equal(vect, vect_aoi)
+
+    with pytest.raises(ValueError):
+        vectors.read(vect_path, bbox=aoi.total_bounds)
