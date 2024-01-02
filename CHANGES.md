@@ -1,6 +1,6 @@
 # Release History
 
-## 1.33.0 (2023-MM-DD)
+## 1.33.0 (2024-01-02)
 
 - **ENH: Mirror `window` in `vectors.read` (from `rasters.read`), enhancing `gpd.read_file(bbox=...)`**
 - FIX: Allow kwargs in `rasters.collocate`
