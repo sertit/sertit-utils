@@ -1,5 +1,9 @@
 # Release History
 
+## 1.34.0 (2024-MM-DD)
+
+- **BREAKING CHANGE**: Set default `chunks` to `auto` in `rasters.read`
+
 ## 1.33.0 (2024-01-02)
 
 - **ENH: Mirror `window` in `vectors.read` (from `rasters.read`), enhancing `gpd.read_file(bbox=...)`**

@@ -646,7 +646,7 @@ def read(
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
     indexes: Union[int, list] = None,
-    chunks: Union[int, tuple, dict] = None,
+    chunks: Union[int, tuple, dict] = "auto",
     as_type: Any = None,
     **kwargs,
 ) -> AnyXrDataStructure:
