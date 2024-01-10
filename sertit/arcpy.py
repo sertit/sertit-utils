@@ -1,6 +1,25 @@
 import logging
 import logging.handlers
 
+# Arcpy types from inside a schema
+SHORT = "int32:4"
+""" 'Short' type for ArcGis GDB """
+
+LONG = "int32:10"
+""" 'Long' type for ArcGis GDB """
+
+FLOAT = "float"
+""" 'Float' type for ArcGis GDB """
+
+DOUBLE = "float"
+""" 'Double' type for ArcGis GDB """
+
+TEXT = "str:255"
+""" "Text" type for ArcGis GDB """
+
+DATE = "datetime"
+""" 'Date' type for ArcGis GDB """
+
 
 # flake8: noqa
 def init_conda_arcpy_env():
