@@ -475,8 +475,8 @@ def read(
     except AnyPathTypeError:
         vect_path = str(vector_path)
 
-    if not os.path.isfile(vector_path):
-        raise FileNotFoundError(f"Non existing file: {vector_path}")
+    if not os.path.exists(vector_path):
+        raise FileNotFoundError(f"Non existing vector: {vector_path}")
 
     # Open vector
     try:

@@ -3,6 +3,7 @@
 ## 1.34.0 (2024-MM-DD)
 
 - **BREAKING CHANGE**: Set default `chunks` to `auto` in `rasters.read`
+- FIX: Allow folders to be opened in `vectors.read` (to open GDBs)
 
 ## 1.33.0 (2024-01-02)
 

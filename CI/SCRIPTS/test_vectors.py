@@ -261,3 +261,12 @@ def test_window():
 
     with pytest.raises(ValueError):
         vectors.read(vect_path, bbox=aoi.total_bounds)
+
+
+def test_read_gdb():
+    """Test read from GDB"""
+    gdb_path = vectors_path() / "EMSR712_04WESERRIVERSOUTH_DelineationMap_MONIT_06.gdb"
+    layer = "B1_observed_event_a"
+    ci.assert_geom_equal(
+        vectors.read(gdb_path, layer=layer), gpd.read_file(gdb_path, layer=layer)
+    )
