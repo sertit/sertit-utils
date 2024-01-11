@@ -5,6 +5,7 @@
 - **BREAKING CHANGE**: Set default `chunks` to `auto` in `rasters.read`
 - **ENH: Add types for ArcGis GDB in `arcpy`**
 - FIX: Allow folders to be opened in `vectors.read` (to open GDBs)
+- OPTIM: Geopandas now handles correctly S3 paths, so don't download S3-stored vectors anymore
 
 ## 1.33.0 (2024-01-02)
 

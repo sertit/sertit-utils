@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
-from fiona.errors import UnsupportedGeometryTypeError
+from fiona.errors import DriverError, UnsupportedGeometryTypeError
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.types import AnyPathStrType, AnyPathType
@@ -381,10 +381,12 @@ def read(
     """
     Read any vector:
 
-    - if KML: sets correctly the drivers and open layered KML (you may need :code:`ogr2ogr` to make it work !)
+    - if KML/KMZ: sets correctly the drivers and open layered KML (you may need :code:`ogr2ogr` to make it work !)
     - if archive (only zip or tar), use a regex to look for the vector inside the archive.
         You can use this `site <https://regexr.com/>`_ to build your regex.
     - if GML: manages the empty errors
+
+    Handles a lot of exceptions and have fallback mechanisms with ogr2ogr (if in PATH)
 
     .. code-block:: python
 
@@ -411,9 +413,11 @@ def read(
     Returns:
         gpd.GeoDataFrame: Read vector as a GeoDataFrame
     """
-    tmp_dir = None
-    arch_vect_path = None
+    # Default values
+    gpd_vect_path = str(vector_path)
+    arch_path = None
 
+    # -- Manage window and convert it to a bbox
     if window is not None:
         try:
             bbox = read(window)
@@ -426,6 +430,7 @@ def read(
 
         kwargs["bbox"] = bbox
 
+    # -- Manage the path formatting (create the path to be read by GeoPandas, the archive path if needed, ...)
     try:
         vector_path = AnyPath(vector_path)
 
@@ -435,60 +440,74 @@ def read(
             archive_regex = ".*{0}".format(split_vect[1].replace(".", r"\."))
             vector_path = AnyPath(split_vect[0])
 
-        # Load vector in cache if needed (geopandas do not use correctly S3 paths for now)
-        if path.is_cloud_path(vector_path):
-            tmp_dir = tempfile.TemporaryDirectory()
-            if vector_path.suffix == ".shp":
-                # Download everything to disk
-                for shp_file in vector_path.parent.glob(
-                    vector_path.with_suffix(".*").name
-                ):
-                    cached_path = shp_file.download_to(tmp_dir.name)
-                    if cached_path.suffix == ".shp":
-                        vector_path = cached_path
-            else:
-                vector_path = AnyPath(vector_path.fspath)
-
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
+            if path.is_cloud_path(vector_path):
+                vector_path = AnyPath(vector_path.fspath)
+
             prefix = vector_path.suffix[-3:]
             file_list = path.get_archived_file_list(vector_path)
 
             try:
                 regex = re.compile(archive_regex)
-                arch_vect_path = list(filter(regex.match, file_list))[0]
+                arch_path = list(filter(regex.match, file_list))[0]
 
+                # Different template if on cloud or not... (only tested with S3)
                 if path.is_cloud_path(vector_path):
-                    vect_path = f"{prefix}+{vector_path}!{arch_vect_path}"
+                    gpd_vect_path = f"{prefix}+{vector_path}!{arch_path}"
                 else:
-                    vect_path = f"{prefix}://{vector_path}!{arch_vect_path}"
+                    gpd_vect_path = f"{prefix}://{vector_path}!{arch_path}"
             except IndexError:
                 raise FileNotFoundError(
                     f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
                 )
+        # Don't read tar.gz archives (way too slow)
         elif vector_path.suffixes == [".tar", ".gz"]:
             raise TypeError(
-                ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
+                ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
             )
-        else:
-            vect_path = str(vector_path)
     except AnyPathTypeError:
-        vect_path = str(vector_path)
+        pass
 
-    if not os.path.exists(vector_path):
+    # Check existence of the file (here and not before to handle fsspec cases with '!')
+    if not AnyPath(vector_path).exists():
         raise FileNotFoundError(f"Non existing vector: {vector_path}")
 
-    # Open vector
+    # Read vector
+    return _read_vector_core(gpd_vect_path, vector_path, arch_path, crs, **kwargs)
+
+
+def _read_vector_core(
+    gpd_vect_path: str, raw_path: AnyPathStrType, arch_path: str, crs, **kwargs
+):
+    """
+    Read vector (core function) with correctly formatted paths.
+
+    Handles a lot of exceptions, reads KML, and have fallback mechanisms with ogr2ogr (if in PATH)
+
+    Args:
+        gpd_vect_path (str): Resolved vector path (readable by geopandas)
+        raw_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        arch_path (str): If archived vector, path to the vector file inside the archive (from the root of the archive)
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        **kwargs: Other arguments
+
+    Returns:
+        gpd.GeoDataFrame: Read vector as a GeoDataFrame
+    """
+    tmp_dir = None
+
+    # -- Open vector
     try:
         # Discard some weird error concerning a NULL pointer that outputs a ValueError (as we already except it)
         fiona_logger = logging.getLogger("fiona")
         fiona_logger.setLevel(logging.CRITICAL)
 
         # Manage KML driver
-        if vect_path.endswith(".kml") or vect_path.endswith(".kmz"):
-            vect = _read_kml(vect_path, vector_path, arch_vect_path, tmp_dir, **kwargs)
+        if gpd_vect_path.endswith(".kml") or gpd_vect_path.endswith(".kmz"):
+            vect = _read_kml(gpd_vect_path, raw_path, arch_path, tmp_dir, **kwargs)
         else:
-            vect = gpd.read_file(vect_path, **kwargs)
+            vect = gpd.read_file(gpd_vect_path, **kwargs)
 
         # Manage naive geometries
         if vect.crs and crs:
@@ -496,6 +515,8 @@ def read(
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
+    except DriverError:
+        raise
     except (ValueError, UnsupportedGeometryTypeError) as ex:
         if "Use a.any() or a.all()" in str(ex):
             raise
@@ -504,12 +525,12 @@ def read(
             LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
     except CPLE_AppDefinedError as ex:
+        # Last try to read this vector
         # Needs ogr2ogr here
         if shutil.which("ogr2ogr"):
             # Open as geojson
-            if not tmp_dir:
-                tmp_dir = tempfile.TemporaryDirectory()
-            vect_path_gj = ogr2geojson(vector_path, tmp_dir.name, arch_vect_path)
+            tmp_dir = tempfile.TemporaryDirectory()
+            vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
             vect.crs = None
         else:
@@ -518,7 +539,7 @@ def read(
                 LOGGER.warning(ex)
             vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
-    # Clean
+    # Clean if needed
     if tmp_dir:
         tmp_dir.cleanup()
 
@@ -526,9 +547,9 @@ def read(
 
 
 def _read_kml(
-    vect_path: str,
-    path: AnyPathStrType,
-    arch_vect_path: str = None,
+    gpd_vect_path: str,
+    raw_path: AnyPathStrType,
+    arch_path: str = None,
     tmp_dir=None,
     **kwargs,
 ) -> gpd.GeoDataFrame:
@@ -536,9 +557,9 @@ def _read_kml(
     Reader of KML data
 
     Args:
-        vect_path (str): Resolved vector path (rteadable by geopandas, not on cloud etc.)
-        path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
-        arch_vect_path: If archived vector, archive path
+        gpd_vect_path (str): Resolved vector path (readable by geopandas)
+        raw_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        arch_path: If archived vector, path to the vector file inside the archive (from the root of the archive)
         tmp_dir: Temporary directory
         **kwargs: Additional arguments used in gpd.read_file
 
@@ -555,10 +576,12 @@ def _read_kml(
     # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
     import fiona
 
-    driver = "KML" if vect_path.endswith(".kml") else "KMZ"
-    for layer in fiona.listlayers(vect_path):
+    driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
+    for layer in fiona.listlayers(gpd_vect_path):
         try:
-            vect_layer = gpd.read_file(vect_path, driver=driver, layer=layer, **kwargs)
+            vect_layer = gpd.read_file(
+                gpd_vect_path, driver=driver, layer=layer, **kwargs
+            )
             if not vect_layer.empty:
                 # KML files are always in WGS84 (and does not contain this information)
                 vect_layer.crs = EPSG_4326
@@ -574,7 +597,12 @@ def _read_kml(
             # Open the geojson
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
-            vect_path_gj = ogr2geojson(path, tmp_dir.name, arch_vect_path)
+
+            # KML should be downloaded to work with ogr2ogr
+            if path.is_cloud_path(raw_path):
+                raw_path = AnyPath(raw_path).fspath
+
+            vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
         else:
             # Try reading it in a basic manner
@@ -583,7 +611,7 @@ def _read_kml(
                 "(KML files can contain unsupported data structures, nested folders etc.)"
             )
             try:
-                vect = gpd.read_file(vect_path, **kwargs)
+                vect = gpd.read_file(gpd_vect_path, **kwargs)
             except Exception:
                 # Force set CRS to empty vector
                 vect.crs = EPSG_4326
@@ -602,7 +630,7 @@ def ogr2geojson(
     Args:
         vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         out_dir (AnyPathStrType): Output directory
-        arch_vect_path: If archived vector, archive path
+        arch_vect_path: If archived vector, path to the vector file inside the archive (from the root of the archive)
 
     Returns:
         str: Converted file
@@ -610,16 +638,16 @@ def ogr2geojson(
     assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
 
     out_dir = str(out_dir)
-
-    if vector_path.suffix == ".zip":
+    vector_path = str(vector_path)
+    if vector_path.endswith(".zip"):
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
-    elif vector_path.suffix == ".tar":
+    elif vector_path.endswith(".tar"):
         with tarfile.open(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
-        vect_path = str(vector_path)
+        vect_path = vector_path
 
     vect_path_gj = os.path.join(
         out_dir,

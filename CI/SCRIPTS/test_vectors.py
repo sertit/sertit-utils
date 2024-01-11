@@ -267,6 +267,8 @@ def test_read_gdb():
     """Test read from GDB"""
     gdb_path = vectors_path() / "EMSR712_04WESERRIVERSOUTH_DelineationMap_MONIT_06.gdb"
     layer = "B1_observed_event_a"
-    ci.assert_geom_equal(
-        vectors.read(gdb_path, layer=layer), gpd.read_file(gdb_path, layer=layer)
-    )
+
+    sertit_gdb = vectors.read(gdb_path, layer=layer)
+    gpd_gdb = gpd.read_file(str(gdb_path), layer=layer)
+
+    ci.assert_geom_equal(sertit_gdb, gpd_gdb)
