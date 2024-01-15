@@ -1,6 +1,6 @@
 # Release History
 
-## 1.34.0 (2024-MM-DD)
+## 1.34.0 (2024-01-15)
 
 - **BREAKING CHANGE**: Set default `chunks` to `auto` in `rasters.read`
 - **ENH: Add types for ArcGis GDB in `arcpy`**
