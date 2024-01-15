@@ -634,6 +634,14 @@ def ogr2geojson(
 
     Returns:
         str: Converted file
+
+    Args:
+        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        out_dir (AnyPathStrType): Output directory
+        arch_vect_path: If archived vector, path to the vector file inside the archive (from the root of the archive)
+
+    Returns:
+        str: Converted file
     """
     assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
 
