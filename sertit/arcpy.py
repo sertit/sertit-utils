@@ -24,38 +24,27 @@ DATE = "datetime"
 # flake8: noqa
 def init_conda_arcpy_env():
     """
-    Initialize conda environment with Arcgis Pro
+    Initialize conda environment with Arcgis Pro.
+
+    Resolves several issues.
     """
-    # Try importing lxml
     try:
-        from lxml import etree
-    except ImportError:
-        import os
-        import sys
+        from packaging.version import InvalidVersion, Version
 
-        if "python" in sys.executable:
-            root_dir = os.path.dirname(sys.executable)
-        else:
-            import subprocess
+        try:
+            import fiona
+            from fiona import Env as fiona_env
 
-            try:
-                conda_env_list = subprocess.run(
-                    "conda env list", capture_output=True, shell=True, encoding="UTF-8"
-                ).stdout
-                conda_env_list = conda_env_list.split("\n")
-                curr_env = [env for env in conda_env_list if "*" in env][0]
-                root_dir = [elem for elem in curr_env.split(" ") if elem][-1]
-            except IndexError:
-                os_file = os.__file__
-                root_dir = os.path.dirname(os.path.dirname(os_file))
-            except Exception:
-                raise ImportError(
-                    "Cannot import lxml. Please try 'pip uninstall lxml -y' then 'pip install lxml'."
-                )
+            with fiona_env():
+                gdal_version = fiona.env.get_gdal_release_name()
+                Version(gdal_version)
+        except InvalidVersion:
+            # workaround to https://community.esri.com/t5/arcgis-pro-questions/arcgispro-py39-gdal-version-3-7-0e-is-recognized/m-p/1364021
+            import geopandas as gpd
 
-        os.environ["PATH"] = root_dir + r"\Library\bin;" + os.environ["PATH"]
-        print(f"Missing lxml DLLs. Completing PATH: {os.environ['PATH']}")
-        from lxml import etree  # Try again
+            gpd.options.io_engine = "pyogrio"
+    except ModuleNotFoundError:
+        pass
 
 
 class ArcPyLogHandler(logging.handlers.RotatingFileHandler):

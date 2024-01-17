@@ -1,5 +1,9 @@
 # Release History
 
+## 1.34.1 (2024-01-17)
+
+- FIX: Update `arcpy.init_conda_arcpy_env` to fix new issues (`GDAL` `InvalidVersion` when writing on disk with `geopandas` using `fiona`'s engine)
+
 ## 1.34.0 (2024-01-15)
 
 - **BREAKING CHANGE**: Set default `chunks` to `auto` in `rasters.read`
