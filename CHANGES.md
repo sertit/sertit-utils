@@ -1,5 +1,9 @@
 # Release History
 
+## 1.34.x (2024-MM-DD)
+
+- FIX: Update `setup.py` to have all the needed dependencies listed in `requirements.txt` ([#9](https://github.com/sertit/sertit-utils/issues/9))
+
 ## 1.34.1 (2024-01-17)
 
 - FIX: Update `arcpy.init_conda_arcpy_env` to fix new issues (`GDAL` `InvalidVersion` when writing on disk with `geopandas` using `fiona`'s engine)
@@ -202,7 +206,7 @@
 
 ## 1.21.0 (2022-12-13)
 
-- **ENH: Add the possibility to load an image/geo window in `rasters(_rio).read`** ([#1](https://github.com/sertit/eoreader/issues/1))
+- **ENH: Add the possibility to load an image/geo window in `rasters(_rio).read`** ([#1](https://github.com/sertit/sertit-utils/issues/1))
 
 ## 1.20.3 (2022-11-30)
 

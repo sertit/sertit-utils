@@ -28,7 +28,7 @@ setuptools.setup(
         "dill",
         "psutil",
         "geopandas>=0.11.0",
-        "cloudpathlib[all]",
+        "cloudpathlib[all]>=0.10.0",
         "xarray>=0.18.0",
     ],
     extras_require={
