@@ -510,8 +510,12 @@ def _read_vector_core(
             vect = gpd.read_file(gpd_vect_path, **kwargs)
 
         # Manage naive geometries
-        if vect.crs and crs:
-            vect = vect.to_crs(crs)
+        try:
+            if vect.crs and crs:
+                vect = vect.to_crs(crs)
+        except AttributeError:
+            # Pyogrio don't create crs columns for dbf files for example
+            pass
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)

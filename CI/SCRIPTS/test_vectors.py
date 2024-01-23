@@ -272,3 +272,13 @@ def test_read_gdb():
     gpd_gdb = gpd.read_file(str(gdb_path), layer=layer)
 
     ci.assert_geom_equal(sertit_gdb, gpd_gdb)
+
+
+def test_read_dbf():
+    """Test read from GDB"""
+    dbf_path = vectors_path() / "aoi.dbf"
+
+    fiona = vectors.read(dbf_path)
+    pyogrio = vectors.read(dbf_path, engine="pyogrio")
+
+    ci.assert_geom_equal(fiona, pyogrio)
