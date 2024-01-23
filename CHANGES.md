@@ -1,6 +1,6 @@
 # Release History
 
-## 1.34.2 (2024-MM-DD)
+## 1.34.2 (2024-01-23)
 
 - FIX: Update `setup.py` to have all the needed dependencies listed in `requirements.txt` ([#9](https://github.com/sertit/sertit-utils/issues/9))
 - FIX: Fix `vectors.read` with `engine=pyogrio` when opening vectors without geometries (like `dbf` files)

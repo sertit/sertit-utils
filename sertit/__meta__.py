@@ -17,7 +17,7 @@
 """
 Sertit Utils library
 """
-__version__ = "1.34.1"
+__version__ = "1.34.2"
 __title__ = "sertit"
 __description__ = ("SERTIT python library for generic tools",)
 __author__ = "ICube-SERTIT"
