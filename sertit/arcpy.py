@@ -46,6 +46,43 @@ def init_conda_arcpy_env():
     except ModuleNotFoundError:
         pass
 
+class ArcPyLogger:
+    """
+    This class init a ready to use python logger (thanks to logging) for ArcGis tool.
+    It writes outputs to a temporary file and to the ArcGis console.
+    The temporary file is removed when the user closes ArcGis.
+
+    You just have to init this class once. Then, call your logger with `logging.getLogger(LOGGER_NAME)`
+    where LOGGER_NAME is the name of your logger.
+    """
+    def __init__(self, name=None, prefix_log_file="atools_"):
+        self.name = name
+        self.logger = None
+        self.handler = None
+        self.prefix = prefix_log_file
+        self._set_logger()
+
+    def __del__(self):
+        self.logger.removeHandler(self.handler)
+
+    def _set_logger(self):
+
+        import tempfile
+        import arcpy
+
+        logger = logging.getLogger(self.name)
+        f = tempfile.NamedTemporaryFile(prefix=self.prefix, delete=False)
+
+        self.handler = arcpy.ArcPyLogHandler(
+            f.name, maxBytes=1024 * 1024 * 2, backupCount=10  # 2MB log files
+        )
+        logger.addHandler(self.handler)
+
+        formatter = logging.Formatter("%(levelname)-8s %(message)s")
+        self.handler.setFormatter(formatter)
+        logger.setLevel(logging.DEBUG)
+        self.logger = logger
+        self.logger.info("Outputs written to file: " + f.name)
 
 class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
     """
