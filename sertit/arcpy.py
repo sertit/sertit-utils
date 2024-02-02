@@ -68,12 +68,11 @@ class ArcPyLogger:
     def _set_logger(self):
 
         import tempfile
-        import arcpy
 
         logger = logging.getLogger(self.name)
         f = tempfile.NamedTemporaryFile(prefix=self.prefix, delete=False)
 
-        self.handler = arcpy.ArcPyLogHandler(
+        self.handler = ArcPyLogHandler(
             f.name, maxBytes=1024 * 1024 * 2, backupCount=10  # 2MB log files
         )
         logger.addHandler(self.handler)
