@@ -46,27 +46,42 @@ def init_conda_arcpy_env():
     except ModuleNotFoundError:
         pass
 
-class ArcPyLogger:
-    """
-    This class init a ready to use python logger (thanks to logging) for ArcGis tool.
-    It writes outputs to a temporary file and to the ArcGis console.
-    The temporary file is removed when the user closes ArcGis.
 
-    You just have to init this class once. Then, call your logger with `logging.getLogger(LOGGER_NAME)`
-    where LOGGER_NAME is the name of your logger.
-    """
+class ArcPyLogger:
     def __init__(self, name=None, prefix_log_file="atools_"):
+        """
+        This class init a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
+        before using this class. It uses logging under the hood.
+        It writes outputs to a temporary file and to the ArcGis console.
+        The temporary file is removed when the user closes ArcGis.
+
+        You just have to init this class once. Then, call your logger with `logging.getLogger(LOGGER_NAME)`
+        where LOGGER_NAME is the name of your logger.
+
+        Args:
+            name (str) : The name of the logger
+            prefix_log_file (str) : The log filename is random, but you can prefix a name.
+                The default value is "{{ name }}_".
+
+        Examples:
+
+        >>> ArcPyLogger(name="MyArcgisTool")
+        Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\RUSLE_1bv0c1cl
+        >>> logger = logging.getLogger("MyArcgisTool")
+        """
         self.name = name
         self.logger = None
         self.handler = None
-        self.prefix = prefix_log_file
+        if name:
+            self.prefix = name + "_"
+        else:
+            self.prefix = prefix_log_file
         self._set_logger()
 
     def __del__(self):
         self.logger.removeHandler(self.handler)
 
     def _set_logger(self):
-
         import tempfile
 
         logger = logging.getLogger(self.name)
@@ -79,9 +94,11 @@ class ArcPyLogger:
 
         formatter = logging.Formatter("%(levelname)-8s %(message)s")
         self.handler.setFormatter(formatter)
+
         logger.setLevel(logging.DEBUG)
         self.logger = logger
         self.logger.info("Outputs written to file: " + f.name)
+
 
 class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
     """
