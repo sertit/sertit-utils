@@ -351,9 +351,9 @@ def run_cli(
             for line in process.stdout:
                 line = line.decode(
                     encoding=sys.stdout.encoding,
-                    errors="replace"
-                    if sys.version_info < (3, 5)
-                    else "backslashreplace",
+                    errors=(
+                        "replace" if sys.version_info < (3, 5) else "backslashreplace"
+                    ),
                 ).rstrip()
                 LOGGER.info(line)
                 output += line
