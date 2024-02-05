@@ -47,8 +47,29 @@ def init_conda_arcpy_env():
         pass
 
 
-def getArcPyLogger():
-    pass
+def getArcPyLogger(name=None, prefix_log_file="atools_"):
+    """
+    This function init a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
+    before using this function. It uses logging under the hood.
+    It writes outputs to a temporary file and to the ArcGis console.
+    The temporary file is removed when the user closes ArcGis.
+
+    Call this function onece ! Then, call your logger with `logging.getLogger(LOGGER_NAME)`
+    where LOGGER_NAME is the name of your logger.
+
+    Args:
+        name (str) : The name of the logger
+        prefix_log_file (str) : The log filename is random, but you can prefix a name.
+            The default value is "{{ name }}_".
+
+    Examples:
+
+    >>> logger = getArcPyLogger(name="RUSLE_")
+    Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\RUSLE_1bv0c1cl
+    >>> logger.info("Hello Rusle !")
+    Hello Rusle !
+    """
+    return ArcPyLogger(name, prefix_log_file).logger
 
 
 class ArcPyLogger:
@@ -69,7 +90,7 @@ class ArcPyLogger:
 
         Examples:
 
-        >>> ArcPyLogger(name="MyArcgisTool")
+        >>> ArcPyLogger(name="RUSLE_")
         Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\RUSLE_1bv0c1cl
         >>> logger = logging.getLogger("MyArcgisTool")
         """
