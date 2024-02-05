@@ -6,3 +6,4 @@
    :members:
    :show-inheritance:
    :inherited-members:
+   :class-doc-from: init

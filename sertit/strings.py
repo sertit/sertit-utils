@@ -138,7 +138,7 @@ def str_to_list(
 
     Args:
         list_str (Union[str, list]): List as a string
-        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\x20`.
+        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\\\x20` (space).
         case (str): {none, 'lower', 'upper'}
     Returns:
         list: A list from split string

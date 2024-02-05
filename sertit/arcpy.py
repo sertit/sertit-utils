@@ -47,6 +47,10 @@ def init_conda_arcpy_env():
         pass
 
 
+def getArcPyLogger():
+    pass
+
+
 class ArcPyLogger:
     def __init__(self, name=None, prefix_log_file="atools_"):
         """

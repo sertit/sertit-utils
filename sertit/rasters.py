@@ -75,6 +75,7 @@ def get_nodata_value(dtype) -> int:
     Get default nodata value:
 
     .. code-block:: python
+
             if dtype == np.uint8:
                 nodata = UINT8_NODATA
             elif dtype == np.int8:
@@ -116,6 +117,7 @@ def path_xarr_dst(function: Callable) -> Callable:
         >>> # Test
         >>> read1 == read2
         True
+
     Args:
         function (Callable): Function to decorate
 
@@ -288,6 +290,7 @@ def _vectorize(
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
         default_nodata (int): Default values for nodata in case of non existing in file
+
     Returns:
         gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
     """
@@ -371,6 +374,7 @@ def vectorize(
     .. WARNING::
         - Your data is casted by force into np.uint8, so be sure that your data is classified.
         - This could take a while as the computing time directly depends on the number of polygons to vectorize.
+
         Please be careful.
 
     .. code-block:: python
@@ -803,6 +807,7 @@ def write(
 
 
     .. code-block:: python
+
         >>> raster_path = "path/to/raster.tif"
         >>> raster_out = "path/to/out.tif"
         >>> # Read raster
@@ -1115,7 +1120,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
         crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (AnyPathStrType): Path to the merged raster
         kwargs: Other rasterio.merge arguments
-            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>_
+            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
 
@@ -1143,6 +1148,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
                [[0, 0, 1, 0, 0, 0, 0, 0],
                 [1, 1, 0, 0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
+
     Args:
         array (np.ndarray): Array to unpack
         nof_bits (int): Number of bits to unpack
@@ -1354,6 +1360,7 @@ def where(
         array([[ 1.,  1.,  0.],
                [nan,  1.,  1.]])
         Dimensions without coordinates: x, y
+
     Args:
         cond (scalar, array, Variable, DataArray or Dataset): Conditional array
         if_true (scalar, array, Variable, DataArray or Dataset): What to do if :code:`cond` is True

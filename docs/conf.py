@@ -21,7 +21,7 @@ import sertit
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "3"
+needs_sphinx = "7"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -51,8 +51,8 @@ myst_enable_extensions = [
 ]
 
 # Notebook integration parameters
-jupyter_execute_notebooks = "cache"
-execution_timeout = 3600
+nb_execution_mode = "cache"
+nb_execution_timeout = 3600
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
@@ -67,14 +67,6 @@ autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = {
-#     '.rst': 'restructuredtext',
-#     '.md': 'markdown',
-# }
 
 # The master toctree document.
 master_doc = "index"
@@ -128,11 +120,10 @@ html_theme_options = {
     "repository_branch": "master",
     "path_to_docs": "docs",
     "use_download_button": False,
-    "extra_navbar": "",
 }
 
 html_logo = "_static/sertit_utils.png"
-html_title = ""
+html_title = "Sertit utils"
 
 html_favicon = "_static/favicon.png"
 
@@ -140,7 +131,6 @@ html_favicon = "_static/favicon.png"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -154,63 +144,10 @@ html_last_updated_fmt = today_fmt
 # Output file base name for HTML help builder.
 htmlhelp_basename = "sertitdoc"
 
-# -- Options for LaTeX output ---------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "sertit_utils.tex",
-        "Sertit-Utils Documentation",
-        "ICube-SERTIT",
-        "manual",
-    )
-]
-
-# -- Options for manual page output ---------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "sertit-utils", "Sertit-Utils Documentation", [author], 1)]
-
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "sertit-utils",
-        "Sertit-Utils Documentation",
-        author,
-        "sertit-utils",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://docs.python-requests.org/en/master/": None,
+    "python": ("https://docs.python.org/3/", None),
+    "python-request": ("https://docs.python-requests.org/en/master/", None),
 }
 
 add_function_parentheses = False

@@ -77,14 +77,15 @@ def get_nodata_value(dtype) -> int:
     Get default nodata value:
 
     .. code-block:: python
-            if dtype == np.uint8:
-                nodata = UINT8_NODATA
-            elif dtype == np.int8:
-                nodata = INT8_NODATA
-            elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
-                nodata = UINT16_NODATA
-            elif dtype in [np.int16, np.float32, np.float64, float]:
-                nodata = FLOAT_NODATA
+
+        if dtype == np.uint8:
+            nodata = UINT8_NODATA
+        elif dtype == np.int8:
+            nodata = INT8_NODATA
+        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
+            nodata = UINT16_NODATA
+        elif dtype in [np.int16, np.float32, np.float64, float]:
+            nodata = FLOAT_NODATA
 
     Args:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
