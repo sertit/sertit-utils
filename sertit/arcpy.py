@@ -112,14 +112,21 @@ class ArcPyLogger:
         logger = logging.getLogger(self.name)
         f = tempfile.NamedTemporaryFile(prefix=self.prefix, delete=False)
 
+        # Create handler
+        max_file_size = 1024 * 1024 * 2  # 2MB log files
         self.handler = ArcPyLogHandler(
-            f.name, maxBytes=1024 * 1024 * 2, backupCount=10  # 2MB log files
+            f.name,
+            maxBytes=max_file_size,
+            backupCount=10,
+            encoding="utf-8",
         )
         logger.addHandler(self.handler)
 
+        # Set formatter to handler
         formatter = logging.Formatter("%(levelname)-8s %(message)s")
         self.handler.setFormatter(formatter)
 
+        # Set logger
         logger.setLevel(logging.DEBUG)
         self.logger = logger
         self.logger.info("Outputs written to file: " + f.name)
