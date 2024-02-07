@@ -1,5 +1,9 @@
 # Release History
 
+## 1.35.0 (2024-mm-dd)
+
+- **ENH: Add a function (`arcpy.feature_layer_to_path`) to retrieve the path from an ArcGIS feature layer**
+
 ## 1.34.2 (2024-01-23)
 
 - FIX: Update `setup.py` to have all the needed dependencies listed in `requirements.txt` ([#9](https://github.com/sertit/sertit-utils/issues/9))

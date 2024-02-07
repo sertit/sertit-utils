@@ -154,3 +154,23 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
             arcpy.AddMessage(msg)
 
         super(ArcPyLogHandler, self).emit(record)
+
+
+def feature_layer_to_path(feature_layer: str) -> str:
+    """
+    Convert a feature layer to its source path.
+
+    Args:
+        feature_layer (str): Feature layer
+
+    Returns:
+        str: Path to the feature layer source
+
+    """
+    # Get path
+    if hasattr(feature_layer, "dataSource"):
+        path = feature_layer.dataSource
+    else:
+        path = str(feature_layer)
+
+    return path
