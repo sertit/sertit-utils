@@ -47,31 +47,6 @@ def init_conda_arcpy_env():
         pass
 
 
-def getArcPyLogger(name=None, prefix_log_file="atools_"):
-    """
-    This function init a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
-    before using this function. It uses logging under the hood.
-    It writes outputs to a temporary file and to the ArcGis console.
-    The temporary file is removed when the user closes ArcGis.
-
-    Call this function onece ! Then, call your logger with `logging.getLogger(LOGGER_NAME)`
-    where LOGGER_NAME is the name of your logger.
-
-    Args:
-        name (str) : The name of the logger
-        prefix_log_file (str) : The log filename is random, but you can prefix a name.
-            The default value is "{{ name }}_".
-
-    Examples:
-
-    >>> logger = getArcPyLogger(name="RUSLE_")
-    Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\RUSLE_1bv0c1cl
-    >>> logger.info("Hello Rusle !")
-    Hello Rusle !
-    """
-    return ArcPyLogger(name, prefix_log_file).logger
-
-
 class ArcPyLogger:
     def __init__(self, name=None, prefix_log_file="atools_"):
         """
@@ -80,19 +55,33 @@ class ArcPyLogger:
         It writes outputs to a temporary file and to the ArcGis console.
         The temporary file is removed when the user closes ArcGis.
 
-        You just have to init this class once. Then, call your logger with `logging.getLogger(LOGGER_NAME)`
-        where LOGGER_NAME is the name of your logger.
+        If you need a logger in an outside module or function, use `logging.getLogger(LOGGER_NAME)`
+        to get your logger.
 
         Args:
             name (str) : The name of the logger
             prefix_log_file (str) : The log filename is random, but you can prefix a name.
                 The default value is "{{ name }}_".
 
-        Examples:
+        Example:
 
-        >>> ArcPyLogger(name="RUSLE_")
-        Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\RUSLE_1bv0c1cl
+        >>> import sertit, arcpy
+        >>> from sertit import arcpy
+        >>> arcpy_logger = arcpy.ArcPyLogger(name="MyArcgisTool")
+        Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\MyArcgisTool_1bv0c1cl
         >>> logger = logging.getLogger("MyArcgisTool")
+        >>> logger.info("Hello World !")
+        Hello World !
+
+        Warning:
+            Python must keep a reference to the instantiated object during the execution of your program.
+            That's why you must init this class once at the top level of your project.
+
+            This will not work because Python destroys the object class.
+
+            >>> ArcPyLogger(name="MyArcgisTool")
+            >>> logger = logging.getLogger("MyArcgisTool")
+            >>> logger.info("Hello World !")
         """
         self.name = name
         self.logger = None
