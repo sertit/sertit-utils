@@ -979,7 +979,11 @@ def sieve(
 
     # Set back nodata and expand back dim
     sieved_arr = sieved_arr.astype(xds.dtype)
-    sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
+    try:
+        sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
+    except ValueError:
+        # Manage integer files
+        pass
     sieved_arr = np.expand_dims(sieved_arr, axis=0)
     sieved_xds = xds.copy(data=sieved_arr)
 

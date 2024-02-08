@@ -267,6 +267,15 @@ def test_rasters():
             rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
             ci.assert_xr_encoding_attrs(xda, sieve_xda)
 
+            # Test with different dtypes
+            sieve_xda_float = rasters.sieve(
+                xda.astype(np.uint8).astype(np.float32), sieve_thresh=20, connectivity=4
+            )
+            sieve_xda_uint = rasters.sieve(
+                xda.astype(np.uint8), sieve_thresh=20, connectivity=4
+            )
+            np.testing.assert_array_equal(sieve_xda_uint, sieve_xda_float)
+
             # Dataset
             xds_sieved = os.path.join(tmp_dir, "test_sieved_xds.tif")
             sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)

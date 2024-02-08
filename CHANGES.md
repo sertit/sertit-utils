@@ -4,6 +4,7 @@
 
 - **ENH: Add a function (`arcpy.feature_layer_to_path`) to retrieve the path from an ArcGIS feature layer**
 - **ENH: Add a class `ArcPyLogger` to better handle logs in Arcgis Pro tools**
+- FIX: Fix `rasters.sieve` with integer data
 
 ## 1.34.2 (2024-01-23)
 
