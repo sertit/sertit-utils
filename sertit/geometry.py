@@ -265,7 +265,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
         splitter (gpd.GeoDataFrame): Splitter to split the polygons
 
     Returns:
-        gpd.GeoDataFrame: Splitted GeoDataFrame
+        gpd.GeoDataFrame: Split GeoDataFrame
     """
     out = polygons.geometry
     for _, split in splitter.iterrows():

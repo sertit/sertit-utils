@@ -1,6 +1,6 @@
 # Release History
 
-## 1.35.0 (2024-mm-dd)
+## 1.35.0 (2024-02-08)
 
 - **ENH: Add a function (`arcpy.feature_layer_to_path`) to retrieve the path from an ArcGIS feature layer**
 - **ENH: Add a class `ArcPyLogger` to better handle logs in Arcgis Pro tools**
