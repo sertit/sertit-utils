@@ -18,7 +18,7 @@
 
 from CI.SCRIPTS.script_utils import geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
-from sertit.geometry import fill_polygon_holes, get_wider_exterior
+from sertit.geometry import fill_polygon_holes, get_wider_exterior, split
 
 ci.reduce_verbosity()
 
@@ -87,4 +87,26 @@ def test_fill_polygon_holes():
     ci.assert_geom_equal(fill_polygon_holes(water, 0), vectors.read(water_0_path))
     ci.assert_geom_equal(
         fill_polygon_holes(water, threshold=1000), vectors.read(water_1000_path)
+    )
+
+
+@s3_env
+def test_split():
+    """Test fill_polygon_holes"""
+    water_path = geometry_path().joinpath("water.geojson")
+    water = vectors.read(water_path)
+
+    # No MultiLineStrings
+    footprint_path = geometry_path().joinpath("footprint_split.geojson")
+    water_split_path = geometry_path().joinpath("water_split.geojson")
+    ci.assert_geom_equal(
+        split(water, vectors.read(footprint_path)), vectors.read(water_split_path)
+    )
+
+    # With MultiLineStrings
+    footprint_raw_path = geometry_path().joinpath("footprint_raw.geojson")
+    water_split_raw_path = geometry_path().joinpath("water_split_raw.geojson")
+    ci.assert_geom_equal(
+        split(water, vectors.read(footprint_raw_path)),
+        vectors.read(water_split_raw_path),
     )

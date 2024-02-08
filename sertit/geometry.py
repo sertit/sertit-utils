@@ -22,12 +22,14 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 import logging
 
 import numpy as np
+from shapely.errors import GeometryTypeError
 from tqdm import tqdm
 
 from sertit.types import AnyPolygonType
 
 try:
     import geopandas as gpd
+    from shapely import ops
     from shapely.geometry import Polygon, box
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
@@ -252,3 +254,31 @@ def fill_polygon_holes(
 
     # Write back to file
     return gpd_results
+
+
+def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
+    """
+    Split polygons with polygons
+
+    Args:
+        polygons (gpd.GeoDataFrame): Polygons to split
+        splitter (gpd.GeoDataFrame): Splitter to split the polygons
+
+    Returns:
+        gpd.GeoDataFrame: Splitted GeoDataFrame
+    """
+    out = polygons.geometry
+    for _, split in splitter.iterrows():
+        # Compute the boundary of the splitter polygon (to get a LineString)
+        boundary = split.geometry.boundary
+
+        # Explode to prevent FeatureCollections
+        try:
+            # LineStrings
+            out = out.map(lambda geom: ops.split(geom, boundary).geoms).explode()
+        except GeometryTypeError:
+            # MultiLineStrings
+            for line in boundary.geoms:
+                out = out.map(lambda geom: ops.split(geom, line).geoms).explode()
+
+    return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
