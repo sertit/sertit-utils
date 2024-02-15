@@ -50,7 +50,7 @@ def init_conda_arcpy_env():
 class ArcPyLogger:
     def __init__(self, name=None, prefix_log_file="atools_"):
         """
-        This class init a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
+        This class inits a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
         before using this class. It uses logging under the hood.
         It writes outputs to a temporary file and to the ArcGis console.
         The temporary file is removed when the user closes ArcGis.
@@ -65,9 +65,8 @@ class ArcPyLogger:
 
         Example:
 
-        >>> import sertit, arcpy
-        >>> from sertit import arcpy
-        >>> arcpy_logger = arcpy.ArcPyLogger(name="MyArcgisTool")
+        >>> from sertit.arcpy import ArcPyLogger
+        >>> arcpy_logger = ArcPyLogger(name="MyArcgisTool")
         Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\MyArcgisTool_1bv0c1cl
         >>> logger = logging.getLogger("MyArcgisTool")
         >>> logger.info("Hello World !")
@@ -152,15 +151,45 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
         super(ArcPyLogHandler, self).emit(record)
 
 
-def feature_layer_to_path(feature_layer: str) -> str:
+def feature_layer_to_path(feature_layer) -> str:
     """
     Convert a feature layer to its source path.
 
     Args:
-        feature_layer (str): Feature layer
+        feature_layer: Feature layer or Raster layer
 
     Returns:
-        str: Path to the feature layer source
+        str: Path to the feature or raster layer source
+
+    Examples:
+        For python toolbox, in the getParameterInfo() method use GPFeatureLayer or GPRasterLayer datatype.
+        For vector layer use GPFeatureLayer:
+
+        >>> import arcpy
+        >>> aoi = arcpy.Parameter(
+        >>>    displayName="Aoi",
+        >>>    name="aoi",
+        >>>    datatype="GPFeatureLayer",
+        >>>    parameterType="Required",
+        >>>    direction="Input",
+        >>> )
+
+        For raster layer, use GPRasterLayer:
+
+        >>> import arcpy
+        >>> nir_path = arcpy.Parameter(
+        >>>    displayName="Nir infrared band",
+        >>>    name="nir_path",
+        >>>    datatype="GPRasterLayer",
+        >>>    parameterType="Optional",
+        >>>    direction="Input",
+        >>> )
+
+        Then in the execute() method, you can use this function to retrieve the real path to the layer.
+
+        >>> aoi_path = feature_layer_to_path(parameters[0].value)
+        >>> print(aoi_path)
+        D:\data\project\aoi\aoi.shp
 
     """
     # Get path
