@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
 
+from sertit.logs import deprecation_warning
+
 # Arcpy types from inside a schema
 SHORT = "int32:4"
 """ 'Short' type for ArcGis GDB """
@@ -153,7 +155,36 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
 
 def feature_layer_to_path(feature_layer) -> str:
     """
+    .. deprecated:: 1.36.0
+
+    Use :func:`gp_layer_to_path` instead.
+
     Convert a feature layer to its source path.
+
+    Args:
+        feature_layer: Feature layer
+
+    Returns:
+        str: Path to the feature layer source
+
+    """
+    deprecation_warning("This function is deprecated. Use gp_layer_to_path instead.")
+    # Get path
+    if hasattr(feature_layer, "dataSource"):
+        path = feature_layer.dataSource
+    else:
+        path = str(feature_layer)
+
+    return path
+
+
+def gp_layer_to_path(feature_layer) -> str:
+    """
+    Convert a GP layer to its source path.
+
+    A GP layer in ArcGis is a layer in the content panel. Thus, the user can simply choose the layer in a dropdown menu.
+    This function adds the possibility to get the source path of this layer if the user chose in the dropdown menu or
+    drag and drop from the Windows explorer.
 
     Args:
         feature_layer: Feature layer or Raster layer
@@ -162,7 +193,8 @@ def feature_layer_to_path(feature_layer) -> str:
         str: Path to the feature or raster layer source
 
     Examples:
-        For python toolbox, in the getParameterInfo() method use GPFeatureLayer or GPRasterLayer datatype.
+        For python toolbox, in the getParameterInfo() method use GPLayer, GPFeatureLayer or GPRasterLayer datatype.
+
         For vector layer use GPFeatureLayer:
 
         >>> import arcpy
@@ -181,6 +213,17 @@ def feature_layer_to_path(feature_layer) -> str:
         >>>    displayName="Nir infrared band",
         >>>    name="nir_path",
         >>>    datatype="GPRasterLayer",
+        >>>    parameterType="Optional",
+        >>>    direction="Input",
+        >>> )
+
+        If your layer may be a feature or raster layer, use GPLayer:
+
+        >>> import arcpy
+        >>> dem_path = arcpy.Parameter(
+        >>>    displayName="DEM path as isoline or raster",
+        >>>    name="dem_path",
+        >>>    datatype="GPLayer",
         >>>    parameterType="Optional",
         >>>    direction="Input",
         >>> )
