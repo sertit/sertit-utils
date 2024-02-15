@@ -45,6 +45,9 @@ LOGGER = logging.getLogger(SU_NAME)
 
 def get_root_path() -> AnyPathType:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get the root path of the current disk:
 
     - On Linux this returns :code:`/`
@@ -64,6 +67,9 @@ def get_root_path() -> AnyPathType:
 
 def listdir_abspath(directory: AnyPathStrType) -> list:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get absolute path of all files in the given directory.
 
     It is the same function than :code:`os.listdir` but returning absolute paths.
@@ -100,6 +106,9 @@ def to_abspath(
     raise_file_not_found: bool = True,
 ) -> AnyPathType:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Return the absolute path of the specified path and check if it exists
 
     If not:
@@ -132,6 +141,9 @@ def to_abspath(
 
 def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathType:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Gives the real relative path from a starting folder.
     (and not just adding :code:`../..` between the start and the target)
 
@@ -299,6 +311,9 @@ def extract_files(
 
 def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get the list of all the files contained in an archive.
 
     .. code-block:: python
@@ -323,6 +338,9 @@ def get_archived_path(
     archive_path: AnyPathStrType, file_regex: str, as_list: bool = False
 ) -> Union[list, AnyPathType]:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get archived file path from inside the archive.
 
     .. WARNING::
@@ -355,6 +373,9 @@ def get_archived_rio_path(
     archive_path: AnyPathStrType, file_regex: str, as_list: bool = False
 ) -> Union[list, AnyPathType]:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get archived file path from inside the archive, to be read with rasterio:
 
     - :code:`zip+file://{zip_path}!{file_name}`
@@ -619,6 +640,9 @@ def add_to_zip(
 
 def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None) -> str:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get file name (without extension) from file path, ie:
 
     .. code-block:: python
@@ -642,6 +666,9 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
 
 def get_ext(file_path: AnyPathStrType) -> str:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get file extension from file path, ie:
     WITHOUT THE FIRST POINT
 
@@ -780,6 +807,9 @@ def find_files(
     get_as_str: bool = False,
 ) -> Union[list, str]:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Returns matching files recursively from a list of root paths.
 
     Regex are allowed (using glob)
@@ -911,6 +941,9 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
 
 def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     """
+    .. versionchanged:: 1.32.0
+       The order of the function has changed. Please set json_dict in first!
+
     Save a JSON file, with datetime, numpy types and Enum management.
 
     .. code-block:: python
@@ -991,6 +1024,9 @@ def get_file_in_dir(
     exact_name: bool = False,
 ) -> Union[AnyPathType, list]:
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Get one or all matching files (pattern + extension) from inside a directory.
 
     Note that the pattern is a regex with glob's convention, ie. :code:`*pattern*`.
@@ -1065,6 +1101,9 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
 
 def is_writable(dir_path: AnyPathStrType):
     """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
+
     Determine whether the directory is writeable or not.
 
     Args:

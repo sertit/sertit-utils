@@ -67,10 +67,10 @@ SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     """
-    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
+    .. deprecated:: 1.29.1
+       Use `estimate_utm_crs <https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html>`_ instead, which directly returs a CRS instead of a string.
 
-    DEPRECATED: use :code:`estimate_utm_crs` instead.
-    https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html
+    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
     .. code-block:: python
 
@@ -108,10 +108,10 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
 
 def corresponding_utm_projection(lon: float, lat: float) -> str:
     """
-    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
+    .. deprecated:: 1.29.1
+       Use `estimate_utm_crs <https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html>`_ instead, which directly returs a CRS instead of a string.
 
-    DEPRECATED: use :code:`estimate_utm_crs` instead.
-    https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html
+    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
     .. code-block:: python
 
@@ -148,20 +148,19 @@ def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDat
     """
     Get a GeoDataFrame from a geometry and a crs
 
-    .. code-block:: python
-
-        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
-        >>> geodf = get_geodf(poly, crs=WGS84)
-        >>> print(geodf)
-                                                    geometry
-        0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
-
     Args:
         geom (Union[Polygon, list]): List of Polygons, or Polygon or bounds
         crs (str): CRS of the polygon
 
     Returns:
         gpd.GeoDataFrame: Geometry as a geodataframe
+
+    Example:
+        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+        >>> geodf = get_geodf(poly, crs=WGS84)
+        >>> print(geodf)
+                                                    geometry
+        0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
     """
     if isinstance(geom, list):
         if isinstance(geom[0], Polygon):
@@ -187,12 +186,10 @@ def set_kml_driver() -> None:
     """
     Set KML driver for Fiona data (use it at your own risks !)
 
-    .. code-block:: python
-
+    Example:
         >>> path = "path/to/kml.kml"
         >>> gpd.read_file(path)
         fiona.errors.DriverError: unsupported driver: 'LIBKML'
-
         >>> set_kml_driver()
         >>> gpd.read_file(path)
                        Name  ...                                           geometry
@@ -222,14 +219,6 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
     - only **one** polygon composes the AOI (as only the first one is read)
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
-    .. code-block:: python
-
-        >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
-        >>> get_aoi_wkt(path)
-        'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
-        0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
-        34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
-
     Args:
         aoi_path (AnyPathStrType): Absolute or relative path to an AOI.
             Its format should be WKT or any format read by Fiona, like shapefiles.
@@ -237,6 +226,13 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     Returns:
         Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
+
+    Example:
+        >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
+        >>> get_aoi_wkt(path)
+        'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
+        0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
+        34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
     """
     aoi_path = AnyPath(aoi_path)
     if not aoi_path.is_file():
@@ -388,8 +384,18 @@ def read(
 
     Handles a lot of exceptions and have fallback mechanisms with ogr2ogr (if in PATH)
 
-    .. code-block:: python
+    Args:
+        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
+        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
+            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
+        **kwargs: Additional arguments used in gpd.read_file
 
+    Returns:
+        gpd.GeoDataFrame: Read vector as a GeoDataFrame
+
+    Example:
         >>> # Usual
         >>> path = 'D:/path/to/vector.geojson'
         >>> vectors.read(path, crs=WGS84)
@@ -401,17 +407,6 @@ def read(
         >>> vectors.read(arch_path, archive_regex=r".*map-overlay.kml")
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
-
-    Args:
-        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
-        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
-        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
-        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
-            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
-        **kwargs: Additional arguments used in gpd.read_file
-
-    Returns:
-        gpd.GeoDataFrame: Read vector as a GeoDataFrame
     """
     # Default values
     gpd_vect_path = str(vector_path)
@@ -685,19 +680,19 @@ def utm_crs(gdf: gpd.GeoDataFrame) -> None:
     """
     Change temporary the CRS of a vector, ie when computing area based statistics / features (centroid....) which need a meter-based CRS.
 
-    WARNING: the modifications (other than CRS) on the yielded GeoDataFrame will be kept!
+    WARNING:
+        The modifications (other than CRS) on the yielded GeoDataFrame will be kept!
 
-    .. code-block:: python
+    Args:
+        gdf (str): GeoDataFrame to copnvert
 
+    Example:
         >>> vect = vectors.read(vectors_path().joinpath("aoi.kml"))
         >>> with vectors.utm_crs(vect) as utm_vect:
         >>>     utm_centroid = utm_vect.centroid
         >>>     utm_vect["centroid_utm"] = utm_centroid
         >>> vect["centroid_utm"].equals(c2)
         True
-
-    Args:
-        gdf (str): GeoDataFrame to copnvert
     """
     src_crs = None
     if not gdf.crs.is_projected:

@@ -45,6 +45,10 @@ AWS_S3_ENDPOINT = s3.AWS_S3_ENDPOINT
 
 
 def s3_env(*args, **kwargs):
+    """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
+    """
     deprecation_warning(
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
@@ -52,6 +56,10 @@ def s3_env(*args, **kwargs):
 
 
 def define_s3_client():
+    """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
+    """
     deprecation_warning(
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
@@ -59,6 +67,10 @@ def define_s3_client():
 
 
 def get_db2_path():
+    """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
+    """
     deprecation_warning(
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
@@ -66,6 +78,10 @@ def get_db2_path():
 
 
 def get_db3_path():
+    """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
+    """
     deprecation_warning(
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
@@ -73,6 +89,10 @@ def get_db3_path():
 
 
 def get_db4_path():
+    """
+    .. deprecated:: 1.30.0
+       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
+    """
     deprecation_warning(
         "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
     )
@@ -153,15 +173,14 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/rasters/raster.tif"
-        >>> assert_raster_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
-
     Args:
         path_1 (AnyPathStrType): Raster 1
         path_2 (AnyPathStrType): Raster 2
+
+    Example:
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> assert_raster_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         import rasterio
@@ -190,17 +209,16 @@ def assert_raster_almost_equal(
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/rasters/raster.tif"
-        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
-        >>> assert_raster_almost_equal(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
-
     Args:
         path_1 (AnyPathStrType): Raster 1
         path_2 (AnyPathStrType): Raster 2
         decimal (int): Number of decimal
+
+    Example:
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
+        >>> assert_raster_almost_equal(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         import rasterio
@@ -251,17 +269,16 @@ def assert_raster_almost_equal_magnitude(
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/rasters/raster.tif"
-        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
-        >>> assert_raster_almost_equal_magnitude(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
-
     Args:
         path_1 (AnyPathStrType): Raster 1
         path_2 (AnyPathStrType): Raster 2
         decimal (int): Number of decimal
+
+    Example:
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
+        >>> assert_raster_almost_equal_magnitude(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         import rasterio
@@ -320,17 +337,16 @@ def assert_raster_max_mismatch(
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/rasters/raster.tif"
-        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
-        >>> assert_raster_max_mismatch(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
-
     Args:
         path_1 (AnyPathStrType): Raster 1
         path_2 (AnyPathStrType): Raster 2
         max_mismatch_pct (float): Maximum of element mismatch in %
+
+    Example:
+        >>> path = r"CI/DATA/rasters/raster.tif"
+        >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
+        >>> assert_raster_max_mismatch(path, path2)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         import rasterio
@@ -361,15 +377,14 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/rasters"
-        >>> assert_dir_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
-
     Args:
         path_1 (str): Directory 1
         path_2 (str): Directory 2
+
+    Example:
+        >>> path = r"CI/DATA/rasters"
+        >>> assert_dir_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
     """
     path_1 = AnyPath(path_1)
     path_2 = AnyPath(path_2)
@@ -410,22 +425,21 @@ def assert_geom_equal(
 
     Useful for pytests.
 
-    .. code-block:: python
+    Args:
+        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
+        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
+        ignore_z (bool): Ignore Z coordinate
 
-        >>> path = r"CI/DATA/vectors/aoi.geojson"
-        >>> assert_geom_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
-
-    .. WARNING::
+    Warning:
         Only checks:
          - valid geometries
          - length of GeoDataFrame
          - CRS
 
-    Args:
-        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
-        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
-        ignore_z (bool): Ignore Z coordinate
+    Example:
+        >>> path = r"CI/DATA/vectors/aoi.geojson"
+        >>> assert_geom_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         from sertit import vectors
@@ -487,23 +501,22 @@ def assert_geom_almost_equal(
 
     Useful for pytests.
 
-    .. code-block:: python
-
-        >>> path = r"CI/DATA/vectors/aoi.geojson"
-        >>> assert_geom_almost_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
-
-    .. WARNING::
-        Only checks:
-         - valid geometries
-         - length of GeoDataFrame
-         - CRS
-
     Args:
         geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
         geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
         decimal (int): Number of decimal
         ignore_z (bool): Ignore Z coordinate
+
+    Warning:
+        Only checks:
+         - valid geometries
+         - length of GeoDataFrame
+         - CRS
+
+    Example:
+        >>> path = r"CI/DATA/vectors/aoi.geojson"
+        >>> assert_geom_almost_equal(path, path)
+        >>> # Raises AssertionError if sth goes wrong
     """
     try:
         from sertit import vectors

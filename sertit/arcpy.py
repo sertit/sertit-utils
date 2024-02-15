@@ -66,13 +66,12 @@ class ArcPyLogger:
                 The default value is "{{ name }}_".
 
         Example:
-
-        >>> from sertit.arcpy import ArcPyLogger
-        >>> arcpy_logger = ArcPyLogger(name="MyArcgisTool")
-        Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\MyArcgisTool_1bv0c1cl
-        >>> logger = logging.getLogger("MyArcgisTool")
-        >>> logger.info("Hello World !")
-        Hello World !
+            >>> from sertit.arcpy import ArcPyLogger
+            >>> arcpy_logger = ArcPyLogger(name="MyArcgisTool")
+            Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\MyArcgisTool_1bv0c1cl
+            >>> logger = logging.getLogger("MyArcgisTool")
+            >>> logger.info("Hello World !")
+            Hello World !
 
         Warning:
             Python must keep a reference to the instantiated object during the execution of your program.
@@ -156,6 +155,7 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
 def feature_layer_to_path(feature_layer) -> str:
     """
     .. deprecated:: 1.36.0
+       Use :py:func:`gp_layer_to_path` instead.
 
     Use :func:`gp_layer_to_path` instead.
 
