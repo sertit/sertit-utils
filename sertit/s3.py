@@ -52,9 +52,20 @@ Environment variable created to use Unistra's S3 bucket.
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
+    You must export the variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your environement.
 
     Returns:
         Callable: decorated function
+
+    Example:
+        >>> from sertit.s3 import s3_env
+        >>> from sertit import AnyPath
+        >>> @s3_env(endpoint="s3.unistra.fr")
+        >>> def file_exists(path: str):
+        >>>     pth = AnyPath(path)
+        >>>     print(pth.exists())
+        >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
+        True
     """
     import rasterio
 
@@ -112,6 +123,16 @@ def temp_s3(
         default_endpoint (str): Default Endpoint to look for
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
+
+    Example:
+        >>> from sertit.s3 import temp_s3
+        >>> from sertit import AnyPath
+        >>> def file_exists(path: str):
+        >>>     with temp_s3(endpoint="s3.unistra.fr"):
+        >>>         pth = AnyPath(path)
+        >>>         print(pth.exists())
+        >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
+        True
     """
     import rasterio
 

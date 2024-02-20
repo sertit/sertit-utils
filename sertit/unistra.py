@@ -36,13 +36,25 @@ Unistra S3 compatible storage endpoint: s3.unistra.fr
 
 def s3_env(*args, **kwargs):
     """
-    Create Unistra's S3 compatible storage environment
+    Create Unistra's S3 compatible storage environment.
+    You must export the variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your environement. Y
+    ou can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
     Args:
         function (Callable): Function to decorate
 
     Returns:
         Callable: decorated function
+
+    Example:
+        >>> from sertit.unistra import s3_env
+        >>> from sertit import AnyPath
+        >>> @s3_env
+        >>> def file_exists(path: str):
+        >>>     pth = AnyPath(path)
+        >>>     print(pth.exists())
+        >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
+        True
     """
     return s3.s3_env(endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
 
@@ -54,6 +66,16 @@ def unistra_s3() -> None:
 
     Args:
         default_endpoint (str):Default Endpoint to look for
+
+    Example:
+        >>> from sertit.s3 import temp_s3
+        >>> from sertit import AnyPath
+        >>> def file_exists(path: str):
+        >>>     with temp_s3():
+        >>>         pth = AnyPath(path)
+        >>>         print(pth.exists())
+        >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
+        True
     """
     try:
         with temp_s3(endpoint=UNISTRA_S3_ENPOINT):
@@ -71,10 +93,29 @@ def define_s3_client():
 
 def get_geodatastore() -> AnyPathType:
     """
-    Get database directory in the DS2
+    Get database directory.
+
+    If the environment variable USE_S3_STORAGE=1, this function returns `AnyPath("s3://sertit-geodatastore")`.
+
+    If USE_S3_STORAGE=0, it returns path to the DS2: `AnyPath("//ds2/database02/BASES_DE_DONNEES")` or `AnyPath(/home/ds2_db2/BASE_DE_DONNESS`)`
 
     Returns:
-        AnyPathType: Database directory
+        AnyPath: Database directory
+
+    Example:
+        Don't set manually USE_S3_STORAGE with os.environ !
+
+        >>> from sertit.unistra import get_geodatastore
+        >>> import os
+        >>> os.environ["USE_S3_STORAGE"] = "1"
+        >>> print(get_geodatastore())
+        s3://sertit-geodatastore
+
+        >>> from sertit.unistra import get_geodatastore
+        >>> import os
+        >>> os.environ["USE_S3_STORAGE"] = "0"
+        >>> print(get_geodatastore())
+        \\ds2\database02\BASES_DE_DONNEES\GLOBAL
     """
     if int(os.getenv(s3.USE_S3_STORAGE, 0)):
         # Define S3 client for S3 paths

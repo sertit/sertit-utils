@@ -118,7 +118,7 @@ class ArcPyLogger:
         # Set logger
         logger.setLevel(logging.DEBUG)
         self.logger = logger
-        self.logger.info("Outputs written to file: " + f.name)
+        self.logger.info("You can read logs in the file: " + f.name)
 
 
 class ArcPyLogHandler(logging.handlers.RotatingFileHandler):

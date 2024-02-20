@@ -35,17 +35,16 @@ def init_logger(
 
     To be done before everything (like parsing log_file etc...)
 
-    .. code-block:: python
-
-        >>> logger = logging.getLogger("logger_test")
-        >>> init_logger(logger, logging.INFO, '%(asctime)s - [%(levelname)s] - %(message)s')
-        >>> logger.info("MESSAGE")
-        2021-03-02 16:57:35 - [INFO] - MESSAGE
-
     Args:
         curr_logger (logging.Logger): Logger to be initialize
         log_lvl (int): Logging level to be set
         log_format (str): Logger format to be set
+
+    Example:
+        >>> logger = logging.getLogger("logger_test")
+        >>> init_logger(logger, logging.INFO, '%(asctime)s - [%(levelname)s] - %(message)s')
+        >>> logger.info("MESSAGE")
+        2021-03-02 16:57:35 - [INFO] - MESSAGE
     """
     logging.config.dictConfig(
         {
@@ -94,16 +93,6 @@ def create_logger(
 
     It will also manage the log level of other specified logger that you give.
 
-    .. code-block:: python
-
-        >>> logger = logging.getLogger("logger_test")
-        >>> create_logger(logger, logging.DEBUG, logging.INFO, "path/to/log", "log.txt")
-        >>> logger.info("MESSAGE")
-        2021-03-02 16:57:35 - [INFO] - MESSAGE
-
-        >>> # "logger_test" will also log DEBUG messages
-        >>> # to the "path/to/log/log.txt" file with the same format
-
     Args:
         logger (logging.Logger): Logger to create
         file_log_level (int): File log level
@@ -113,6 +102,15 @@ def create_logger(
         other_loggers_names (Union[str, list]): Other existing logger to manage (setting the right format and log level)
         other_loggers_file_log_level (int): File log level for other loggers
         other_loggers_stream_log_level (int): Stream log level for other loggers
+
+    Example:
+        >>> logger = logging.getLogger("logger_test")
+        >>> create_logger(logger, logging.DEBUG, logging.INFO, "path/to/log", "log.txt")
+        >>> logger.info("MESSAGE")
+        2021-03-02 16:57:35 - [INFO] - MESSAGE
+
+        >>> # "logger_test" will also log DEBUG messages
+        >>> # to the "path/to/log/log.txt" file with the same format
     """
     if not isinstance(other_loggers_names, list):
         other_loggers_names = [other_loggers_names]
@@ -238,14 +236,13 @@ def shutdown_logger(logger: logging.Logger) -> None:
     """
     Shutdown logger (if you need to delete the log file for example)
 
-    .. code-block:: python
+    Args:
+        logger (logging.Logger): Logger to shutdown
 
+    Example:
         >>> logger = logging.getLogger("logger_test")
         >>> shutdown_logger(logger)
         >>> # "logger_test" won't log anything after another init
-
-    Args:
-        logger (logging.Logger): Logger to shutdown
     """
     for handler in list(logger.handlers):
         logger.removeHandler(handler)
@@ -257,11 +254,10 @@ def reset_logging() -> None:
     """
     Reset root logger
 
-    .. WARNING::
+    Warning:
         MAY BE OVERKILL
 
-    .. code-block:: python
-
+    Example:
         >>> reset_logging()
         Reset root logger
 
