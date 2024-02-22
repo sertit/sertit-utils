@@ -267,19 +267,28 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     Returns:
         gpd.GeoDataFrame: Split GeoDataFrame
     """
-    out = polygons.geometry
+    out = polygons.dropna(axis=1).geometry
     for _, split in splitter.iterrows():
         # Compute the boundary of the splitter polygon (to get a LineString)
-        boundary = split.geometry.boundary
+        if split.geometry.area > 0:
+            boundary = split.geometry.boundary
+        else:
+            boundary = split.geometry
 
         # Explode to prevent FeatureCollections
         try:
             # LineStrings
-            out = out.map(lambda geom: ops.split(geom, boundary).geoms).explode()
+            out = (
+                out.map(lambda geom: ops.split(geom, boundary).geoms).explode().dropna()
+            )
         except GeometryTypeError:
             # MultiLineStrings
             for line in boundary.geoms:
-                out = out.map(lambda geom: ops.split(geom, line).geoms).explode()
+                out = (
+                    out.map(lambda geom: ops.split(geom, line).geoms).explode().dropna()
+                )
+        except AttributeError:
+            pass
 
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
 

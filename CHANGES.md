@@ -4,6 +4,7 @@
 
 - **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`
 - **ENH: Add `geometry.intersects` to find polygons intersecting with other polygons (wrapper of `geopandas.intersects` that works only row-wise)**
+- FIX: Ignore when trying to split polygons with points
 - DOC: Numerous documentation updates to better use Sphinx syntax
 
 ## 1.35.0 (2024-02-08)
