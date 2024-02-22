@@ -282,3 +282,17 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
                 out = out.map(lambda geom: ops.split(geom, line).geoms).explode()
 
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
+
+
+def intersects(input: gpd.GeoDataFrame, other: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Select the polygons of the input GeoDataFrame that intersects the other one and return them.
+
+    Args:
+        input (gpd.GeoDataFrame): Input GeoDataFrame from which the polygons will be selected
+        other (gpd.GeoDataFrame): Other GeoDataFrame from that will intersect the first one
+
+    Returns:
+        gpd.GeoDataFrame: Polygons of the input that intersects the other GeoDataFrame
+    """
+    return input[input.geometry.map(lambda x: x.intersects(other.geometry).any())]

@@ -92,7 +92,7 @@ def test_fill_polygon_holes():
 
 @s3_env
 def test_split():
-    """Test fill_polygon_holes"""
+    """Test split"""
     water_path = geometry_path().joinpath("water.geojson")
     water = vectors.read(water_path)
 
@@ -110,3 +110,8 @@ def test_split():
         split(water, vectors.read(footprint_raw_path)),
         vectors.read(water_split_raw_path),
     )
+
+
+def test_intersects():
+    """Test intersects"""
+    # TODO

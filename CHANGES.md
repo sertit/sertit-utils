@@ -1,10 +1,16 @@
 # Release History
 
+## 1.36.0 (2024-MM-DD)
+
+- **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`
+- **ENH: Add `geometry.intersects` to find polygons intersecting with other polygons (wrapper of `geopandas.intersects` that works only row-wise)**
+- DOC: Numerous documentation updates to better use Sphinx syntax
+
 ## 1.35.0 (2024-02-08)
 
-- **ENH: Add a function (`arcpy.feature_layer_to_path`) to retrieve the path from an ArcGIS feature layer**
+- **ENH: Add `arcpy.feature_layer_to_path` to retrieve the path from an ArcGIS feature layer**
 - **ENH: Add a class `ArcPyLogger` to better handle logs in Arcgis Pro tools**
-- **ENH: Add a function (`geometry.split`) to split polygons with polygons**
+- **ENH: Add `geometry.split` to split polygons with polygons**
 - FIX: Fix `rasters.sieve` with integer data
 
 ## 1.34.2 (2024-01-23)
