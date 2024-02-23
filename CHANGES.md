@@ -5,6 +5,8 @@
 - **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`
 - **ENH: Add `geometry.intersects` to find polygons intersecting with other polygons (wrapper of `geopandas.intersects` that works only row-wise)**
 - **ENH: Add `geometry.line_merge` to use `shapely.line_merge` on GeoDataFrames**
+- **ENH: Add `geometry.buffer` (using `gpd.buffer`) to return a GeoDataFrame instead of a GeoSeries**
+- **ENH: Add `geometry.nearest_neighbors` to get the nearest neighbors from each point of a Point GeoDataFrame in another one (two methods, `k_neighbors` and `radius`). Needs `sklearn`.**
 - FIX: Ignore when trying to split polygons with points
 - FIX: Make `ci.assert_val` work for Iterables
 - DOC: Numerous documentation updates to better use Sphinx syntax

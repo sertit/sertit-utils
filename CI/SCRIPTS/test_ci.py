@@ -46,6 +46,10 @@ def test_assert_base():
     with pytest.raises(AssertionError):
         ci.assert_field(dict_1, dict_2, "a")
 
+    ci.assert_val([1, 2], [1, 2], "same list")
+    with pytest.raises(AssertionError):
+        ci.assert_val([1, 2], [3, 2], "different list")
+
 
 @s3_env
 def test_assert_dir():

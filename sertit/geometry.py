@@ -22,19 +22,19 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 import logging
 
 import numpy as np
-import shapely
-from shapely.errors import GeometryTypeError
 from tqdm import tqdm
 
 from sertit.types import AnyPolygonType
 
 try:
     import geopandas as gpd
+    import shapely
     from shapely import ops
+    from shapely.errors import GeometryTypeError
     from shapely.geometry import Polygon, box
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
-        "Please install 'geopandas' to use the rasters package."
+        "Please install 'geopandas' and 'shapely' to use the geometry package."
     ) from ex
 
 from sertit import vectors
@@ -335,6 +335,16 @@ def intersects(input: gpd.GeoDataFrame, other: gpd.GeoDataFrame) -> gpd.GeoDataF
     """
     Select the polygons of the input GeoDataFrame that intersects the other one and return them.
 
+    :code:`gpd.intersects` algorithm applied to whole GeoDataFrames.
+
+    Examples:
+        >>> water = vectors.read("water.geojson")
+        >>> lakes = vectors.read("lakes.geojson")
+        >>> intersects(water, lakes)
+                                                    geometry
+        2  POLYGON ((490733.035 5616749.035, 490936.972 5...
+        3  POLYGON ((491254.800 5616242.894, 491175.035 5...
+
     Args:
         input (gpd.GeoDataFrame): Input GeoDataFrame from which the polygons will be selected
         other (gpd.GeoDataFrame): Other GeoDataFrame from that will intersect the first one
@@ -343,3 +353,145 @@ def intersects(input: gpd.GeoDataFrame, other: gpd.GeoDataFrame) -> gpd.GeoDataF
         gpd.GeoDataFrame: Polygons of the input that intersects the other GeoDataFrame
     """
     return input[input.geometry.map(lambda x: x.intersects(other.geometry).any())]
+
+
+def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
+    """
+    Add a buffer on a vector.
+
+    :code:`gpd.buffer` algorithm returning a GeoDataFrame instead of a GeoSeries.
+
+    Args:
+        vector (gpd.GeoDataFrame): Input vector
+        buffer_m (int): Buffer size in meters.
+        **kwargs: Other buffer arguments
+
+    Returns:
+        gpd.GeoDataFrame: Buffered vector
+
+    """
+    vector_bfd = vector.copy()
+    vector_bfd.geometry = vector.buffer(buffer_m, **kwargs)
+    return vector_bfd
+
+
+def nearest_neighbors(
+    src_gdf: gpd.GeoDataFrame,
+    candidates_gdf: gpd.GeoDataFrame,
+    method: str,
+    k_neighbors: int = None,
+    radius: float = None,
+    **kwargs,
+) -> (np.ndarray, np.ndarray):
+    """
+    For each point in src_gdf, find the closest point in candidates_gdf and return them with their distances (in the crs coordinates).
+
+    Closest points are:
+    - if method == "k_neighbors": the k closest neighbors
+    - if method == "radius": the neighbors inside this radius (in the crs coordinates, better done with projected geometries)
+
+    Examples:
+        >>> from sertit import geometry, vectors
+        >>> src = vectors.read("src.shp")
+        >>> candidates = vectors.read("candidates.shp")
+        There is only one point in the neighborhood of each src, the others are further than 100m
+        >>> nearest_neighbors(src, candidates, method="radius", radius=100)
+        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
+        >>> nearest_neighbors(src, candidates, method="k_neighbors", k_neighbors=1)
+        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
+
+    Args:
+        src_gdf (gpd.GeoDataFrame): Source geodataframe
+        candidates_gdf (gpd.GeoDataFrame): Candidates geodataframe
+        method (str): 'k_neighbors' or 'radius'
+        k_neighbors (int): Number of neighbors to be looked for
+        radius (float): Radius in which to find the neighbors
+        **kwargs: Other args for the query
+
+    Returns:
+        (np.ndarray, np.ndarray): closest samples, distances
+    """
+    # Parse coordinates from points and insert them into a numpy array as RADIANS
+    src = [(val.xy[0][0], val.xy[1][0]) for val in src_gdf.geometry.values]
+    candidates = [
+        (val.xy[0][0], val.xy[1][0]) for val in candidates_gdf.geometry.values
+    ]
+
+    # Find the nearest points
+    # -----------------------
+    # closest ==> index in right_gdf that corresponds to the closest point
+    # dist ==> distance between the nearest neighbors (in the crs coordinates)
+    if method == "k_neighbors":
+        closest_samples, distances = _get_k_nearest(
+            src_points=src, candidates=candidates, k_neighbors=k_neighbors, **kwargs
+        )
+    else:
+        closest_samples, distances = _get_radius_nearest(
+            src_points=src, candidates=candidates, radius=radius, **kwargs
+        )
+
+    return closest_samples, distances
+
+
+def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwargs):
+    """
+    For each point in src_gdf, find the nearest k points in candidates_gdf and return them with their distance.
+
+    Args:
+        src_points (list): Source points
+        candidates (list): Candidate points
+        k_neighbors (int): Number of neighbors to be looked for
+        **kwargs: Other args for the query
+
+    Returns:
+        (np.ndarray, np.ndarray): closest samples, distances
+    """
+    try:
+        from sklearn.neighbors import BallTree
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
+        ) from ex
+
+    # Create tree from the candidate points
+    tree = BallTree(candidates, leaf_size=15)
+
+    # Find the closest points and distances
+    closest_dist, closest = tree.query(src_points, k=k_neighbors, **kwargs)
+
+    # Return indices and distances
+    return closest, closest_dist
+
+
+def _get_radius_nearest(
+    src_points: list, candidates: list, radius: float, **kwargs
+) -> (np.ndarray, np.ndarray):
+    """
+    For each point in src_gdf, find the points in candidates_gdf inside the given radius and return them with their distance.
+
+    Args:
+        src_points (list): Source points
+        candidates (list): Candidate points
+        radius (float): Radius for the search
+        **kwargs: Other args for the query
+
+    Returns:
+        (np.ndarray, np.ndarray): closest samples, distances
+    """
+    try:
+        from sklearn.neighbors import BallTree
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
+        ) from ex
+
+    # Create tree from the candidate points
+    tree = BallTree(candidates, leaf_size=15)
+
+    # Find the closest points and distances
+    closest, closest_dist = tree.query_radius(
+        src_points, r=radius, return_distance=True, **kwargs
+    )
+
+    # Return indices and distances
+    return closest, closest_dist

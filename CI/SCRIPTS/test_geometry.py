@@ -19,10 +19,12 @@
 from CI.SCRIPTS.script_utils import geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
 from sertit.geometry import (
+    buffer,
     fill_polygon_holes,
     get_wider_exterior,
     intersects,
     line_merge,
+    nearest_neighbors,
     split,
 )
 
@@ -135,6 +137,7 @@ def test_split():
     )
 
 
+@s3_env
 def test_intersects():
     """Test intersects"""
     water_path = geometry_path().joinpath("water.geojson")
@@ -142,3 +145,46 @@ def test_intersects():
 
     inter = intersects(vectors.read(lakes_path), vectors.read(water_path))
     ci.assert_val(inter.index, [2, 3], "Index")
+
+
+@s3_env
+def test_buffer():
+    """Test buffer"""
+    water_path = geometry_path().joinpath("water.geojson")
+    water = vectors.read(water_path)
+    buffer_true = water.copy()
+    buffer_true.geometry = water.buffer(10)
+
+    ci.assert_geom_equal(buffer(water, 10), buffer_true)
+
+
+@s3_env
+def test_nearest_neighbors():
+    """Test nearest_neighbors"""
+    src_path = geometry_path().joinpath("source.geojson")
+    candidates_path = geometry_path().joinpath("candidates.geojson")
+
+    src = vectors.read(src_path)
+    candidates = vectors.read(candidates_path)
+
+    # Radius
+    radius = 100
+    closest, distances = nearest_neighbors(
+        src, candidates, method="radius", radius=radius
+    )
+    for curr_closest, curr_dist in zip(closest, distances):
+        ci.assert_val(len(curr_closest), 1, "length")
+        assert (
+            curr_dist[0] < radius
+        ), f"distance superior to radius: {curr_dist[0]} > {radius}"
+
+    # Nof neighbors
+    nof_neighbors = 1
+    closest, distances = nearest_neighbors(
+        src, candidates, method="k_neighbors", k_neighbors=nof_neighbors
+    )
+    for curr_closest, curr_dist in zip(closest, distances):
+        ci.assert_val(len(curr_closest), nof_neighbors, "length")
+        assert (
+            curr_dist[0] < radius
+        ), f"distance superior to wanted distance: {curr_dist[0]} > {radius}"
