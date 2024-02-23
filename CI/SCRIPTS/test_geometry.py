@@ -18,7 +18,13 @@
 
 from CI.SCRIPTS.script_utils import geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
-from sertit.geometry import fill_polygon_holes, get_wider_exterior, split
+from sertit.geometry import (
+    fill_polygon_holes,
+    get_wider_exterior,
+    intersects,
+    line_merge,
+    split,
+)
 
 ci.reduce_verbosity()
 
@@ -112,9 +118,27 @@ def test_split():
     )
 
     # Test with lines as splitter (with and without line_merge)
-    # TODO
+    # Without line_merge: doesn't split anything
+    lines_raw_path = geometry_path().joinpath("lines.shp")
+    lines_raw = vectors.read(lines_raw_path)
+    ci.assert_geom_equal(
+        split(water, lines_raw),
+        water,
+    )
+
+    # With line_merge: works
+    water_split_line_path = geometry_path().joinpath("water_split_line.geojson")
+    lines_merged = line_merge(lines_raw)
+    ci.assert_geom_equal(
+        split(water, lines_merged),
+        vectors.read(water_split_line_path),
+    )
 
 
 def test_intersects():
     """Test intersects"""
-    # TODO
+    water_path = geometry_path().joinpath("water.geojson")
+    lakes_path = geometry_path().joinpath("lakes.geojson")
+
+    inter = intersects(vectors.read(lakes_path), vectors.read(water_path))
+    ci.assert_val(inter.index, [2, 3], "Index")

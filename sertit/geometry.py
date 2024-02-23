@@ -277,10 +277,10 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
     """
-    merge_lines = shapely.line_merge(
-        lines.dissolve().geometry.values, **kwargs
-    ).explode(ignore_index=True)
-    return gpd.GeoDataFrame(geometry=merge_lines, crs=lines.crs)
+    merge_lines = shapely.line_merge(lines.dissolve().geometry.values, **kwargs)
+    return gpd.GeoDataFrame(geometry=merge_lines, crs=lines.crs).explode(
+        ignore_index=True
+    )
 
 
 def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
@@ -310,7 +310,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     out = polygons.dropna(axis=1).geometry
     for _, split in splitter.iterrows():
         # Compute the boundary of the splitter polygon (to get a LineString)
-        if split.area > 0:
+        if split.geometry.area > 0:
             boundary = split.geometry.boundary
         else:
             boundary = split.geometry
