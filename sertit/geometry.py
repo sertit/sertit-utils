@@ -125,6 +125,8 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
     """
     Repair geometries from a dataframe.
 
+    Better to use :code:`gpd.make_valid` if you can.
+
     Args:
         gdf (gpd.GeoDataFrame): GeoDataFrame to repair
         verbose (bool): Verbose invalid geometries
@@ -151,7 +153,7 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         import shapely
 
         LOGGER.warning(
-            f"make_valid not available in shapely (version {shapely.__version__} < 1.8). "
+            f"'make_valid' not available in 'shapely' (version {shapely.__version__} < 1.8). "
             f"The obtained vector may be broken !"
         )
 
