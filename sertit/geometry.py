@@ -402,8 +402,9 @@ def nearest_neighbors(
     For each point in src_gdf, find the closest point in candidates_gdf and return them with their distances (in the crs coordinates).
 
     Closest points are:
-    - if method == "k_neighbors": the k closest neighbors
-    - if method == "radius": the neighbors inside this radius (in the crs coordinates, better done with projected geometries)
+
+    - if method == :code:`k_neighbors`: the k closest neighbors
+    - if method == :code:`radius`: the neighbors inside this radius (in the crs coordinates, better done with projected geometries)
 
     Examples:
         >>> from sertit import geometry, vectors
