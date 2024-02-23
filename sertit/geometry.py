@@ -268,8 +268,19 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
         >>> from sertit import geometry
         >>> lines = gpd.read("my_lines.shp")
         >>> poly = gpd.read("my_poly.shp")
+                                                    geometry
+        0  POLYGON ((491460.248 5616687.073, 491460.248 5...
+        >>> geometry.split(poly, splitter=lines)
+        The lines are discontinuous and don't intersect totally the input polygon: nothing is splitted
+                                                    geometry
+        0  POLYGON ((491460.248 5616687.073, 491460.248 5...
+
         >>> lines = geometry.line_merge(lines)
-        >>> split_poly = geometry.split(ploy, splitter=lines)
+        >>> geometry.split(poly, splitter=lines)
+        The lines are now merged into one and now intersect totally the input polygon: split is done
+                                                            geometry
+        0  POLYGON ((491460.248 5616687.073, 491460.248 5...
+        0  POLYGON ((491055.017 5616255.823, 491053.998 5...
 
     Args:
         lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
@@ -297,8 +308,12 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
         >>> from sertit import geometry
         >>> lines = gpd.read("my_lines.shp")
         >>> poly = gpd.read("my_poly.shp")
-        >>> lines = geometry.line_merge(lines)
-        >>> split_poly = geometry.split(ploy, splitter=lines)
+                                                    geometry
+        0  POLYGON ((491460.248 5616687.073, 491460.248 5...
+        >>> split_poly = geometry.split(poly, splitter=lines)
+                                                            geometry
+        0  POLYGON ((491460.248 5616687.073, 491460.248 5...
+        0  POLYGON ((491055.017 5616255.823, 491053.998 5...
 
     Args:
         polygons (gpd.GeoDataFrame): Polygons to split
