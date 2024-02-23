@@ -22,6 +22,7 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 import logging
 
 import numpy as np
+import shapely
 from shapely.errors import GeometryTypeError
 from tqdm import tqdm
 
@@ -256,9 +257,48 @@ def fill_polygon_holes(
     return gpd_results
 
 
+def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
+    """
+    :code:`shapely.line_merge` algorithm applied to a GeoDataFrame.
+
+    See the corresponding documentation for more insights about the details of this function.
+
+    Example:
+        >>> import geopandas as gpd
+        >>> from sertit import geometry
+        >>> lines = gpd.read("my_lines.shp")
+        >>> poly = gpd.read("my_poly.shp")
+        >>> lines = geometry.line_merge(lines)
+        >>> split_poly = geometry.split(ploy, splitter=lines)
+
+    Args:
+        lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
+
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
+    """
+    merge_lines = shapely.line_merge(
+        lines.dissolve().geometry.values, **kwargs
+    ).explode(ignore_index=True)
+    return gpd.GeoDataFrame(geometry=merge_lines, crs=lines.crs)
+
+
 def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     """
-    Split polygons with polygons
+    Split polygons with polygons or lines.
+
+    :code:`shapely.ops.split` algorithm applied to GeoDataFrames.
+
+    Be careful: lines have to cut the whole polygon to work!
+    Use :code:`geometry.line_merge: to merge your lines if needed.
+
+    Example:
+        >>> import geopandas as gpd
+        >>> from sertit import geometry
+        >>> lines = gpd.read("my_lines.shp")
+        >>> poly = gpd.read("my_poly.shp")
+        >>> lines = geometry.line_merge(lines)
+        >>> split_poly = geometry.split(ploy, splitter=lines)
 
     Args:
         polygons (gpd.GeoDataFrame): Polygons to split
@@ -270,7 +310,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     out = polygons.dropna(axis=1).geometry
     for _, split in splitter.iterrows():
         # Compute the boundary of the splitter polygon (to get a LineString)
-        if split.geometry.area > 0:
+        if split.area > 0:
             boundary = split.geometry.boundary
         else:
             boundary = split.geometry
@@ -287,8 +327,6 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
                 out = (
                     out.map(lambda geom: ops.split(geom, line).geoms).explode().dropna()
                 )
-        except AttributeError:
-            pass
 
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
 

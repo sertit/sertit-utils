@@ -111,6 +111,9 @@ def test_split():
         vectors.read(water_split_raw_path),
     )
 
+    # Test with lines as splitter (with and without line_merge)
+    # TODO
+
 
 def test_intersects():
     """Test intersects"""
