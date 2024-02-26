@@ -468,7 +468,7 @@ def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
     Get the nodata vector of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :py:mod:`get_footprint`.
+    If you want only the footprint of the raster, please use :py:mod:`rasters.get_footprint`.
 
     Examples:
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255

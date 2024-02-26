@@ -47,8 +47,7 @@ def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, flo
     """
     Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
 
-    .. code-block:: python
-
+    Examples:
         >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
         >>> from_polygon_to_bounds(poly)
         (0.0, 0.0, 1.0, 1.0)
@@ -76,8 +75,7 @@ def from_bounds_to_polygon(
     """
     Convert the bounds to a :code:`shapely.polygon`.
 
-    .. code-block:: python
-
+    Examples:
         >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
         >>> print(poly)
         'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
@@ -98,6 +96,19 @@ def from_bounds_to_polygon(
 def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Get the wider exterior of a MultiPolygon as a Polygon
+
+    Examples:
+        >>> # Open a raw footprint
+        >>> footprint_raw = vectors.read("footprint_raw.geojson")
+                                                           geometry
+        0         MULTIPOLYGON (((491053.524 5616778.498, 491262...
+        1         MULTIPOLYGON (((491314.496 5616444.620, 491295...
+        2         MULTIPOLYGON (((490783.440 5616102.457, 490923...
+        >>>
+        >>> # Get the wider exterior
+        >>> get_wider_exterior(footprint_raw)
+                                                        geometry
+        0      POLYGON ((491053.524 5616778.498, 491262.302 5...
 
     Args:
         vector (gpd.GeoDataFrame): Polygon to simplify
@@ -126,6 +137,19 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
     Repair geometries from a dataframe.
 
     Better to use :code:`gpd.make_valid` if you can.
+
+    Examples:
+        >>> # Open a raw  vector with invalid geometries
+        >>> raw = vectors.read("raw.geojson")
+                                                           geometry
+        0         MULTIPOLYGON (((491053.524 5616778.498, 491262...
+        1         MULTIPOLYGON (((491314.496 5616444.620, 491295...
+        2         MULTIPOLYGON (((490783.440 5616102.457, 490923...
+        >>>
+        >>> # Get the valid geometries
+        >>> make_valid(raw)
+                                                           geometry
+        1         MULTIPOLYGON (((491314.496 5616444.620, 491295...
 
     Args:
         gdf (gpd.GeoDataFrame): GeoDataFrame to repair
@@ -172,6 +196,16 @@ def simplify_footprint(
     This function will loop over a number of pixels of tolerence [1, 2, 4, 8, 16, 32, 64] (tolerance of gpd.simplify == resolution * tol_pix)
     If in the end, the number of vertices is still too high, a warning will be emitted.
 
+    Examples:
+        >>> # Open a raw footprint
+        >>> footprint_raw = vectors.read("footprint_raw.geojson")
+        >>> len(footprint_raw.get_coordinates())
+        64757
+        >>>
+        >>> # Get the simplified footprint
+        >>> simplify_footprint(footprint_raw, 20)
+        29
+
     Args:
         footprint (gpd.GeoDataFrame): Footprint to be simplified
         resolution (float): Corresponding resolution
@@ -211,6 +245,19 @@ def fill_polygon_holes(
     """
     Fill holes over a given threshold on the hole area (in meters) for all polygons of a GeoDataFrame.
     If the threshold is set to None, every hole is filled.
+
+    Examples:
+        >>> # Open a polygon with holes
+        >>> holes = vectors.read("holes.geojson")
+        >>> # This polygons has interiors features, it has holes
+        >>> holes.interiors
+        3    [LINEARRING (491328.9981955575 5616655.8234532...
+        dtype: object
+        >>> no_holes = fill_polygon_holes(holes)
+        Processing objects: 100%|██████████| 1/1 [00:00<00:00, 897.18it/s]
+        >>> no_holes.interiors
+        0    []
+        dtype: object
 
     Args:
         gpd_results (gpd.GeoDataFrame): Geodataframe filled whith drilled polygons
@@ -378,6 +425,18 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFr
 
     :code:`gpd.buffer` algorithm returning a GeoDataFrame instead of a GeoSeries.
 
+    Examples:
+        >>> lines = vectors.read(r"lines.shp")
+        >>> lines.area
+        0    0.0
+        1    0.0
+        dtype: float64
+        >>> lines_buffer = buffer(lines, 10)
+        >>> lines_buffer.area
+        0    5695.213033
+        1    5898.723719
+        dtype: float64
+
     Args:
         vector (gpd.GeoDataFrame): Input vector
         buffer_m (int): Buffer size in meters.
@@ -413,8 +472,12 @@ def nearest_neighbors(
         >>> src = vectors.read("src.shp")
         >>> candidates = vectors.read("candidates.shp")
         There is only one point in the neighborhood of each src, the others are further than 100m
+        >>>
+        >>> # Radius method
         >>> nearest_neighbors(src, candidates, method="radius", radius=100)
         [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
+        >>>
+        >>> # k_neighbors method
         >>> nearest_neighbors(src, candidates, method="k_neighbors", k_neighbors=1)
         [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
 
