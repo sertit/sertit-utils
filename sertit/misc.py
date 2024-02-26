@@ -37,8 +37,7 @@ class ListEnum(Enum):
     """
     List Enum (enum with function listing names and values)
 
-    .. code-block:: python
-
+    Example:
         >>> @unique
         >>> class TsxPolarization(ListEnum):
         >>>     SINGLE = "S"  # Single
@@ -52,8 +51,7 @@ class ListEnum(Enum):
         """
         Get the value list of this enum
 
-        .. code-block:: python
-
+        Example:
             >>> TsxPolarization.list_values()
             ["S", "D", "Q", "T"]
 
@@ -65,8 +63,7 @@ class ListEnum(Enum):
         """
         Get the name list of this enum:
 
-        .. code-block:: python
-
+        Example:
             >>> TsxPolarization.list_values()
             ["SINGLE", "DUAL", "QUAD", "TWIN"]
         """
@@ -77,16 +74,15 @@ class ListEnum(Enum):
         """
         Get the enum class from its value:
 
-        .. code-block:: python
-
-            >>> TsxPolarization.from_value("Q")
-            <TsxPolarization.QUAD: 'Q'>
-
         Args:
             val (Any): Value of the Enum
 
         Returns:
             ListEnum: Enum with value
+
+        Example:
+            >>> TsxPolarization.from_value("Q")
+            <TsxPolarization.QUAD: 'Q'>
         """
         if isinstance(val, cls):
             val = val.value
@@ -100,16 +96,15 @@ class ListEnum(Enum):
         """
         Convert from a list or a string to an enum instance
 
-        .. code-block:: python
-
-            >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
-            [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
-
         Args:
             to_convert (Union[list, str]): List or string to convert into an enum instance
 
         Returns:
             list: Converted list
+
+        Example:
+            >>> TsxPolarization.convert_from(["SINGLE", "S", TsxPolarization.QUAD])
+            [<TsxPolarization.SINGLE: 'S'>, <TsxPolarization.SINGLE: 'S'>, <TsxPolarization.QUAD: 'Q'>]
 
         """
         if not isinstance(to_convert, list):
@@ -150,18 +145,19 @@ def unique(sequence: list):
 
 def remove_empty_values(list_with_empty_values: list) -> list:
     """
-    Remove empty values from list:
+    Remove empty values from list.
 
-    .. code-block:: python
+    Args:
+        list_with_empty_values (list): List with empty values
 
+    Returns:
+        list: Curated list
+
+    Example:
         >>> lst = ["A", "T", "R", "", 3, None]
         >>> list_to_dict(lst)
         ["A", "T", "R", 3]
 
-    Args:
-        list_with_empty_values (list): List with empty values
-    Returns:
-        list: Curated list
     """
 
     return list(filter(None, list_with_empty_values))
@@ -171,17 +167,16 @@ def list_to_dict(dict_list: list) -> dict:
     """
     Return a dictionary from a list :code:`[key, value, key_2, value_2...]`
 
-    .. code-block:: python
-
-        >>> lst = ["A","T", "R", 3]
-        >>> list_to_dict(lst)
-        {"A": "T", "R": 3}
-
     Args:
         dict_list (list[str]): Dictionary as a list
 
     Returns:
         dict: Dictionary
+
+    Example:
+        >>> lst = ["A","T", "R", 3]
+        >>> list_to_dict(lst)
+        {"A": "T", "R": 3}
     """
     dictionary = {dict_list[i]: dict_list[i + 1] for i in range(0, len(dict_list), 2)}
     return dictionary
@@ -191,8 +186,12 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
     """
     Set value in nested directory:
 
-    .. code-block:: python
+    Args:
+        dic (dict): Dictionary
+        keys (list[str]): Keys as a list
+        value: Value to be set
 
+    Example:
         >>> dct = {"A": "T", "R": 3}
         >>> nested_set(dct, keys=["B", "C", "D"], value="value")
         {
@@ -204,11 +203,6 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
                   }
              }
         }
-
-    Args:
-        dic (dict): Dictionary
-        keys (list[str]): Keys as a list
-        value: Value to be set
     """
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
@@ -222,8 +216,12 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
 
     **Note**: nested keys do not work here !
 
-    .. code-block:: python
 
+    Args:
+        data_dict (dict): Data dictionary to be checked
+        mandatory_keys (list[str]): List of mandatory keys
+
+    Example:
         >>> dct = {"A": "T", "R": 3}
         >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
         >>> check_mandatory_keys(dct, ["C"])
@@ -231,11 +229,6 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
           File "<input>", line 1, in <module>
           File "<input>", line 167, in check_mandatory_keys
         ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
-
-
-    Args:
-        data_dict (dict): Data dictionary to be checked
-        mandatory_keys (list[str]): List of mandatory keys
     """
 
     for mandatory_key in mandatory_keys:
@@ -249,8 +242,14 @@ def find_by_key(data: dict, target: str) -> Any:
     """
     Find a value by key in a dictionary.
 
-    .. code-block:: python
+    Args:
+        data (dict): Dict to walk through
+        target (str): target key
 
+    Returns:
+        Any: Value data[...][target]
+
+    Example:
         >>> dct = {
         >>>         "A": "T",
         >>>         "R": 3,
@@ -262,13 +261,6 @@ def find_by_key(data: dict, target: str) -> Any:
         >>>        }
         >>> find_by_key(dct, "D")
         "value"
-
-    Args:
-        data (dict): Dict to walk through
-        target (str): target key
-
-    Returns:
-        Any: Value data[...][target]
 
     """
     val = None
@@ -292,8 +284,17 @@ def run_cli(
     """
     Run a command line.
 
-    .. code-block:: python
+    Args:
+        cmd (str or list[str]): Command as a list
+        timeout (float): Timeout
+        check_return_value (bool): Check output value of the exe
+        in_background (bool): Run the subprocess in background
+        cwd (str): Working directory
 
+    Returns:
+        int, str: return value and output log
+
+    Example:
         >>> cmd_hillshade = ["gdaldem", "--config",
         >>>                  "NUM_THREADS", "1",
         >>>                  "hillshade", strings.to_cmd_string(dem_path),
@@ -305,16 +306,6 @@ def run_cli(
         >>>                  strings.to_cmd_string(hillshade_dem)]
         >>> # Run command
         >>> run_cli(cmd_hillshade)
-
-    Args:
-        cmd (str or list[str]): Command as a list
-        timeout (float): Timeout
-        check_return_value (bool): Check output value of the exe
-        in_background (bool): Run the subprocess in background
-        cwd (str): Working directory
-
-    Returns:
-        int, str: return value and output log
     """
     if isinstance(cmd, list):
         cmd = [str(cmd_i) for cmd_i in cmd]
@@ -375,15 +366,14 @@ def get_function_name() -> str:
     """
     Get the name of the function where this one is launched.
 
-    .. code-block:: python
+    Returns:
+        str: Function's name
 
+    Example:
         >>> def huhuhu():
         >>>     return get_function_name()
         >>> huhuhu()
         "huhuhu"
-
-    Returns:
-        str: Function's name
     """
     # pylint: disable=W0212
     return sys._getframe(1).f_code.co_name
@@ -393,15 +383,14 @@ def in_docker() -> bool:
     """
     Check if the session is running inside a docker
 
-    .. code-block:: python
-
-        if in_docker():
-            print("OMG we are stock in a Docker ! Get me out of here !")
-        else:
-            print("We are safe")
-
     Returns:
         bool: True if inside a docker
+
+    Example:
+        >>> if in_docker():
+        >>>    print("OMG we are stock in a Docker ! Get me out of here !")
+        >>> else:
+        >>>    print("We are safe")
     """
     try:
         with open("/proc/1/cgroup", "rt") as ifh:
@@ -416,17 +405,16 @@ def in_docker() -> bool:
 @contextmanager
 def chdir(newdir: AnyPathStrType) -> None:
     """
-    Change current directory, used as a context manager, ie:
+    Change current directory, used as a context manager, i.e.:
 
-    .. code-block:: python
+    Args:
+        newdir (str): New directory
 
+    Example:
         >>> folder = r"C:/"
         >>> with chdir(folder):
         >>>     print(os.getcwd())
         'C:/'
-
-    Args:
-        newdir (str): New directory
     """
     newdir = AnyPath(newdir)
     prevdir = os.getcwd()

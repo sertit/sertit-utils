@@ -47,16 +47,16 @@ def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, flo
     """
     Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
 
-    Examples:
-        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
-        >>> from_polygon_to_bounds(poly)
-        (0.0, 0.0, 1.0, 1.0)
-
     Args:
         polygon (MultiPolygon): polygon to convert
 
     Returns:
         (float, float, float, float): left, bottom, right, top
+
+    Example:
+        >>> poly = Polygon(((0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)))
+        >>> from_polygon_to_bounds(poly)
+        (0.0, 0.0, 1.0, 1.0)
     """
     left = polygon.bounds[0]  # xmin
     bottom = polygon.bounds[1]  # ymin
@@ -75,11 +75,6 @@ def from_bounds_to_polygon(
     """
     Convert the bounds to a :code:`shapely.polygon`.
 
-    Examples:
-        >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
-        >>> print(poly)
-        'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
-
     Args:
         left (float): Left coordinates
         bottom (float): Bottom coordinates
@@ -89,6 +84,11 @@ def from_bounds_to_polygon(
     Returns:
         Polygon: Polygon corresponding to the bounds
 
+    Example:
+        >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
+        >>> print(poly)
+        'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
+
     """
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
@@ -97,7 +97,13 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Get the wider exterior of a MultiPolygon as a Polygon
 
-    Examples:
+    Args:
+        vector (gpd.GeoDataFrame): Polygon to simplify
+
+    Returns:
+        vector: gpd.GeoDataFrame: Wider exterior
+
+    Example:
         >>> # Open a raw footprint
         >>> footprint_raw = vectors.read("footprint_raw.geojson")
                                                            geometry
@@ -109,12 +115,6 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         >>> get_wider_exterior(footprint_raw)
                                                         geometry
         0      POLYGON ((491053.524 5616778.498, 491262.302 5...
-
-    Args:
-        vector (gpd.GeoDataFrame): Polygon to simplify
-
-    Returns:
-        vector: gpd.GeoDataFrame: Wider exterior
     """
     vector = vector.explode(index_parts=True)
 
@@ -138,7 +138,14 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
 
     Better to use :code:`gpd.make_valid` if you can.
 
-    Examples:
+    Args:
+        gdf (gpd.GeoDataFrame): GeoDataFrame to repair
+        verbose (bool): Verbose invalid geometries
+
+    Returns:
+        gpd.GeoDataFrame: Repaired geometries
+
+    Example:
         >>> # Open a raw  vector with invalid geometries
         >>> raw = vectors.read("raw.geojson")
                                                            geometry
@@ -150,13 +157,6 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         >>> make_valid(raw)
                                                            geometry
         1         MULTIPOLYGON (((491314.496 5616444.620, 491295...
-
-    Args:
-        gdf (gpd.GeoDataFrame): GeoDataFrame to repair
-        verbose (bool): Verbose invalid geometries
-
-    Returns:
-        gpd.GeoDataFrame: Repaired geometries
     """
     try:
         geos_logger = logging.getLogger("shapely.geos")
@@ -196,16 +196,6 @@ def simplify_footprint(
     This function will loop over a number of pixels of tolerence [1, 2, 4, 8, 16, 32, 64] (tolerance of gpd.simplify == resolution * tol_pix)
     If in the end, the number of vertices is still too high, a warning will be emitted.
 
-    Examples:
-        >>> # Open a raw footprint
-        >>> footprint_raw = vectors.read("footprint_raw.geojson")
-        >>> len(footprint_raw.get_coordinates())
-        64757
-        >>>
-        >>> # Get the simplified footprint
-        >>> simplify_footprint(footprint_raw, 20)
-        29
-
     Args:
         footprint (gpd.GeoDataFrame): Footprint to be simplified
         resolution (float): Corresponding resolution
@@ -213,6 +203,17 @@ def simplify_footprint(
 
     Returns:
         gpd.GeoDataFrame: Simplified footprint
+
+    Examples:
+        >>> # Open a raw footprint
+        >>> footprint_raw = vectors.read("footprint_raw.geojson")
+        >>> len(footprint_raw.get_coordinates())
+        64757
+        >>>
+        >>> # Get the simplified footprint
+        >>> simplified = simplify_footprint(footprint_raw, 20)
+        >>> len(simplified.get_coordinates())
+        29
     """
     # Number of pixels of tolerance
     tolerance = [1, 2, 4, 8, 16, 32, 64]
@@ -246,7 +247,14 @@ def fill_polygon_holes(
     Fill holes over a given threshold on the hole area (in meters) for all polygons of a GeoDataFrame.
     If the threshold is set to None, every hole is filled.
 
-    Examples:
+    Args:
+        gpd_results (gpd.GeoDataFrame): Geodataframe filled whith drilled polygons
+        threshold (float): Holes area threshold, in meters. If set to None, every hole is filled.
+
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame with filled holes
+
+    Example:
         >>> # Open a polygon with holes
         >>> holes = vectors.read("holes.geojson")
         >>> # This polygons has interiors features, it has holes
@@ -258,13 +266,6 @@ def fill_polygon_holes(
         >>> no_holes.interiors
         0    []
         dtype: object
-
-    Args:
-        gpd_results (gpd.GeoDataFrame): Geodataframe filled whith drilled polygons
-        threshold (float): Holes area threshold, in meters. If set to None, every hole is filled.
-
-    Returns:
-        gpd.GeoDataFrame: GeoDataFrame with filled holes
     """
 
     def _fill_polygon(polygon: Polygon, threshold: float = None):
@@ -312,6 +313,12 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
 
     See the corresponding documentation for more insights about the details of this function.
 
+    Args:
+        lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
+
+    Returns:
+        gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
+
     Example:
         >>> import geopandas as gpd
         >>> from sertit import geometry
@@ -330,12 +337,6 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
                                                             geometry
         0  POLYGON ((491460.248 5616687.073, 491460.248 5...
         0  POLYGON ((491055.017 5616255.823, 491053.998 5...
-
-    Args:
-        lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
-
-    Returns:
-        gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
     """
     merge_lines = shapely.line_merge(lines.dissolve().geometry.values, **kwargs)
     return gpd.GeoDataFrame(geometry=merge_lines, crs=lines.crs).explode(
@@ -352,6 +353,13 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     Be careful: lines have to cut the whole polygon to work!
     Use :code:`geometry.line_merge: to merge your lines if needed.
 
+    Args:
+        polygons (gpd.GeoDataFrame): Polygons to split
+        splitter (gpd.GeoDataFrame): Splitter to split the polygons
+
+    Returns:
+        gpd.GeoDataFrame: Split GeoDataFrame
+
     Example:
         >>> import geopandas as gpd
         >>> from sertit import geometry
@@ -363,13 +371,6 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
                                                             geometry
         0  POLYGON ((491460.248 5616687.073, 491460.248 5...
         0  POLYGON ((491055.017 5616255.823, 491053.998 5...
-
-    Args:
-        polygons (gpd.GeoDataFrame): Polygons to split
-        splitter (gpd.GeoDataFrame): Splitter to split the polygons
-
-    Returns:
-        gpd.GeoDataFrame: Split GeoDataFrame
     """
     out = polygons.dropna(axis=1).geometry
     for _, split in splitter.iterrows():
@@ -401,20 +402,20 @@ def intersects(input: gpd.GeoDataFrame, other: gpd.GeoDataFrame) -> gpd.GeoDataF
 
     :code:`gpd.intersects` algorithm applied to whole GeoDataFrames.
 
-    Examples:
-        >>> water = vectors.read("water.geojson")
-        >>> lakes = vectors.read("lakes.geojson")
-        >>> intersects(water, lakes)
-                                                    geometry
-        2  POLYGON ((490733.035 5616749.035, 490936.972 5...
-        3  POLYGON ((491254.800 5616242.894, 491175.035 5...
-
     Args:
         input (gpd.GeoDataFrame): Input GeoDataFrame from which the polygons will be selected
         other (gpd.GeoDataFrame): Other GeoDataFrame from that will intersect the first one
 
     Returns:
         gpd.GeoDataFrame: Polygons of the input that intersects the other GeoDataFrame
+
+    Example:
+        >>> water = vectors.read("water.geojson")
+        >>> lakes = vectors.read("lakes.geojson")
+        >>> intersects(water, lakes)
+                                                    geometry
+        2  POLYGON ((490733.035 5616749.035, 490936.972 5...
+        3  POLYGON ((491254.800 5616242.894, 491175.035 5...
     """
     return input[input.geometry.map(lambda x: x.intersects(other.geometry).any())]
 
@@ -425,7 +426,15 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFr
 
     :code:`gpd.buffer` algorithm returning a GeoDataFrame instead of a GeoSeries.
 
-    Examples:
+    Args:
+        vector (gpd.GeoDataFrame): Input vector
+        buffer_m (int): Buffer size in meters.
+        **kwargs: Other buffer arguments
+
+    Returns:
+        gpd.GeoDataFrame: Buffered vector
+
+    Example:
         >>> lines = vectors.read(r"lines.shp")
         >>> lines.area
         0    0.0
@@ -436,14 +445,6 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFr
         0    5695.213033
         1    5898.723719
         dtype: float64
-
-    Args:
-        vector (gpd.GeoDataFrame): Input vector
-        buffer_m (int): Buffer size in meters.
-        **kwargs: Other buffer arguments
-
-    Returns:
-        gpd.GeoDataFrame: Buffered vector
 
     """
     vector_bfd = vector.copy()
@@ -467,20 +468,6 @@ def nearest_neighbors(
     - if method == :code:`k_neighbors`: the k closest neighbors
     - if method == :code:`radius`: the neighbors inside this radius (in the crs coordinates, better done with projected geometries)
 
-    Examples:
-        >>> from sertit import geometry, vectors
-        >>> src = vectors.read("src.shp")
-        >>> candidates = vectors.read("candidates.shp")
-        There is only one point in the neighborhood of each src, the others are further than 100m
-        >>>
-        >>> # Radius method
-        >>> nearest_neighbors(src, candidates, method="radius", radius=100)
-        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
-        >>>
-        >>> # k_neighbors method
-        >>> nearest_neighbors(src, candidates, method="k_neighbors", k_neighbors=1)
-        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
-
     Args:
         src_gdf (gpd.GeoDataFrame): Source geodataframe
         candidates_gdf (gpd.GeoDataFrame): Candidates geodataframe
@@ -491,6 +478,20 @@ def nearest_neighbors(
 
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
+
+    Examples:
+        >>> from sertit import geometry, vectors
+        >>> src = vectors.read("src.shp")
+        >>> candidates = vectors.read("candidates.shp")
+        >>> # There is only one point in the neighborhood of each src, the others are further than 100m
+        >>>
+        >>> # Radius method
+        >>> nearest_neighbors(src, candidates, method="radius", radius=100)
+        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
+        >>>
+        >>> # k_neighbors method
+        >>> nearest_neighbors(src, candidates, method="k_neighbors", k_neighbors=1)
+        [array([13]) array([12]) array([0])], [array([39.62574458]) array([50.37121574]) array([90.98648454])]
     """
     # Parse coordinates from points and insert them into a numpy array as RADIANS
     src = [(val.xy[0][0], val.xy[1][0]) for val in src_gdf.geometry.values]

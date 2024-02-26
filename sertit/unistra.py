@@ -144,13 +144,12 @@ def get_mnt_path() -> str:
     .. WARNING::
         This won't work on Windows !
 
-    .. code-block:: python
-
-        >>> get_mnt_path()
-        '/mnt'
-
     Returns:
         str: Mounting directory
+
+    Example:
+        >>> get_mnt_path()
+        '/mnt'
     """
     return r"/mnt"
 
@@ -179,13 +178,12 @@ def get_db2_path() -> str:
     - :code:`/mnt/ds2_db2` when mounted (docker...)
     - :code:`\\ds2\database02` on windows
 
-    .. code-block:: python
-
-        >>> get_db2_path()
-        '/mnt/ds2_db2'
-
     Returns:
         str: Mounted directory
+
+    Example:
+        >>> get_db2_path()
+        '/mnt/ds2_db2'
     """
     return _get_db_path(2)
 
@@ -197,13 +195,12 @@ def get_db3_path() -> str:
     - :code:`/mnt/ds2_db3` when mounted (docker...)
     - :code:`\\ds2\database03` on windows
 
-    .. code-block:: python
-
-        >>> get_db3_path()
-        '/mnt/ds2_db3'
-
     Returns:
         str: Mounted directory
+
+    Example:
+        >>> get_db3_path()
+        '/mnt/ds2_db3'
     """
     return _get_db_path(3)
 
@@ -217,5 +214,9 @@ def get_db4_path() -> str:
 
     Returns:
         str: Mounted directory
+
+    Example:
+        >>> get_db4_path()
+        '/mnt/ds2_db4'
     """
     return _get_db_path(4)

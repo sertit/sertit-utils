@@ -38,19 +38,18 @@ def str_to_bool(bool_str: str) -> bool:
     - :code:`True` <=> :code:`yes`, :code:`true`, :code:`t`, :code:`1`
     - :code:`False` <=> :code:`no`, :code:`false`, :code:`f`, :code:`0`
 
-    .. code-block:: python
-
-        >>> str_to_bool("yes") == True  # Works with "yes", "true", "t", "y", "1" (accepted with any letter case)
-        True
-
-        >>> str_to_bool("no") == False  # Works with "no", "false", "f", "n", "0" (accepted with any letter case)
-        True
-
     Args:
         bool_str: Bool as a string
 
     Returns:
         bool: Boolean value
+
+    Examples:
+        >>> str_to_bool("yes") == True  # Works with "yes", "true", "t", "y", "1" (accepted with any letter case)
+        True
+
+        >>> str_to_bool("no") == False  # Works with "no", "false", "f", "n", "0" (accepted with any letter case)
+        True
     """
 
     if isinstance(bool_str, bool):
@@ -80,8 +79,13 @@ def str_to_verbosity(verbosity_str: str) -> int:
     - :code:`WARNING` <=> {:code:`warning`, :code:`w`, :code:`warn`}
     - :code:`ERROR`   <=> {:code:`error`, :code:`e`, :code:`err`}
 
-    .. code-block:: python
+    Args:
+        verbosity_str (str): String to be converted
 
+    Returns:
+        logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
+
+    Examples:
         >>> str_to_bool("d") == logging.DEBUG  # Works with 'debug', 'd', 10 (accepted with any letter case)
         True
 
@@ -93,12 +97,6 @@ def str_to_verbosity(verbosity_str: str) -> int:
 
         >>> str_to_bool("e") == logging.ERROR  # Works with 'error', 'e', 'err', 40 (accepted with any letter case)
         True
-
-    Args:
-        verbosity_str (str): String to be converted
-
-    Returns:
-        logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
     """
     debug_str = ("debug", "d", 10)
     info_str = ("info", "i", 20)
@@ -131,17 +129,17 @@ def str_to_list(
     """
     Convert str to list with :code:`,`, :code:`;`, :code:`\x20` separators.
 
-    .. code-block:: python
-
-        >>> str_to_list("A, B; C D")
-        ["A", "B", "C", "D"]
-
     Args:
         list_str (Union[str, list]): List as a string
         additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\\\x20` (space).
         case (str): {none, 'lower', 'upper'}
+
     Returns:
         list: A list from split string
+
+    Example:
+        >>> str_to_list("A, B; C D")
+        ["A", "B", "C", "D"]
     """
     if isinstance(list_str, str):
         # Concatenate separators
@@ -186,8 +184,14 @@ def str_to_date(
     - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
-    .. code-block:: python
+    Args:
+        date_str (str): Date as a string
+        date_format (str): Format of the date (as ingested by strptime)
 
+    Returns:
+        datetime.datetime: A date as a python datetime object
+
+    Examples:
         # Default date format (isoformat)
         >>> str_to_date("2020-05-05T08:05:15")
         datetime(2020, 5, 5, 8, 5, 15)
@@ -199,13 +203,6 @@ def str_to_date(
         # User date's format
         >>> str_to_date("20200909105055", date_format="%Y%m%d%H%M%S")
         datetime(2020, 9, 9, 10, 50, 55)
-
-    Args:
-        date_str (str): Date as a string
-        date_format (str): Format of the date (as ingested by strptime)
-
-    Returns:
-        datetime.datetime: A date as a python datetime object
     """
     if isinstance(date_str, datetime):
         dtm = date_str
@@ -247,14 +244,6 @@ def str_to_list_of_dates(
     - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
-    .. code-block:: python
-
-        >>> # Default date format (isoformat)
-        >>> str_to_list_of_dates("20200909105055, 2019-08-06;19560702121212\t2020-08-09",
-        >>>                      date_format="%Y%m%d%H%M%S",
-        >>>                      additional_separator="\t")
-        [datetime(2020, 9, 9, 10, 50, 55), datetime(2019, 8, 6), datetime(1956, 7, 2, 12, 12, 12), datetime(2020, 8, 9)]
-
     Args:
         date_str (Union[list, str]): Date as a string
         date_format (str): Format of the date (as ingested by strptime)
@@ -262,6 +251,13 @@ def str_to_list_of_dates(
 
     Returns:
         list: A list containing datetimes objects
+
+    Example:
+        >>> # Default date format (isoformat)
+        >>> str_to_list_of_dates("20200909105055, 2019-08-06;19560702121212\t2020-08-09",
+        >>>                      date_format="%Y%m%d%H%M%S",
+        >>>                      additional_separator="\t")
+        [datetime(2020, 9, 9, 10, 50, 55), datetime(2019, 8, 6), datetime(1956, 7, 2, 12, 12, 12), datetime(2020, 8, 9)]
     """
     # Split string to get a list of strings
     list_of_dates_str = str_to_list(date_str, additional_separator)
@@ -277,18 +273,17 @@ def to_cmd_string(unquoted_str: Any) -> str:
     Add quotes around the string in order to make the command understand it's a string
     (useful with tricky symbols like :code:`&` or white spaces):
 
-    .. code-block:: python
-
-        >>> # This str wont work in the terminal without quotes (because of the &)
-        >>> pb_str = r"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp"
-        >>> to_cmd_string(pb_str)
-        "\"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp\""
-
     Args:
         unquoted_str (str): String to update
 
     Returns:
         str: Quoted string
+
+    Example:
+        >>> # This str wont work in the terminal without quotes (because of the &)
+        >>> pb_str = r"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp"
+        >>> to_cmd_string(pb_str)
+        "\"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp\""
     """
     if not isinstance(unquoted_str, str):
         unquoted_str = str(unquoted_str)
@@ -305,16 +300,15 @@ def snake_to_camel_case(snake_str: str) -> str:
     """
     Convert a :code:`snake_case` string to :code:`CamelCase`.
 
-    .. code-block:: python
-
-        >>> snake_to_camel_case("snake_case")
-        "SnakeCase"
-
     Args:
         snake_str (str): String formatted in snake_case
 
     Returns:
         str: String formatted in CamelCase
+
+    Example:
+        >>> snake_to_camel_case("snake_case")
+        "SnakeCase"
     """
     return "".join((w.capitalize() for w in snake_str.split("_")))
 
@@ -323,16 +317,15 @@ def camel_to_snake_case(snake_str: str) -> str:
     """
     Convert a :code:`CamelCase` string to :code:`snake_case`.
 
-    .. code-block:: python
-
-        >>> camel_to_snake_case("CamelCase")
-        "camel_case"
-
     Args:
         snake_str (str): String formatted in CamelCase
 
     Returns:
         str: String formatted in snake_case
+
+    Example:
+        >>> camel_to_snake_case("CamelCase")
+        "camel_case"
     """
     return "".join(["_" + c.lower() if c.isupper() else c for c in snake_str]).lstrip(
         "_"

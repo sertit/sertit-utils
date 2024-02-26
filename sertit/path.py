@@ -40,8 +40,7 @@ def get_root_path() -> AnyPathType:
     - On Linux this returns :code:`/`
     - On Windows this returns :code:`C:/` or whatever the current drive is
 
-    .. code-block:: python
-
+    Example:
         >>> get_root_path()
         "/" on Linux
         "C:/" on Windows (if you run this code from the C: drive)
@@ -53,10 +52,15 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
     """
     Get absolute path of all files in the given directory.
 
-    It is the same function than :code:`os.listdir` but returning absolute paths.
+    It is the same function as :code:`os.listdir` but returning absolute paths.
 
-    .. code-block:: python
+    Args:
+        directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
 
+    Returns:
+        str: Absolute path of all files in the given directory
+
+    Example:
         >>> folder = "."
         >>> listdir_abspath(folder)
         ['D:/_SERTIT_UTILS/sertit-utils/sertit/files.py',
@@ -68,12 +72,6 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
         'D:/_SERTIT_UTILS/sertit-utils/sertit/vectors.py',
         'D:/_SERTIT_UTILS/sertit-utils/sertit/version.py',
         'D:/_SERTIT_UTILS/sertit-utils/sertit/__init__.py']
-
-    Args:
-        directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
-
-    Returns:
-        str: Absolute path of all files in the given directory
     """
     dirpath = AnyPath(directory)
 
@@ -95,20 +93,20 @@ def to_abspath(
 
     To be used with argparse to retrieve the absolute path of a file, like:
 
-    .. code-block:: python
-
-        >>> parser = argparse.ArgumentParser()
-        >>> # Add config file path key
-        >>> parser.add_argument("--config",
-                                help="Config file path (absolute or relative)",
-                                type=to_abspath)
-
     Args:
         raw_path (AnyPathStrType): Path as a string (relative or absolute)
         create (bool): Create directory if not existing
 
     Returns:
         AnyPathType: Absolute path
+
+    Example:
+        >>> parser = argparse.ArgumentParser()
+        >>> # Add config file path key
+        >>> parser.add_argument(
+        >>>     "--config",
+        >>>     help="Config file path (absolute or relative)",
+        >>> )
     """
     abs_path = AnyPath(raw_path).resolve()
 
@@ -130,19 +128,18 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
     Gives the real relative path from a starting folder.
     (and not just adding :code:`../..` between the start and the target)
 
-    .. code-block:: python
-
-        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
-        >>> start = os.path.join(".", "..", "..")
-        >>> real_rel_path(path, start)
-        'sertit-utils/sertit'
-
     Args:
         raw_path (AnyPathStrType): Path to make relative
         start (AnyPathStrType): Start, the path being relative from this folder.
 
     Returns:
         Relative path
+
+    Example:
+        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
+        >>> start = os.path.join(".", "..", "..")
+        >>> real_rel_path(path, start)
+        'sertit-utils/sertit'
     """
     raw_path = AnyPath(raw_path)
     start = AnyPath(start)
@@ -158,17 +155,16 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     """
     Get the list of all the files contained in an archive.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> get_archived_file_list(arch_path, file_regex)
-        ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
-
     Args:
         archive_path (AnyPathStrType): Archive path
 
     Returns:
         list: All files contained in the given archive
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> get_archived_file_list(arch_path, file_regex)
+        ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
     """
     archive_path = AnyPath(archive_path)
     if archive_path.suffix == ".zip":
@@ -196,13 +192,6 @@ def get_archived_path(
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_path(arch_path, file_regex)
-        'dir/filename.tif'
-
     Args:
         archive_path (AnyPathStrType): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
@@ -210,6 +199,12 @@ def get_archived_path(
 
     Returns:
         Union[list, str]: Path from inside the zipfile
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> path = get_archived_path(arch_path, file_regex)
+        'dir/filename.tif'
     """
     # Get file list
     archive_path = AnyPath(archive_path)
@@ -251,15 +246,6 @@ def get_archived_rio_path(
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_tif_path(arch_path, file_regex)
-        'zip+file://D:/path/to/output.zip!dir/filename.tif'
-        >>> rasterio.open(path)
-        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
-
     Args:
         archive_path (AnyPathStrType): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
@@ -267,6 +253,14 @@ def get_archived_rio_path(
 
     Returns:
         Union[list, str]: Band path that can be read by rasterio
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> path = get_archived_tif_path(arch_path, file_regex)
+        'zip+file://D:/path/to/output.zip!dir/filename.tif'
+        >>> rasterio.open(path)
+        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
     archive_path = AnyPath(archive_path)
     if archive_path.suffix in [".tar", ".zip"]:
@@ -305,18 +299,17 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
     """
     Get file name (without extension) from file path, ie:
 
-    .. code-block:: python
-
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_file_name(file_path)
-        'filename'
-
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
         other_exts (Union[list, str]): Other double extensions to discard
 
     Returns:
         str: File name (without extension)
+
+    Example:
+        >>> file_path = 'D:/path/to/filename.zip'
+        >>> get_file_name(file_path)
+        'filename'
     """
     file_path = AnyPath(file_path)
 
@@ -338,20 +331,21 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
 
 def get_ext(file_path: AnyPathStrType) -> str:
     """
-    Get file extension from file path, ie:
-    WITHOUT THE FIRST POINT
+    Get file extension from file path.
 
-    .. code-block:: python
-
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_ext(file_path)
-        'zip'
+    .. WARNING::
+        Extension is given WITHOUT THE FIRST POINT
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
 
     Returns:
         str: File name (without extension)
+
+    Example:
+        >>> file_path = 'D:/path/to/filename.zip'
+        >>> get_ext(file_path)
+        'zip'
     """
     file_path = AnyPath(file_path)
 
@@ -370,26 +364,6 @@ def find_files(
 
     Regex are allowed (using glob)
 
-    .. code-block:: python
-
-        >>> root_path = 'D:/root'
-        >>> dir1_path = 'D:/root/dir1'
-        >>> dir2_path = 'D:/root/dir2'
-
-        >>> os.listdir(dir1_path)
-        ["haha.txt", "huhu.txt", "hoho.txt"]
-        >>> os.listdir(dir2_path)
-        ["huhu.txt", "hehe.txt"]
-
-        >>> find_files("huhu.txt", root_path)
-        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
-
-        >>> find_files("huhu.txt", root_path, max_nof_files=1)
-        ['D:/root/dir1/huhu.txt']
-
-        >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
-        found = 'D:/root/dir1/huhu.txt'
-
     Args:
         names (Union[list, str]): File names.
         root_paths (Union[list, str]): Root paths
@@ -398,6 +372,25 @@ def find_files(
 
     Returns:
         list: File name
+
+    Example:
+        >>> root_path = 'D:/root'
+        >>> dir1_path = 'D:/root/dir1'
+        >>> dir2_path = 'D:/root/dir2'
+        >>>
+        >>> os.listdir(dir1_path)
+        ["haha.txt", "huhu.txt", "hoho.txt"]
+        >>> os.listdir(dir2_path)
+        ["huhu.txt", "hehe.txt"]
+        >>>
+        >>> find_files("huhu.txt", root_path)
+        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
+        >>>
+        >>> find_files("huhu.txt", root_path, max_nof_files=1)
+        ['D:/root/dir1/huhu.txt']
+        >>>
+        >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
+        found = 'D:/root/dir1/huhu.txt'
     """
     paths = []
 
@@ -456,27 +449,6 @@ def get_file_in_dir(
     If :code:`exact_name` is :code:`False`, the searched pattern will be :code:`*{pattern}*.{extension}`,
     else :code:`{pattern}.{extension}`.
 
-    .. code-block:: python
-
-        >>> directory = 'D:/path/to/dir'
-        >>> os.listdir(directory)
-        ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
-
-        >>> get_file_in_dir(directory, "huhu")
-        'D:/path/to/dir/huhu1.geojson'
-
-        >>> get_file_in_dir(directory, "huhu", extension="txt")
-        'D:/path/to/dir/huhu1.txt'
-
-        >>> get_file_in_dir(directory, "huhu", get_list=True)
-        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
-
-        >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
-        ['huhu1.txt', 'huhu1.geojson']
-
-        >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
-        []
-
     Args:
         directory (str): Directory where to find the files
         pattern_str (str): Pattern wanted as a string, with glob's convention.
@@ -487,6 +459,26 @@ def get_file_in_dir(
 
     Returns:
         Union[AnyPathType, list]: File
+
+    Example:
+        >>> directory = 'D:/path/to/dir'
+        >>> os.listdir(directory)
+        ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
+        >>>
+        >>> get_file_in_dir(directory, "huhu")
+        'D:/path/to/dir/huhu1.geojson'
+        >>>
+        >>> get_file_in_dir(directory, "huhu", extension="txt")
+        'D:/path/to/dir/huhu1.txt'
+        >>>
+        >>> get_file_in_dir(directory, "huhu", get_list=True)
+        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
+        >>>
+        >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
+        ['huhu1.txt', 'huhu1.geojson']
+        >>>
+        >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
+        []
     """
     directory = AnyPath(directory)
 

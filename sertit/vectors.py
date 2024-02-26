@@ -72,7 +72,14 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
 
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
-    Examples:
+    Args:
+        lon (float): Longitude (WGS84, epsg:4326)
+        lat (float): Latitude (WGS84, epsg:4326)
+
+    Returns:
+        CRS: UTM CRS
+
+    Example:
         >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
         <Derived Projected CRS: EPSG:32632>
         Name: WGS 84 / UTM zone 32N
@@ -87,13 +94,6 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
         Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
-
-    Args:
-        lon (float): Longitude (WGS84, epsg:4326)
-        lat (float): Latitude (WGS84, epsg:4326)
-
-    Returns:
-        CRS: UTM CRS
 
     """
     # Manage the case with centroids etc. that are already written as arrays
@@ -112,7 +112,14 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
 
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
-    Examples:
+    Args:
+        lon (float): Longitude (WGS84, epsg:4326)
+        lat (float): Latitude (WGS84, epsg:4326)
+
+    Returns:
+        CRS: UTM CRS
+
+    Example:
         >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
         <Derived Projected CRS: EPSG:32632>
         Name: WGS 84 / UTM zone 32N
@@ -127,13 +134,6 @@ def corresponding_utm_projection(lon: float, lat: float) -> str:
         Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
-
-    Args:
-        lon (float): Longitude (WGS84, epsg:4326)
-        lat (float): Latitude (WGS84, epsg:4326)
-
-    Returns:
-        CRS: UTM CRS
 
     """
     logs.deprecation_warning(
@@ -217,13 +217,6 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
     - only **one** polygon composes the AOI (as only the first one is read)
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
 
-    Examples:
-        >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
-        >>> get_aoi_wkt(path)
-        'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
-        0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
-        34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
-
     Args:
         aoi_path (AnyPathStrType): Absolute or relative path to an AOI.
             Its format should be WKT or any format read by Fiona, like shapefiles.
@@ -231,6 +224,13 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     Returns:
         Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
+
+    Example:
+        >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
+        >>> get_aoi_wkt(path)
+        'POLYGON Z ((46.1947755465253067 32.4973553439109324 0.0000000000000000, 45.0353174370802520 32.4976496856158974
+        0.0000000000000000, 45.0355748149750283 34.1139970085580018 0.0000000000000000, 46.1956059695554089
+        34.1144793800670882 0.0000000000000000, 46.1947755465253067 32.4973553439109324 0.0000000000000000))'
 
 
     """
@@ -322,12 +322,12 @@ def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
     """
     Write vector to disk, managing the common drivers automatically.
 
-    Examples:
-        >>> write(my_vector, path="my_vector.kml")
-
     Args:
         gdf (gpd.GeoDataFrame): GeoDataFrame to write on disk
         path (AnyPathStrType): Where to write on disk.
+
+    Example:
+        >>> write(my_vector, path="my_vector.kml")
     """
     path = AnyPath(path)
 
@@ -346,20 +346,19 @@ def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
     """
      Copy vector (handles shapefiles additional files)
 
-     Examples:
-         >>> new_aoi_path = copy("in/aoi.shp", "out/aoi.shp")
-         >>> new_aoi_path
-         PosixPath('out/aoi.shp')
-         >>> list(new_aoi_path.parent.glob("*"))
-         [PosixPath('out/aoi.dbf'), PosixPath('out/aoi.prj'), PosixPath('out/aoi.shp'), PosixPath('out/aoi.shx')]
-
-
     Args:
         src_path (AnyPathStrType): Source Path
         dst_path (AnyPathStrType): Destination Path (file or folder)
 
     Returns:
         AnyPathType: Path to copied vector
+
+    Example:
+        >>> new_aoi_path = copy("in/aoi.shp", "out/aoi.shp")
+        >>> new_aoi_path
+        PosixPath('out/aoi.shp')
+        >>> list(new_aoi_path.parent.glob("*"))
+        [PosixPath('out/aoi.dbf'), PosixPath('out/aoi.prj'), PosixPath('out/aoi.shp'), PosixPath('out/aoi.shx')]
     """
     src_path = AnyPath(src_path)
     dst_path = AnyPath(dst_path)
@@ -393,7 +392,18 @@ def read(
     - if archive (only zip or tar), use a regex to look for the vector inside the archive. You can use this `site <https://regexr.com/>`_ to build your regex.
     - if GML: manages the empty errors
 
-    Handles a lot of exceptions and have fallback mechanisms with ogr2ogr (if in PATH)
+    Handles a lot of exceptions and have fallback mechanisms with :code:`ogr2ogr` (if in :code:`PATH`)
+
+    Args:
+        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
+        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
+            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
+        **kwargs: Additional arguments used in gpd.read_file
+
+    Returns:
+        gpd.GeoDataFrame: Read vector as a GeoDataFrame
 
     Examples:
         >>> # Usual
@@ -407,17 +417,6 @@ def read(
         >>> vectors.read(arch_path, archive_regex=r".*map-overlay.kml")
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
-
-    Args:
-        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
-        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
-        archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
-        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
-            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
-        **kwargs: Additional arguments used in gpd.read_file
-
-    Returns:
-        gpd.GeoDataFrame: Read vector as a GeoDataFrame
     """
     # Default values
     gpd_vect_path = str(vector_path)
@@ -694,16 +693,16 @@ def utm_crs(gdf: gpd.GeoDataFrame) -> None:
     WARNING:
         The modifications (other than CRS) on the yielded GeoDataFrame will be kept!
 
-    Examples:
+    Args:
+        gdf (str): GeoDataFrame to convert
+
+    Example:
         >>> vect = vectors.read(vectors_path().joinpath("aoi.kml"))
         >>> with vectors.utm_crs(vect) as utm_vect:
         >>>     utm_centroid = utm_vect.centroid
         >>>     utm_vect["centroid_utm"] = utm_centroid
         >>> vect["centroid_utm"].equals(c2)
         True
-
-    Args:
-        gdf (str): GeoDataFrame to convert
     """
     src_crs = None
     if not gdf.crs.is_projected:

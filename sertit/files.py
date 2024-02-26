@@ -53,8 +53,7 @@ def get_root_path() -> AnyPathType:
     - On Linux this returns :code:`/`
     - On Windows this returns :code:`C:/` or whatever the current drive is
 
-    .. code-block:: python
-
+    Example:
         >>> get_root_path()
         "/" on Linux
         "C:/" on Windows (if you run this code from the C: drive)
@@ -74,8 +73,13 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
 
     It is the same function than :code:`os.listdir` but returning absolute paths.
 
-    .. code-block:: python
+    Args:
+        directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
 
+    Returns:
+        str: Absolute path of all files in the given directory
+
+    Example:
         >>> folder = "."
         >>> listdir_abspath(folder)
         ['D:/_SERTIT_UTILS/sertit-utils/sertit/files.py',
@@ -87,12 +91,6 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
         'D:/_SERTIT_UTILS/sertit-utils/sertit/vectors.py',
         'D:/_SERTIT_UTILS/sertit-utils/sertit/version.py',
         'D:/_SERTIT_UTILS/sertit-utils/sertit/__init__.py']
-
-    Args:
-        directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
-
-    Returns:
-        str: Absolute path of all files in the given directory
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -118,20 +116,21 @@ def to_abspath(
 
     To be used with argparse to retrieve the absolute path of a file, like:
 
-    .. code-block:: python
-
-        >>> parser = argparse.ArgumentParser()
-        >>> # Add config file path key
-        >>> parser.add_argument("--config",
-                                help="Config file path (absolute or relative)",
-                                type=to_abspath)
-
     Args:
         raw_path (AnyPathStrType): Path as a string (relative or absolute)
         create (bool): Create directory if not existing
 
     Returns:
         AnyPathType: Absolute path
+
+    Example:
+        >>> parser = argparse.ArgumentParser()
+        >>> # Add config file path key
+        >>> parser.add_argument(
+        >>>     "--config",
+        >>>     help="Config file path (absolute or relative)",
+        >>>     type=to_abspath
+        >>> )
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -147,19 +146,18 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
     Gives the real relative path from a starting folder.
     (and not just adding :code:`../..` between the start and the target)
 
-    .. code-block:: python
-
-        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
-        >>> start = os.path.join(".", "..", "..")
-        >>> real_rel_path(path, start)
-        'sertit-utils/sertit'
-
     Args:
         raw_path (AnyPathStrType): Path to make relative
         start (AnyPathStrType): Start, the path being relative from this folder.
 
     Returns:
         Relative path
+
+    Example:
+        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
+        >>> start = os.path.join(".", "..", "..")
+        >>> real_rel_path(path, start)
+        'sertit-utils/sertit'
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -176,13 +174,6 @@ def extract_file(
     Extract an archived file (zip or others). Overwrites if specified.
     For zipfiles, in case of multiple folders archived, pay attention that what is returned is the first folder.
 
-    .. code-block:: python
-
-        >>> file_path = 'D:/path/to/zip.zip'
-        >>> output = 'D:/path/to/output'
-        >>> extract_file(file_path, output, overwrite=True)
-        D:/path/to/output.zip'
-
     Args:
         file_path (str): Archive file path
         output (str): Output where to put the extracted file
@@ -190,6 +181,12 @@ def extract_file(
 
     Returns:
         Union[list, AnyPathType]: Extracted file paths (as str if only one)
+
+    Example:
+        >>> file_path = 'D:/path/to/zip.zip'
+        >>> output = 'D:/path/to/output'
+        >>> extract_file(file_path, output, overwrite=True)
+        D:/path/to/output.zip'
     """
     # Convert to path
     file_path = AnyPath(file_path)
@@ -284,8 +281,7 @@ def extract_files(
     """
     Extract all archived files. Overwrites if specified.
 
-    .. code-block:: python
-
+    Example:
         >>> file_path = ['D:/path/to/zip1.zip', 'D:/path/to/zip2.zip']
         >>> output = 'D:/path/to/output'
         >>> extract_files(file_path, output, overwrite=True)
@@ -316,17 +312,16 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
 
     Get the list of all the files contained in an archive.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> get_archived_file_list(arch_path, file_regex)
-        ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
-
     Args:
         archive_path (AnyPathStrType): Archive path
 
     Returns:
         list: All files contained in the given archive
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> get_archived_file_list(arch_path, file_regex)
+        ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -348,8 +343,7 @@ def get_archived_path(
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
+    Example:
         >>> arch_path = 'D:/path/to/zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
         >>> path = get_archived_path(arch_path, file_regex)
@@ -393,15 +387,6 @@ def get_archived_rio_path(
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_tif_path(arch_path, file_regex)
-        'zip+file://D:/path/to/output.zip!dir/filename.tif'
-        >>> rasterio.open(path)
-        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
-
     Args:
         archive_path (AnyPathStrType): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
@@ -409,6 +394,14 @@ def get_archived_rio_path(
 
     Returns:
         Union[list, str]: Band path that can be read by rasterio
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> path = get_archived_tif_path(arch_path, file_regex)
+        'zip+file://D:/path/to/output.zip!dir/filename.tif'
+        >>> rasterio.open(path)
+        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -471,19 +464,18 @@ def read_archived_xml(archive_path: AnyPathStrType, xml_regex: str) -> etree._El
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> read_archived_xml(arch_path, file_regex)
-        <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
-
     Args:
         archive_path (AnyPathStrType): Archive path
         xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list
 
     Returns:
          etree._Element: XML file
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> read_archived_xml(arch_path, file_regex)
+        <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
     xml_bytes = read_archived_file(archive_path, xml_regex)
 
@@ -496,19 +488,18 @@ def read_archived_html(archive_path: AnyPathStrType, regex: str) -> html.HtmlEle
 
     You can use this `site <https://regexr.com/>`_ to build your regex.
 
-    .. code-block:: python
-
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> read_archived_html(arch_path, file_regex)
-        <Element html at 0x1c90007f8c8>
-
     Args:
         archive_path (AnyPathStrType): Archive path
         regex (str): HTML regex (used by re) as it can be found in the getmembers() list
 
     Returns:
          html._Element: HTML file
+
+    Example:
+        >>> arch_path = 'D:/path/to/zip.zip'
+        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> read_archived_html(arch_path, file_regex)
+        <Element html at 0x1c90007f8c8>
     """
     html_bytes = read_archived_file(archive_path, regex)
 
@@ -523,19 +514,19 @@ def archive(
     """
     Archives a folder recursively.
 
-    .. code-block:: python
-
-        >>> folder_path = 'D:/path/to/folder_to_archive'
-        >>> archive_path = 'D:/path/to/output'
-        >>> archive = archive(folder_path, archive_path, fmt="gztar")
-        'D:/path/to/output/folder_to_archive.tar.gz'
-
     Args:
         folder_path (AnyPathStrType): Folder to archive
         archive_path (AnyPathStrType): Archive path, with or without extension
         fmt (str): Format of the archive, used by :code:`shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
+
     Returns:
         str: Archive filename
+
+    Example:
+        >>> folder_path = 'D:/path/to/folder_to_archive'
+        >>> archive_path = 'D:/path/to/output'
+        >>> archive = archive(folder_path, archive_path, fmt="gztar")
+        'D:/path/to/output/folder_to_archive.tar.gz'
     """
     archive_path = AnyPath(archive_path)
     folder_path = AnyPath(folder_path)
@@ -569,19 +560,18 @@ def add_to_zip(
     """
     Add folders to an already existing zip file (recursively).
 
-    .. code-block:: python
-
-        >>> zip_path = 'D:/path/to/zip.zip'
-        >>> dirs_to_add = ['D:/path/to/dir1', 'D:/path/to/dir2']
-        >>> add_to_zip(zip_path, dirs_to_add)
-        >>> # zip.zip contains 2 more folders, dir1 and dir2
-
     Args:
         zip_path (AnyPathStrType): Already existing zip file
         dirs_to_add (Union[list, AnyPathStrType]): Directories to add
 
     Returns:
         AnyPathType: Updated zip_path
+
+    Example:
+        >>> zip_path = 'D:/path/to/zip.zip'
+        >>> dirs_to_add = ['D:/path/to/dir1', 'D:/path/to/dir2']
+        >>> add_to_zip(zip_path, dirs_to_add)
+        zip.zip contains 2 more folders, dir1 and dir2
     """
     zip_path = AnyPath(zip_path)
 
@@ -643,13 +633,7 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
     .. deprecated:: 1.30.0
        Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
 
-    Get file name (without extension) from file path, ie:
-
-    .. code-block:: python
-
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_file_name(file_path)
-        'filename'
+    Get file name (without extension) from file path, i.e.:
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
@@ -657,6 +641,11 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
 
     Returns:
         str: File name (without extension)
+
+    Example:
+        >>> file_path = 'D:/path/to/filename.zip'
+        >>> get_file_name(file_path)
+        'filename'
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -669,20 +658,21 @@ def get_ext(file_path: AnyPathStrType) -> str:
     .. deprecated:: 1.30.0
        Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
 
-    Get file extension from file path, ie:
-    WITHOUT THE FIRST POINT
+    Get file extension from file path.
 
-    .. code-block:: python
-
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_ext(file_path)
-        'zip'
+    .. WARNING::
+        Extension is given WITHOUT THE FIRST POINT
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
 
     Returns:
         str: File name (without extension)
+
+    Example:
+        >>> file_path = 'D:/path/to/filename.zip'
+        >>> get_ext(file_path)
+        'zip'
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -694,14 +684,13 @@ def remove(path: AnyPathStrType) -> None:
     """
     Deletes a file or a directory (recursively) using :code:`shutil.rmtree` or :code:`os.remove`.
 
-    .. code-block:: python
+    Args:
+        path (AnyPathStrType): Path to be removed
 
+    Example:
         >>> path_to_remove = 'D:/path/to/remove'  # Could also be a file
         >>> remove(path_to_remove)
         path_to_remove deleted
-
-    Args:
-        path (AnyPathStrType): Path to be removed
     """
     path = AnyPath(path)
     if not path.exists():
@@ -728,24 +717,23 @@ def remove_by_pattern(
     """
     Remove files corresponding to a pattern from a directory.
 
-    .. code-block:: python
-
-        >>> directory = 'D:/path/to/folder'
-        >>> os.listdir(directory)
-        ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
-
-        >>> remove(directory, "blabla*")
-        >>> os.listdir(directory)
-        ["huhu.exe", "haha.txt"] # Removes also directories
-
-        >>> remove(directory, "*", extension="txt")
-        >>> os.listdir(directory)
-        ["huhu.exe"]
-
     Args:
         directory (AnyPathStrType): Directory where to find the files
         name_with_wildcard (str): Filename (wildcards accepted)
         extension (str): Extension wanted, optional. With or without point. (yaml or .yaml accepted)
+
+    Example:
+        >>> directory = 'D:/path/to/folder'
+        >>> os.listdir(directory)
+        ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
+        >>>
+        >>> remove(directory, "blabla*")
+        >>> os.listdir(directory)
+        ["huhu.exe", "haha.txt"] # Removes also directories
+        >>>
+        >>> remove(directory, "*", extension="txt")
+        >>> os.listdir(directory)
+        ["huhu.exe"]
     """
     directory = AnyPath(directory)
     if extension and not extension.startswith("."):
@@ -760,8 +748,14 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
     """
     Copy a file or a directory (recursively) with :code:`copytree` or :code:`copy2`.
 
-    .. code-block:: python
+    Args:
+        src (AnyPathStrType): Source Path
+        dst (AnyPathStrType): Destination Path (file or folder)
 
+    Returns:
+        AnyPathType: New path
+
+    Examples:
         >>> src = 'D:/path/to/copy'
         >>> dst = 'D:/path/to/output'
         >>> copy(src, dst)
@@ -771,13 +765,6 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
         >>> dst = 'D:/path/to/output/huhu.txt'
         >>> copyfile = copy(src, dst)
         'D:/path/to/output/huhu.txt' but with the content of copy.txt
-
-    Args:
-        src (AnyPathStrType): Source Path
-        dst (AnyPathStrType): Destination Path (file or folder)
-
-    Returns:
-        AnyPathType: New path
     """
     src = AnyPath(src)
 
@@ -814,26 +801,6 @@ def find_files(
 
     Regex are allowed (using glob)
 
-    .. code-block:: python
-
-        >>> root_path = 'D:/root'
-        >>> dir1_path = 'D:/root/dir1'
-        >>> dir2_path = 'D:/root/dir2'
-
-        >>> os.listdir(dir1_path)
-        ["haha.txt", "huhu.txt", "hoho.txt"]
-        >>> os.listdir(dir2_path)
-        ["huhu.txt", "hehe.txt"]
-
-        >>> find_files("huhu.txt", root_path)
-        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
-
-        >>> find_files("huhu.txt", root_path, max_nof_files=1)
-        ['D:/root/dir1/huhu.txt']
-
-        >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
-        found = 'D:/root/dir1/huhu.txt'
-
     Args:
         names (Union[list, str]): File names.
         root_paths (Union[list, str]): Root paths
@@ -842,6 +809,25 @@ def find_files(
 
     Returns:
         list: File name
+
+    Examples:
+        >>> root_path = 'D:/root'
+        >>> dir1_path = 'D:/root/dir1'
+        >>> dir2_path = 'D:/root/dir2'
+        >>>
+        >>> os.listdir(dir1_path)
+        ["haha.txt", "huhu.txt", "hoho.txt"]
+        >>> os.listdir(dir2_path)
+        ["huhu.txt", "hehe.txt"]
+        >>>
+        >>> find_files("huhu.txt", root_path)
+        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
+        >>>
+        >>> find_files("huhu.txt", root_path, max_nof_files=1)
+        ['D:/root/dir1/huhu.txt']
+
+        >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
+        found = 'D:/root/dir1/huhu.txt'
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -914,18 +900,17 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
     """
     Read a JSON file
 
-    .. code-block:: python
-
-        >>> json_path = 'D:/path/to/json.json'
-        >>> read_json(json_path, print_file=False)
-        {"A": 1, "B": 2}
-
     Args:
         json_file (AnyPathStrType): Path to JSON file
         print_file (bool):  Print the configuration file
 
     Returns:
         dict: JSON data
+
+    Example:
+        >>> json_path = 'D:/path/to/json.json'
+        >>> read_json(json_path, print_file=False)
+        {"A": 1, "B": 2}
     """
 
     with open(json_file) as file:
@@ -946,16 +931,15 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
 
     Save a JSON file, with datetime, numpy types and Enum management.
 
-    .. code-block:: python
-
-        >>> output_json = 'D:/path/to/json.json'
-        >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
-        >>> save_json(output_json, json_dict)
-
     Args:
         json_dict (dict): Json dictionary
         output_json (AnyPathStrType): Output file
         **kwargs: Other arguments
+
+    Example:
+        >>> output_json = 'D:/path/to/json.json'
+        >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
+        >>> save_json(output_json, json_dict)
     """
     if isinstance(output_json, dict):
         # Old order. Swap the variables.
@@ -977,17 +961,16 @@ def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
     """
     Save an object as a pickle (can save any Python objects).
 
-    .. code-block:: python
+    Args:
+        obj (Any): Any object serializable
+        path (AnyPathStrType): Path where to write the pickle
 
+    Example:
         >>> output_pkl = 'D:/path/to/pickle.pkl'
         >>> pkl_dict = {"A": np.ones([3, 3]),
                         "B": datetime.today(),
                         "C": SomeEnum.some_name}
         >>> save_json(output_pkl, pkl_dict)
-
-    Args:
-        obj (Any): Any object serializable
-        path (AnyPathStrType): Path where to write the pickle
     """
     with open(path, "wb+") as file:
         dill.dump(obj, file, **kwargs)
@@ -997,16 +980,16 @@ def load_obj(path: AnyPathStrType) -> Any:
     """
     Load a pickled object.
 
-    .. code-block:: python
+    Args:
+        path (AnyPathStrType): Path of the pickle
 
+    Returns:
+        object (Any): Pickled object
+
+    Example:
         >>> output_pkl = 'D:/path/to/pickle.pkl'
         >>> load_obj(output_pkl)
         {"A": np.ones([3, 3]), "B": datetime.today(), "C": SomeEnum.some_name}
-
-    Args:
-        path (AnyPathStrType): Path of the pickle
-    Returns:
-        object (Any): Pickled object
 
     """
     with open(path, "rb") as file:
@@ -1034,27 +1017,6 @@ def get_file_in_dir(
     If :code:`exact_name` is :code:`False`, the searched pattern will be :code:`*{pattern}*.{extension}`,
     else :code:`{pattern}.{extension}`.
 
-    .. code-block:: python
-
-        >>> directory = 'D:/path/to/dir'
-        >>> os.listdir(directory)
-        ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
-
-        >>> get_file_in_dir(directory, "huhu")
-        'D:/path/to/dir/huhu1.geojson'
-
-        >>> get_file_in_dir(directory, "huhu", extension="txt")
-        'D:/path/to/dir/huhu1.txt'
-
-        >>> get_file_in_dir(directory, "huhu", get_list=True)
-        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
-
-        >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
-        ['huhu1.txt', 'huhu1.geojson']
-
-        >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
-        []
-
     Args:
         directory (str): Directory where to find the files
         pattern_str (str): Pattern wanted as a string, with glob's convention.
@@ -1065,6 +1027,26 @@ def get_file_in_dir(
 
     Returns:
         Union[AnyPathType, list]: File
+
+    Example:
+        >>> directory = 'D:/path/to/dir'
+        >>> os.listdir(directory)
+        ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
+        >>>
+        >>> get_file_in_dir(directory, "huhu")
+        'D:/path/to/dir/huhu1.geojson'
+        >>>
+        >>> get_file_in_dir(directory, "huhu", extension="txt")
+        'D:/path/to/dir/huhu1.txt'
+        >>>
+        >>> get_file_in_dir(directory, "huhu", get_list=True)
+        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
+        >>>
+        >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
+        ['huhu1.txt', 'huhu1.geojson']
+        >>>
+        >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
+        []
     """
     logs.deprecation_warning(
         "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
@@ -1079,20 +1061,19 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
     """
     Hash a file into a unique str.
 
-    .. code-block:: python
-
-        >>> read_json("path/to/json.json")
-        {"A": 1, "B": 2}
-
-        >>> hash_file_content(str(file_content))
-        "d3fad5bdf9"
-
     Args:
         file_content (str): File content
         len_param (int): Length parameter for the hash (length of the key will be 2x this number)
 
     Returns:
         str: Hashed file content
+
+    Example:
+        >>> read_json("path/to/json.json")
+        {"A": 1, "B": 2}
+        >>>
+        >>> hash_file_content(str(file_content))
+        "d3fad5bdf9"
     """
     hasher = hashlib.shake_256()
     hasher.update(str.encode(file_content))
