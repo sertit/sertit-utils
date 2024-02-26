@@ -95,7 +95,7 @@ def get_nodata_value(dtype) -> int:
     # Convert type to numpy if needed
     try:
         dtype = getattr(np, dtype)
-    except AttributeError:
+    except (AttributeError, TypeError):
         pass
 
     if dtype == np.uint8:
