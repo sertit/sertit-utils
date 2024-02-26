@@ -1,8 +1,9 @@
 # Release History
 
-## 1.36.0 (2024-MM-DD)
+## 1.36.0 (2024-02-26)
 
 - **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`
+- **BREAKING CHANGE**: Rename `rasters(_rio).get_nodata_mask` to `rasters(_rio).get_data_mask` to better fit with its behaviour (1 where data is valid, 0 elsewhere)
 - **ENH: Add `geometry.intersects` to find polygons intersecting with other polygons (wrapper of `geopandas.intersects` that works only row-wise)**
 - **ENH: Add `geometry.line_merge` to use `shapely.line_merge` on GeoDataFrames**
 - **ENH: Add `geometry.buffer` (using `gpd.buffer`) to return a GeoDataFrame instead of a GeoSeries**

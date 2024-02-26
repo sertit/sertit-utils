@@ -50,7 +50,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' and 'geopandas' to use the 'rasters' package."
     ) from ex
 
-from sertit import geometry, path, rasters_rio, vectors
+from sertit import geometry, logs, path, rasters_rio, vectors
 
 MAX_CORES = MAX_CORES
 PATH_XARR_DS = Union[str, AnyXrDataStructure, rasterio.DatasetReader]
@@ -58,16 +58,16 @@ LOGGER = logging.getLogger(SU_NAME)
 
 # NODATAs
 UINT8_NODATA = rasters_rio.UINT8_NODATA
-""" int: UINT8 nodata = 255 """
+""" :code:`uint8` nodata """
 
 INT8_NODATA = rasters_rio.INT8_NODATA
-""" int: INT8 nodata = -128 """
+""" :code:`int8` nodata """
 
 UINT16_NODATA = rasters_rio.UINT16_NODATA
-""" int: UINT16 nodata = 65535 """
+""" :code:`uint16` nodata """
 
 FLOAT_NODATA = rasters_rio.FLOAT_NODATA
-""" float: FLOAT nodata, -9999 """
+""" :code:`float` nodata """
 
 
 def get_nodata_value(dtype) -> int:
@@ -75,14 +75,14 @@ def get_nodata_value(dtype) -> int:
     Get default nodata value:
 
     Examples:
-        >>> if dtype == np.uint8:
-        >>>     nodata = UINT8_NODATA
-        >>> elif dtype == np.int8:
-        >>>     nodata = INT8_NODATA
-        >>> elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
-        >>>     nodata = UINT16_NODATA
-        >>> elif dtype in [np.int16, np.float32, np.float64, float]:
-        >>>     nodata = FLOAT_NODATA
+        >>> rasters.get_nodata_value("uint8")
+        255
+        >>> rasters.get_nodata_value("uint16")
+        65535
+        >>> rasters.get_nodata_value("int8")
+        -128
+        >>> rasters.get_nodata_value("float")
+        -9999
 
     Args:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
@@ -95,7 +95,7 @@ def get_nodata_value(dtype) -> int:
 
 def path_xarr_dst(function: Callable) -> Callable:
     """
-    Path, :code:`xarray` or dataset decorator. Allows a function to ingest:
+    Path, :code:`xarray.Dataset`, :code:`xarray.DataArray`,or dataset decorator. Allows a function to ingest:
 
     - a path
     - a :code:`xarray`
@@ -179,9 +179,23 @@ def path_xarr_dst(function: Callable) -> Callable:
     return path_or_xarr_or_dst_wrapper
 
 
+@path_xarr_dst
 def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
     """
+    .. deprecated:: 1.36.0
+       Use :py:mod:`rasters.get_data_mask` instead.
+    """
+    logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
+    return get_data_mask(xds)
+
+
+@path_xarr_dst
+def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
+    """
     Get nodata mask from a xarray.
+
+    .. WARNING::
+        Sets 1 where the data is valid and 0 where it is not!
 
     Examples:
         >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
@@ -191,7 +205,8 @@ def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
                [0, 2, 0],
                [0, 0, 3]])
         Dimensions without coordinates: dim_0, dim_1
-
+        >>>
+        >>> # Get the nodata mask from this array
         >>> get_nodata_mask(diag_arr)
         array([[1, 0, 0],
                [0, 1, 0],
@@ -306,7 +321,7 @@ def _vectorize(
         nodata = default_nodata
 
     if get_nodata:
-        data = get_nodata_mask(xds)
+        data = get_data_mask(xds)
         nodata_arr = None
     else:
         xds_uint8 = xds.fillna(uint8_nodata)
@@ -330,7 +345,7 @@ def _vectorize(
             data = np.where(np.isin(data, values), true, false).astype(np.uint8)
 
         # Get nodata array
-        nodata_arr = rasters_rio.get_nodata_mask(
+        nodata_arr = rasters_rio.get_data_mask(
             data, has_nodata=False, default_nodata=nodata
         )
 
@@ -384,9 +399,12 @@ def vectorize(
     Examples:
         >>> raster_path = "path/to/raster.tif"
         >>> vec1 = vectorize(raster_path)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     vec2 = vectorize(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> vec1 == vec2
         True
 
@@ -412,17 +430,20 @@ def vectorize(
 @path_xarr_dst
 def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
-    Get the valid data of a raster as a vector.
+    Get the valid data of a raster, returned as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :code:`get_footprint`.
+    If you want only the footprint of the raster, please use :py:mod:`rasters.get_footprint`.
 
     Examples:
         >>> raster_path = "path/to/raster.tif"
         >>> nodata1 = get_nodata_vec(raster_path)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     nodata2 = get_nodata_vec(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> nodata1 == nodata2
         True
 
@@ -447,14 +468,17 @@ def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
     Get the nodata vector of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :code:`get_footprint`.
+    If you want only the footprint of the raster, please use :py:mod:`get_footprint`.
 
     Examples:
         >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
         >>> nodata1 = get_nodata_vec(raster_path)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     nodata2 = get_nodata_vec(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> nodata1 == nodata2
         True
 
@@ -492,9 +516,12 @@ def mask(
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
         >>> mask1 = mask(raster_path, shapes)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     mask2 = mask(ds, shapes)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> mask1 == mask2
         True
 
@@ -544,9 +571,12 @@ def paint(
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
         >>> paint1 = paint(raster_path, shapes, value=100)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     paint2 = paint(ds, shapes, value=100)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> paint1 == paint2
         True
 
@@ -610,9 +640,12 @@ def crop(
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
         >>> xds2 = crop(raster_path, shapes)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     xds2 = crop(ds, shapes)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> xds1 == xds2
         True
 
@@ -673,9 +706,12 @@ def read(
     Examples:
         >>> raster_path = "path/to/raster.tif"
         >>> xds1 = read(raster_path)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>    xds2 = read(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> xds1 == xds2
         True
 
@@ -795,19 +831,25 @@ def write(
 
     If not overwritten, sets the nodata according to :code:`dtype`:
 
-    - uint8: 255
-    - int8: -128
-    - uint16, uint32, int32, int64, uint64: 65535
-    - int16, float32, float64, float128, float: -9999
+    - :code:`uint8`: 255
+    - :code:`int8`: -128
+    - :code:`uint16`, :code:`uint32`, :code:`int32`, :code:`int64`, :code:`uint64`, :code:`int`: 65535
+    - :code:int16, :code:`float32`, :code:`float64`, :code:`float128`, :code:`float`: -9999
 
-    Compress with :code:`LZW` option by default. To disable it, add the :code:`compress=None` parameter.
+    Default parameters
 
+    - Compress with :code:`LZW` option by default. To disable it, add the :code:`compress=None` parameter.
+    - :code:`predictor` set to `2` for float data, to `3` for interger data by default. To disable it, add the :code:`predictor=None` parameter.
+    - :code:`tiled` set to `True` by default.
+    - :code:`driver` is :code:`GTiff` by default. BigTiff option is set according to the estimated output weight
 
     Examples:
         >>> raster_path = "path/to/raster.tif"
         >>> raster_out = "path/to/out.tif"
+        >>>
         >>> # Read raster
         >>> xds = read(raster_path)
+        >>>
         >>> # Rewrite it
         >>> write(xds, raster_out)
 
@@ -880,10 +922,10 @@ def collocate(
         >>> reference_path = "path/to/reference.tif"
         >>> other_path = "path/to/other.tif"
         >>> col_path = "path/to/collocated.tif"
-
+        >>>
         >>> # Collocate the other to the reference
         >>> col_xds = collocate(read(reference_path), read(other_path), Resampling.bilinear)
-
+        >>>
         >>> # Write it
         >>> write(col_xds, col_path)
 
@@ -928,17 +970,17 @@ def sieve(
     xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4
 ) -> AnyXrDataStructure:
     """
-    Sieving, overloads rasterio function with raster shaped like (1, h, w).
+    Sieving, overloads rasterio function with raster shaped like an image: :code:`(1, h, w)`.
 
     .. WARNING::
         Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
 
     Examples:
         >>> raster_path = "path/to/raster.tif"  # classified raster
-
+        >>>
         >>> # Rewrite it
         >>> sieved_xds = sieve(raster_path, sieve_thresh=20)
-
+        >>>
         >>> # Write it
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
@@ -993,7 +1035,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
     Examples:
         >>> dim_path = "path/to/dimap.dim"  # BEAM-DIMAP image
         >>> img_path = get_dim_img_path(dim_path)
-
+        >>>
         >>> # Read raster
         >>> raster, meta = read(img_path)
 
@@ -1014,11 +1056,14 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
 
     Examples:
         >>> raster_path = "path/to/raster.tif"
-
+        >>>
         >>> extent1 = get_extent(raster_path)
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     extent2 = get_extent(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> extent1 == extent2
         True
 
@@ -1034,17 +1079,20 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
 @path_xarr_dst
 def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     """
-    Get real footprint of the product (without nodata, in french == emprise utile)
+    Get real footprint of the product (without nodata, *in french == emprise utile*)
 
     Examples:
         >>> raster_path = "path/to/raster.tif"
-
+        >>>
         >>> footprint1 = get_footprint(raster_path)
-
+        >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
         >>>     footprint2 = get_footprint(ds)
+        >>>
+        >>> # Assert those two approaches give the same result
         >>> footprint1 == footprint2
+        True
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -1068,17 +1116,18 @@ def merge_vrt(
 
     Creates VRT with relative paths !
 
-    This function handles files of different projection by create intermediate VRT used for warping.
+    This function handles files of different projection by create intermediate VRT used for warping (longer to open).
+
     All VRTs will be written with relative paths.
 
     Examples:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
         >>> paths_utm32631 = ["path/to/raster4.tif", "path/to/raster5.tif"]
-
+        >>>
         >>> mosaic_32630 = "path/to/mosaic_32630.vrt"
         >>> mosaic_32631 = "path/to/mosaic_32631.vrt"
-
-        >>> # Create mosaic, one by CRS !
+        >>>
+        >>> # Create mosaic, one per CRS or not (longer to open)
         >>> merge_vrt(paths_utm32630, mosaic_32630)
         >>> merge_vrt(paths_utm32631, mosaic_32631, {"-srcnodata":255, "-vrtnodata":0})
 
@@ -1101,18 +1150,18 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
     Examples:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
         >>> paths_utm32631 = ["path/to/raster4.tif", "path/to/raster5.tif"]
-
+        >>>
         >>> mosaic_32630 = "path/to/mosaic_32630.tif"
         >>> mosaic_32631 = "path/to/mosaic_32631.tif"
-
-        # Create mosaic, one by CRS !
+        >>>
+        >>> # Create mosaic, one by CRS !
         >>> merge_gtiff(paths_utm32630, mosaic_32630)
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
 
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (AnyPathStrType): Path to the merged raster
-        kwargs: Other rasterio.merge arguments
+        kwargs: Other rasterio.merge arguments.
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
     """
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
@@ -1128,8 +1177,8 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
         array([[1, 1, 3],
                [4, 2, 0],
                [4, 3, 2]], dtype=uint8)
-
-        # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
+        >>>
+        >>> # Unpack 8 bits (8*1, as itemsize of uint8 is 1)
         >>> unpackbits(bit_array, 8)
         array([[[1, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 0, 0, 0],
@@ -1155,15 +1204,15 @@ def read_bit_array(
     bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
 ) -> Union[np.ndarray, list]:
     """
-    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
+    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number :code:`bit_id`)
 
     Examples:
         >>> bit_array = np.random.randint(5, size=[3,3])
         array([[1, 1, 3],
                [4, 2, 0],
                [4, 3, 2]], dtype=uint8)
-
-        # Get the 2nd bit array
+        >>>
+        >>> # Get the 2nd bit array
         >>> read_bit_array(bit_array, 2)
         array([[0, 0, 0],
                [1, 0, 0],
@@ -1191,7 +1240,7 @@ def read_uint8_array(
 
     Forces array to :code:`np.uint8`.
 
-    See :code:`read_bit_array`.
+    See :py:mod:`rasters.read_bit_array`.
 
     Args:
         bit_mask (np.ndarray): Bit array to read
@@ -1227,7 +1276,7 @@ def set_metadata(
           * band         (band) int32 1
           * y            (y) float64 4.798e+06 4.798e+06 ... 4.788e+06 4.788e+06
           * x            (x) float64 5.411e+05 5.411e+05 ... 5.549e+05 5.55e+05
-
+        >>>
         >>> # We need to set the metadata back (and we can set a new name)
         >>> sum = set_metadata(sum, xda, new_name="sum")
         <xarray.DataArray 'sum' (band: 1, y: 322, x: 464)>
@@ -1295,7 +1344,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
                [0, 0, 0],
                [0, 0, 0]], dtype=uint8)
         Dimensions without coordinates: x, y
-
+        >>>
         >>> A_nodata = set_nodata(A, 0)
         <xarray.DataArray (x: 3, y: 3)>
         array([[ 1., nan, nan],

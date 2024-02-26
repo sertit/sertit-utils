@@ -47,7 +47,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, geometry, misc, path, strings, vectors, xml
+from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -60,32 +60,31 @@ DEG_2_RAD = np.pi / 180
 
 # NODATAs
 UINT8_NODATA = 255
-""" UINT8 nodata: 255 """
+""" :code:`uint8` nodata """
 
 INT8_NODATA = -128
-""" INT8 nodata: -128 """
+""" :code:`int8` nodata """
 
 UINT16_NODATA = 65535
-""" UINT16 nodata: 65535 """
+""" :code:`uint16` nodata """
 
 FLOAT_NODATA = -9999
-""" FLOAT nodata: -9999 """
+""" :code:`float` nodata """
 
 
 def get_nodata_value(dtype) -> int:
     """
     Get default nodata value:
 
-    .. code-block:: python
-
-        if dtype == np.uint8:
-            nodata = UINT8_NODATA
-        elif dtype == np.int8:
-            nodata = INT8_NODATA
-        elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
-            nodata = UINT16_NODATA
-        elif dtype in [np.int16, np.float32, np.float64, float]:
-            nodata = FLOAT_NODATA
+    Examples:
+        >>> rasters.get_nodata_value("uint8")
+        255
+        >>> rasters.get_nodata_value("uint16")
+        65535
+        >>> rasters.get_nodata_value("int8")
+        -128
+        >>> rasters.get_nodata_value("float")
+        -9999
 
     Args:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
@@ -93,13 +92,19 @@ def get_nodata_value(dtype) -> int:
     Returns:
         int: Nodata value
     """
+    # Convert type to numpy if needed
+    try:
+        dtype = getattr(np, dtype)
+    except AttributeError:
+        pass
+
     if dtype == np.uint8:
         nodata = UINT8_NODATA
     elif dtype == np.int8:
         nodata = INT8_NODATA
-    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int]:
+    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int, "int"]:
         nodata = UINT16_NODATA
-    elif dtype in [np.int16, np.float32, np.float64, float]:
+    elif dtype in [np.int16, np.float32, np.float64, float, "float"]:
         nodata = FLOAT_NODATA
     else:
         LOGGER.warning(f"Not recognized dtype: {dtype}. Setting -9999 by default.")
@@ -394,9 +399,25 @@ def get_nodata_mask(
     default_nodata: int = 0,
 ) -> np.ndarray:
     """
+    .. deprecated:: 1.36.0
+       Use :py:mod:`rasters_rio.get_data_mask` instead.
+    """
+    logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
+    return get_data_mask(array, has_nodata, default_nodata)
+
+
+def get_data_mask(
+    array: AnyNumpyArray,
+    has_nodata: bool,
+    default_nodata: int = 0,
+) -> np.ndarray:
+    """
     Get nodata mask from a masked array.
 
     The nodata may not be set before, then pass a nodata value that will be evaluated on the array.
+
+    .. WARNING::
+        Sets 1 where the data is valid and 0 where it is not!
 
     .. code-block:: python
 
@@ -563,7 +584,7 @@ def _vectorize(
         data = array.data
 
     # Get nodata mask
-    nodata_mask = get_nodata_mask(data, has_nodata=False, default_nodata=nodata)
+    nodata_mask = get_data_mask(data, has_nodata=False, default_nodata=nodata)
 
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(
@@ -1330,7 +1351,7 @@ def merge_vrt(
         paths (list): Path of the rasters to be merged with the same CRS)
         merged_path (AnyPathStrType): Path to the merged raster
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
-        kwargs: Other gdlabuildvrt arguments
+        kwargs: Other :code:`gdalbuildvrt` arguments
     """
     # Copy crs_paths in order not to modify it in place (replacing str by Paths for example)
     crs_paths_cp = paths.copy()
