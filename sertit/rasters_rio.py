@@ -401,7 +401,7 @@ def get_nodata_mask(
 ) -> np.ndarray:
     """
     .. deprecated:: 1.36.0
-       Use :py:mod:`rasters_rio.get_data_mask` instead.
+       Use :py:func:`rasters_rio.get_data_mask` instead.
     """
     logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
     return get_data_mask(array, has_nodata, default_nodata)

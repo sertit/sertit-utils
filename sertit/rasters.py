@@ -186,7 +186,7 @@ def path_xarr_dst(function: Callable) -> Callable:
 def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
     """
     .. deprecated:: 1.36.0
-       Use :py:mod:`rasters.get_data_mask` instead.
+       Use :py:func:`rasters.get_data_mask` instead.
     """
     logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
     return get_data_mask(xds)
@@ -436,7 +436,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     Get the valid data of a raster, returned as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :py:mod:`rasters.get_footprint`.
+    If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     Args:
         xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
@@ -471,7 +471,7 @@ def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFr
     Get the nodata vector of a raster as a vector.
 
     Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :py:mod:`rasters.get_footprint`.
+    If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     Args:
         ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -1242,7 +1242,7 @@ def read_uint8_array(
 
     Forces array to :code:`np.uint8`.
 
-    See :py:mod:`rasters.read_bit_array`.
+    See :py:func:`rasters.read_bit_array`.
 
     Args:
         bit_mask (np.ndarray): Bit array to read
