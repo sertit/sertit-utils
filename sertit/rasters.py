@@ -829,7 +829,7 @@ def write(
     Write raster to disk.
     (encapsulation of :code:`rasterio`'s function, because for now :code:`rioxarray` to_raster doesn't work as expected)
 
-    Metadata will be created with the :code:`xarray` metadata (ie. width, height, count, type...)
+    Metadata will be created with the :code:`xarray` metadata (i.e. width, height, count, type...)
     The driver is :code:`GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
@@ -1036,7 +1036,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
 
     Args:
         dim_path (AnyPathStrType): DIM path (.dim or .data)
-        img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
+        img_name (str): .img file name (or regex), in case there are multiple .img files (i.e. for S3 data)
 
     Returns:
         AnyPathType: .img file

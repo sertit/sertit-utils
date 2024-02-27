@@ -130,15 +130,30 @@ class ListEnum(Enum):
 
 def unique(sequence: list):
     """
-    Keep only unique values from a .
+    Keep only unique values from a list (any Iterable should work).
 
-    Option to preserve the original order of the list.
+    Preserves the order of the sequence (except for sets of course).
 
     Args:
-        sequence (list): List from which to keep only the
+        sequence (list): List from which to keep only the unique values
 
     Returns:
         list: List containing only unique values
+
+    Examples:
+        >>> # With a list
+        >>> unique([5, 4, 1, 2, 3, 1, 2])
+        [5, 4, 1, 2, 3]
+
+        >>> # With an array
+        >>> unique(np.array([5, 4, 1, 2, 3, 1, 2]))
+        [5, 4, 1, 2, 3]
+
+        >>> # With a set (sorts the values, as a set would do!)
+        >>> unique({5, 4, 1, 2, 3, 1, 2})
+        [1, 2, 3, 4, 5]
+
+
     """
     return list(dict.fromkeys(sequence))
 

@@ -108,7 +108,7 @@ def create_logger(
         >>> create_logger(logger, logging.DEBUG, logging.INFO, "path/to/log", "log.txt")
         >>> logger.info("MESSAGE")
         2021-03-02 16:57:35 - [INFO] - MESSAGE
-
+        >>>
         >>> # "logger_test" will also log DEBUG messages
         >>> # to the "path/to/log/log.txt" file with the same format
     """
@@ -255,7 +255,7 @@ def reset_logging() -> None:
     Reset root logger
 
     Warning:
-        MAY BE OVERKILL
+        MAYBE OVERKILL
 
     Example:
         >>> reset_logging()
@@ -290,6 +290,14 @@ def deprecation_warning(msg: str) -> None:
 
     Args:
         msg (str): Deprecation warning
+
+    Example:
+        >>> def deprecated_fct():
+        >>>     deprecation_warning("This function is deprecated. Use this other function instead.")
+        >>>
+        >>> deprecated_fct()
+        DeprecationWarning: This function is deprecated. Use this other function instead.
+
     """
     from warnings import warn
 

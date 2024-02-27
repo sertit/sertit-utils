@@ -79,8 +79,9 @@ def read_archive(path: AnyPathStrType, regex: str = None) -> _Element:
     Convenient duplicate of :code:`files.read_archived_xml`
 
     Manages two cases:
+
     - complete path to an XML file stored inside an archive. In this case the filetree from inside the archive should be separated with a :code:`!`. Don't need to start with zip or tar
-    - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :code:`files.read_archived_xml`
+    - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :py:func:`files.read_archived_xml`
 
     Args:
         path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
@@ -128,7 +129,7 @@ def add(el: _Element, field: str, value: Any) -> None:
 
 def remove(xml: _Element, field: str) -> None:
     """
-    Remove in place field from a lxml _Element
+    Remove in place field from a :code:`lxml _Element`
 
     Args:
         xml (_Element): Root XML
@@ -186,7 +187,7 @@ def update_txt_fct(xml: _Element, field: str, fct: Callable) -> None:
 
 def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
     """
-    Convert any dataset containing the given attributes to an XML _Element
+    Convert any dataset containing the given attributes to :code:`lxml _Element`
     (i.e. netcdf dataset)
 
     Args:
@@ -226,12 +227,13 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
 
 def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
     """
-    Convert any dict containing the given attributes to an XML _Element.
+    Convert any dict containing the given attributes to a :code:`lxml _Element`.
 
     Replacements in keys:
-    - " " to "_"
-    - "(" to "_"
-    - ")" to ""
+
+    - :code:`" "` to :code:`"_"`
+    - :code:`"("` to :code:`"_"`
+    - :code:`")"` to :code:`""`
 
     Args:
         dict_to_cv (Any): Dict to convert into a XML
@@ -276,7 +278,7 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
 
 def df_to_xml(src_ds: Any) -> _Element:
     """
-    Convert a pd.DataFrame or similar (which has a .to_xml() function) to a lxml _Element
+    Convert a :code:`pandas.DataFrame` or similar (which has a :code:`.to_xml()` function) to a :code:`lxml _Element`
 
     Args:
         src_ds:
@@ -289,7 +291,7 @@ def df_to_xml(src_ds: Any) -> _Element:
 
 def to_string(xml: _Element) -> str:
     """
-    Convert XMl root to string
+    Convert XML root to string
 
     Args:
         xml (_Element): Root XML

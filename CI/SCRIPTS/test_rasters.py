@@ -575,7 +575,7 @@ def test_where():
 
 @s3_env
 def test_dem_fct():
-    """Test DEM fct, ie. slope and hillshade"""
+    """Test DEM fct, i.e. slope and hillshade"""
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
     hlsd_path = rasters_path().joinpath("hillshade.tif")

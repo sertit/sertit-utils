@@ -1254,7 +1254,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
 
     Args:
         dim_path (AnyPathStrType): DIM path (.dim or .data)
-        img_name (str): .img file name (or regex), in case there are multiple .img files (ie. for S3 data)
+        img_name (str): .img file name (or regex), in case there are multiple .img files (i.e. for S3 data)
 
     Returns:
         AnyPathType: .img file

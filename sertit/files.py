@@ -1012,7 +1012,7 @@ def get_file_in_dir(
 
     Get one or all matching files (pattern + extension) from inside a directory.
 
-    Note that the pattern is a regex with glob's convention, ie. :code:`*pattern*`.
+    Note that the pattern is a regex with glob's convention, i.e. :code:`*pattern*`.
 
     If :code:`exact_name` is :code:`False`, the searched pattern will be :code:`*{pattern}*.{extension}`,
     else :code:`{pattern}.{extension}`.
