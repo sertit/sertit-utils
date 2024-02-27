@@ -1,6 +1,6 @@
 # Release History
 
-## 1.36.0 (2024-02-26)
+## 1.36.0 (2024-02-27)
 
 - **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`
 - **BREAKING CHANGE**: Rename `rasters(_rio).get_nodata_mask` to `rasters(_rio).get_data_mask` to better fit with its behaviour (1 where data is valid, 0 elsewhere)
