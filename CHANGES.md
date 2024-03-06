@@ -1,5 +1,9 @@
 # Release History
 
+## 1.36.1 (2024-xx-xx)
+
+- DOC: Update some examples in documentation
+
 ## 1.36.0 (2024-02-27)
 
 - **BREAKING CHANGE**: Rename `feature_layer_to_path` to `gp_layer_to_path`

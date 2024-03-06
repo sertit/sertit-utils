@@ -68,10 +68,10 @@ def unistra_s3() -> None:
         default_endpoint (str):Default Endpoint to look for
 
     Example:
-        >>> from sertit.s3 import temp_s3
+        >>> from sertit.unistra import unistra_s3
         >>> from sertit import AnyPath
         >>> def file_exists(path: str):
-        >>>     with temp_s3():
+        >>>     with unistra_s3():
         >>>         pth = AnyPath(path)
         >>>         print(pth.exists())
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
