@@ -539,7 +539,9 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     tree = BallTree(candidates, leaf_size=15)
 
     # Find the closest points and distances
-    closest_dist, closest = tree.query(src_points, k=k_neighbors, **kwargs)
+    closest_dist, closest = tree.query(
+        src_points, k=min(k_neighbors, len(candidates)), **kwargs
+    )
 
     # Return indices and distances
     return closest, closest_dist

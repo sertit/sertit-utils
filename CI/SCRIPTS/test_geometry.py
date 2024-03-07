@@ -188,3 +188,8 @@ def test_nearest_neighbors():
         assert (
             curr_dist[0] < radius
         ), f"distance superior to wanted distance: {curr_dist[0]} > {radius}"
+
+    # Ensure it works with k > nof candidates
+    closest, distances = nearest_neighbors(
+        src, candidates, method="k_neighbors", k_neighbors=len(candidates) + 10
+    )

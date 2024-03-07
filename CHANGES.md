@@ -2,6 +2,7 @@
 
 ## 1.36.1 (2024-xx-xx)
 
+- FIX: Fix `geometry.nearest_neighbors` when k is bigger than the number of candidates
 - DOC: Update some examples in documentation
 
 ## 1.36.0 (2024-02-27)
