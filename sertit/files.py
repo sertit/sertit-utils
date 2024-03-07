@@ -200,7 +200,8 @@ def extract_file(
     if file_path.suffix == ".zip":
         # Manage the case with several directories inside one zipfile
         arch = zipfile.ZipFile(file_path, "r")
-        extr_names = list({p.split("/")[0] for p in arch.namelist()})
+        # extr_names contains only directory names
+        extr_names = list({p.split("/")[0] for p in arch.namelist() if "/" in p})
     elif file_path.suffix == ".tar" or file_path.suffixes == [".tar", ".gz"]:
         # Tar files have no subdirectories, so create one
         extr_names = [path.get_filename(file_path)]
