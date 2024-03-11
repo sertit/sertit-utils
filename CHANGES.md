@@ -2,6 +2,7 @@
 
 ## 1.36.1 (2024-xx-xx)
 
+- FIX: Fix `files.extract_file` when there is a file in the root of the zip archive ([#11](https://github.com/sertit/sertit-utils/pull/11))
 - FIX: Fix `geometry.nearest_neighbors` when k is bigger than the number of candidates
 - DOC: Update some examples in documentation
 
