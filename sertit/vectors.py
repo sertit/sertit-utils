@@ -607,10 +607,6 @@ def _read_kml(
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
 
-            # KML should be downloaded to work with ogr2ogr
-            if path.is_cloud_path(raw_path):
-                raw_path = AnyPath(raw_path).fspath
-
             vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
         else:
@@ -655,6 +651,11 @@ def ogr2geojson(
     assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
 
     out_dir = str(out_dir)
+
+    # vector_path should be downloaded to work with ogr2ogr
+    if path.is_cloud_path(vector_path):
+        vector_path = AnyPath(vector_path).fspath
+
     vector_path = str(vector_path)
     if vector_path.endswith(".zip"):
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
