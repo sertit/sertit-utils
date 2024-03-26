@@ -29,24 +29,17 @@ import zipfile
 from contextlib import contextmanager
 from typing import Any, Generator, Union
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
 from fiona.errors import DriverError, UnsupportedGeometryTypeError
+from shapely import Polygon, wkt
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
-from sertit.types import AnyPathStrType, AnyPathType
-
-try:
-    import geopandas as gpd
-    from shapely import Polygon, wkt
-except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError(
-        "Please install 'geopandas' to use the rasters package."
-    ) from ex
-
 from sertit.logs import SU_NAME
+from sertit.types import AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
 

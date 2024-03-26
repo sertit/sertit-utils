@@ -25,15 +25,11 @@ import tempfile
 from functools import wraps
 from typing import Any, Callable, Optional, Union
 
+import geopandas as gpd
 import numpy as np
-from rasterio.vrt import WarpedVRT
-from rasterio.windows import Window, from_bounds
-
-from sertit.logs import SU_NAME
-from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType
+from shapely.geometry import Polygon
 
 try:
-    import geopandas as gpd
     import rasterio
     from rasterio import MemoryFile, features
     from rasterio import mask as rio_mask
@@ -41,13 +37,16 @@ try:
     from rasterio import shutil as rio_shutil
     from rasterio import warp
     from rasterio.enums import Resampling
-    from shapely.geometry import Polygon
+    from rasterio.vrt import WarpedVRT
+    from rasterio.windows import Window, from_bounds
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
-        "Please install 'rasterio' and 'geopandas' to use the 'rasters_rio' package."
+        "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
 
 from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
+from sertit.logs import SU_NAME
+from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType
 
 np.seterr(divide="ignore", invalid="ignore")
 

@@ -21,24 +21,17 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 import logging
 
+import geopandas as gpd
 import numpy as np
+import shapely
+from shapely import ops
+from shapely.errors import GeometryTypeError
+from shapely.geometry import Polygon, box
 from tqdm import tqdm
-
-from sertit.types import AnyPolygonType
-
-try:
-    import geopandas as gpd
-    import shapely
-    from shapely import ops
-    from shapely.errors import GeometryTypeError
-    from shapely.geometry import Polygon, box
-except ModuleNotFoundError as ex:
-    raise ModuleNotFoundError(
-        "Please install 'geopandas' and 'shapely' to use the geometry package."
-    ) from ex
 
 from sertit import vectors
 from sertit.logs import SU_NAME
+from sertit.types import AnyPolygonType
 
 LOGGER = logging.getLogger(SU_NAME)
 

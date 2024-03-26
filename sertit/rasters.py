@@ -23,32 +23,28 @@ import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Union
 
+import geopandas as gpd
 import numpy as np
-import xarray
-from rioxarray.exceptions import MissingCRS
-
-from sertit.logs import SU_NAME
-from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, bigtiff_value, get_window
-from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
+import xarray as xr
+from shapely.geometry import Polygon
 
 try:
-    import geopandas as gpd
     import rasterio
     import rioxarray
-    import xarray as xr
     from rasterio import features
     from rasterio.enums import Resampling
-    from shapely.geometry import Polygon
+    from rioxarray.exceptions import MissingCRS
 except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
-        "Please install 'rioxarray' and 'geopandas' to use the 'rasters' package."
+        "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
 
 from sertit import geometry, logs, path, rasters_rio, vectors
+from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
-MAX_CORES = MAX_CORES
+MAX_CORES = rasters_rio.MAX_CORES
 PATH_XARR_DS = Union[str, AnyXrDataStructure, rasterio.DatasetReader]
-LOGGER = logging.getLogger(SU_NAME)
+LOGGER = logging.getLogger(logs.SU_NAME)
 
 # NODATAs
 UINT8_NODATA = rasters_rio.UINT8_NODATA
@@ -233,7 +229,9 @@ def path_arr_dst(function: Callable) -> Callable:
                 from rasterio import MemoryFile
 
                 with MemoryFile() as memfile:
-                    with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
+                    with memfile.open(
+                        **meta, BIGTIFF=rasters_rio.bigtiff_value(arr)
+                    ) as ds:
                         ds.write(arr)
                         out = function(ds, *args, **kwargs)
             else:
@@ -536,7 +534,9 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
 
 
 @path_xarr_dst
-def get_nodata_vector(ds: PATH_ARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_nodata_vector(
+    ds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
+) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
 
@@ -747,7 +747,7 @@ def crop(
 
 @path_arr_dst
 def read(
-    ds: PATH_ARR_DS,
+    ds: rasters_rio.PATH_ARR_DS,
     resolution: Union[tuple, list, float] = None,
     size: Union[tuple, list] = None,
     window: Any = None,
@@ -810,7 +810,7 @@ def read(
 
     """
     if window is not None:
-        window = get_window(ds, window)
+        window = rasters_rio.get_window(ds, window)
 
     # Get new height and width
     new_height, new_width, do_resampling = rasters_rio.get_new_shape(
@@ -818,7 +818,7 @@ def read(
     )
 
     # Read data (and load it to discard lock)
-    with xarray.set_options(keep_attrs=True):
+    with xr.set_options(keep_attrs=True):
         with rioxarray.set_options(export_grid_mapping=False):
             with rioxarray.open_rasterio(
                 ds, default_name=path.get_filename(ds.name), chunks=chunks, **kwargs
@@ -966,7 +966,7 @@ def write(
             kwargs["predictor"] = "2"
 
     # Bigtiff if needed
-    bigtiff = bigtiff_value(xds)
+    bigtiff = rasters_rio.bigtiff_value(xds)
 
     # Manage tiles
     if "tiled" not in kwargs:
