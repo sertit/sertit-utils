@@ -396,28 +396,56 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
 
 
-def intersects(input: gpd.GeoDataFrame, other: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def intersects(
+    input: gpd.GeoDataFrame, other: gpd.GeoDataFrame, buffer_on_input: float = None
+) -> gpd.GeoDataFrame:
     """
     Select the polygons of the input GeoDataFrame that intersects the other one and return them.
+
+    A buffer can be added on the input GeoDataFrame to be sure the intersection is ok.
+    For example, when dealing with polygons and points on their borders, sometimes the points fall a tiny bit outside the polygon boundary and is not considred as intersecting.
 
     :code:`gpd.intersects` algorithm applied to whole GeoDataFrames.
 
     Args:
         input (gpd.GeoDataFrame): Input GeoDataFrame from which the polygons will be selected
         other (gpd.GeoDataFrame): Other GeoDataFrame from that will intersect the first one
+        buffer_on_input (float): Buffer size on thhe input GeoDataFrame
 
     Returns:
         gpd.GeoDataFrame: Polygons of the input that intersects the other GeoDataFrame
 
-    Example:
+    Examples:
         >>> water = vectors.read("water.geojson")
         >>> lakes = vectors.read("lakes.geojson")
         >>> intersects(water, lakes)
                                                     geometry
         2  POLYGON ((490733.035 5616749.035, 490936.972 5...
         3  POLYGON ((491254.800 5616242.894, 491175.035 5...
+
+        >>> water = vectors.read("water.geojson")
+        >>> samples = vectors.read("samples.geojson")
+        >>>
+        >>> # Some samples are on the polygon boundary but for some reason fall a tiny bit outside and don't intersect the water
+        >>> intersects(water, samples)
+                                                    geometry
+        2  POLYGON ((490733.035 5616749.035, 490936.972 5...
+        >>>
+        >>> # Some samples are on the polygon boundary but for some reason fall a tiny bit outside and don't intersect the water
+        >>> # Use the buffer to handle this case. Use it carefully!
+        >>> intersects(water, samples, buffer_on_input=0.1)
+                                                    geometry
+        2  POLYGON ((490733.035 5616749.035, 490936.972 5...
+        3  POLYGON ((491254.800 5616242.894, 491175.035 5...
     """
-    return input[input.geometry.map(lambda x: x.intersects(other.geometry).any())]
+    if buffer_on_input is not None:
+        input_to_intersect = buffer(input, buffer_on_input)
+    else:
+        input_to_intersect = input
+
+    return input[
+        input_to_intersect.geometry.map(lambda x: x.intersects(other.geometry).any())
+    ]
 
 
 def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
