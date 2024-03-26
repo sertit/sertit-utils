@@ -6,6 +6,7 @@
 - FIX: Fix `files.extract_file` when there is a file in the root of the zip archive ([#11](https://github.com/sertit/sertit-utils/pull/11))
 - FIX: Fix `geometry.nearest_neighbors` when k is bigger than the number of candidates
 - FIX: Add a `buffer_on_input` in `geometry.intersects` to manage edge cases when points on polygons boundary aren't seen as intersecting
+- FIX: `rasters.read` accepts `xarray` objects as input
 - DOC: Update some examples in documentation
 
 ## 1.36.0 (2024-02-27)

@@ -187,47 +187,50 @@ def path_arr_dst(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        if path.is_path(path_or_arr_or_ds):
-            with rasterio.open(str(path_or_arr_or_ds)) as ds:
-                out = function(ds, *args, **kwargs)
-        elif isinstance(path_or_arr_or_ds, tuple):
-            arr, meta = path_or_arr_or_ds
-            with MemoryFile() as memfile:
-                with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
-                    ds.write(arr)
+        try:
+            out = function(path_or_arr_or_ds, *args, **kwargs)
+        except Exception as ex:
+            if path.is_path(path_or_arr_or_ds):
+                with rasterio.open(str(path_or_arr_or_ds)) as ds:
                     out = function(ds, *args, **kwargs)
-        else:
-            out = None
-            # Try if xarray is importable
-            try:
-                import xarray as xr
+            elif isinstance(path_or_arr_or_ds, tuple):
+                arr, meta = path_or_arr_or_ds
+                with MemoryFile() as memfile:
+                    with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
+                        ds.write(arr)
+                        out = function(ds, *args, **kwargs)
+            else:
+                # Try if xarray is importable
+                try:
+                    import xarray as xr
 
-                if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
-                    meta = {
-                        "driver": "GTiff",
-                        "dtype": path_or_arr_or_ds.dtype,
-                        "nodata": path_or_arr_or_ds.rio.encoded_nodata,
-                        "width": path_or_arr_or_ds.rio.width,
-                        "height": path_or_arr_or_ds.rio.height,
-                        "count": path_or_arr_or_ds.rio.count,
-                        "crs": path_or_arr_or_ds.rio.crs,
-                        "transform": path_or_arr_or_ds.rio.transform(),
-                    }
-                    with MemoryFile() as memfile:
-                        with memfile.open(
-                            **meta, BIGTIFF=bigtiff_value(path_or_arr_or_ds)
-                        ) as ds:
-                            if path_or_arr_or_ds.rio.encoded_nodata is not None:
-                                path_or_arr_or_ds = path_or_arr_or_ds.fillna(
-                                    path_or_arr_or_ds.rio.encoded_nodata
-                                )
-                            ds.write(path_or_arr_or_ds.data)
-                            out = function(ds, *args, **kwargs)
-            except ModuleNotFoundError:
-                out = None
-
-            if out is None:
-                out = function(path_or_arr_or_ds, *args, **kwargs)
+                    if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
+                        meta = {
+                            "driver": "GTiff",
+                            "dtype": path_or_arr_or_ds.dtype,
+                            "nodata": path_or_arr_or_ds.rio.encoded_nodata,
+                            "width": path_or_arr_or_ds.rio.width,
+                            "height": path_or_arr_or_ds.rio.height,
+                            "count": path_or_arr_or_ds.rio.count,
+                            "crs": path_or_arr_or_ds.rio.crs,
+                            "transform": path_or_arr_or_ds.rio.transform(),
+                        }
+                        with MemoryFile() as memfile:
+                            with memfile.open(
+                                **meta, BIGTIFF=bigtiff_value(path_or_arr_or_ds)
+                            ) as ds:
+                                if path_or_arr_or_ds.rio.encoded_nodata is not None:
+                                    arr = path_or_arr_or_ds.fillna(
+                                        path_or_arr_or_ds.rio.encoded_nodata
+                                    )
+                                else:
+                                    arr = path_or_arr_or_ds
+                                ds.write(arr.data)
+                                out = function(ds, *args, **kwargs)
+                    else:
+                        raise ex
+                except Exception:
+                    raise ex
         return out
 
     return path_or_arr_or_dst_wrapper

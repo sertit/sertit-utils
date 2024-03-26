@@ -28,13 +28,7 @@ import xarray
 from rioxarray.exceptions import MissingCRS
 
 from sertit.logs import SU_NAME
-from sertit.rasters_rio import (
-    MAX_CORES,
-    PATH_ARR_DS,
-    bigtiff_value,
-    get_window,
-    path_arr_dst,
-)
+from sertit.rasters_rio import MAX_CORES, PATH_ARR_DS, bigtiff_value, get_window
 from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
 try:
@@ -180,6 +174,82 @@ def path_xarr_dst(function: Callable) -> Callable:
         return out
 
     return path_or_xarr_or_dst_wrapper
+
+
+def path_arr_dst(function: Callable) -> Callable:
+    """
+    Path, :code:`xarray`, (array, metadata) or dataset decorator.
+    Allows a function to ingest:
+
+    - a path
+    - a :code:`xarray`
+    - a :code:`rasterio` dataset
+    - :code:`rasterio` open data: (array, meta)
+
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+
+    Example:
+        >>> # Create mock function
+        >>> @path_or_dst
+        >>> def fct(ds):
+        >>>     read(ds)
+        >>>
+        >>> # Test the two ways
+        >>> read1 = fct("path/to/raster.tif")
+        >>> with rasterio.open("path/to/raster.tif") as ds:
+        >>>     read2 = fct(ds)
+        >>>
+        >>> # Test
+        >>> read1 == read2
+        True
+    """
+
+    @wraps(function)
+    def path_or_arr_or_dst_wrapper(
+        path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs
+    ) -> Any:
+        """
+        Path or dataset wrapper
+        Args:
+            path_or_arr_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        """
+        try:
+            out = function(path_or_arr_or_ds, *args, **kwargs)
+        except Exception as ex:
+            if path.is_path(path_or_arr_or_ds):
+                with rasterio.open(str(path_or_arr_or_ds)) as ds:
+                    out = function(ds, *args, **kwargs)
+            elif isinstance(path_or_arr_or_ds, tuple):
+                arr, meta = path_or_arr_or_ds
+                from rasterio import MemoryFile
+
+                with MemoryFile() as memfile:
+                    with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
+                        ds.write(arr)
+                        out = function(ds, *args, **kwargs)
+            else:
+                # Try if xarray is importable
+                try:
+                    if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
+                        file_path = path_or_arr_or_ds.encoding["source"]
+                        with rasterio.open(file_path) as ds:
+                            out = function(ds, *args, **kwargs)
+                    else:
+                        raise ex
+                except Exception:
+                    raise ex
+        return out
+
+    return path_or_arr_or_dst_wrapper
 
 
 @path_xarr_dst

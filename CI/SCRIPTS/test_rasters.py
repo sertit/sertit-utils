@@ -113,6 +113,7 @@ def test_rasters():
             xda_2 = rasters.read(raster_path, resolution=[dst.res[0], dst.res[1]])
             xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
             xda_4 = rasters.read(raster_path, resolution=dst.res[0] / 2)
+            xda_5 = rasters.read(xda)
 
             xda_dask = rasters.read(raster_path, chunks=True)
 
@@ -134,12 +135,14 @@ def test_rasters():
             assert xda_1.rio.transform() == dst.transform
             np.testing.assert_array_equal(xda_1, xda_2)
             np.testing.assert_array_equal(xda_1, xda_3)
+            np.testing.assert_array_equal(xda, xda_5)
             np.testing.assert_array_equal(xda, xda_dask)
 
             ci.assert_xr_encoding_attrs(xda, xda_1)
             ci.assert_xr_encoding_attrs(xda, xda_2)
             ci.assert_xr_encoding_attrs(xda, xda_3)
             ci.assert_xr_encoding_attrs(xda, xda_4)
+            ci.assert_xr_encoding_attrs(xda, xda_5)
             ci.assert_xr_encoding_attrs(
                 xda, xda_dask, unchecked_attr="preferred_chunks"
             )
