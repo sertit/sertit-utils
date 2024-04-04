@@ -1,5 +1,9 @@
 # Release History
 
+## 1.36.2 (2024-mm-dd)
+
+- FIX: FIX metadata handling with `rasters_rio.read` when reading with indexes
+
 ## 1.36.1 (2024-03-26)
 
 - FIX: Fix `vector._read_vector_core` when we convert a GML file from S3 to geojson with ogr2ogr ([#12](https://github.com/sertit/sertit-utils/pull/12))

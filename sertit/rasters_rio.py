@@ -973,10 +973,13 @@ def read(
     if "indexes" in kwargs:
         if isinstance(kwargs["indexes"], int):
             out_shape = (new_height, new_width)
+            new_count = 1
         else:
-            out_shape = (len(kwargs["indexes"]), new_height, new_width)
+            new_count = len(kwargs["indexes"])
+            out_shape = (new_count, new_height, new_width)
     else:
-        out_shape = (ds.count, new_height, new_width)
+        new_count = ds.count
+        out_shape = (new_count, new_height, new_width)
 
     # Read data
     array = ds.read(
@@ -1003,6 +1006,7 @@ def read(
         {
             "height": new_height,
             "width": new_width,
+            "count": new_count,
             "transform": dst_transform,
             "dtype": array.dtype,
             "nodata": ds.nodata,

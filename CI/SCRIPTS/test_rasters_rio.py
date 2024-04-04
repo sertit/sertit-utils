@@ -346,3 +346,26 @@ def test_rasterize():
         rasters_rio.write(rast, meta, out_path)
 
         ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
+
+
+def test_read_idx():
+    """Test mtd after reading with index"""
+    raster_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
+
+    def _test_idx(idx_list):
+        raster, meta = rasters_rio.read(raster_path, indexes=idx_list)
+
+        if isinstance(idx_list, list):
+            nof_idx = len(idx_list)
+            shape = (meta["count"], meta["height"], meta["width"])
+        else:
+            nof_idx = 1
+            shape = (meta["height"], meta["width"])
+
+        ci.assert_val(meta["count"], nof_idx, "Count")
+        ci.assert_val(raster.shape, shape, "Shape")
+
+    # Tests
+    _test_idx([1])
+    _test_idx([1, 2])
+    _test_idx(1)
