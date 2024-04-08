@@ -35,7 +35,9 @@ def test_archive():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Archives
         zip_file = files_path().joinpath("test_zip.zip")
-        zip2_file = files_path().joinpath("test_zip.zip")  # For overwrite
+        zip2_file = files_path().joinpath(
+            "test_zip_without_directory.zip"
+        )  # For overwrite and zip without any directory
         tar_file = files_path().joinpath("test_tar.tar")
         tar_gz_file = files_path().joinpath("test_targz.tar.gz")
 
@@ -60,7 +62,7 @@ def test_archive():
             )
             out = files.extract_file(archive_fn, tmp_dir)
             if fmt == "zip":
-                ci.assert_dir_equal(core_dir, out)
+                ci.assert_dir_equal(core_dir, out.joinpath("core"))
             else:
                 # For tar and tar.gz, an additional folder is created because these formats dont have any file tree
                 out_dir = path.listdir_abspath(out)[0]
@@ -79,7 +81,7 @@ def test_archive():
 
         # Extract
         unzip_out = os.path.join(tmp_dir, "out")
-        files.extract_file(zip_out, unzip_out)
+        unzip_out = files.extract_file(zip_out, unzip_out)
 
         # Test
         unzip_dirs = path.listdir_abspath(unzip_out)
