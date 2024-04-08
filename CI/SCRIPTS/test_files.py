@@ -36,7 +36,7 @@ def test_archive():
         # Archives
         zip_file = files_path().joinpath("test_zip.zip")
         zip2_file = files_path().joinpath("test_zip.zip")  # For overwrite
-        zip_without_dir = files_path().joinpath("test_zip_without_directory.zip")
+        zip_without_directory = files_path().joinpath("test_zip_without_directory.zip")
         tar_file = files_path().joinpath("test_tar.tar")
         tar_gz_file = files_path().joinpath("test_targz.tar.gz")
 
@@ -49,7 +49,7 @@ def test_archive():
             tar_gz_file,
             folder,
             zip2_file,
-            zip_without_dir,
+            zip_without_directory,
         ]
 
         # Extract
