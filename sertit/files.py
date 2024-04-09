@@ -195,7 +195,14 @@ def extract_file(
     # In case a folder is given, returns it (this means that the file is already extracted)
     if file_path.is_dir():
         return file_path
-    archive_output = output.joinpath(file_path.stem.split(".")[0])
+
+    # Beware with .SEN3 and .SAFE extensions
+    archive_output = output.joinpath(
+        file_path.stem.replace(".zip", "")
+        .replace(".7z", "")
+        .replace(".tar.gz", "")
+        .replace(".tar", "")
+    )
 
     # In case not overwrite and the extracted directory already exists
     if not overwrite and archive_output.exists():
