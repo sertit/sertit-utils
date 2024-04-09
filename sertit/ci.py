@@ -16,8 +16,6 @@
 # limitations under the License.
 """
 CI tools
-
-You can use :code:`assert_raster_equal` only if you have installed sertit[full] or sertit[rasters]
 """
 import filecmp
 import logging
