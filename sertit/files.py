@@ -197,12 +197,7 @@ def extract_file(
         return file_path
 
     # Beware with .SEN3 and .SAFE extensions
-    archive_output = output.joinpath(
-        file_path.stem.replace(".zip", "")
-        .replace(".7z", "")
-        .replace(".tar.gz", "")
-        .replace(".tar", "")
-    )
+    archive_output = output.joinpath(path.get_filename(file_path))
 
     # In case not overwrite and the extracted directory already exists
     if not overwrite and archive_output.exists():
@@ -216,8 +211,12 @@ def extract_file(
         top_level_files = list({item.split("/")[0] for item in filename_list})
 
         # When the only root directory in the archive has the right name, we don't have to create it
-        if len(top_level_files) == 1 and top_level_files[0] == archive_output.name:
+        if (
+            len(top_level_files) == 1
+            and path.get_filename(top_level_files[0]) == archive_output.name
+        ):
             arch.extractall(archive_output.parent)
+            archive_output.parent.joinpath(top_level_files[0]).rename(archive_output)
         else:
             arch.extractall(archive_output)
 
