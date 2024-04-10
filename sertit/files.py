@@ -211,9 +211,8 @@ def extract_file(
         top_level_files = list({item.split("/")[0] for item in filename_list})
 
         # When the only root directory in the archive has the right name, we don't have to create it
-        if (
-            len(top_level_files) == 1
-            and path.get_filename(top_level_files[0]) == archive_output.name
+        if len(top_level_files) == 1 and archive_output.name == path.get_filename(
+            top_level_files[0]
         ):
             arch.extractall(archive_output.parent)
             archive_output.parent.joinpath(top_level_files[0]).rename(archive_output)
