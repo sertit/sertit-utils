@@ -36,13 +36,21 @@ def test_archive():
         # Archives
         zip_file = files_path().joinpath("test_zip.zip")
         zip2_file = files_path().joinpath("test_zip.zip")  # For overwrite
+        zip_without_directory = files_path().joinpath("test_zip_without_directory.zip")
         tar_file = files_path().joinpath("test_tar.tar")
         tar_gz_file = files_path().joinpath("test_targz.tar.gz")
 
         # Core dir
         core_dir = files_path().joinpath("core")
         folder = core_dir
-        archives = [zip_file, tar_file, tar_gz_file, folder, zip2_file]
+        archives = [
+            zip_file,
+            tar_file,
+            tar_gz_file,
+            folder,
+            zip2_file,
+            zip_without_directory,
+        ]
 
         # Extract
         extracted_dirs = files.extract_files(archives, tmp_dir, overwrite=True)
@@ -59,12 +67,9 @@ def test_archive():
                 folder_path=core_dir, archive_path=archive_base, fmt=fmt
             )
             out = files.extract_file(archive_fn, tmp_dir)
-            if fmt == "zip":
-                ci.assert_dir_equal(core_dir, out)
-            else:
-                # For tar and tar.gz, an additional folder is created because these formats dont have any file tree
-                out_dir = path.listdir_abspath(out)[0]
-                ci.assert_dir_equal(core_dir, out_dir)
+            # an additional folder is created
+            out_dir = path.listdir_abspath(out)[0]
+            ci.assert_dir_equal(core_dir, out_dir)
 
             # Remove out directory in order to avoid any interferences
             files.remove(out)
@@ -79,7 +84,7 @@ def test_archive():
 
         # Extract
         unzip_out = os.path.join(tmp_dir, "out")
-        files.extract_file(zip_out, unzip_out)
+        unzip_out = files.extract_file(zip_out, unzip_out)
 
         # Test
         unzip_dirs = path.listdir_abspath(unzip_out)

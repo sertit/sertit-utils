@@ -2,6 +2,7 @@
 
 ## 1.36.2 (2024-mm-dd)
 
+- FIX: Fix `files.extract_file` when there are only files in the root of the zip archive ([#14](https://github.com/sertit/sertit-utils/pull/14))
 - FIX: FIX metadata handling with `rasters_rio.read` when reading with indexes
 
 ## 1.36.1 (2024-03-26)
