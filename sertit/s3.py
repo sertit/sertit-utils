@@ -52,7 +52,16 @@ Environment variable created to use Unistra's S3 bucket.
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
-    You must export the variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your environement.
+    You need to set endpoint url if you use s3 compatible storage
+    since GDAL/Rasterio does not read endpoint url from config file.
+
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+        1. AWS profile
+        2. Given endpoint_url as function argument
+        3. AWS environment variable
 
     Returns:
         Callable: decorated function
@@ -70,32 +79,42 @@ def s3_env(*args, **kwargs):
     import rasterio
 
     use_s3 = kwargs.get("use_s3_env_var", USE_S3_STORAGE)
-    default_endpoint = kwargs.get("default_endpoint")
     requester_pays = kwargs.get("requester_pays")
     no_sign_request = kwargs.get("no_sign_request")
-    endpoint = kwargs.get("endpoint", os.getenv(AWS_S3_ENDPOINT, default_endpoint))
+    endpoint = os.getenv(AWS_S3_ENDPOINT, kwargs.get("endpoint"))
+    profile_name = kwargs.get("profile_name", None)
 
     def decorator(function):
         @wraps(function)
         def s3_env_wrapper(*_args, **_kwargs):
             """S3 environment wrapper"""
-            if int(os.getenv(use_s3, 1)) and os.getenv(AWS_SECRET_ACCESS_KEY):
+            if int(os.getenv(use_s3, 1)):
+
+                args_rasterio = {
+                    "profile_name": profile_name,
+                    "CPL_CURL_VERBOSE": False,
+                    "GDAL_DISABLE_READDIR_ON_OPEN": False,
+                    "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
+                    "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
+                }
+                args_s3_client = {
+                    "profile_name": profile_name,
+                    "requester_pays": requester_pays,
+                    "no_sign_request": no_sign_request,
+                }
+                args_s3_client.update(kwargs)
+
+                if endpoint is not None:
+                    args_rasterio["AWS_S3_ENDPOINT"] = endpoint
+                    args_s3_client["endpoint_url"] = (
+                        f"https://{endpoint}"  # cloudpathlib can read endpoint from config file
+                    )
+
                 # Define S3 client for S3 paths
-                define_s3_client(
-                    endpoint_url=f"https://{endpoint}",
-                    requester_pays=requester_pays,
-                    **_kwargs,
-                )
+                define_s3_client(**args_s3_client)
                 os.environ[use_s3] = "1"
                 LOGGER.info("Using S3 files")
-                with rasterio.Env(
-                    CPL_CURL_VERBOSE=False,
-                    AWS_VIRTUAL_HOSTING=False,
-                    AWS_S3_ENDPOINT=endpoint,
-                    GDAL_DISABLE_READDIR_ON_OPEN=False,
-                    AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
-                    AWS_REQUEST_PAYER="requester" if requester_pays else None,
-                ):
+                with rasterio.Env(**args_rasterio):
                     return function(*_args, **_kwargs)
 
             else:
@@ -110,17 +129,28 @@ def s3_env(*args, **kwargs):
 
 @contextmanager
 def temp_s3(
-    endpoint=None,
-    default_endpoint: str = None,
+    endpoint: str = None,
+    profile_name: str = None,
     requester_pays: bool = False,
     no_sign_request: bool = False,
     **kwargs,
 ) -> None:
     """
     Initialize a temporary S3 environment as a context manager
+    You need to set endpoint url if you use s3 compatible storage
+    since GDAL/Rasterio does not read endpoint url from config file.
+
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+        1. AWS profile
+        2. Given endpoint_url as function argument
+        3. AWS environment variable
 
     Args:
-        default_endpoint (str): Default Endpoint to look for
+        endpoint: Endpoint to s3 path in the form s3.yourdomain.com
+        profile_name: The name of your AWS profile
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
 
@@ -136,25 +166,33 @@ def temp_s3(
     """
     import rasterio
 
-    if not endpoint:
-        endpoint = os.getenv(AWS_S3_ENDPOINT, default_endpoint)
-
     # Define S3 client for S3 paths
     try:
-        with rasterio.Env(
-            CPL_CURL_VERBOSE=False,
-            AWS_VIRTUAL_HOSTING=False,
-            AWS_S3_ENDPOINT=endpoint,
-            GDAL_DISABLE_READDIR_ON_OPEN=False,
-            AWS_NO_SIGN_REQUEST="YES" if no_sign_request else "NO",
-            AWS_REQUEST_PAYER="requester" if requester_pays else None,
-        ):
-            yield define_s3_client(
-                endpoint_url=f"https://{endpoint}",
-                requester_pays=requester_pays,
-                no_sign_request=no_sign_request,
-                **kwargs,
+        args_rasterio = {
+            "profile_name": profile_name,
+            "CPL_CURL_VERBOSE": False,
+            "GDAL_DISABLE_READDIR_ON_OPEN": False,
+            "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
+            "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
+        }
+        args_s3_client = {
+            "profile_name": profile_name,
+            "requester_pays": requester_pays,
+            "no_sign_request": no_sign_request,
+        }
+        args_s3_client.update(kwargs)
+
+        endpoint = os.getenv(
+            AWS_S3_ENDPOINT, endpoint
+        )  # Give the precedence to AWS_S3_ENDPOINT
+        if endpoint is not None:
+            args_rasterio["AWS_S3_ENDPOINT"] = endpoint
+            args_s3_client["endpoint_url"] = (
+                f"https://{endpoint}"  # cloudpathlib can read endpoint from config file
             )
+
+        with rasterio.Env(**args_rasterio):
+            yield define_s3_client(**args_s3_client)
     finally:
         # Clean env
         S3Client().set_as_default_client()
@@ -162,7 +200,7 @@ def temp_s3(
 
 def define_s3_client(
     endpoint_url=None,
-    default_endpoint=None,
+    profile_name=None,
     requester_pays: bool = False,
     no_sign_request: bool = False,
     **kwargs,
@@ -170,14 +208,24 @@ def define_s3_client(
     """
     Define S3 client
 
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+        1. AWS profile
+        2. Given endpoint_url as function argument
+        3. AWS environment variable
+
     Args:
-        default_endpoint (str): Default Endpoint to look for
+        endpoint_url: The endpoint url in the form https://s3.yourdomain.com
+        profile_name: The name of the aws profile. Default to default profile in AWS configuration file.
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
     """
-    if not endpoint_url:
+
+    if os.environ.get(AWS_S3_ENDPOINT) is not None:
         endpoint_url = kwargs.pop(
-            "endpoint_url", f"https://{os.getenv(AWS_S3_ENDPOINT, default_endpoint)}"
+            "endpoint_url", f"https://{os.environ.get(AWS_S3_ENDPOINT)}"
         )
 
     aws_access_key_id = kwargs.pop("aws_access_key_id", os.getenv(AWS_ACCESS_KEY_ID))
@@ -207,11 +255,17 @@ def define_s3_client(
             s3_client_kwargs["extra_args"] = {"RequestPayer": "requester"}
 
     # ON S3
-    client = S3Client(
-        endpoint_url=endpoint_url,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        no_sign_request=no_sign_request,
-        **s3_client_kwargs,
-    )
+    args_s3_client = {
+        "aws_access_key_id": aws_access_key_id,
+        "aws_secret_access_key": aws_secret_access_key,
+        "profile_name": profile_name,
+        "no_sign_request": no_sign_request,
+    }
+    args_s3_client.update(s3_client_kwargs)
+
+    if endpoint_url is not None:
+        args_s3_client["endpoint_url"] = endpoint_url
+
+    client = S3Client(**args_s3_client)
+
     client.set_as_default_client()

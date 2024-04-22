@@ -4,6 +4,7 @@
 
 - FIX: Fix `files.extract_file` when there are only files in the root of the zip archive ([#14](https://github.com/sertit/sertit-utils/pull/14))
 - FIX: FIX metadata handling with `rasters_rio.read` when reading with indexes
+- **ENH: Add AWS profile feature to s3 module**
 
 ## 1.36.1 (2024-03-26)
 
