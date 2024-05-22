@@ -1,5 +1,8 @@
 # Release History
 
+## 1.37.1 (2024-05-22)
+- FIX: Don't set endpoint_url in s3 if environment variable is empty
+
 ## 1.37.0 (2024-04-22)
 
 - **ENH: Add AWS profile feature to s3 module**
