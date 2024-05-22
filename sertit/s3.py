@@ -185,7 +185,7 @@ def temp_s3(
         endpoint = os.getenv(
             AWS_S3_ENDPOINT, endpoint
         )  # Give the precedence to AWS_S3_ENDPOINT
-        if endpoint is not None:
+        if endpoint is not None and endpoint != "":
             args_rasterio["AWS_S3_ENDPOINT"] = endpoint
             args_s3_client["endpoint_url"] = (
                 f"https://{endpoint}"  # cloudpathlib can read endpoint from config file
@@ -223,7 +223,8 @@ def define_s3_client(
         no_sign_request (bool): True if the endpoint is open access
     """
 
-    if os.environ.get(AWS_S3_ENDPOINT) is not None:
+    endpoint_url = os.environ.get(AWS_S3_ENDPOINT)
+    if endpoint_url is not None and endpoint_url != "":
         endpoint_url = kwargs.pop(
             "endpoint_url", f"https://{os.environ.get(AWS_S3_ENDPOINT)}"
         )
@@ -263,7 +264,7 @@ def define_s3_client(
     }
     args_s3_client.update(s3_client_kwargs)
 
-    if endpoint_url is not None:
+    if endpoint_url is not None and endpoint_url != "":
         args_s3_client["endpoint_url"] = endpoint_url
 
     client = S3Client(**args_s3_client)
