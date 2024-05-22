@@ -1,5 +1,8 @@
 # Release History
 
+## 1.37.2 (2024-05-22)
+- FIX: Fail build in 1.37.1
+
 ## 1.37.1 (2024-05-22)
 - FIX: Don't set endpoint_url in s3 if environment variable is empty
 
