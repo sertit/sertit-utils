@@ -1,7 +1,6 @@
 stages:
   - lint
   - test
-  - publish
   - weekly_tests
 
 variables:

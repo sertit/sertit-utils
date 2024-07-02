@@ -204,19 +204,9 @@ def path_arr_dst(function: Callable) -> Callable:
                     import xarray as xr
 
                     if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
-                        meta = {
-                            "driver": "GTiff",
-                            "dtype": path_or_arr_or_ds.dtype,
-                            "nodata": path_or_arr_or_ds.rio.encoded_nodata,
-                            "width": path_or_arr_or_ds.rio.width,
-                            "height": path_or_arr_or_ds.rio.height,
-                            "count": path_or_arr_or_ds.rio.count,
-                            "crs": path_or_arr_or_ds.rio.crs,
-                            "transform": path_or_arr_or_ds.rio.transform(),
-                        }
                         with MemoryFile() as memfile:
                             with memfile.open(
-                                **meta, BIGTIFF=bigtiff_value(path_or_arr_or_ds)
+                                BIGTIFF=bigtiff_value(path_or_arr_or_ds)
                             ) as ds:
                                 if path_or_arr_or_ds.rio.encoded_nodata is not None:
                                     arr = path_or_arr_or_ds.fillna(
@@ -224,7 +214,7 @@ def path_arr_dst(function: Callable) -> Callable:
                                     )
                                 else:
                                     arr = path_or_arr_or_ds
-                                ds.write(arr.data)
+                                arr.rio.to_raster(memfile.name)
                                 out = function(ds, *args, **kwargs)
                     else:
                         raise ex
