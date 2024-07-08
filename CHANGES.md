@@ -1,7 +1,6 @@
 # Release History
 
 ## 1.37.3 (2024-mm-dd)
-- FIX: Simplify the conversion from xarray to rasterio memory dataset (based on [this post](https://github.com/corteva/rioxarray/issues/309#issuecomment-2174435283))
 
 ## 1.37.2 (2024-05-22)
 - FIX: Fail build in 1.37.1
