@@ -182,7 +182,10 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
 
 
 def get_archived_path(
-    archive_path: AnyPathStrType, file_regex: str, as_list: bool = False
+    archive_path: AnyPathStrType,
+    file_regex: str,
+    as_list: bool = False,
+    case_sensitive: bool = False,
 ) -> Union[list, AnyPathType]:
     """
     Get archived file path from inside the archive.
@@ -196,6 +199,7 @@ def get_archived_path(
         archive_path (AnyPathStrType): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
+        case_sensitive (bool): If true, the regex is case-sensitive.
 
     Returns:
         Union[list, str]: Path from inside the zipfile
@@ -211,7 +215,11 @@ def get_archived_path(
     file_list = get_archived_file_list(archive_path)
 
     # Search for file
-    regex = re.compile(file_regex)
+    regex = (
+        re.compile(file_regex)
+        if case_sensitive
+        else re.compile(file_regex, re.IGNORECASE)
+    )
     archived_band_paths = list(filter(regex.match, file_list))
     if not archived_band_paths:
         raise FileNotFoundError(
