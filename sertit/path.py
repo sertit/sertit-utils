@@ -342,6 +342,7 @@ def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None)
 
     return filename
 
+
 def get_ext(file_path: AnyPathStrType) -> str:
     """
     Get file extension from file path.
