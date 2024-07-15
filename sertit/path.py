@@ -176,7 +176,7 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
                 tar_mb = tar_ds.getmembers()
                 file_list = [mb.name for mb in tar_mb]
         except tarfile.ReadError as ex:
-            raise TypeError(f"Impossible to open archive: {archive_path}") from ex
+            raise tarfile.ReadError(f"Impossible to open archive: {archive_path}") from ex
 
     return file_list
 
