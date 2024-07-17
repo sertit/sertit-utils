@@ -529,7 +529,7 @@ def _read_vector_core(
         fiona_logger.setLevel(logging.INFO)
     except DataSourceError:
         raise
-    except (ValueError, UnsupportedGeometryTypeError) as ex:
+    except (ValueError, UnsupportedGeometryTypeError, IndexError) as ex:
         if "Use a.any() or a.all()" in str(ex):
             raise
         # Do not print warning for null layer
