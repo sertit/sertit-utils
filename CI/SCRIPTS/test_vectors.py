@@ -258,7 +258,20 @@ def test_window():
     with pytest.raises(AssertionError):
         ci.assert_geom_equal(vect, vect_aoi)
 
-    with pytest.raises(ValueError):
+    # Manage exception by default and with reversed engine
+    if vectors.is_geopandas_1_0():
+        # Default engine is pyogrio, so test here fiona
+        ex = TypeError
+        with pytest.raises(ValueError):
+            vectors.read(vect_path, bbox=aoi.total_bounds, engine="fiona")
+    else:
+        # Default engine is fiona, so test here pyogrio
+        ex = ValueError
+        with pytest.raises(TypeError):
+            vectors.read(vect_path, bbox=aoi.total_bounds, engine="pyogrio")
+
+    # Test default engine
+    with pytest.raises(ex):
         vectors.read(vect_path, bbox=aoi.total_bounds)
 
 

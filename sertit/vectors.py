@@ -27,7 +27,6 @@ import tarfile
 import tempfile
 import zipfile
 from contextlib import contextmanager
-from importlib.metadata import version
 from typing import Any, Generator, Union
 
 import geopandas as gpd
@@ -41,12 +40,6 @@ from shapely import Polygon, wkt
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
-
-if version("geopandas") >= "1.0.0":
-    from pyogrio.errors import DataSourceError
-else:
-    from fiona.errors import DriverError as DataSourceError
-DataSourceError = DataSourceError
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -63,6 +56,20 @@ EXT_TO_DRIVER = {
 }
 
 SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
+
+
+def is_geopandas_1_0():
+    """Is geopandas over 1.0.0. Default engine changes, from fiona to pyogrio"""
+    from importlib.metadata import version
+
+    return version("geopandas") >= "1.0.0"
+
+
+if is_geopandas_1_0():
+    from pyogrio.errors import DataSourceError
+else:
+    from fiona.errors import DriverError as DataSourceError
+DataSourceError = DataSourceError
 
 
 def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
@@ -195,9 +202,7 @@ def set_kml_driver() -> None:
         [1 rows x 12 columns]
 
     """
-    from importlib.metadata import version
-
-    if int(version("geopandas").split(".")[0]) <= 1.0:
+    if not is_geopandas_1_0():
         import fiona
 
         drivers = fiona.drvsupport.supported_drivers
@@ -588,14 +593,12 @@ def _read_kml(
     # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
     from importlib.metadata import version
 
-    # TODO: check imports as pyogrio isn't mandatory for geopandas < 1.0 and fiona isn't for geopandas > 1.0
     import fiona
-    from pyogrio.errors import DataSourceError
 
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
 
     # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
-    if version("geopandas") >= "1.0.0" and version("pyogrio") <= "0.10.0":
+    if is_geopandas_1_0() and version("pyogrio") <= "0.10.0":
         engine = "fiona"
     else:
         engine = None

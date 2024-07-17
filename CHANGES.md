@@ -2,9 +2,11 @@
 
 ## 1.37.3 (2024-mm-dd)
 
-- FIX: Manage the duality of exceptions between `fiona` and `pyogrio` for `DriverError`/`DataSourceError`
-- FIX: Handle null GMLs with `pyogrio` engine
-- FIX: Workaround for KMZ issue with `geopandas > 1.0` and `pyogrio < 0.10.0` ([Github issue](https://github.com/geopandas/pyogrio/issues/444))
+- **ENH: Manage `geopandas>=1.0` and its default engine `pyogrio`**:
+  - ENH: Add function `vectors.is_geopandas_1_0`
+  - FIX: Manage the duality of exceptions between `fiona` and `pyogrio` for `DriverError`/`DataSourceError`
+  - FIX: Handle null GMLs with `pyogrio` engine
+  - FIX: Workaround for KMZ issue with `geopandas > 1.0` and `pyogrio < 0.10.0` ([GitHub issue](https://github.com/geopandas/pyogrio/issues/444))
 
 ## 1.37.2 (2024-05-22)
 - FIX: Fail build in 1.37.1
