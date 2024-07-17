@@ -119,8 +119,8 @@ def test_kml():
     )
 
     # Read vectors
-    kml = vectors.read(kml_path).explode()
-    json = vectors.read(json_path).explode()
+    kml = vectors.read(kml_path).explode(ignore_index=True)
+    json = vectors.read(json_path).explode(ignore_index=True)
 
     # Check if equivalent
     ci.assert_geom_almost_equal(json, kml, decimal=6)

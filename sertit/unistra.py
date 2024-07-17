@@ -115,7 +115,7 @@ def get_geodatastore() -> AnyPathType:
         >>> import os
         >>> os.environ["USE_S3_STORAGE"] = "0"
         >>> print(get_geodatastore())
-        \\ds2\database02\BASES_DE_DONNEES\GLOBAL
+        //ds2/database02/BASES_DE_DONNEES/GLOBAL
     """
     if int(os.getenv(s3.USE_S3_STORAGE, 0)):
         # Define S3 client for S3 paths
@@ -159,7 +159,7 @@ def _get_db_path(db_nb=2) -> str:
     Returns DSx database0x path
 
     - :code:`/mnt/ds2_dbx` when mounted (docker...)
-    - :code:`\\ds2\database0x` on windows
+    - :code:`//ds2/database0x` on windows
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
@@ -176,7 +176,7 @@ def get_db2_path() -> str:
     Returns DS2 database02 path
 
     - :code:`/mnt/ds2_db2` when mounted (docker...)
-    - :code:`\\ds2\database02` on windows
+    - :code:`//ds2/database02` on windows
 
     Returns:
         str: Mounted directory
@@ -193,7 +193,7 @@ def get_db3_path() -> str:
     Returns DS2 database03 path
 
     - :code:`/mnt/ds2_db3` when mounted (docker...)
-    - :code:`\\ds2\database03` on windows
+    - :code:`//ds2/database03` on windows
 
     Returns:
         str: Mounted directory
@@ -210,7 +210,7 @@ def get_db4_path() -> str:
     Returns DS2 database04 path
 
     - :code:`/mnt/ds2_db4` when mounted (docker...)
-    - :code:`\\ds2\database04` on windows
+    - :code:`//ds2/database04` on windows
 
     Returns:
         str: Mounted directory

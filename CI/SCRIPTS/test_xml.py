@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Script testing XML functions """
+import io
 import os
 import tempfile
 
@@ -72,7 +73,7 @@ def test_xml():
         </data>
         """
 
-    pd_xml = pd.read_xml(xml_str)
+    pd_xml = pd.read_xml(io.StringIO(xml_str))
     df_xml = xml.df_to_xml(pd_xml)
     _compare_xml_str(xml.to_string(df_xml), xml_str)
 

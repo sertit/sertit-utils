@@ -232,7 +232,7 @@ def gp_layer_to_path(feature_layer) -> str:
 
         >>> aoi_path = feature_layer_to_path(parameters[0].value)
         >>> print(aoi_path)
-        D:\data\project\aoi\aoi.shp
+        D:/data/project/aoi/aoi.shp
 
     """
     # Get path
