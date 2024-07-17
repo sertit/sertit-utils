@@ -2,6 +2,8 @@
 
 ## 1.37.3 (2024-mm-dd)
 
+- FIX: Workaround for KMZ issue with `geopandas > 1.0` and `pyogrio < 0.10.0` ([Github issue](https://github.com/geopandas/pyogrio/issues/444))
+
 ## 1.37.2 (2024-05-22)
 - FIX: Fail build in 1.37.1
 
