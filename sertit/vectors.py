@@ -27,6 +27,7 @@ import tarfile
 import tempfile
 import zipfile
 from contextlib import contextmanager
+from importlib.metadata import version
 from typing import Any, Generator, Union
 
 import geopandas as gpd
@@ -34,12 +35,18 @@ import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from fiona._err import CPLE_AppDefinedError
-from fiona.errors import DriverError, UnsupportedGeometryTypeError
+from fiona.errors import UnsupportedGeometryTypeError
 from shapely import Polygon, wkt
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
+
+if version("geopandas") >= "1.0.0":
+    from pyogrio.errors import DataSourceError
+else:
+    from fiona.errors import DriverError as DataSourceError
+DataSourceError = DataSourceError
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -520,7 +527,7 @@ def _read_vector_core(
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
-    except DriverError:
+    except DataSourceError:
         raise
     except (ValueError, UnsupportedGeometryTypeError) as ex:
         if "Use a.any() or a.all()" in str(ex):
@@ -581,6 +588,7 @@ def _read_kml(
     # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
     from importlib.metadata import version
 
+    # TODO: check imports as pyogrio isn't mandatory for geopandas < 1.0 and fiona isn't for geopandas > 1.0
     import fiona
     from pyogrio.errors import DataSourceError
 

@@ -21,13 +21,12 @@ import warnings
 
 import geopandas as gpd
 import pytest
-from fiona.errors import DriverError
 from rasterio import CRS
 from shapely import wkt
 
 from CI.SCRIPTS.script_utils import files_path, s3_env, vectors_path
 from sertit import ci, files, vectors
-from sertit.vectors import EPSG_4326
+from sertit.vectors import EPSG_4326, DataSourceError
 
 ci.reduce_verbosity()
 
@@ -170,7 +169,7 @@ def test_copy():
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Assert normal copy will fail
-        with pytest.raises(DriverError):
+        with pytest.raises(DataSourceError):
             gpd.read_file(files.copy(shpfile, tmp_dir))
 
         # Assert vector copy will open in geopandas
