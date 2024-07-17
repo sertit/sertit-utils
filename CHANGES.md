@@ -7,6 +7,7 @@
   - FIX: Manage the duality of exceptions between `fiona` and `pyogrio` for `DriverError`/`DataSourceError`
   - FIX: Handle null GMLs with `pyogrio` engine
   - FIX: Workaround for KMZ issue with `geopandas > 1.0` and `pyogrio < 0.10.0` ([GitHub issue](https://github.com/geopandas/pyogrio/issues/444))
+- CI: Minor fix in CI scripts to handle `numpy>=2.0` updates
 
 ## 1.37.2 (2024-05-22)
 - FIX: Fail build in 1.37.1

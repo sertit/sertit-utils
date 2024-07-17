@@ -271,16 +271,16 @@ def test_dem_fct():
 
         # Compute
         hlsd, meta = rasters_rio.hillshade(dem_path, 34.0, 45.2)
-        rasters_rio.write(hlsd, meta, hlsd_path_out)
+        rasters_rio.write(hlsd, meta, hlsd_path_out, dtype="float32")
 
         slp, meta = rasters_rio.slope(dem_path)
-        rasters_rio.write(slp, meta, slope_path_out)
+        rasters_rio.write(slp, meta, slope_path_out, dtype="float32")
 
         slp_r, meta = rasters_rio.slope(dem_path, in_pct=False, in_rad=True)
-        rasters_rio.write(slp_r, meta, slope_r_path_out)
+        rasters_rio.write(slp_r, meta, slope_r_path_out, dtype="float32")
 
         slp_p, meta = rasters_rio.slope(dem_path, in_pct=True)
-        rasters_rio.write(slp_p, meta, slope_p_path_out)
+        rasters_rio.write(slp_p, meta, slope_p_path_out, dtype="float32")
 
         # Test
         ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)

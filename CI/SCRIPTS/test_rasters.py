@@ -601,10 +601,10 @@ def test_dem_fct():
         slp_p = rasters.slope(dem_path, in_pct=True)
 
         # Write
-        rasters.write(hlsd, hlsd_path_out)
-        rasters.write(slp, slope_path_out)
-        rasters.write(slp_r, slope_r_path_out)
-        rasters.write(slp_p, slope_p_path_out)
+        rasters.write(hlsd, hlsd_path_out, dtype="float32")
+        rasters.write(slp, slope_path_out, dtype="float32")
+        rasters.write(slp_r, slope_r_path_out, dtype="float32")
+        rasters.write(slp_p, slope_p_path_out, dtype="float32")
 
         # Test
         ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
