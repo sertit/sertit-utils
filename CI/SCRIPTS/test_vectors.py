@@ -105,6 +105,28 @@ def test_vectors():
 
 
 @s3_env
+def test_kml():
+    # Just check there is no issue when opening this file
+    kml_path = vectors_path().joinpath("GEARTH_POLY.kml")
+    kml = vectors.read(kml_path)
+
+    # Check equivalence between two vector types (complex vector)
+    kml_path = vectors_path().joinpath(
+        "EMSR680_AOI03_DEL_PRODUCT_observedEventA_v1.kml"
+    )
+    json_path = vectors_path().joinpath(
+        "EMSR680_AOI03_DEL_PRODUCT_observedEventA_v1.json"
+    )
+
+    # Read vectors
+    kml = vectors.read(kml_path).explode()
+    json = vectors.read(json_path).explode()
+
+    # Check if equivalent
+    ci.assert_geom_almost_equal(json, kml, decimal=6)
+
+
+@s3_env
 def test_kmz():
     """Test KMZ files"""
     kmz_path = vectors_path().joinpath("AOI_kmz.kmz")

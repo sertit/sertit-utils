@@ -584,30 +584,25 @@ def _read_kml(
         gpd.GeoDataFrame: KML as a geopandas GeoDataFrame
 
     """
-    set_kml_driver()
     vect = gpd.GeoDataFrame()
+    driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
 
     # Document tags in KML file are separate layers for GeoPandas.
     # When you try to get the KML content, you actually get the first layer.
     # So you need for loop for iterating over layers.
     # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
-    from importlib.metadata import version
 
-    import fiona
+    engine = None
+    if is_geopandas_1_0():
+        # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
+        from importlib.metadata import version
 
-    driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
+        if version("pyogrio") <= "0.10.0":
+            engine = "fiona"
 
-    # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
-    if is_geopandas_1_0() and version("pyogrio") <= "0.10.0":
-        engine = "fiona"
-    else:
-        engine = None
-
-    for layer in fiona.listlayers(gpd_vect_path):
         try:
-
             vect_layer = gpd.read_file(
-                gpd_vect_path, driver=driver, layer=layer, engine=engine, **kwargs
+                gpd_vect_path, driver=driver, engine=engine, **kwargs
             )
             if not vect_layer.empty:
                 # KML files are always in WGS84 (and does not contain this information)
@@ -619,6 +614,23 @@ def _read_kml(
             LOGGER.error(
                 f"Error in reading {path.get_filename(gpd_vect_path)}. geopandas: {version('geopandas')},  pyogrio: {version('pyogrio')}, engine: {engine}"
             )
+    else:
+        import fiona
+
+        set_kml_driver()
+
+        for layer in fiona.listlayers(gpd_vect_path):
+            try:
+
+                vect_layer = gpd.read_file(
+                    gpd_vect_path, driver=driver, layer=layer, engine=engine, **kwargs
+                )
+                if not vect_layer.empty:
+                    # KML files are always in WGS84 (and does not contain this information)
+                    vect_layer.crs = EPSG_4326
+                    vect = pd.concat([vect, vect_layer])
+            except ValueError:
+                pass  # Except Null Layer
 
     # Workaround for archived KML -> they may be empty
     # Convert KML to GeoJSON
