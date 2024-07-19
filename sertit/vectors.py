@@ -60,9 +60,7 @@ SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 def is_geopandas_1_0():
     """Is geopandas over 1.0.0. Default engine changes, from fiona to pyogrio"""
-    from importlib.metadata import version
-
-    return version("geopandas") >= "1.0.0"
+    return misc.compare_version("geopandas", "1.0.0", ">=")
 
 
 if is_geopandas_1_0():
@@ -586,30 +584,19 @@ def _read_kml(
     """
     vect = gpd.GeoDataFrame()
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
-
-    # Document tags in KML file are separate layers for GeoPandas.
-    # When you try to get the KML content, you actually get the first layer.
-    # So you need for loop for iterating over layers.
-    # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
-
     engine = None
-    if is_geopandas_1_0():
-        # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
-        from importlib.metadata import version
 
-        if version("pyogrio") <= "0.10.0":
-            engine = "fiona"
+    # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
+    use_pyogrio = is_geopandas_1_0()
+    from importlib.metadata import version
 
+    if misc.compare_version("pyogrio", "0.10.0", "<="):
+        engine = "fiona"
+        use_pyogrio = False
+
+    if use_pyogrio:
         try:
-            vect_layer = gpd.read_file(
-                gpd_vect_path, driver=driver, engine=engine, **kwargs
-            )
-            if not vect_layer.empty:
-                # KML files are always in WGS84 (and does not contain this information)
-                vect_layer.crs = EPSG_4326
-                vect = pd.concat([vect, vect_layer])
-        except ValueError:
-            pass  # Except Null Layer
+            vect = gpd.read_file(gpd_vect_path, driver=driver, engine=engine, **kwargs)
         except DataSourceError:
             LOGGER.error(
                 f"Error in reading {path.get_filename(gpd_vect_path)}. geopandas: {version('geopandas')},  pyogrio: {version('pyogrio')}, engine: {engine}"
@@ -619,9 +606,12 @@ def _read_kml(
 
         set_kml_driver()
 
+        # Document tags in KML file are separate layers for GeoPandas.
+        # When you try to get the KML content, you actually get the first layer.
+        # So you need for loop for iterating over layers.
+        # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
         for layer in fiona.listlayers(gpd_vect_path):
             try:
-
                 vect_layer = gpd.read_file(
                     gpd_vect_path, driver=driver, layer=layer, engine=engine, **kwargs
                 )

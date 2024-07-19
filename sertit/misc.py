@@ -438,3 +438,57 @@ def chdir(newdir: AnyPathStrType) -> None:
         yield
     finally:
         os.chdir(prevdir)
+
+
+def compare(a, b, operation: str) -> bool:
+    """
+    Compare two objects using a specific operation.
+    Using this function allows to ask the user the operation he wants (see compare_version for example)
+
+    Args:
+        a: First object
+        b: Second object
+        operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
+
+    Returns:
+        bool: True if the comparison between the two objects is respected
+
+    Example:
+        >>> compare(1, 2, ">=")
+        False
+
+    """
+    import operator
+
+    ops = {
+        ">": operator.gt,
+        "<": operator.lt,
+        ">=": operator.ge,
+        "<=": operator.le,
+        "==": operator.eq,
+    }
+    return ops[operation](a, b)
+
+
+def compare_version(lib: str, version_to_check: str, operator: str) -> bool:
+    """
+    Compare the version of a librarie to a reference, giving the operator.
+
+    Args:
+        lib (str): Name of the library
+        version_to_check (str): Version of the library to be compared
+        operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
+
+    Returns:
+        bool: True if the comparison between the version of the library and the reference version is respected
+
+    Example:
+        >>> compare_version("geopandas", "0.10.0", ">=")
+        True
+
+    """
+    from importlib.metadata import version
+
+    from packaging.version import Version
+
+    return compare(Version(version(lib)), Version(version_to_check), operator)

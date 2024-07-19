@@ -1,12 +1,14 @@
 # Release History
 
-## 1.38.0 (2024-mm-dd)
+## 1.38.0 (2024-07-17)
 
 - **ENH: Manage `geopandas>=1.0` and its default engine `pyogrio`**:
   - ENH: Add function `vectors.is_geopandas_1_0`
   - FIX: Manage the duality of exceptions between `fiona` and `pyogrio` for `DriverError`/`DataSourceError`
   - FIX: Handle null GMLs with `pyogrio` engine
   - FIX: Workaround for KMZ issue with `geopandas > 1.0` and `pyogrio < 0.10.0` ([GitHub issue](https://github.com/geopandas/pyogrio/issues/444))
+- **ENH: Add a function `misc.compare_version` to compare a library version to a reference version according to an operator given by the user**
+- **ENH: Add a function `misc.compare` to compare two objects according to an operator given by the user**
 - FIX: Make `path.get_archived_path` function case-insensitive by default
 - FIX: Fix `path.get_filename` for a file in a zip path
 - CI: Minor fix in CI scripts to handle `numpy>=2.0` updates

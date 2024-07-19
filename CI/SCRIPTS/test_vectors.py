@@ -109,6 +109,7 @@ def test_kml():
     # Just check there is no issue when opening this file
     kml_path = vectors_path().joinpath("GEARTH_POLY.kml")
     kml = vectors.read(kml_path)
+    assert not kml.empty
 
     # Check equivalence between two vector types (complex vector)
     kml_path = vectors_path().joinpath(
@@ -124,6 +125,13 @@ def test_kml():
 
     # Check if equivalent
     ci.assert_geom_almost_equal(json, kml, decimal=6)
+
+    # Just check there is no issue when opening this file
+    kml_path = vectors_path().joinpath(
+        "ICEYE_X2_QUICKLOOK_SC_124020_20210827T162211.kml"
+    )
+    kml = vectors.read(kml_path)
+    assert not kml.empty
 
 
 @s3_env

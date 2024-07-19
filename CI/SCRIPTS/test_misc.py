@@ -21,6 +21,7 @@ import pytest
 
 from CI.SCRIPTS.script_utils import Polarization
 from sertit import ci, misc
+from sertit.misc import compare, compare_version
 
 ci.reduce_verbosity()
 
@@ -103,3 +104,32 @@ def test_unique():
     non_unique = [1, 2, 20, 6, 210, 2, 1]
     unique = [1, 2, 20, 6, 210]
     assert unique == misc.unique(non_unique)
+
+
+def test_comparisons():
+    """Test comparisons"""
+    # -- True --
+    # Equalities
+    assert compare(1, 1, "==")
+    assert compare(1, 1, ">=")
+    assert compare(1, 1, "<=")
+
+    # Inequalities
+    assert compare(1, 2, "<")
+    assert compare(1, 0.5, ">")
+
+    # -- False --
+    # Equalities
+    assert not compare(1, 2, "==")
+    assert not compare(1, 5, ">=")
+    assert not compare(1, 0.5, "<=")
+
+    # Inequalities
+    assert not compare(1, 0.5, "<")
+    assert not compare(1, 2, ">")
+
+
+def test_compare_versions():
+    """"""
+    assert compare_version("geopandas", "0.10.0", ">=")
+    assert compare_version("geopandas", "5.0.0", "<")
