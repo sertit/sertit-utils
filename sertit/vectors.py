@@ -33,8 +33,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
-from fiona._err import CPLE_AppDefinedError
-from fiona.errors import UnsupportedGeometryTypeError
 from shapely import Polygon, wkt
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
@@ -65,9 +63,18 @@ def is_geopandas_1_0():
 
 if is_geopandas_1_0():
     from pyogrio.errors import DataSourceError
+    from shapely.errors import GEOSException
+
+    CPLE_AppDefinedError = Exception
 else:
+    from fiona._err import CPLE_AppDefinedError
     from fiona.errors import DriverError as DataSourceError
+    from fiona.errors import UnsupportedGeometryTypeError as GEOSException
+
+# Handle errors changing from fiona to pyogrio
 DataSourceError = DataSourceError
+GEOSException = GEOSException
+CPLE_AppDefinedError = CPLE_AppDefinedError
 
 
 def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
@@ -532,7 +539,7 @@ def _read_vector_core(
         fiona_logger.setLevel(logging.INFO)
     except DataSourceError:
         raise
-    except (ValueError, UnsupportedGeometryTypeError, IndexError) as ex:
+    except (ValueError, GEOSException, IndexError) as ex:
         if "Use a.any() or a.all()" in str(ex):
             raise
         # Do not print warning for null layer
