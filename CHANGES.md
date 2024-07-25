@@ -1,5 +1,9 @@
 # Release History
 
+## 1.38.1 (2024-07-17)
+
+- FIX: Handle fiona not installed in the environment ([#20](https://github.com/sertit/sertit-utils/issues/20))
+
 ## 1.38.0 (2024-07-17)
 
 - **ENH: Manage `geopandas>=1.0` and its default engine `pyogrio`**:
