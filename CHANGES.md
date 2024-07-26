@@ -1,6 +1,6 @@
 # Release History
 
-## 1.38.1 (2024-07-17)
+## 1.38.1 (2024-07-26)
 
 - FIX: Handle fiona not installed in the environment ([#20](https://github.com/sertit/sertit-utils/issues/20))
 
