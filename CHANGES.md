@@ -1,10 +1,6 @@
 # Release History
 
-## 1.38.1 (2024-07-26)
-
-- FIX: Handle fiona not installed in the environment ([#20](https://github.com/sertit/sertit-utils/issues/20))
-
-## 1.38.0 (2024-07-17)
+## 1.38.0 (2024-07-26)
 
 - **ENH: Manage `geopandas>=1.0` and its default engine `pyogrio`**:
   - ENH: Add function `vectors.is_geopandas_1_0`
@@ -15,6 +11,7 @@
 - **ENH: Add a function `misc.compare` to compare two objects according to an operator given by the user**
 - FIX: Make `path.get_archived_path` function case-insensitive by default
 - FIX: Fix `path.get_filename` for a file in a zip path
+- FIX: Handle fiona not installed in the environment ([#20](https://github.com/sertit/sertit-utils/issues/20))
 - CI: Minor fix in CI scripts to handle `numpy>=2.0` updates
 
 ## 1.37.2 (2024-05-22)
