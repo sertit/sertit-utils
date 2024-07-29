@@ -3,6 +3,7 @@
 ## 1.39.0 (2024-mm-dd)
 
 - **ENH: Add `types.make_iterable` and `types.is_iterable` functions**
+- Switch to `main` branch
 
 ## 1.38.0 (2024-07-26)
 
