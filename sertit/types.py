@@ -26,6 +26,19 @@ AnyPolygonType = Union[Polygon, MultiPolygon]
 def is_iterable(obj: Any):
     """
     Is the object an iterable?
+
+    Useful to replace this kind of code:
+
+        >>> if isinstance(my_items, (list, tuple)):
+        >>>     do...
+
+    by:
+
+        >>> if is_iterable(my_items):
+        >>>     do...
+
+    It allows not to forget checking for some iterables you aren't aware of.
+
     Args:
         obj (Any): Object to check
 
@@ -52,12 +65,33 @@ def is_iterable(obj: Any):
     return isinstance(obj, Iterable)
 
 
-def make_iterable(obj: Any) -> list:
+def make_iterable(obj: Any, convert_none: bool = False) -> list:
     """
     Convert the object to a list if this object is not iterable
 
+    Useful to replace this kind of code:
+
+        >>> if to_convert is not None and not isinstance(to_convert, (list, tuple)):
+        >>>    to_convert = [to_convert]
+
+    by:
+
+        >>> to_convert = make_iterable(to_convert)
+
+    or:
+
+        >>> if isinstance(my_items, (list, tuple)):
+        >>>    first_item = my_items[0]
+        >>> else:
+        >>>    first_item = my_items
+
+    by:
+
+        >>> first_item = make_iterable(to_convert)[0]
+
     Args:
         obj (Any): Object to check
+        convert_none (bool): If true, if obj is None, then it won't be converted into a list.
 
     Returns:
         list: Object as an iterable
@@ -77,7 +111,11 @@ def make_iterable(obj: Any) -> list:
         >>> make_interable(1)
         [1]
         >>> make_interable(AnyPath("1, 2, 3"))
-        [AnyPath("1, 2, 3")] si
+        [AnyPath("1, 2, 3")]
+        >>> make_interable(None)
+        None
+        >>> make_interable(None, convert_none=True)
+        [None]
 
     """
     if not is_iterable(obj):

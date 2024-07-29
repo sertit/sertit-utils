@@ -1,5 +1,9 @@
 # Release History
 
+## 1.39.1 (2024-mm-dd)
+
+- FIX: Allow the user not to convert Nones in `types.make_iterable` (with `convert_none` keyword)
+
 ## 1.39.0 (2024-07-29)
 
 - **ENH: Add `types.make_iterable` and `types.is_iterable` functions**
