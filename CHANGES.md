@@ -1,6 +1,6 @@
 # Release History
 
-## 1.39.0 (2024-mm-dd)
+## 1.39.0 (2024-07-29)
 
 - **ENH: Add `types.make_iterable` and `types.is_iterable` functions**
 - Switch to `main` branch
