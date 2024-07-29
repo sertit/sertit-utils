@@ -1,5 +1,9 @@
 # Release History
 
+## 1.39.0 (2024-mm-dd)
+
+- **ENH: Add `types.is_iterable` function**
+
 ## 1.38.0 (2024-07-26)
 
 - **ENH: Manage `geopandas>=1.0` and its default engine `pyogrio`**:

@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import numpy as np
 import xarray as xr
@@ -20,3 +21,15 @@ AnyNumpyArray = Union[np.ndarray, np.ma.masked_array]
 
 AnyPolygonType = Union[Polygon, MultiPolygon]
 """Shapely Polygon or MultiPolygon"""
+
+
+def is_iterable(obj: Any):
+    """
+    Is the object an iterable?
+    Args:
+        obj (Any): Object to check
+
+    Returns:
+        bool: True if the iobject is iterable
+    """
+    return isinstance(obj, Iterable)
