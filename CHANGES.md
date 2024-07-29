@@ -2,7 +2,7 @@
 
 ## 1.39.0 (2024-mm-dd)
 
-- **ENH: Add `types.is_iterable` function**
+- **ENH: Add `types.make_iterable` and `types.is_iterable` functions**
 
 ## 1.38.0 (2024-07-26)
 

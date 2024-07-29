@@ -31,5 +31,56 @@ def is_iterable(obj: Any):
 
     Returns:
         bool: True if the iobject is iterable
+
+    Examples:
+
+        >>> is_iterable((1, 2, 3))
+        True
+        >>> is_iterable([1, 2, 3])
+        True
+        >>> is_iterable({1, 2, 3})
+        True
+        >>> is_iterable(np.array([1, 2, 3]))
+        True
+        >>> is_iterable("1, 2, 3")
+        True
+        >>> is_iterable(1)
+        False
+        >>> is_iterable(AnyPath("1, 2, 3"))
+        False
     """
     return isinstance(obj, Iterable)
+
+
+def make_iterable(obj: Any) -> list:
+    """
+    Convert the object to a list if this object is not iterable
+
+    Args:
+        obj (Any): Object to check
+
+    Returns:
+        list: Object as an iterable
+
+    Examples:
+
+        >>> make_interable((1, 2, 3))
+        (1, 2, 3)
+        >>> make_interable([1, 2, 3])
+        [1, 2, 3]
+        >>> make_interable({1, 2, 3})
+        {1, 2, 3}
+        >>> make_interable(np.array([1, 2, 3]))
+        np.array([1, 2, 3])
+        >>> make_interable("1, 2, 3")
+        "1, 2, 3"
+        >>> make_interable(1)
+        [1]
+        >>> make_interable(AnyPath("1, 2, 3"))
+        [AnyPath("1, 2, 3")] si
+
+    """
+    if not is_iterable(obj):
+        obj = [obj]
+
+    return obj
