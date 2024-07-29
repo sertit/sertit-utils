@@ -3,6 +3,7 @@
 ## 1.39.1 (2024-mm-dd)
 
 - FIX: Allow the user not to convert Nones in `types.make_iterable` (with `convert_none` keyword)
+- FIX: Allow the user not to take strings as iterables `types.make_iterable` and `types.is_iterable` (with `str_allowed` keyword)
 
 ## 1.39.0 (2024-07-29)
 

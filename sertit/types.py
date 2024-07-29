@@ -23,7 +23,7 @@ AnyPolygonType = Union[Polygon, MultiPolygon]
 """Shapely Polygon or MultiPolygon"""
 
 
-def is_iterable(obj: Any):
+def is_iterable(obj: Any, str_allowed: bool = False):
     """
     Is the object an iterable?
 
@@ -41,6 +41,7 @@ def is_iterable(obj: Any):
 
     Args:
         obj (Any): Object to check
+        str_allowed (bool): If set, strings are considered as iterable. If not, they are not considered as iterable.
 
     Returns:
         bool: True if the iobject is iterable
@@ -56,16 +57,23 @@ def is_iterable(obj: Any):
         >>> is_iterable(np.array([1, 2, 3]))
         True
         >>> is_iterable("1, 2, 3")
+        False
+        >>> is_iterable("1, 2, 3", str_allowed=True)
         True
         >>> is_iterable(1)
         False
         >>> is_iterable(AnyPath("1, 2, 3"))
         False
     """
-    return isinstance(obj, Iterable)
+    if isinstance(obj, str) and not str_allowed:
+        return False
+    else:
+        return isinstance(obj, Iterable)
 
 
-def make_iterable(obj: Any, convert_none: bool = False) -> list:
+def make_iterable(
+    obj: Any, str_allowed: bool = False, convert_none: bool = False
+) -> list:
     """
     Convert the object to a list if this object is not iterable
 
@@ -91,6 +99,7 @@ def make_iterable(obj: Any, convert_none: bool = False) -> list:
 
     Args:
         obj (Any): Object to check
+        str_allowed (bool): If set, strings are considered as iterable. If not, they are not considered as iterable.
         convert_none (bool): If true, if obj is None, then it won't be converted into a list. By default, Nones are not converted to list.
 
     Returns:
@@ -106,8 +115,10 @@ def make_iterable(obj: Any, convert_none: bool = False) -> list:
         {1, 2, 3}
         >>> make_interable(np.array([1, 2, 3]))
         np.array([1, 2, 3])
-        >>> make_interable("1, 2, 3")
+        >>> make_interable("1, 2, 3", str_allowed=True)
         "1, 2, 3"
+        >>> make_interable("1, 2, 3", str_allowed=False)
+        ["1, 2, 3"]
         >>> make_interable(1)
         [1]
         >>> make_interable(AnyPath("1, 2, 3"))
@@ -118,7 +129,7 @@ def make_iterable(obj: Any, convert_none: bool = False) -> list:
         [None]
 
     """
-    if not is_iterable(obj):
+    if (convert_none and obj is None) or not is_iterable(obj, str_allowed):
         obj = [obj]
 
     return obj
