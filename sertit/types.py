@@ -91,7 +91,7 @@ def make_iterable(obj: Any, convert_none: bool = False) -> list:
 
     Args:
         obj (Any): Object to check
-        convert_none (bool): If true, if obj is None, then it won't be converted into a list.
+        convert_none (bool): If true, if obj is None, then it won't be converted into a list. By default, Nones are not converted to list.
 
     Returns:
         list: Object as an iterable
