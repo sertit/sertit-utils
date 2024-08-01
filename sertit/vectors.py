@@ -196,12 +196,14 @@ def set_kml_driver() -> None:
     """
     Set KML driver for Fiona data (use it at your own risks !)
 
+    Only useful with :code:`geopandas<1.0.0` or with :code:`fiona`'s engine
+
     Example:
         >>> path = "path/to/kml.kml"
-        >>> gpd.read_file(path)
+        >>> gpd.read_file(path, engine="fiona")
         fiona.errors.DriverError: unsupported driver: 'LIBKML'
         >>> set_kml_driver()
-        >>> gpd.read_file(path)
+        >>> gpd.read_file(path, engine="fiona")
                        Name  ...                                           geometry
         0  CC679_new_AOI2_3  ...  POLYGON Z ((45.03532 32.49765 0.00000, 46.1947...
         [1 rows x 12 columns]
@@ -419,7 +421,7 @@ def read(
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
-            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics 'rasters.read(..., window=)'. If given, 'bbox' is ignored.
+            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
         **kwargs: Additional arguments used in gpd.read_file
 
     Returns:
