@@ -6,6 +6,7 @@
 - **BREAKING CHANGE**: Renaming of `rasters_rio.path_arr_dst` function to `rasters_rio.any_raster_to_rio_ds`. Older function is deprecated.
 - **BREAKING CHANGE**: Creating `types.AnyRasterType` instead of `rasters.PATH_XARR_DS` and `rasters_rio.PATH_ARR_DS`. Older types are deprecated.
 - **ENH: Creating `types.AnyRioDatasetType` for any rasterio Dataset (both Reader, Writer)**
+- **ENH: Adding the file path and name in the vector attributes (in `vec.attrs["path"]` and `vec.attrs["name"]`) with `vectors.read`**
 
 ## 1.39.1 (2024-07-29)
 

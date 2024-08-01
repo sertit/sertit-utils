@@ -25,10 +25,15 @@ from rasterio import CRS
 from shapely import wkt
 
 from CI.SCRIPTS.script_utils import files_path, s3_env, vectors_path
-from sertit import ci, files, vectors
+from sertit import ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 
 ci.reduce_verbosity()
+
+
+def _assert_attributes(vec: gpd.GeoDataFrame, vec_path):
+    ci.assert_val(vec.attrs["path"], str(vec_path), "path")
+    ci.assert_val(vec.attrs["name"], path.get_filename(vec_path), "name")
 
 
 @s3_env
@@ -74,6 +79,8 @@ def test_vectors():
 
     # UTM and bounds
     aoi = vectors.read(kml_path)
+    _assert_attributes(aoi, kml_path)
+
     with pytest.deprecated_call():
         assert "EPSG:32638" == vectors.corresponding_utm_projection(
             aoi.centroid.x, aoi.centroid.y
@@ -109,6 +116,7 @@ def test_kml():
     # Just check there is no issue when opening this file
     kml_path = vectors_path().joinpath("GEARTH_POLY.kml")
     kml = vectors.read(kml_path)
+    _assert_attributes(kml, kml_path)
     assert not kml.empty
 
     # Check equivalence between two vector types (complex vector)
@@ -123,6 +131,10 @@ def test_kml():
     kml = vectors.read(kml_path).explode(ignore_index=True)
     json = vectors.read(json_path).explode(ignore_index=True)
 
+    # Check attributes
+    _assert_attributes(kml, kml_path)
+    _assert_attributes(json, json_path)
+
     # Check if equivalent
     ci.assert_geom_almost_equal(json, kml, decimal=6)
 
@@ -131,6 +143,7 @@ def test_kml():
         "ICEYE_X2_QUICKLOOK_SC_124020_20210827T162211.kml"
     )
     kml = vectors.read(kml_path)
+    _assert_attributes(kml, kml_path)
     assert not kml.empty
 
 
@@ -143,6 +156,10 @@ def test_kmz():
     # Read vectors
     kmz = vectors.read(kmz_path)
     gj = vectors.read(gj_path)
+
+    # Check attributes
+    _assert_attributes(kmz, kmz_path)
+    _assert_attributes(gj, gj_path)
 
     # Check if equivalent
     assert all(
@@ -164,15 +181,21 @@ def test_gml():
     empty_gdf = vectors.read(empty_gml, crs=EPSG_4326)
     assert empty_gdf.empty
     assert empty_gdf.crs == EPSG_4326
+    _assert_attributes(empty_gdf, empty_gml)
 
     # Not empty
     not_empty_true = vectors.read(not_empty_true_path)
     not_empty = vectors.read(not_empty_gml, crs=not_empty_true.crs)
     ci.assert_geom_equal(not_empty, not_empty_true)
 
+    # Check attrs
+    _assert_attributes(not_empty_true, not_empty_true_path)
+    _assert_attributes(not_empty, not_empty_gml)
+
     # Naive
     naive = vectors.read(naive_gml)
     assert naive.crs is None
+    _assert_attributes(naive, naive_gml)
 
 
 @s3_env
@@ -314,6 +337,7 @@ def test_read_gdb():
     gpd_gdb = gpd.read_file(str(gdb_path), layer=layer)
 
     ci.assert_geom_equal(sertit_gdb, gpd_gdb)
+    _assert_attributes(sertit_gdb, gdb_path)
 
 
 def test_read_dbf():
@@ -324,3 +348,5 @@ def test_read_dbf():
     pyogrio = vectors.read(dbf_path, engine="pyogrio")
 
     ci.assert_geom_equal(fiona, pyogrio)
+    _assert_attributes(fiona, dbf_path)
+    _assert_attributes(pyogrio, dbf_path)

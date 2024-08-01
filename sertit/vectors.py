@@ -492,7 +492,13 @@ def read(
         raise FileNotFoundError(f"Non existing vector: {vector_path}")
 
     # Read vector
-    return _read_vector_core(gpd_vect_path, vector_path, arch_path, crs, **kwargs)
+    vect = _read_vector_core(gpd_vect_path, vector_path, arch_path, crs, **kwargs)
+
+    # Add some attributes
+    vect.attrs["path"] = str(vector_path)
+    vect.attrs["name"] = path.get_filename(vector_path)
+
+    return vect
 
 
 def _read_vector_core(
