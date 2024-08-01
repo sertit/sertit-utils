@@ -1,5 +1,12 @@
 # Release History
 
+## 1.40.0 (2024-07-29)
+
+- **BREAKING CHANGE**: Renaming of `rasters.path_xarr_dst` function to `rasters.any_raster_to_xr_ds`. Older function is deprecated.
+- **BREAKING CHANGE**: Renaming of `rasters_rio.path_arr_dst` function to `rasters_rio.any_raster_to_rio_ds`. Older function is deprecated.
+- **BREAKING CHANGE**: Creating `types.AnyRasterType` instead of `rasters.PATH_XARR_DS` and `rasters_rio.PATH_ARR_DS`. Older types are deprecated.
+- **ENH: Creating `types.AnyRioDatasetType` for any rasterio Dataset (both Reader, Writer)**
+
 ## 1.39.1 (2024-07-29)
 
 - FIX: Allow the user not to convert Nones in `types.make_iterable` (with `convert_none` keyword)
@@ -107,7 +114,7 @@
 
 ## 1.32.0 (2023-11-13)
 
-- **BREAKING CHANGE**: Change the order of `files.save_json` function to fit `files.save_obj`. Older order is deprecated.
+- **BREAKING CHANGE**: Change the order of `files.save_json` function to fit `files.save_obj`. Older function is deprecated.
 - **ENH: Allow to pass \*\*kwargs in `files.save_json` and `files.save_obj`**
 - **ENH: Allow to pass \*\*kwargs for S3 environments, in order to add options such as _requester pays_**
 - FIX: Use `EPSG_4326` instead of `WGS84` for sake of naming accuracy (this is not the same thing!) (`WGS84` stays available though)

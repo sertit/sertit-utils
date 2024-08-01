@@ -31,7 +31,7 @@ from shapely.geometry import Polygon
 try:
     import rasterio
     import rioxarray
-    from rasterio import features
+    from rasterio import MemoryFile, features
     from rasterio.enums import Resampling
     from rioxarray.exceptions import MissingCRS
 except ModuleNotFoundError as ex:
@@ -40,10 +40,10 @@ except ModuleNotFoundError as ex:
     ) from ex
 
 from sertit import geometry, logs, path, rasters_rio, vectors
-from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
+from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
 
 MAX_CORES = rasters_rio.MAX_CORES
-PATH_XARR_DS = Union[str, AnyXrDataStructure, rasterio.DatasetReader]
+PATH_XARR_DS = AnyRasterType
 LOGGER = logging.getLogger(logs.SU_NAME)
 
 # NODATAs
@@ -86,13 +86,14 @@ def get_nodata_value(dtype) -> int:
     return rasters_rio.get_nodata_value(dtype)
 
 
-def path_xarr_dst(function: Callable) -> Callable:
+def any_raster_to_xr_ds(function: Callable) -> Callable:
     """
-    Path, :code:`xarray.Dataset`, :code:`xarray.DataArray`,or dataset decorator. Allows a function to ingest:
+    Allows a function to ingest AnyRasterType and convert it into a xr.DataArray:
 
-    - a path
-    - a :code:`xarray`
-    - a :code:`rasterio` dataset
+    - a path (:code:`Path`, :code:`CloudPath` or :code:`str`)
+    - a :code:`xarray.Dataset` or a :code:`xarray.DataArray`
+    - a :code:`rasterio.DatasetWriter` or :code:`rasterio.DatasetReader`
+    - :code:`rasterio` dataset after reading, its array and metadata: (np.ndarray, dict)
 
     Args:
         function (Callable): Function to decorate
@@ -117,34 +118,38 @@ def path_xarr_dst(function: Callable) -> Callable:
     """
 
     @wraps(function)
-    def path_or_xarr_or_dst_wrapper(path_or_ds: PATH_XARR_DS, *args, **kwargs) -> Any:
+    def wrapper(any_raster_type: AnyRasterType, *args, **kwargs) -> Any:
         """
         Path or dataset wrapper
         Args:
-            path_or_ds (PATH_XARR_DS): Raster path or its dataset
+            any_raster_type (AnyRasterType): Raster path or its dataset
             *args: args
             **kwargs: kwargs
 
         Returns:
             Any: regular output
         """
-        if isinstance(path_or_ds, xr.DataArray):
-            out = function(path_or_ds, *args, **kwargs)
-        elif isinstance(path_or_ds, xr.Dataset):
-            # Try on the whole dataset
-            try:
-                out = function(path_or_ds, *args, **kwargs)
-            except Exception:
-                # Try on every dataarray
+        if any_raster_type is None:
+            raise ValueError("'any_raster_type' shouldn't be None!")
+
+        # By default, try with the input fct
+        try:
+            out = function(any_raster_type, *args, **kwargs)
+        except Exception as ex:
+            if isinstance(any_raster_type, xr.DataArray):
+                # Should work with a DataArray
+                raise ex
+            elif isinstance(any_raster_type, xr.Dataset):
+                # Try on every DataArray of the Dataset
                 try:
                     xds_dict = {}
                     convert_to_xdataset = False
-                    for var in path_or_ds.data_vars:
-                        xds_dict[var] = function(path_or_ds[var], *args, **kwargs)
+                    for var in any_raster_type.data_vars:
+                        xds_dict[var] = function(any_raster_type[var], *args, **kwargs)
                         if isinstance(xds_dict[var], xr.DataArray):
                             convert_to_xdataset = True
 
-                    # Convert in dataset if we have dataarrays, else keep the dict
+                    # Convert in dataset if we have DataArrays, else keep the dict
                     if convert_to_xdataset:
                         xds = xr.Dataset(xds_dict)
                     else:
@@ -152,105 +157,53 @@ def path_xarr_dst(function: Callable) -> Callable:
                     return xds
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
-        else:
-            # Get name
-            if path.is_path(path_or_ds):
-                name = str(path_or_ds)
-                path_or_ds = str(path_or_ds)
-            else:
-                name = path_or_ds.name
 
-            with rioxarray.open_rasterio(
-                path_or_ds,
-                masked=True,
-                default_name=name,
-                chunks=kwargs.pop("chunks", True),
-            ) as xds:
-                out = function(xds, *args, **kwargs)
-        return out
-
-    return path_or_xarr_or_dst_wrapper
-
-
-def path_arr_dst(function: Callable) -> Callable:
-    """
-    Path, :code:`xarray`, (array, metadata) or dataset decorator.
-    Allows a function to ingest:
-
-    - a path
-    - a :code:`xarray`
-    - a :code:`rasterio` dataset
-    - :code:`rasterio` open data: (array, meta)
-
-    Args:
-        function (Callable): Function to decorate
-
-    Returns:
-        Callable: decorated function
-
-    Example:
-        >>> # Create mock function
-        >>> @path_or_dst
-        >>> def fct(ds):
-        >>>     read(ds)
-        >>>
-        >>> # Test the two ways
-        >>> read1 = fct("path/to/raster.tif")
-        >>> with rasterio.open("path/to/raster.tif") as ds:
-        >>>     read2 = fct(ds)
-        >>>
-        >>> # Test
-        >>> read1 == read2
-        True
-    """
-
-    @wraps(function)
-    def path_or_arr_or_dst_wrapper(
-        path_or_arr_or_ds: Union[str, rasterio.DatasetReader], *args, **kwargs
-    ) -> Any:
-        """
-        Path or dataset wrapper
-        Args:
-            path_or_arr_or_ds (Union[str, rasterio.DatasetReader]): Raster path or its dataset
-            *args: args
-            **kwargs: kwargs
-
-        Returns:
-            Any: regular output
-        """
-        try:
-            out = function(path_or_arr_or_ds, *args, **kwargs)
-        except Exception as ex:
-            if path.is_path(path_or_arr_or_ds):
-                with rasterio.open(str(path_or_arr_or_ds)) as ds:
-                    out = function(ds, *args, **kwargs)
-            elif isinstance(path_or_arr_or_ds, tuple):
-                arr, meta = path_or_arr_or_ds
-                from rasterio import MemoryFile
-
+            elif isinstance(any_raster_type, tuple):
+                arr, meta = any_raster_type
                 with MemoryFile() as memfile:
                     with memfile.open(
-                        **meta, BIGTIFF=rasters_rio.bigtiff_value(arr)
+                        **meta, BIGTIFF=rasters_rio.bigtiff_value(any_raster_type)
                     ) as ds:
-                        ds.write(arr)
-                        out = function(ds, *args, **kwargs)
+                        ds.write(arr.data)
+
+                        with rioxarray.open_rasterio(
+                            any_raster_type,
+                            masked=True,
+                            default_name=ds.name,
+                            chunks=kwargs.pop("chunks", True),
+                        ) as xds:
+                            out = function(xds, *args, **kwargs)
             else:
-                # Try if xarray is importable
-                try:
-                    if isinstance(path_or_arr_or_ds, (xr.DataArray, xr.Dataset)):
-                        file_path = path_or_arr_or_ds.encoding["source"]
-                        with rasterio.open(file_path) as ds:
-                            out = function(ds, *args, **kwargs)
-                    else:
-                        raise ex
-                except Exception:
-                    raise ex
+                # Get the path from the input
+                if path.is_path(any_raster_type):
+                    name = str(any_raster_type)
+                    any_raster_type = str(any_raster_type)
+                else:
+                    # For rasterio datasets, '.name' gives the path
+                    name = any_raster_type.name
+
+                # Convert path or rasterio.dataset to xr.dataset
+                with rioxarray.open_rasterio(
+                    any_raster_type,
+                    masked=True,
+                    default_name=name,
+                    chunks=kwargs.pop("chunks", True),
+                ) as xds:
+                    out = function(xds, *args, **kwargs)
+
         return out
 
-    return path_or_arr_or_dst_wrapper
+    return wrapper
 
 
-@path_xarr_dst
+def path_xarr_dst(function: Callable) -> Callable:
+    logs.deprecation_warning(
+        "Deprecated 'path_xarr_dst' decorator. Please use 'any_raster_to_xr_ds' instead."
+    )
+    return any_raster_to_xr_ds(function)
+
+
+@any_raster_to_xr_ds
 def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
     """
     .. deprecated:: 1.36.0
@@ -260,7 +213,7 @@ def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
     return get_data_mask(xds)
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
     """
     Get nodata mask from a xarray.
@@ -306,9 +259,9 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
     return np.where(nodata_pos, 0, 1).astype(np.uint8)
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def rasterize(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
@@ -324,7 +277,7 @@ def rasterize(
     Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the rtaster will be binary.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray, used as base for the vector's rasterization data (shape, etc.)
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray, used as base for the vector's rasterization data (shape, etc.)
         vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
@@ -350,9 +303,9 @@ def rasterize(
     return rasterized_xds
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def _vectorize(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
     dissolve: bool = False,
@@ -374,7 +327,7 @@ def _vectorize(
         - You will get a classified polygon with data (value=0)/nodata pixels. To
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
@@ -425,7 +378,11 @@ def _vectorize(
 
     # WARNING: features.shapes do NOT accept dask arrays !
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
-        data = data.compute()
+        try:
+            data = data.compute()
+        except Exception:
+            data = None
+
     if nodata_arr is not None and not isinstance(
         nodata_arr, (np.ndarray, np.ma.masked_array)
     ):
@@ -447,9 +404,9 @@ def _vectorize(
     return gdf
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def vectorize(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     values: Union[None, int, list] = None,
     keep_values: bool = True,
     dissolve: bool = False,
@@ -468,7 +425,7 @@ def vectorize(
         Please be careful.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
@@ -498,8 +455,8 @@ def vectorize(
     )
 
 
-@path_xarr_dst
-def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataFrame:
+@any_raster_to_xr_ds
+def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster, returned as a vector.
 
@@ -507,7 +464,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         default_nodata (int): Default values for nodata in case of non-existing in file
 
     Returns:
@@ -533,7 +490,7 @@ def get_valid_vector(xds: PATH_XARR_DS, default_nodata: int = 0) -> gpd.GeoDataF
     ]  # 0 is the values of not nodata put there by rasterio
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def get_nodata_vector(
     ds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
 ) -> gpd.GeoDataFrame:
@@ -566,9 +523,9 @@ def get_nodata_vector(
     return nodata[nodata.raster_val == 0]
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def mask(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
@@ -585,7 +542,7 @@ def mask(
     It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
@@ -620,9 +577,9 @@ def mask(
     return masked_xds
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def paint(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     value: int,
     invert: bool = False,
@@ -640,7 +597,7 @@ def paint(
     The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
@@ -693,9 +650,9 @@ def paint(
     return painted_xds
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def crop(
-    xds: PATH_XARR_DS,
+    xds: AnyRasterType,
     shapes: Union[gpd.GeoDataFrame, Polygon, list],
     nodata: Optional[int] = None,
     **kwargs,
@@ -709,7 +666,7 @@ def crop(
     function in order to create a masked_array.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
@@ -745,9 +702,91 @@ def crop(
     return xds.rio.clip(shapes, **kwargs)
 
 
-@path_arr_dst
+def _any_raster_to_rio_ds(function: Callable) -> Callable:
+    """
+    Specific declination of rasters_rio.any_raster_to_rio_ds for this specific case, handling the xarray object differently.
+
+    Allows a function to ingest AnyRasterType and convert it into a rasterio.DatasetReader:
+
+    - a path (:code:`Path`, :code:`CloudPath` or :code:`str`)
+    - a :code:`rasterio.DatasetWriter` or :code:`rasterio.DatasetReader`
+    - :code:`rasterio` dataset after reading, its array and metadata: (np.ndarray, dict)
+
+    But returns directly any xarray object
+
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+
+    Example:
+        >>> # Create mock function
+        >>> @any_raster_to_rio_ds
+        >>> def fct(ds):
+        >>>     read(ds)
+        >>>
+        >>> # Test the two ways
+        >>> read1 = fct("path/to/raster.tif")
+        >>> with rasterio.open("path/to/raster.tif") as ds:
+        >>>     read2 = fct(ds)
+        >>>
+        >>> # Test
+        >>> read1 == read2
+        True
+    """
+
+    @wraps(function)
+    def wrapper(any_raster_type: AnyRasterType, *args, **kwargs) -> Any:
+        """
+        any_raster_to_rio_ds wrapper
+        Args:
+            any_raster_type (AnyRasterType): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        """
+        try:
+            out = function(any_raster_type, *args, **kwargs)
+        except Exception as ex:
+            if path.is_path(any_raster_type):
+                with rasterio.open(str(any_raster_type)) as ds:
+                    out = function(ds, *args, **kwargs)
+            elif isinstance(any_raster_type, tuple):
+                arr, meta = any_raster_type
+                from rasterio import MemoryFile
+
+                with MemoryFile() as memfile:
+                    with memfile.open(
+                        **meta, BIGTIFF=rasters_rio.bigtiff_value(arr)
+                    ) as ds:
+                        ds.write(arr)
+                        out = function(ds, *args, **kwargs)
+            else:
+                # Try if xarray is importable
+                try:
+                    if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
+                        try:
+                            file_path = any_raster_type.encoding["source"]
+                            with rasterio.open(file_path) as ds:
+                                out = function(ds, *args, **kwargs)
+                        except Exception:
+                            # Return given xarray object
+                            return any_raster_type
+                    else:
+                        raise ex
+                except Exception:
+                    raise ex
+        return out
+
+    return wrapper
+
+
+@_any_raster_to_rio_ds
 def read(
-    ds: rasters_rio.PATH_ARR_DS,
+    ds: AnyRasterType,
     resolution: Union[tuple, list, float] = None,
     size: Union[tuple, list] = None,
     window: Any = None,
@@ -777,7 +816,7 @@ def read(
     `rioxarray tutorial <https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html>`_.
 
     Args:
-        ds (PATH_ARR_DS): Path to the raster or a rasterio dataset or a xarray
+        ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
@@ -807,8 +846,8 @@ def read(
         >>> # Assert those two approaches give the same result
         >>> xds1 == xds2
         True
-
     """
+
     if window is not None:
         window = rasters_rio.get_window(ds, window)
 
@@ -891,7 +930,7 @@ def read(
     return xda
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def write(
     xds: AnyXrDataStructure, path: AnyPathStrType, tags: dict = None, **kwargs
 ) -> None:
@@ -1037,9 +1076,9 @@ def collocate(
     return collocated_xds
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def sieve(
-    xds: PATH_XARR_DS, sieve_thresh: int, connectivity: int = 4
+    xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4
 ) -> AnyXrDataStructure:
     """
     Sieving, overloads rasterio function with raster shaped like an image: :code:`(1, h, w)`.
@@ -1048,7 +1087,7 @@ def sieve(
         Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         sieve_thresh (int): Sieving threshold in pixels
         connectivity (int): Connectivity, either 4 or 8
 
@@ -1121,13 +1160,13 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
     return rasters_rio.get_dim_img_path(dim_path, img_name)
 
 
-@path_xarr_dst
-def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
+@any_raster_to_xr_ds
+def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
     Get the extent of a raster as a :code:`geopandas.Geodataframe`.
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
 
     Returns:
         gpd.GeoDataFrame: Extent as a :code:`geopandas.Geodataframe`
@@ -1148,13 +1187,13 @@ def get_extent(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
     return vectors.get_geodf(geom=[*xds.rio.bounds()], crs=xds.rio.crs)
 
 
-@path_xarr_dst
-def get_footprint(xds: PATH_XARR_DS) -> gpd.GeoDataFrame:
+@any_raster_to_xr_ds
+def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, *in french == emprise utile*)
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
     Returns:
         gpd.GeoDataFrame: Footprint as a GeoDataFrame
 
@@ -1501,9 +1540,9 @@ def where(
     return where_xda
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def hillshade(
-    xds: PATH_XARR_DS, azimuth: float = 315, zenith: float = 45
+    xds: AnyRasterType, azimuth: float = 315, zenith: float = 45
 ) -> AnyXrDataStructure:
     """
     Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
@@ -1518,7 +1557,7 @@ def hillshade(
     - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth angle in degrees
         zenith (float): Zenith angle in degrees
 
@@ -1531,9 +1570,9 @@ def hillshade(
     return xds.copy(data=arr)
 
 
-@path_xarr_dst
+@any_raster_to_xr_ds
 def slope(
-    xds: PATH_XARR_DS, in_pct: bool = False, in_rad: bool = False
+    xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False
 ) -> AnyXrDataStructure:
     """
     Compute the slope of a DEM (in degrees).
@@ -1541,7 +1580,7 @@ def slope(
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
-        xds (PATH_XARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         in_pct (bool): Outputs slope in percents
         in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 

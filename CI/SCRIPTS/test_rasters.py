@@ -88,7 +88,7 @@ def test_rasters():
     valid_truth_path = rasters_path().joinpath("valid.geojson")
 
     # Create tmp file
-    # VRT needs to be build on te same disk
+    # VRT needs to be built on the same disk
     with tempfile.TemporaryDirectory() as tmp_dir:
         # tmp_dir = rasters_path().joinpath("OUTPUT_XARRAY")
         # os.makedirs(tmp_dir, exist_ok=True)

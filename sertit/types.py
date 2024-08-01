@@ -1,10 +1,11 @@
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import xarray as xr
 from cloudpathlib import CloudPath
+from rasterio.io import DatasetReader, DatasetWriter
 from shapely import MultiPolygon, Polygon
 
 AnyPathType = Union[CloudPath, Path]
@@ -21,6 +22,20 @@ AnyNumpyArray = Union[np.ndarray, np.ma.masked_array]
 
 AnyPolygonType = Union[Polygon, MultiPolygon]
 """Shapely Polygon or MultiPolygon"""
+
+AnyRioDatasetType = Union[DatasetReader, DatasetWriter]
+""" Any Rasterio Dataset Type (both Reader, Writer) """
+
+AnyRasterType = Union[
+    AnyPathStrType, Tuple[AnyNumpyArray, dict], AnyXrDataStructure, AnyRioDatasetType
+]
+"""
+Any object potentially describing a raster:
+- its path,
+- its xarray representation (Dataset or DataArray),
+- its rasterio representation (DatasetReader or Writer)
+- or its array + metadata (np.ndarray + dict)
+"""
 
 
 def is_iterable(obj: Any, str_allowed: bool = False):
