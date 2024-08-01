@@ -407,6 +407,13 @@ def read(
 
     Handles a lot of exceptions and have fallback mechanisms with :code:`ogr2ogr` (if in :code:`PATH`)
 
+    Handles both on disk and cloud-stored vectors.
+
+    Adds two attributes to your vector:
+
+    - :code:`path`: File path
+    - :code:`name`: File name
+
     Args:
         vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
@@ -421,9 +428,16 @@ def read(
     Examples:
         >>> # Usual
         >>> path = 'D:/path/to/vector.geojson'
-        >>> vectors.read(path, crs=WGS84)
+        >>> vec = vectors.read(path, crs=WGS84)
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
+        >>>
+        >>> # Attributes
+        >>> vec.attrs["path"]
+        'D:/path/to/vector.geojson'
+        >>>
+        >>> vec.attrs["name"]
+        'vector.geojson'
 
         >>> # Archive
         >>> arch_path = 'D:/path/to/zip.zip'
