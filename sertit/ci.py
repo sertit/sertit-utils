@@ -106,10 +106,16 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
         val_2 (Any): Value 2
         field (str): Field to compare
     """
-    try:
-        assert val_1 == val_2, f"{field} incoherent:\n{val_1} != {val_2}"
-    except ValueError:
-        assert all(val_1 == val_2), f"{field} incoherent:\n{val_1} != {val_2}"
+    desc = f"{field} incoherent:\n{val_1} != {val_2}"
+
+    # Manage None as value
+    if val_2 is None or val_1 is None:
+        assert val_1 is val_2, desc
+    else:
+        try:
+            assert val_1 == val_2, desc
+        except ValueError:
+            assert all(val_1 == val_2), desc
 
 
 def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:

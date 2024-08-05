@@ -32,8 +32,12 @@ def test_assert_base():
     """Test CI functions"""
     # assert_val
     ci.assert_val("a", "a", "same string")
+    ci.assert_val(None, None, "both None")
     with pytest.raises(AssertionError):
         ci.assert_val("a", "b", "different string")
+
+    with pytest.raises(AssertionError):
+        ci.assert_val("a", None, "only one None")
 
     # assert_field
     dict_1 = {
