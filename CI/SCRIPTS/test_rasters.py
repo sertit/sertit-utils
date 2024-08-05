@@ -260,7 +260,7 @@ def test_rasters():
 
             # Dataset
             xds_cropped = os.path.join(tmp_dir, "test_crop_xds.tif")
-            crop_xds = rasters.crop(xds, mask, nodata=xda.rio.encoded_nodata)
+            crop_xds = rasters.crop(xds, mask, nodata=get_nodata_value_from_xr(xds))
             rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
             ci.assert_xr_encoding_attrs(xds, crop_xds)
 
@@ -560,16 +560,18 @@ def test_xarray_fct():
     xda_sum = xda + xda
     xda_sum = rasters.set_metadata(xda_sum, xda, "sum")
 
-    assert xda_sum.rio.crs == xda.rio.crs
+    ci.assert_val(xda_sum.rio.crs, xda.rio.crs, "CRS")
     assert np.isnan(xda_sum.rio.nodata)
-    assert xda_sum.rio.encoded_nodata == xda.rio.encoded_nodata
-    assert xda_sum.attrs == xda.attrs
-    assert xda_sum.encoding == xda.encoding
-    assert xda_sum.rio.transform() == xda.rio.transform()
-    assert xda_sum.rio.width == xda.rio.width
-    assert xda_sum.rio.height == xda.rio.height
-    assert xda_sum.rio.count == xda.rio.count
-    assert xda_sum.name == "sum"
+    ci.assert_val(
+        get_nodata_value_from_xr(xda_sum), get_nodata_value_from_xr(xda), "nodata"
+    )
+    ci.assert_val(xda_sum.attrs, xda.attrs, "attributes")
+    ci.assert_val(xda_sum.encoding, xda.encoding, "encoding")
+    ci.assert_val(xda_sum.rio.transform(), xda.rio.transform(), "transform")
+    ci.assert_val(xda_sum.rio.width, xda.rio.width, "width")
+    ci.assert_val(xda_sum.rio.height, xda.rio.height, "height")
+    ci.assert_val(xda_sum.rio.count, xda.rio.count, "count")
+    ci.assert_val(xda_sum.name, "sum", "name")
 
 
 @dask_env

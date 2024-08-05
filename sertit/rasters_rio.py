@@ -46,7 +46,13 @@ except ModuleNotFoundError as ex:
 
 from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
 from sertit.logs import SU_NAME
-from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
+from sertit.types import (
+    AnyNumpyArray,
+    AnyPathStrType,
+    AnyPathType,
+    AnyRasterType,
+    AnyXrDataStructure,
+)
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -217,13 +223,15 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
             else:
                 # Try if xarray is importable
                 try:
-                    import xarray as xr
+                    from sertit.rasters import get_nodata_value_from_xr
 
-                    if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
+                    nodata = get_nodata_value_from_xr(any_raster_type)
+
+                    if isinstance(any_raster_type, AnyXrDataStructure):
                         meta = {
                             "driver": "GTiff",
                             "dtype": any_raster_type.dtype,
-                            "nodata": any_raster_type.rio.encoded_nodata,
+                            "nodata": nodata,
                             "width": any_raster_type.rio.width,
                             "height": any_raster_type.rio.height,
                             "count": any_raster_type.rio.count,
@@ -234,10 +242,8 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                             with memfile.open(
                                 **meta, BIGTIFF=bigtiff_value(any_raster_type)
                             ) as ds:
-                                if any_raster_type.rio.encoded_nodata is not None:
-                                    arr = any_raster_type.fillna(
-                                        any_raster_type.rio.encoded_nodata
-                                    )
+                                if nodata is not None:
+                                    arr = any_raster_type.fillna(nodata)
                                 else:
                                     arr = any_raster_type
                                 ds.write(arr.data)

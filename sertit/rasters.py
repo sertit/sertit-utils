@@ -73,10 +73,10 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     Returns:
         float: nodata
     """
-    nodata = xds.rio.encoded_nodata
-
-    if nodata is None:
-        nodata = xds.rio.nodata
+    try:
+        nodata = xds.rio.encoded_nodata
+    except AttributeError:
+        nodata = None
 
     if nodata is None:
         nodata = xds.attrs.get("_FillValue")
@@ -87,8 +87,11 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     if nodata is None:
         nodata = xds.attrs.get("fill_value")
 
-    if nodata is None:
-        nodata = xds.rio.nodata
+    try:
+        if nodata is None:
+            nodata = xds.rio.nodata
+    except AttributeError:
+        pass
 
     return nodata
 
@@ -395,7 +398,7 @@ def _vectorize(
     """
     # Manage nodata value
     uint8_nodata = 255
-    if xds.rio.encoded_nodata is not None:
+    if get_nodata_value_from_xr(xds) is not None:
         nodata = uint8_nodata
     else:
         nodata = default_nodata
@@ -678,10 +681,9 @@ def paint(
         True
     """
     # Fill na values in order to not interfere with the mask function
-    if xds.rio.encoded_nodata is not None:
-        xds_fill = xds.fillna(xds.rio.encoded_nodata)
-    elif xds.rio.nodata is not None:
-        xds_fill = xds.fillna(xds.rio.nodata)
+    nodata = get_nodata_value_from_xr(xds)
+    if nodata is not None:
+        xds_fill = xds.fillna(nodata)
     else:
         xds_fill = xds
 
@@ -699,8 +701,9 @@ def paint(
     painted_xds.rio.update_encoding(xds.encoding, inplace=True)
 
     # Set back nodata to keep the original nodata
-    if xds.rio.encoded_nodata is not None:
-        painted_xds = set_nodata(painted_xds, xds.rio.encoded_nodata)
+    nodata = get_nodata_value_from_xr(xds)
+    if nodata is not None:
+        painted_xds = set_nodata(painted_xds, nodata)
 
     # Convert back to xarray
     return painted_xds
@@ -1503,7 +1506,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
     Set nodata to a xarray that have no default nodata value.
 
     In the data array, the no data will be set to :code:`np.nan`.
-    The encoded value can be retrieved with :code:`xda.rio.encoded_nodata`.
+    The encoded value can be retrieved with :code:`get_nodata_value_from_xr`.
 
     Args:
         xda (xr.DataArray): DataArray
