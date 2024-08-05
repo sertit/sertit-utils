@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Tuple, Union
 
+import geopandas as gpd
 import numpy as np
 import xarray as xr
 from cloudpathlib import CloudPath
@@ -35,6 +36,13 @@ Any object potentially describing a raster:
 - its xarray representation (Dataset or DataArray),
 - its rasterio representation (DatasetReader or Writer)
 - or its array + metadata (np.ndarray + dict)
+"""
+
+AnyVectorType = Union[AnyPathStrType, gpd.GeoDataFrame]
+"""
+Any object potentially describing a vector:
+- its path,
+- its GeoDataFrame
 """
 
 
