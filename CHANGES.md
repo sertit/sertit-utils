@@ -1,6 +1,6 @@
 # Release History
 
-## 1.40.0 (2024-07-29)
+## 1.40.0 (2024-08-05)
 
 - **BREAKING CHANGE**: Renaming of `rasters.path_xarr_dst` function to `rasters.any_raster_to_xr_ds`. Older function is deprecated.
 - **BREAKING CHANGE**: Renaming of `rasters_rio.path_arr_dst` function to `rasters_rio.any_raster_to_rio_ds`. Older function is deprecated.
