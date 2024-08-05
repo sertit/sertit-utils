@@ -71,27 +71,27 @@ FLOAT_NODATA = -9999
 """ :code:`float` nodata """
 
 
-def get_nodata_value(dtype) -> int:
+def get_nodata_value_from_dtype(dtype) -> float:
     """
-    Get default nodata value:
+    Get default nodata value from any given dtype.
 
     Args:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
 
     Returns:
-        int: Nodata value
+        float: Nodata value
 
     Examples:
-        >>> rasters.get_nodata_value("uint8")
+        >>> rasters_rio.get_nodata_value_from_dtype("uint8")
         255
 
-        >>> rasters.get_nodata_value("uint16")
+        >>> rasters_rio.get_nodata_value_from_dtype("uint16")
         65535
 
-        >>> rasters.get_nodata_value("int8")
+        >>> rasters_rio.get_nodata_value_from_dtype("int8")
         -128
 
-        >>> rasters.get_nodata_value("float")
+        >>> rasters_rio.get_nodata_value_from_dtype("float")
         -9999
     """
     # Convert type to numpy if needed
@@ -113,6 +113,25 @@ def get_nodata_value(dtype) -> int:
         nodata = FLOAT_NODATA
 
     return nodata
+
+
+def get_nodata_value(dtype) -> float:
+    """
+    .. deprecated:: 1.41.0
+       Use :code:`get_nodata_value_from_dtype` instead.
+
+    Get default nodata value:
+
+    Args:
+        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
+
+    Returns:
+        float: Nodata value
+    """
+    logs.deprecation_warning(
+        "This function is deprecated. Use 'get_nodata_value_from_dtype' instead."
+    )
+    return get_nodata_value_from_dtype(dtype)
 
 
 def bigtiff_value(arr: Any) -> str:

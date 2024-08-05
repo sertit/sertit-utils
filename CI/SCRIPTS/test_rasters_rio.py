@@ -27,7 +27,12 @@ from rasterio.windows import Window
 
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
-from sertit.rasters_rio import any_raster_to_rio_ds, path_arr_dst
+from sertit.rasters_rio import (
+    any_raster_to_rio_ds,
+    get_nodata_value,
+    get_nodata_value_from_dtype,
+    path_arr_dst,
+)
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
@@ -373,7 +378,7 @@ def test_read_idx():
 
 
 @s3_env
-def test_deprecation():
+def test_decorator_deprecation():
     raster_path = rasters_path().joinpath("raster.tif")
 
     @any_raster_to_rio_ds
@@ -386,3 +391,28 @@ def test_deprecation():
 
     # Not able to warn deprecation from inside the decorator
     np.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
+
+
+def test_get_nodata_deprecation():
+    """Test deprecation of get_nodata_value"""
+    # Test deprecation
+    for dtype in [
+        np.uint8,
+        np.int8,
+        np.uint16,
+        np.uint32,
+        np.int32,
+        np.int64,
+        np.uint64,
+        int,
+        "int",
+        np.int16,
+        np.float32,
+        np.float64,
+        float,
+        "float",
+    ]:
+        with pytest.deprecated_call():
+            ci.assert_val(
+                get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
+            )

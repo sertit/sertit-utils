@@ -1,5 +1,10 @@
 # Release History
 
+## 1.41.0 (2024-mm-dd)
+
+- **BREAKING CHANGE**: Renaming of `rasters(_rio).get_nodata_value` function to `rasters(_rio).get_nodata_value_from_dtype`. Older function is deprecated.
+- **ENH: Creating `rasters.get_nodata_value_from_xr` to retrieve the nodata value as specified by `rioxarray`**
+
 ## 1.40.0 (2024-08-05)
 
 - **BREAKING CHANGE**: Renaming of `rasters.path_xarr_dst` function to `rasters.any_raster_to_xr_ds`. Older function is deprecated.

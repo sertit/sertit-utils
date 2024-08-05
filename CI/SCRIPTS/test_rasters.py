@@ -28,7 +28,13 @@ import xarray as xr
 
 from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
 from sertit import ci, path, rasters, vectors
-from sertit.rasters import any_raster_to_xr_ds, path_xarr_dst
+from sertit.rasters import (
+    any_raster_to_xr_ds,
+    get_nodata_value,
+    get_nodata_value_from_dtype,
+    get_nodata_value_from_xr,
+    path_xarr_dst,
+)
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
@@ -643,7 +649,7 @@ def test_rasterize():
 
 
 @s3_env
-def test_deprecation():
+def test_decorator_deprecation():
     raster_path = rasters_path().joinpath("raster.tif")
 
     @any_raster_to_xr_ds
@@ -658,3 +664,47 @@ def test_deprecation():
 
     # Not able to warn deprecation from inside the decorator
     xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
+
+
+def test_get_nodata_deprecation():
+    """Test deprecation of get_nodata_value"""
+    # Test deprecation
+    for dtype in [
+        np.uint8,
+        np.int8,
+        np.uint16,
+        np.uint32,
+        np.int32,
+        np.int64,
+        np.uint64,
+        int,
+        "int",
+        np.int16,
+        np.float32,
+        np.float64,
+        float,
+        "float",
+    ]:
+        with pytest.deprecated_call():
+            ci.assert_val(
+                get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
+            )
+
+
+def test_get_notata_from_xr():
+    """Test get_nodata_value_from_xr"""
+    raster_path = rasters_path().joinpath("raster.tif")
+    ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), 255, "nodata")
+
+    raster_path = rasters_path().joinpath(
+        "20220228T102849_S2_T31TGN_L2A_134712_RED.tif"
+    )
+    ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), 65535, "nodata")
+
+    raster_path = rasters_path().joinpath(
+        "Copernicus_DSM_10_N43_00_W003_00_DEM_resampled.tif"
+    )
+    ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), None, "nodata")
+
+    raster_path = rasters_path().joinpath("dem.tif")
+    ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), -9999, "nodata")

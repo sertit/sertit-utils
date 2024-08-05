@@ -60,9 +60,42 @@ FLOAT_NODATA = rasters_rio.FLOAT_NODATA
 """ :code:`float` nodata """
 
 
-def get_nodata_value(dtype) -> int:
+def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     """
-    Get default nodata value:
+    Retrieve the nodata from a xarray structure.
+
+    Follow process as described here:
+    https://corteva.github.io/rioxarray/stable/getting_started/nodata_management.html#Search-order-for-nodata-(DataArray-only):
+
+    Args:
+        xds (AnyXrDataStructure): Xarray structure to retrieve data from
+
+    Returns:
+        float: nodata
+    """
+    nodata = xds.rio.encoded_nodata
+
+    if nodata is None:
+        nodata = xds.rio.nodata
+
+    if nodata is None:
+        nodata = xds.attrs.get("_FillValue")
+
+    if nodata is None:
+        nodata = xds.attrs.get("missing_value")
+
+    if nodata is None:
+        nodata = xds.attrs.get("fill_value")
+
+    if nodata is None:
+        nodata = xds.rio.nodata
+
+    return nodata
+
+
+def get_nodata_value_from_dtype(dtype) -> float:
+    """
+    Get default nodata value from any given dtype.
 
     Args:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
@@ -71,19 +104,38 @@ def get_nodata_value(dtype) -> int:
         int: Nodata value
 
     Examples:
-        >>> rasters.get_nodata_value("uint8")
+        >>> rasters.get_nodata_value_from_dtype("uint8")
         255
 
-        >>> rasters.get_nodata_value("uint16")
+        >>> rasters.get_nodata_value_from_dtype("uint16")
         65535
 
-        >>> rasters.get_nodata_value("int8")
+        >>> rasters.get_nodata_value_from_dtype("int8")
         -128
 
-        >>> rasters.get_nodata_value("float")
+        >>> rasters.get_nodata_value_from_dtype("float")
         -9999
     """
-    return rasters_rio.get_nodata_value(dtype)
+    return rasters_rio.get_nodata_value_from_dtype(dtype)
+
+
+def get_nodata_value(dtype) -> float:
+    """
+    .. deprecated:: 1.41.0
+       Use :code:`get_nodata_value_from_dtype` instead.
+
+    Get default nodata value:
+
+    Args:
+        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
+
+    Returns:
+        float: Nodata value
+    """
+    logs.deprecation_warning(
+        "This function is deprecated. Use 'get_nodata_value_from_dtype' instead."
+    )
+    return get_nodata_value_from_dtype(dtype)
 
 
 def any_raster_to_xr_ds(function: Callable) -> Callable:
@@ -988,7 +1040,9 @@ def write(
 
     # Write nodata
     xds.rio.write_nodata(
-        kwargs.pop("nodata", get_nodata_value(dtype)), encoded=True, inplace=True
+        kwargs.pop("nodata", get_nodata_value_from_dtype(dtype)),
+        encoded=True,
+        inplace=True,
     )
 
     # WORKAROUND: Pop _FillValue attribute (if existing)
