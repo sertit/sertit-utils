@@ -28,6 +28,7 @@ import xarray as xr
 
 from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
 from sertit import ci, path, rasters, vectors
+from sertit.rasters import any_raster_to_xr_ds, path_xarr_dst
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
@@ -639,3 +640,21 @@ def test_rasterize():
         rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
         ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
+
+
+@s3_env
+def test_deprecation():
+    raster_path = rasters_path().joinpath("raster.tif")
+
+    @any_raster_to_xr_ds
+    def _ok_rasters(xds):
+        assert isinstance(xds, xr.DataArray)
+        return xds
+
+    @path_xarr_dst
+    def _depr_rasters(xds):
+        assert isinstance(xds, xr.DataArray)
+        return xds
+
+    # Not able to warn deprecation from inside the decorator
+    xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))

@@ -233,6 +233,10 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
 
 
 def path_arr_dst(function: Callable) -> Callable:
+    """
+    .. deprecated:: 1.40.0
+       Use :py:func:`rasters.any_raster_to_rio_ds` instead.
+    """
     logs.deprecation_warning(
         "Deprecated 'path_arr_dst' decorator. Please use 'any_raster_to_rio_ds' instead."
     )

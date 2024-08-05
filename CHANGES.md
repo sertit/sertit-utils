@@ -5,6 +5,7 @@
 - **BREAKING CHANGE**: Renaming of `rasters.path_xarr_dst` function to `rasters.any_raster_to_xr_ds`. Older function is deprecated.
 - **BREAKING CHANGE**: Renaming of `rasters_rio.path_arr_dst` function to `rasters_rio.any_raster_to_rio_ds`. Older function is deprecated.
 - **BREAKING CHANGE**: Creating `types.AnyRasterType` instead of `rasters.PATH_XARR_DS` and `rasters_rio.PATH_ARR_DS`. Older types are deprecated.
+- **BREAKING CHANGE**: Creating `types.AnyRasterType` instead of `rasters.PATH_XARR_DS` and `rasters_rio.PATH_ARR_DS`. Older types are deprecated.
 - **ENH: Creating `types.AnyRioDatasetType` for any rasterio Dataset (both Reader, Writer)**
 - **ENH: Creating `types.AnyVectorType` for any vector (path or GeoDataFrame)**
 - **ENH: Adding the file path and name in the vector attributes (in `vec.attrs["path"]` and `vec.attrs["name"]`) with `vectors.read`**

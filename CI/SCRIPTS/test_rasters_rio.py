@@ -27,6 +27,7 @@ from rasterio.windows import Window
 
 from CI.SCRIPTS.script_utils import rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
+from sertit.rasters_rio import any_raster_to_rio_ds, path_arr_dst
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
@@ -369,3 +370,19 @@ def test_read_idx():
     _test_idx([1])
     _test_idx([1, 2])
     _test_idx(1)
+
+
+@s3_env
+def test_deprecation():
+    raster_path = rasters_path().joinpath("raster.tif")
+
+    @any_raster_to_rio_ds
+    def _ok_rasters(ds):
+        return ds.read()
+
+    @path_arr_dst
+    def _depr_rasters(ds):
+        return ds.read()
+
+    # Not able to warn deprecation from inside the decorator
+    np.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))

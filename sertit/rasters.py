@@ -197,6 +197,10 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
 
 
 def path_xarr_dst(function: Callable) -> Callable:
+    """
+    .. deprecated:: 1.40.0
+       Use :py:func:`rasters.any_raster_to_xr_ds` instead.
+    """
     logs.deprecation_warning(
         "Deprecated 'path_xarr_dst' decorator. Please use 'any_raster_to_xr_ds' instead."
     )
