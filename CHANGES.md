@@ -6,7 +6,7 @@
 - **ENH: Creating `rasters.get_nodata_value_from_xr` to retrieve the nodata value as specified by `rioxarray`**
 - FIX: Fix handling of nodata with xarray structures in `sertit.rasters`
 - FIX: Handle None cases in `ci.assert_val`
-- CI: Update pre-commit libs
+- CI: [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/sertit/sertit-utils/pull/21
 
 ## 1.40.0 (2024-08-05)
 
