@@ -1,11 +1,12 @@
 # Release History
 
-## 1.41.0 (2024-mm-dd)
+## 1.41.0 (2024-08-06)
 
 - **BREAKING CHANGE**: Renaming of `rasters(_rio).get_nodata_value` function to `rasters(_rio).get_nodata_value_from_dtype`. Older function is deprecated.
 - **ENH: Creating `rasters.get_nodata_value_from_xr` to retrieve the nodata value as specified by `rioxarray`**
 - FIX: Fix handling of nodata with xarray structures in `sertit.rasters`
 - FIX: Handle None cases in `ci.assert_val`
+- CI: Update pre-commit libs
 
 ## 1.40.0 (2024-08-05)
 
