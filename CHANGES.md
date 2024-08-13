@@ -1,5 +1,9 @@
 # Release History
 
+## 1.42.0 (2024-mm-dd)
+
+- **ENH: Add a function `snap.get_snap_version` to retrieve current SNAP version**  ([#172](https://github.com/sertit/eoreader/issues/172))
+
 ## 1.41.0 (2024-08-06)
 
 - **BREAKING CHANGE**: Renaming of `rasters(_rio).get_nodata_value` function to `rasters(_rio).get_nodata_value_from_dtype`. Older function is deprecated.

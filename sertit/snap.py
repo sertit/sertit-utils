@@ -19,8 +19,10 @@ SNAP tools
 """
 import logging
 import os
+import subprocess
 
 import psutil
+from packaging.version import Version
 
 from sertit import misc, strings
 from sertit.logs import SU_NAME
@@ -133,3 +135,27 @@ def get_gpt_cli(
         misc.run_cli(gpt_cli + ["--diag"])
 
     return gpt_cli
+
+
+def get_snap_version() -> Version:
+    """Get SNAP version with a call to GPT --diag"""
+    snap_version = None
+    try:
+        output = subprocess.run(["gpt", "--diag"], capture_output=True)
+    except FileNotFoundError:
+        raise FileNotFoundError("'gpt' not found in your PATH")
+
+    stdout = output.stdout.decode("utf-8")
+
+    if stdout is not None:
+        version_str = stdout.split("\n")
+        try:
+            version_str = [v for v in version_str if "version" in v][0]
+        except IndexError as ex:
+            LOGGER.debug(ex)
+        else:
+            snap_version = version_str.split(" ")[-1]
+
+            snap_version = Version(snap_version)
+
+    return snap_version
