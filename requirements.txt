@@ -18,19 +18,19 @@ tqdm
 lxml
 dill
 psutil
-geopandas>=0.11.0
-cloudpathlib[all]>=0.10.0
-xarray>=0.18.0
+geopandas>=1.0.0
+cloudpathlib[all]>=0.12.1
+xarray>=2024.06.0
 shapely >= 2.0.0
 
 # Colorlog
 colorlog
 
 # rasters_rio
-rasterio>=1.3.0
+rasterio>=1.3.10
 
 # rasters
-rioxarray>=0.4.0
+rioxarray>=0.10.0
 
 # dask
-dask[complete]>=2021.10.0
+dask[complete]>=2024.5.1
