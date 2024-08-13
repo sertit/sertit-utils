@@ -19,7 +19,6 @@
 import shutil
 
 import pytest
-from packaging.version import Version
 
 from sertit import ci, misc, snap
 from sertit.snap import TILE_SIZE
@@ -53,9 +52,9 @@ def test_snap():
         assert substr in cli
 
 
-def snap_version():
+def test_snap_version():
     """Test SNAP version"""
     snap_version = snap.get_snap_version()
-    assert misc.compare(
-        snap_version, Version("10.0.0"), "=="
+    assert misc.compare_version(
+        snap_version, "10.0.0", "=="
     ), f"Unexpected SNAP version: {snap_version}."

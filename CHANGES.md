@@ -3,6 +3,7 @@
 ## 1.42.0 (2024-mm-dd)
 
 - **ENH: Add a function `snap.get_snap_version` to retrieve current SNAP version**  ([#172](https://github.com/sertit/eoreader/issues/172))
+- **ENH: Allow to pass directly a version object to `misc.compare_version`**
 
 ## 1.41.0 (2024-08-06)
 

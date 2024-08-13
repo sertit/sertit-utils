@@ -25,6 +25,8 @@ from contextlib import contextmanager
 from enum import Enum, unique
 from typing import Any, Union
 
+from packaging.version import Version
+
 from sertit import AnyPath
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType
@@ -470,7 +472,9 @@ def compare(a, b, operation: str) -> bool:
     return ops[operation](a, b)
 
 
-def compare_version(lib: str, version_to_check: str, operator: str) -> bool:
+def compare_version(
+    lib: Union[str, Version], version_to_check: str, operator: str
+) -> bool:
     """
     Compare the version of a librarie to a reference, giving the operator.
 
@@ -489,6 +493,13 @@ def compare_version(lib: str, version_to_check: str, operator: str) -> bool:
     """
     from importlib.metadata import version
 
-    from packaging.version import Version
+    if isinstance(lib, Version):
+        lib_version = lib
+    elif isinstance(lib, str):
+        lib_version = Version(version(lib))
+    else:
+        raise TypeError(
+            "'lib' should either be the name of your library as a string or directly a 'Version' object."
+        )
 
-    return compare(Version(version(lib)), Version(version_to_check), operator)
+    return compare(lib_version, Version(version_to_check), operator)
