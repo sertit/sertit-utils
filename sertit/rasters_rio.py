@@ -1082,6 +1082,9 @@ def write(
     """
     raster_out = raster.copy()
 
+    # Prune empty kwargs to avoid throwing GDAL warnings/errors
+    kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
     # Manage raster type (impossible to write boolean arrays)
     if raster_out.dtype == bool:
         raster_out = raster_out.astype(np.uint8)

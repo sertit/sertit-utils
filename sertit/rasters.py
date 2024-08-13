@@ -1030,6 +1030,9 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
+    # Prune empty kwargs to avoid throwing GDAL warnings/errors
+    kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
     # Manage dtype
     if "dtype" in kwargs:
         dtype = kwargs["dtype"]
