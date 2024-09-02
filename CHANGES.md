@@ -6,6 +6,7 @@
 - **ENH: Allow to pass directly a version object to `misc.compare_version`**
 - FIX: Prune empty keywords from kwargs in `rasters(_rio).write` to avoid throwing GDAL warnings/errors
 - FIX: Correctly throw the exception when `rasters_rio.any_raster_to_rio_ds` fails with a `xarray` data structure
+- FIX: Fix rasterization of vector on floating point rasters (with a nodata not castable to the wanted dtype)
 
 ## 1.41.0 (2024-08-06)
 

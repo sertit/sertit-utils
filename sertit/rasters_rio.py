@@ -521,12 +521,6 @@ def rasterize(
     else:
         vector = vector.to_crs(crs=ds.crs)
 
-    # Manage nodata
-    if ds.nodata:
-        nodata = ds.nodata
-    else:
-        nodata = default_nodata
-
     # Manage vector values
     if value_field:
         geom_value = (
@@ -536,6 +530,25 @@ def rasterize(
     else:
         geom_value = vector.geometry
         dtype = kwargs.pop("dtype", np.uint8)
+
+    # Manage nodata
+    if "nodata" in kwargs:
+        nodata = kwargs.pop("nodata")
+    elif ds.nodata:
+        nodata = ds.nodata
+    else:
+        nodata = default_nodata
+
+    if not np.can_cast(np.array(nodata, dtype=ds.dtypes[0]), dtype):
+        old_nodata = nodata
+        nodata = get_nodata_value(dtype)
+
+        # Only throw a warning if the value is really different  (we don't care about 255.0 being replaced by 255)
+        if old_nodata - nodata != 0.0:
+            LOGGER.warning(
+                f"Impossible to cast nodata value ({old_nodata}) into the wanted dtype ({str(dtype)}). "
+                f"Default nodata value for this current dtype will be used ({nodata})."
+            )
 
     # Rasterize vector
     mask = features.rasterize(

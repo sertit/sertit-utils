@@ -629,6 +629,7 @@ def test_rasterize():
     """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_path = rasters_path().joinpath("raster.tif")
+    raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
     raster_true_path = rasters_path().joinpath("rasterized.tif")
 
@@ -642,9 +643,20 @@ def test_rasterize():
 
         ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
 
+        # Binary vector with floating point raster
+        out_bin_path = os.path.join(tmp_dir, "out_bin_float.tif")
+        rast_bin = rasters.rasterize(
+            rasters.read(raster_float_path, chunks=[1, 2048, 2048]), vec_path
+        )
+        rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
+
+        ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
+
         # Vector
         out_path = os.path.join(tmp_dir, "out.tif")
-        rast = rasters.rasterize(raster_path, vec_path, "raster_val", dtype=np.uint8)
+        rast = rasters.rasterize(
+            raster_path, vec_path, value_field="raster_val", dtype=np.uint8
+        )
         rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
         ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
