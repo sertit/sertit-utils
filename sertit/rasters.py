@@ -1534,16 +1534,17 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
                [nan, nan, nan]])
         Dimensions without coordinates: x, y
     """
+    # Where removes encoding so save them and set them back in place
     encoding = xda.encoding
-    attrs = xda.attrs
 
+    # Set nodata in the array
     xda = xda.where(xda.data != nodata_val)
-    xda.rio.write_nodata(nodata_val, encoded=True, inplace=True)
 
-    # Set back attributes and encoding
-    xda.rio.update_attrs(attrs, inplace=True)
+    # Set encoding back
     xda.rio.update_encoding(encoding, inplace=True)
 
+    # Set nodata in the attributes and encoding
+    xda.rio.write_nodata(nodata_val, encoded=True, inplace=True)
     return xda
 
 

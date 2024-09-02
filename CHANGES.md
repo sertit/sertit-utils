@@ -8,6 +8,7 @@
 - FIX: Correctly throw the exception when `rasters_rio.any_raster_to_rio_ds` fails with a `xarray` data structure
 - FIX: Fix rasterization of vector on floating point rasters (with a nodata not castable to the wanted dtype)
 - FIX: Handle correctly nan values in `ci.assert_val`
+- FIX: Fix `rasters.set_nodata` with already existing nodata value in raster
 
 ## 1.41.0 (2024-08-06)
 

@@ -543,17 +543,30 @@ def test_bit():
 
 @s3_env
 @dask_env
-def test_xarray_fct():
+def test_set_nodata():
     """Test xarray functions"""
+    nodata_val = 0
+
     # Set nodata
-    A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 0], [0, 0, 0]])
+    xda = xr.DataArray(
+        dims=("x", "y"),
+        data=[[1, nodata_val, nodata_val], [nodata_val, nodata_val, nodata_val]],
+    )
+    xda.rio.write_nodata(-9999, inplace=True, encoded=True)
     nodata = xr.DataArray(
         dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
     )
-    A_nodata = rasters.set_nodata(A, 0)
+    xda_nodata = rasters.set_nodata(xda, nodata_val)
 
-    xr.testing.assert_equal(A_nodata, nodata)
+    xr.testing.assert_equal(xda_nodata, nodata)
+    ci.assert_val(xda_nodata.rio.encoded_nodata, nodata_val, "Encoded nodata")
+    ci.assert_val(xda_nodata.rio.nodata, np.nan, "Array nodata")
 
+
+@s3_env
+@dask_env
+def test_xarray_fct():
+    """Test xarray functions"""
     # Mtd
     raster_path = rasters_path().joinpath("raster.tif")
     xda = rasters.read(raster_path)
