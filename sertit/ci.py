@@ -111,6 +111,8 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
     # Manage None as value
     if val_2 is None or val_1 is None:
         assert val_1 is val_2, desc
+    elif val_2 is np.nan or val_1 is np.nan:
+        assert np.isnan(val_1) and np.isnan(val_2), desc
     else:
         try:
             assert val_1 == val_2, desc
