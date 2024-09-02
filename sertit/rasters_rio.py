@@ -221,36 +221,32 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                         ds.write(arr)
                         out = function(ds, *args, **kwargs)
             else:
-                # Try if xarray is importable
-                try:
+                if isinstance(any_raster_type, AnyXrDataStructure):
                     from sertit.rasters import get_nodata_value_from_xr
 
                     nodata = get_nodata_value_from_xr(any_raster_type)
 
-                    if isinstance(any_raster_type, AnyXrDataStructure):
-                        meta = {
-                            "driver": "GTiff",
-                            "dtype": any_raster_type.dtype,
-                            "nodata": nodata,
-                            "width": any_raster_type.rio.width,
-                            "height": any_raster_type.rio.height,
-                            "count": any_raster_type.rio.count,
-                            "crs": any_raster_type.rio.crs,
-                            "transform": any_raster_type.rio.transform(),
-                        }
-                        with MemoryFile() as memfile:
-                            with memfile.open(
-                                **meta, BIGTIFF=bigtiff_value(any_raster_type)
-                            ) as ds:
-                                if nodata is not None:
-                                    arr = any_raster_type.fillna(nodata)
-                                else:
-                                    arr = any_raster_type
-                                ds.write(arr.data)
-                                out = function(ds, *args, **kwargs)
-                    else:
-                        raise ex
-                except Exception:
+                    meta = {
+                        "driver": "GTiff",
+                        "dtype": any_raster_type.dtype,
+                        "nodata": nodata,
+                        "width": any_raster_type.rio.width,
+                        "height": any_raster_type.rio.height,
+                        "count": any_raster_type.rio.count,
+                        "crs": any_raster_type.rio.crs,
+                        "transform": any_raster_type.rio.transform(),
+                    }
+                    with MemoryFile() as memfile:
+                        with memfile.open(
+                            **meta, BIGTIFF=bigtiff_value(any_raster_type)
+                        ) as ds:
+                            if nodata is not None:
+                                arr = any_raster_type.fillna(nodata)
+                            else:
+                                arr = any_raster_type
+                            ds.write(arr.data)
+                            out = function(ds, *args, **kwargs)
+                else:
                     raise ex
         return out
 
