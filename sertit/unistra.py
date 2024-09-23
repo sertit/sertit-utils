@@ -28,10 +28,13 @@ from sertit.types import AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
 
-UNISTRA_S3_ENPOINT = "s3.unistra.fr"
+UNISTRA_S3_ENDPOINT = "s3.unistra.fr"
 """
 Unistra S3 compatible storage endpoint: s3.unistra.fr
 """
+
+UNISTRA_S3_ENPOINT = UNISTRA_S3_ENDPOINT
+# Legacy, to be removed in v2.0
 
 
 def s3_env(*args, **kwargs):
@@ -56,7 +59,7 @@ def s3_env(*args, **kwargs):
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
-    return s3.s3_env(endpoint=UNISTRA_S3_ENPOINT)(*args, **kwargs)
+    return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT)(*args, **kwargs)
 
 
 @contextmanager
@@ -78,7 +81,7 @@ def unistra_s3() -> None:
         True
     """
     try:
-        with temp_s3(endpoint=UNISTRA_S3_ENPOINT):
+        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT):
             yield
     finally:
         pass
@@ -88,7 +91,7 @@ def define_s3_client():
     """
     Define Unistra's S3 client
     """
-    return s3.define_s3_client(endpoint=UNISTRA_S3_ENPOINT)
+    return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT)
 
 
 def get_geodatastore() -> AnyPathType:
