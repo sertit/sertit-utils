@@ -46,13 +46,7 @@ except ModuleNotFoundError as ex:
 
 from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
 from sertit.logs import SU_NAME
-from sertit.types import (
-    AnyNumpyArray,
-    AnyPathStrType,
-    AnyPathType,
-    AnyRasterType,
-    AnyXrDataStructure,
-)
+from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -221,33 +215,38 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                         ds.write(arr)
                         out = function(ds, *args, **kwargs)
             else:
-                if isinstance(any_raster_type, AnyXrDataStructure):
-                    from sertit.rasters import get_nodata_value_from_xr
-
-                    nodata = get_nodata_value_from_xr(any_raster_type)
-
-                    meta = {
-                        "driver": "GTiff",
-                        "dtype": any_raster_type.dtype,
-                        "nodata": nodata,
-                        "width": any_raster_type.rio.width,
-                        "height": any_raster_type.rio.height,
-                        "count": any_raster_type.rio.count,
-                        "crs": any_raster_type.rio.crs,
-                        "transform": any_raster_type.rio.transform(),
-                    }
-                    with MemoryFile() as memfile:
-                        with memfile.open(
-                            **meta, BIGTIFF=bigtiff_value(any_raster_type)
-                        ) as ds:
-                            if nodata is not None:
-                                arr = any_raster_type.fillna(nodata)
-                            else:
-                                arr = any_raster_type
-                            ds.write(arr.data)
-                            out = function(ds, *args, **kwargs)
-                else:
+                try:
+                    import xarray as xr
+                except ModuleNotFoundError:
                     raise ex
+                else:
+                    if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
+                        from sertit.rasters import get_nodata_value_from_xr
+
+                        nodata = get_nodata_value_from_xr(any_raster_type)
+
+                        meta = {
+                            "driver": "GTiff",
+                            "dtype": any_raster_type.dtype,
+                            "nodata": nodata,
+                            "width": any_raster_type.rio.width,
+                            "height": any_raster_type.rio.height,
+                            "count": any_raster_type.rio.count,
+                            "crs": any_raster_type.rio.crs,
+                            "transform": any_raster_type.rio.transform(),
+                        }
+                        with MemoryFile() as memfile:
+                            with memfile.open(
+                                **meta, BIGTIFF=bigtiff_value(any_raster_type)
+                            ) as ds:
+                                if nodata is not None:
+                                    arr = any_raster_type.fillna(nodata)
+                                else:
+                                    arr = any_raster_type
+                                ds.write(arr.data)
+                                out = function(ds, *args, **kwargs)
+                    else:
+                        raise ex
         return out
 
     return wrapper

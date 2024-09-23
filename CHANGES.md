@@ -1,5 +1,9 @@
 # Release History
 
+## 1.42.1 (2024-09-dd)
+
+- FIX: Don't use isinstance and subtypes together ([#22](https://github.com/sertit/sertit-utils/issues/22))
+
 ## 1.42.0 (2024-09-03)
 
 - **ENH: Add a function `snap.get_snap_version` to retrieve current SNAP version**  ([#172](https://github.com/sertit/eoreader/issues/172))
