@@ -20,9 +20,8 @@ from collections.abc import Callable
 from enum import unique
 from functools import wraps
 
-from sertit import AnyPath, s3, unistra
+from sertit import AnyPath, unistra
 from sertit.misc import ListEnum
-from sertit.unistra import UNISTRA_S3_ENDPOINT
 
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
 
@@ -112,7 +111,5 @@ def xml_path():
     return get_ci_data_path().joinpath("xml")
 
 
-def s3_env(function):
-    return s3.s3_env(default_endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=CI_SERTIT_S3)(
-        function
-    )
+def s3_env(*args, **kwargs):
+    return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)

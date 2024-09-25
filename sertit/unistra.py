@@ -23,7 +23,7 @@ from contextlib import contextmanager
 
 from sertit import AnyPath, s3
 from sertit.logs import SU_NAME
-from sertit.s3 import temp_s3
+from sertit.s3 import USE_S3_STORAGE, temp_s3
 from sertit.types import AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -59,7 +59,10 @@ def s3_env(*args, **kwargs):
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
-    return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT)(*args, **kwargs)
+    use_s3 = kwargs.pop("use_s3_env_var", USE_S3_STORAGE)
+    return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3)(
+        *args, **kwargs
+    )
 
 
 @contextmanager

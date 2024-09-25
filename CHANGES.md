@@ -3,6 +3,7 @@
 ## 1.42.1 (2024-09-dd)
 
 - FIX: Don't use isinstance and subtypes together ([#22](https://github.com/sertit/sertit-utils/issues/22))
+- FIX: Allow `use_s3_env_var` in `unistra.s3_env`
 - TYPO: Replace `UNISTRA_S3_ENPOINT` by `UNISTRA_S3_ENDPOINT`
 
 ## 1.42.0 (2024-09-03)

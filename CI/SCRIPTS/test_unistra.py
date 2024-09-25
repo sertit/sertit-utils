@@ -20,7 +20,7 @@ from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3
-from sertit import misc, rasters, s3
+from sertit import ci, misc, rasters, s3
 from sertit.unistra import (
     _get_db_path,
     get_db2_path,
@@ -30,6 +30,8 @@ from sertit.unistra import (
     s3_env,
     unistra_s3,
 )
+
+ci.reduce_verbosity()
 
 
 def base_fct(value):
