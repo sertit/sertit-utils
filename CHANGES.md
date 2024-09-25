@@ -1,5 +1,9 @@
 # Release History
 
+## 1.42.2 (2024-mm-dd)
+
+- PUBLISH: Use PyPI's Trusted Publisher Management mechanism
+
 ## 1.42.1 (2024-09-25)
 
 - FIX: Don't use isinstance and subtypes together ([#22](https://github.com/sertit/sertit-utils/issues/22))
