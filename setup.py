@@ -27,7 +27,7 @@ setuptools.setup(
         "lxml",
         "dill",
         "psutil",
-        "geopandas>=1.0.0",
+        "geopandas>=0.14.4",
         "cloudpathlib[all]>=0.12.1",
         "xarray>=2024.06.0",
     ],

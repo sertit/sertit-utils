@@ -1,7 +1,8 @@
 # Release History
 
-## 1.42.2 (2024-mm-dd)
+## 1.42.2 (2024-10-01)
 
+- Allow `geopandas < 1.0.0` (`sertit-utils` should work with `0.14.4`)
 - PUBLISH: Use PyPI's Trusted Publisher Management mechanism
 
 ## 1.42.1 (2024-09-25)
