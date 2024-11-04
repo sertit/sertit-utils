@@ -2,7 +2,8 @@
 
 ## 1.42.3 (2024-mm-dd)
 
-- Add `numba` in `ci.reduce_verbosity`
+- FIX: Use `pyogrio` version `0.10.0` with KMLs (only discard earlier versions)
+- LOG: Add `numba` in `ci.reduce_verbosity`
 
 ## 1.42.2 (2024-10-01)
 
