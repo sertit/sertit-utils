@@ -56,5 +56,5 @@ def test_snap_version():
     """Test SNAP version"""
     snap_version = snap.get_snap_version()
     assert misc.compare_version(
-        snap_version, "10.0.0", "=="
+        snap_version, "11.0.0", "=="
     ), f"Unexpected SNAP version: {snap_version}."
