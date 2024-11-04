@@ -4,6 +4,7 @@
 
 - FIX: Fix PyPI's Trusted Publisher Management mechanism
 - CI: Update SNAP version to 11.0
+- CI: Update repo for mirroring
 - LOG: Add `numba` in `ci.reduce_verbosity`
 
 ## 1.42.2 (2024-10-01)

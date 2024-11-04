@@ -12,7 +12,7 @@ jobs:
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@master
         with:
-          args: "https://${{ secrets.GITLAB_HOSTNAME }}/sertit/sertit-utils"
+          args: "https://${{ secrets.GITLAB_HOSTNAME }}/sertit/libraries/sertit-utils"
         env:
           GITLAB_HOSTNAME: ${{ secrets.GITLAB_HOSTNAME }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
