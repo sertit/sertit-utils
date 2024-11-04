@@ -693,6 +693,7 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "distributed",
         "asyncio",
         "bokeh",
+        "numba",
     ]
     if other_loggers:
         loggers += other_loggers

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.42.3 (2024-mm-dd)
+
+- Add `numba` in `ci.reduce_verbosity`
+
 ## 1.42.2 (2024-10-01)
 
 - Allow `geopandas < 1.0.0` (`sertit-utils` should work with `0.14.4`)
