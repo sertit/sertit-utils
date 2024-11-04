@@ -3,6 +3,7 @@
 ## 1.42.3 (2024-mm-dd)
 
 - FIX: Use `pyogrio` version `0.10.0` with KMLs (only discard earlier versions)
+- FIX: Fix PyPI's Trusted Publisher Management mechanism
 - LOG: Add `numba` in `ci.reduce_verbosity`
 
 ## 1.42.2 (2024-10-01)
