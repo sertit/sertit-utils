@@ -1,6 +1,6 @@
 # Release History
 
-## 1.42.3 (2024-mm-dd)
+## 1.42.3 (2024-11-04)
 
 - FIX: Fix PyPI's Trusted Publisher Management mechanism
 - CI: Update SNAP version to 11.0
