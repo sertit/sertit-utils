@@ -619,7 +619,7 @@ def _read_kml(
     use_pyogrio = is_geopandas_1_0()
     from importlib.metadata import version
 
-    if misc.compare_version("pyogrio", "0.10.0", "<"):
+    if misc.compare_version("pyogrio", "0.10.0", "<="):
         engine = "fiona"
         use_pyogrio = False
 
