@@ -38,7 +38,9 @@ def test_run_command():
 
 def test_get_function_name():
     """Test get_function_name"""
-    assert misc.get_function_name() == "test_get_function_name"
+    ci.assert_val(
+        misc.get_function_name(), "test_get_function_name", "get_function_name"
+    )
 
 
 def test_in_docker():
@@ -55,23 +57,36 @@ def test_chdir():
         pwd = os.getcwd()
         assert pwd == curr_dir
 
-    assert os.getcwd() == old_pwd
+    ci.assert_val(os.getcwd(), old_pwd, "test_chdir")
+
+
+def test_select_prune_dict():
+    keys = ["a", "b", "c"]
+    d = {"a": 1, "b": 2, "c": 3, "d": 4}
+
+    # Select dict
+    ci.assert_val(misc.select_dict(d, keys), {"a": 1, "b": 2, "c": 3}, "Select dict")
+
+    # Prune dict
+    ci.assert_val(misc.prune_dict(d, keys), {"d": 4}, "Prune dict")
 
 
 def test_list_dict():
     """Test dict functions"""
     test_list = ["A", "T", "R", "", 3, None]
     test_dict = {"A": "T", "R": 3}
+
+    # Remove empty values
     test_list = misc.remove_empty_values(test_list)
-    assert test_list == ["A", "T", "R", 3]
+    ci.assert_val(test_list, ["A", "T", "R", 3], "Remove empty values")
 
     # List to dict
-    assert misc.list_to_dict(test_list) == test_dict
+    ci.assert_val(misc.list_to_dict(test_list), test_dict, "List to dict")
 
     # Nested set
     res_dict = {"A": "T", "R": 3, "B": {"C": {"D": "value"}}}
     misc.nested_set(test_dict, ["B", "C", "D"], "value")
-    assert test_dict == res_dict
+    ci.assert_val(test_dict, res_dict, "Nested set")
 
     # Mandatory keys
     misc.check_mandatory_keys(test_dict, ["A", "B"])  # True
@@ -79,31 +94,38 @@ def test_list_dict():
         misc.check_mandatory_keys(test_dict, ["C"])  # False
 
     # Find by key
-    assert misc.find_by_key(test_dict, "D") == "value"
+    ci.assert_val(misc.find_by_key(test_dict, "D"), "value", "Find by key")
 
 
 def test_enum():
     """Test ListEnum"""
-    assert Polarization.list_values() == ["HH", "VV", "VH", "HV"]
-    assert Polarization.list_names() == ["hh", "vv", "vh", "hv"]
-    assert Polarization.from_value("HH") == Polarization.hh
-    assert Polarization.from_value(Polarization.hh) == Polarization.hh
+
+    ci.assert_val(Polarization.list_values(), ["HH", "VV", "VH", "HV"], "Values")
+    ci.assert_val(Polarization.list_names(), ["hh", "vv", "vh", "hv"], "Names")
+    ci.assert_val(Polarization.from_value("HH"), Polarization.hh, "From string value")
+    ci.assert_val(
+        Polarization.from_value(Polarization.hh), Polarization.hh, "From enum value"
+    )
 
     with pytest.raises(ValueError):
         Polarization.from_value("ZZ")
 
-    assert Polarization.convert_from(["HH", "vv", Polarization.hv]) == [
-        Polarization.hh,
-        Polarization.vv,
-        Polarization.hv,
-    ]
+    ci.assert_val(
+        Polarization.convert_from(["HH", "vv", Polarization.hv]),
+        [
+            Polarization.hh,
+            Polarization.vv,
+            Polarization.hv,
+        ],
+        "convert_from",
+    )
 
 
 def test_unique():
     """Test unique function"""
     non_unique = [1, 2, 20, 6, 210, 2, 1]
     unique = [1, 2, 20, 6, 210]
-    assert unique == misc.unique(non_unique)
+    ci.assert_val(unique, misc.unique(non_unique), "Unique")
 
 
 def test_comparisons():

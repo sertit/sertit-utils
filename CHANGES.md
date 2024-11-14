@@ -1,5 +1,9 @@
 # Release History
 
+## 1.43.0 (2024-mm-dd)
+
+- **ENH: Add prune and select keys from dict functions: `misc.select_dict` and `misc.prune_dict`**
+
 ## 1.42.3 (2024-11-04)
 
 - FIX: Fix PyPI's Trusted Publisher Management mechanism

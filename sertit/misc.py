@@ -180,6 +180,34 @@ def remove_empty_values(list_with_empty_values: list) -> list:
     return list(filter(None, list_with_empty_values))
 
 
+def select_dict(dict_to_select: dict, keys_to_select: list) -> dict:
+    """
+    Select keys from a dictionary.
+
+    Args:
+        dict_to_select (dict): Dictionary to select from
+        keys_to_select (list): List of keys to select in the dictionary
+
+    Returns:
+        dict: Dictionary with selected keys
+    """
+    return {k: v for k, v in dict_to_select.items() if k in keys_to_select}
+
+
+def prune_dict(dict_to_prune: dict, keys_to_prune: list) -> dict:
+    """
+    Prune keys from a dictionary.
+
+    Args:
+        dict_to_prune (dict): Dictionary to prune from
+        keys_to_prune (list): List of keys to prune in the dictionary
+
+    Returns:
+        dict: Dictionary with pruned keys
+    """
+    return {k: v for k, v in dict_to_prune.items() if k not in keys_to_prune}
+
+
 def list_to_dict(dict_list: list) -> dict:
     """
     Return a dictionary from a list :code:`[key, value, key_2, value_2...]`
