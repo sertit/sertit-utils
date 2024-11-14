@@ -160,12 +160,14 @@ def unique(sequence: list):
     return list(dict.fromkeys(sequence))
 
 
-def remove_empty_values(list_with_empty_values: list) -> list:
+def remove_empty_values(
+    object_with_empty_values: Union[dict, list], other_empty_values: list = None
+) -> Union[dict, list]:
     """
     Remove empty values from list.
 
     Args:
-        list_with_empty_values (list): List with empty values
+        object_with_empty_values (list): List with empty values
 
     Returns:
         list: Curated list
@@ -176,8 +178,21 @@ def remove_empty_values(list_with_empty_values: list) -> list:
         ["A", "T", "R", 3]
 
     """
+    if not other_empty_values:
+        other_empty_values = []
 
-    return list(filter(None, list_with_empty_values))
+    if isinstance(object_with_empty_values, dict):
+        return {
+            k: v
+            for k, v in object_with_empty_values.items()
+            if v is not None and v not in other_empty_values
+        }
+    else:
+        return [
+            v
+            for v in filter(None, object_with_empty_values)
+            if v not in other_empty_values
+        ]
 
 
 def select_dict(dict_to_select: dict, keys_to_select: list) -> dict:

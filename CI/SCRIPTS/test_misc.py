@@ -73,12 +73,16 @@ def test_select_prune_dict():
 
 def test_list_dict():
     """Test dict functions"""
-    test_list = ["A", "T", "R", "", 3, None]
-    test_dict = {"A": "T", "R": 3}
+    test_list = ["A", "T", "R", "", 3, None, "0"]
+    test_dict = {"A": "T", "R": 3, "B": None, "C": "", "D": "0"}
 
-    # Remove empty values
-    test_list = misc.remove_empty_values(test_list)
-    ci.assert_val(test_list, ["A", "T", "R", 3], "Remove empty values")
+    # Remove empty values (list)
+    test_list = misc.remove_empty_values(test_list, other_empty_values=["0"])
+    ci.assert_val(test_list, ["A", "T", "R", 3], "Remove empty values from list")
+
+    # Remove empty values (dict)
+    test_dict = misc.remove_empty_values(test_dict, other_empty_values=["", "0"])
+    ci.assert_val(test_dict, {"A": "T", "R": 3}, "Remove empty values from dict")
 
     # List to dict
     ci.assert_val(misc.list_to_dict(test_list), test_dict, "List to dict")
