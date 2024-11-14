@@ -1,6 +1,6 @@
 # Release History
 
-## 1.43.0 (2024-mm-dd)
+## 1.43.0 (2024-11-14)
 
 - **ENH: Add prune and select keys from dict functions: `misc.select_dict` and `misc.prune_dict`**
 - **ENH: Handle dict in `misc.remove_empty_values` and allow the user to add other values considered as empty**
