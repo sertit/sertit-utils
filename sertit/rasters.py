@@ -1077,16 +1077,22 @@ def write(
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
 
-    # Manage tiles
-    if "tiled" not in kwargs:
-        kwargs["tiled"] = True
-
     # Force GTiff
     kwargs["driver"] = kwargs.get("driver", "GTiff")
 
+    # Manage tiles
+    if kwargs["driver"] == "GOG":
+        kwargs.pop("tiled", None)
+    elif "tiled" not in kwargs:
+        kwargs["tiled"] = True
+
     # Write on disk
     xds.rio.to_raster(
-        str(path), BIGTIFF=bigtiff, NUM_THREADS=MAX_CORES, tags=tags, **kwargs
+        str(path),
+        BIGTIFF=bigtiff,
+        NUM_THREADS=MAX_CORES,
+        tags=tags,
+        **misc.remove_empty_values(kwargs),
     )
 
 

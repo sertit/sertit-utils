@@ -5,6 +5,8 @@
 - **ENH: Add prune and select keys from dict functions: `misc.select_dict` and `misc.prune_dict`**
 - **ENH: Handle dict in `misc.remove_empty_values` and allow the user to add other values considered as empty**
 - FIX: Select arguments from `**kwargs` for functions with finished number of arguments
+- FIX: Remove empty kwargs from `rasters.write` (leading sometimes to GDAL warnings)
+- FIX: Don't try to set any `tiled` argument with `COG` driver in `rasters.write`
 
 ## 1.42.3 (2024-11-04)
 
