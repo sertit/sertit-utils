@@ -25,7 +25,7 @@ import rasterio
 import shapely
 from rasterio.windows import Window
 
-from CI.SCRIPTS.script_utils import rasters_path, s3_env
+from CI.SCRIPTS.script_utils import KAPUT_KWARGS, rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
 from sertit.rasters_rio import (
     any_raster_to_rio_ds,
@@ -82,7 +82,7 @@ def test_rasters_rio():
         ci.assert_geom_equal(footprint, truth_footprint)
 
         # Read
-        raster, meta = rasters_rio.read(raster_path)
+        raster, meta = rasters_rio.read(raster_path, **KAPUT_KWARGS)
         with rasterio.open(str(raster_path)) as dst:
             raster_1, meta1 = rasters_rio.read(dst, resolution=20)
             raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
@@ -104,7 +104,7 @@ def test_rasters_rio():
                 raster_path,
                 window=mask_path,
             )
-            rasters_rio.write(window, w_mt, window_out)
+            rasters_rio.write(window, w_mt, window_out, **KAPUT_KWARGS)
             ci.assert_raster_equal(window_out, raster_window_path)
 
             # Gdf
@@ -234,7 +234,10 @@ def test_vrt():
         os.remove(raster_merged_vrt_out)
 
         rasters_rio.merge_vrt(
-            [raster_path, raster_to_merge_path], raster_merged_vrt_out, abs_path=True
+            [raster_path, raster_to_merge_path],
+            raster_merged_vrt_out,
+            abs_path=True,
+            **KAPUT_KWARGS,
         )
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
@@ -307,7 +310,7 @@ def test_reproj():
     with rasterio.open(str(dem_path)) as src:
         with rasterio.open(str(raster_path)) as dst:
             dst_arr, dst_meta = rasters_rio.reproject_match(
-                dst.meta, src.read(), src.meta
+                dst.meta, src.read(), src.meta, **KAPUT_KWARGS
             )
 
             # from dst

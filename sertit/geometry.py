@@ -29,7 +29,7 @@ from shapely.errors import GeometryTypeError
 from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from sertit import vectors
+from sertit import misc, vectors
 from sertit.logs import SU_NAME
 from sertit.types import AnyPolygonType
 
@@ -595,7 +595,10 @@ def _get_radius_nearest(
 
     # Find the closest points and distances
     closest, closest_dist = tree.query_radius(
-        src_points, r=radius, return_distance=True, **kwargs
+        src_points,
+        r=radius,
+        return_distance=True,
+        **misc.select_dict(kwargs, ["count_only", "sort_results"]),
     )
 
     # Return indices and distances

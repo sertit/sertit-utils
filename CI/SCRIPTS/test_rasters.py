@@ -26,7 +26,7 @@ import rasterio
 import shapely
 import xarray as xr
 
-from CI.SCRIPTS.script_utils import dask_env, rasters_path, s3_env
+from CI.SCRIPTS.script_utils import KAPUT_KWARGS, dask_env, rasters_path, s3_env
 from sertit import ci, path, rasters, vectors
 from sertit.rasters import (
     any_raster_to_xr_ds,
@@ -45,7 +45,7 @@ def test_indexes(caplog):
     @dask_env
     def test_core():
         raster_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
-        xda_raw = rasters.read(raster_path)
+        xda_raw = rasters.read(raster_path, **KAPUT_KWARGS)
         xda_idx = rasters.read(raster_path, indexes=1)
         np.testing.assert_array_equal(xda_raw[[0], :], xda_idx)
 
@@ -199,7 +199,7 @@ def test_rasters():
 
             # DataArray
             xda_masked = os.path.join(tmp_dir, "test_mask_xda.tif")
-            mask_xda = rasters.mask(xda, mask.geometry)
+            mask_xda = rasters.mask(xda, mask.geometry, **KAPUT_KWARGS)
             rasters.write(mask_xda, xda_masked, dtype=np.uint8)
             ci.assert_xr_encoding_attrs(xda, mask_xda)
 
@@ -221,7 +221,9 @@ def test_rasters():
             # DataArray
             xda_paint_true = os.path.join(tmp_dir, "test_paint_true_xda.tif")
             xda_paint_false = os.path.join(tmp_dir, "test_paint_false_xda.tif")
-            paint_true_xda = rasters.paint(xda, mask.geometry, value=600, invert=True)
+            paint_true_xda = rasters.paint(
+                xda, mask.geometry, value=600, invert=True, **KAPUT_KWARGS
+            )
             paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
             rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
             rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
@@ -254,7 +256,7 @@ def test_rasters():
             # -- Crop
             # DataArray
             xda_cropped = os.path.join(tmp_dir, "test_crop_xda.tif")
-            crop_xda = rasters.crop(xda, mask.geometry)
+            crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
             rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
             ci.assert_xr_encoding_attrs(xda, crop_xda)
 
@@ -300,12 +302,14 @@ def test_rasters():
             # ----------------------------------------------------------------------------------------------
             # -- Collocate
             # DataArray
-            coll_xda = rasters.collocate(xda, xda)  # Just hope that it doesnt crash
+            coll_xda = rasters.collocate(
+                xda, xda, **KAPUT_KWARGS
+            )  # Just hope that it doesn't crash
             xr.testing.assert_equal(coll_xda, xda)
             ci.assert_xr_encoding_attrs(xda, coll_xda)
 
             # Dataset
-            coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesnt crash
+            coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesn't crash
             xr.testing.assert_equal(coll_xds, xds)
             ci.assert_xr_encoding_attrs(xds, coll_xds)
 
@@ -411,7 +415,9 @@ def test_vrt():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Merge VRT
         raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-        rasters.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+        rasters.merge_vrt(
+            [raster_path, raster_to_merge_path], raster_merged_vrt_out, **KAPUT_KWARGS
+        )
         ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
         os.remove(raster_merged_vrt_out)
@@ -482,7 +488,7 @@ def test_write():
 
         for dtype, nodata_val in nodata.items():
             print(dtype.__name__)
-            rasters.write(raster_xds, test_path, dtype=dtype)
+            rasters.write(raster_xds, test_path, dtype=dtype, **KAPUT_KWARGS)
             with rasterio.open(test_path) as ds:
                 assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
                 assert ds.meta["nodata"] == nodata_val
@@ -650,7 +656,7 @@ def test_rasterize():
         # Binary vector
         out_bin_path = os.path.join(tmp_dir, "out_bin.tif")
         rast_bin = rasters.rasterize(
-            rasters.read(raster_path, chunks=[1, 2048, 2048]), vec_path
+            rasters.read(raster_path, chunks=[1, 2048, 2048]), vec_path, **KAPUT_KWARGS
         )
         rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 

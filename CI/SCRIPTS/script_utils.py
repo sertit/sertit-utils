@@ -25,6 +25,8 @@ from sertit.misc import ListEnum
 
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
 
+KAPUT_KWARGS = {"fdezf": 0}
+
 
 @unique
 class Polarization(ListEnum):

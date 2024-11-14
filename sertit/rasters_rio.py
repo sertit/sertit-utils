@@ -558,7 +558,7 @@ def rasterize(
         transform=ds.transform,
         dtype=dtype,
         all_touched=kwargs.get("all_touched", True),
-        **kwargs,
+        **misc.select_dict(kwargs, ["merge_alg"]),
     )
 
     meta = ds.meta.copy()
@@ -802,7 +802,14 @@ def _mask(
             nodata = 0
 
     # Crop dataset
-    msk, trf = rio_mask.mask(ds, shapes, nodata=nodata, crop=do_crop, **kwargs)
+    possible_kwargs = ["all_touched", "invert", "filled", "pad", "pad_width", "indexes"]
+    msk, trf = rio_mask.mask(
+        ds,
+        shapes,
+        nodata=nodata,
+        crop=do_crop,
+        **misc.select_dict(kwargs, possible_kwargs),
+    )
 
     # Create masked array
     nodata_mask = np.where(msk == nodata, 1, 0).astype(np.uint8)
@@ -1028,7 +1035,7 @@ def read(
         resampling=resampling,
         masked=masked,
         window=window,
-        **kwargs,
+        **misc.select_dict(kwargs, ["indexes", "out_dtype", "boundless", "fill_value"]),
     )
 
     # Get destination transform

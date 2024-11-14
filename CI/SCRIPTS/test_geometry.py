@@ -16,7 +16,7 @@
 # limitations under the License.
 """ Script testing vector functions """
 
-from CI.SCRIPTS.script_utils import geometry_path, s3_env, vectors_path
+from CI.SCRIPTS.script_utils import KAPUT_KWARGS, geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
 from sertit.geometry import (
     buffer,
@@ -170,7 +170,7 @@ def test_nearest_neighbors():
     # Radius
     radius = 100
     closest, distances = nearest_neighbors(
-        src, candidates, method="radius", radius=radius
+        src, candidates, method="radius", radius=radius, **KAPUT_KWARGS
     )
     for curr_closest, curr_dist in zip(closest, distances):
         ci.assert_val(len(curr_closest), 1, "length")

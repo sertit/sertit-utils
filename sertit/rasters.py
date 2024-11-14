@@ -39,7 +39,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
 
-from sertit import geometry, logs, path, rasters_rio, vectors
+from sertit import geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
 
 MAX_CORES = rasters_rio.MAX_CORES
@@ -758,7 +758,13 @@ def crop(
         kwargs["from_disk"] = True  # WAY FASTER
 
     # Clip keeps encoding and attrs
-    return xds.rio.clip(shapes, **kwargs)
+    return xds.rio.clip(
+        shapes,
+        **misc.select_dict(
+            kwargs,
+            ["crs", "all_touched", "drop", "invert", "from_disk"],
+        ),
+    )
 
 
 def _any_raster_to_rio_ds(function: Callable) -> Callable:

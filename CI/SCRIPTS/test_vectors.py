@@ -24,7 +24,7 @@ import pytest
 from rasterio import CRS
 from shapely import wkt
 
-from CI.SCRIPTS.script_utils import files_path, s3_env, vectors_path
+from CI.SCRIPTS.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
 from sertit import ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 
@@ -78,7 +78,7 @@ def test_vectors():
     assert wkt.dumps(aoi) == aoi_str
 
     # UTM and bounds
-    aoi = vectors.read(kml_path)
+    aoi = vectors.read(kml_path, **KAPUT_KWARGS)
     _assert_attributes(aoi, kml_path)
 
     with pytest.deprecated_call():
