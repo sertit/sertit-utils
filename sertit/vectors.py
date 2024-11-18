@@ -354,7 +354,7 @@ def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
         elif driver == "KMZ":
             raise NotImplementedError("Impossible to write a KMZ for now.")
 
-    gdf.to_file(str(path), driver=driver, **kwargs)
+    gdf.to_file(str(path), driver=driver, **misc.prune_dict(kwargs, ["window"]))
 
 
 def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:

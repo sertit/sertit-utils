@@ -1,5 +1,9 @@
 # Release History
 
+## 1.43.1 (2024-mm-dd)
+
+- FIX: Don't allow `window` keyword to go into `gpd.to_file` function
+
 ## 1.43.0 (2024-11-14)
 
 - **ENH: Add prune and select keys from dict functions: `misc.select_dict` and `misc.prune_dict`**
