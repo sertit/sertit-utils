@@ -121,8 +121,10 @@ def test_rasters():
             xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
             xda_4 = rasters.read(raster_path, resolution=dst.res[0] / 2)
             xda_5 = rasters.read(xda)
+            assert xda.chunks is not None
 
             xda_dask = rasters.read(raster_path, chunks=True)
+            assert xda_dask.chunks is not None
 
             # Test shape (link between resolution and size)
             assert xda_4.shape[-2] == xda.shape[-2] * 2
@@ -161,6 +163,7 @@ def test_rasters():
                 raster_path,
                 window=mask_path,
             )
+            assert xda_window.chunks is not None
             rasters.write(xda_window, xda_window_out, dtype=np.uint8)
             ci.assert_raster_equal(xda_window_out, raster_window_path)
 

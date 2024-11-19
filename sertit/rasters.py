@@ -931,7 +931,7 @@ def read(
 
                 # Windows
                 if window is not None:
-                    xda = xda.rio.isel_window(window).load()
+                    xda = xda.rio.isel_window(window)
 
                 # Indexes
                 if indexes is not None:

@@ -2,6 +2,7 @@
 
 ## 1.43.1 (2024-mm-dd)
 
+- FIX: Don't compute dask array in case of `window` keyword in `rasters.read` function
 - FIX: Don't allow `window` keyword to go into `gpd.to_file` function
 - FIX: Add all `distributed` logers to `ci.reduce_verbosity`
 
