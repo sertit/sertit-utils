@@ -3,6 +3,7 @@
 ## 1.43.1 (2024-mm-dd)
 
 - FIX: Don't allow `window` keyword to go into `gpd.to_file` function
+- FIX: Add all `distributed` logers to `ci.reduce_verbosity`
 
 ## 1.43.0 (2024-11-14)
 

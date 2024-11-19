@@ -690,10 +690,16 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "s3transfer",
         "pyproj",
         "matplotlib",
-        "distributed",
         "asyncio",
         "bokeh",
         "numba",
+        "distributed",
+        "distributed.worker",
+        "distributed.scheduler",
+        "distributed.nanny",
+        "distributed.core",
+        "distributed.http.proxy",
+        "distributed.batched",
     ]
     if other_loggers:
         loggers += other_loggers
