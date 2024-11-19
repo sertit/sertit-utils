@@ -214,6 +214,7 @@ def test_rasters():
 
             # With dask
             mask_xda_dask = rasters.mask(xda_dask, mask)
+            # assert mask_xda_dask.chunks is not None TODO
             np.testing.assert_array_equal(mask_xda, mask_xda_dask)
             ci.assert_xr_encoding_attrs(xda_dask, mask_xda_dask)
 
@@ -250,6 +251,8 @@ def test_rasters():
             paint_false_xda_dask = rasters.paint(
                 xda_dask, mask.geometry, value=600, invert=False
             )
+            # assert paint_true_xda_dask.chunks is not None : TODO with mask
+            # assert paint_false_xda_dask.chunks is not None : TODO with mask
             np.testing.assert_array_equal(paint_true_xda, paint_true_xda_dask)
             np.testing.assert_array_equal(paint_false_xda, paint_false_xda_dask)
             ci.assert_xr_encoding_attrs(xda_dask, paint_true_xda_dask)
@@ -271,6 +274,7 @@ def test_rasters():
 
             # With dask
             crop_xda_dask = rasters.crop(xda_dask, mask)
+            assert crop_xda_dask.chunks is not None
             np.testing.assert_array_equal(crop_xda, crop_xda_dask)
             ci.assert_xr_encoding_attrs(xda_dask, crop_xda_dask)
 
@@ -299,6 +303,7 @@ def test_rasters():
 
             # With dask
             sieve_xda_dask = rasters.sieve(xda_dask, sieve_thresh=20, connectivity=4)
+            # assert sieve_xda_dask.chunks is not None TODO
             np.testing.assert_array_equal(sieve_xda, sieve_xda_dask)
             ci.assert_xr_encoding_attrs(xda_dask, sieve_xda_dask)
 
@@ -320,6 +325,7 @@ def test_rasters():
             coll_xda_dask = rasters.collocate(
                 xda_dask, xda_dask
             )  # Just hope that it doesnt crash
+            # assert coll_xda_dask.chunks is not None TODO
             xr.testing.assert_equal(coll_xda_dask, xda_dask)
             ci.assert_xr_encoding_attrs(xda_dask, coll_xda_dask)
 
