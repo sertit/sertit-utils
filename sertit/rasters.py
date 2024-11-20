@@ -25,6 +25,7 @@ from typing import Any, Callable, Optional, Union
 
 import geopandas as gpd
 import numpy as np
+import psutil
 import xarray as xr
 from shapely.geometry import Polygon
 
@@ -94,6 +95,67 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
         pass
 
     return nodata
+
+
+def get_or_create_dask_client():
+    """
+    Return default Dask client or create a local cluster and linked  client if not existing
+    Returns:
+    """
+
+    try:
+        from dask.distributed import Client, get_client  # noqa
+
+        ram_info = psutil.virtual_memory()
+        available_ram = ram_info.available / 1024 / 1024 / 1024
+        available_ram = 0.9 * available_ram
+
+        n_workers = 1
+        memory_limit = f"{available_ram}Gb"
+        if available_ram >= 16:
+            n_workers = available_ram // 16
+            memory_limit = f"{16}Gb"
+        try:
+            # Return default client
+            return get_client()  # noqa
+        except ValueError:
+            # Create a local cluster and return client
+            LOGGER.warning(
+                f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
+            )
+            return Client(
+                n_workers=int(n_workers),
+                threads_per_worker=4,
+                memory_limit=memory_limit,
+            )
+    except ModuleNotFoundError:
+        LOGGER.warning(
+            "Can't import dask. If you experiment out of memory issue, consider installing dask."
+        )
+
+    return None
+
+
+def get_dask_lock(name):
+    """
+    Get a dask lock with given name. This lock uses the default client if existing;
+    or create a local cluster (get_or_create_dask_client) otherwise.
+    Args:
+        name: The name of the lock
+    Returns:
+    """
+
+    try:
+        client = get_or_create_dask_client()
+        from dask.diagnostics import ProgressBar  # noqa
+        from dask.distributed import Client, Lock, get_client  # noqa
+
+        return Lock(name, client=client)  # noqa
+    except ModuleNotFoundError:
+        LOGGER.warning(
+            "Can't import dask. If you experiment out of memory issue, consider installing dask."
+        )
+        return None
 
 
 def get_nodata_value_from_dtype(dtype) -> float:
@@ -877,8 +939,6 @@ def read(
     - None, in which case the dataset resolution will be used
 
     Uses `rioxarray.open_rasterio <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
-    For Dask usage, you can look at the
-    `rioxarray tutorial <https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html>`_.
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -925,7 +985,11 @@ def read(
     with xr.set_options(keep_attrs=True):
         with rioxarray.set_options(export_grid_mapping=False):
             with rioxarray.open_rasterio(
-                ds, default_name=path.get_filename(ds.name), chunks=chunks, **kwargs
+                ds,
+                lock=False,
+                default_name=path.get_filename(ds.name),
+                chunks=chunks,
+                **kwargs,
             ) as xda:
                 orig_dtype = xda.dtype
 
@@ -1085,6 +1149,11 @@ def write(
         kwargs.pop("tiled", None)
     elif "tiled" not in kwargs:
         kwargs["tiled"] = True
+
+    # Get default client
+    lock = get_dask_lock("rio")
+    if lock:
+        kwargs["lock"] = lock
 
     # Write on disk
     xds.rio.to_raster(
