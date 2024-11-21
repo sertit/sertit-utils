@@ -494,14 +494,48 @@ def test_write():
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         test_path = os.path.join(tmp_dir, "test_nodata.tif")
+        test_cog_path = os.path.join(tmp_dir, "test_cog.tif")
 
         for dtype, nodata_val in nodata.items():
-            print(dtype.__name__)
-            rasters.write(raster_xds, test_path, dtype=dtype, **KAPUT_KWARGS)
-            with rasterio.open(test_path) as ds:
+            dtype_str = dtype.__name__
+            print(dtype_str)
+
+            # Force negative value
+            if "uint" not in dtype_str:
+                raster_xds.data[:, 0, -1] = -3
+
+            curr_test_path = test_path.replace(".tif", f"_{dtype_str}.tif")
+
+            rasters.write(raster_xds, curr_test_path, dtype=dtype, **KAPUT_KWARGS)
+            with rasterio.open(curr_test_path) as ds:
                 assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
                 assert ds.meta["nodata"] == nodata_val
                 assert ds.read()[:, 0, 0] == nodata_val  # Check value
+
+                # Test negative value
+                if "uint" not in dtype_str:
+                    assert ds.read()[:, 0, -1] == -3
+
+            # COGs
+            if dtype not in [np.int8]:
+                curr_test_cog_path = test_cog_path.replace(".tif", f"_{dtype_str}.tif")
+                rasters.write(
+                    raster_xds,
+                    curr_test_cog_path,
+                    dtype=dtype,
+                    driver="COG",
+                    **KAPUT_KWARGS,
+                )
+                with rasterio.open(curr_test_cog_path) as ds:
+                    assert (
+                        ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
+                    )
+                    assert ds.meta["nodata"] == nodata_val
+                    assert ds.read()[:, 0, 0] == nodata_val  # Check value
+
+                    # Test negative value
+                    if "uint" not in dtype_str:
+                        assert ds.read()[:, 0, -1] == -3
 
 
 def test_dim():

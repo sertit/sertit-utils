@@ -1061,7 +1061,11 @@ def read(
 
 @any_raster_to_xr_ds
 def write(
-    xds: AnyXrDataStructure, path: AnyPathStrType, tags: dict = None, **kwargs
+    xds: AnyXrDataStructure,
+    path: AnyPathStrType,
+    tags: dict = None,
+    write_cogs_with_dask: bool = True,
+    **kwargs,
 ) -> None:
     """
     Write raster to disk.
@@ -1088,6 +1092,9 @@ def write(
     Args:
         xds (AnyXrDataStructure): Path to the raster or a rasterio dataset or a xarray
         path (AnyPathStrType): Path where to save it (directories should be existing)
+        tags (dict): Tags that will be written in your file
+        write_cogs_with_dask (bool): If odc-geo and imagecodecs are installed, write your COGs with Dask.
+            Otherwise, the array will be loaded into memory before writing it on disk (and can cause MemoryErrors).
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
 
     Examples:
@@ -1104,10 +1111,7 @@ def write(
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     # Manage dtype
-    if "dtype" in kwargs:
-        dtype = kwargs["dtype"]
-    else:
-        dtype = xds.dtype
+    dtype = kwargs.get("dtype", xds.dtype)
 
     if isinstance(dtype, str):
         # Convert to numpy dtype
@@ -1115,8 +1119,9 @@ def write(
     xds.encoding["dtype"] = dtype
 
     # Write nodata
+    nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
     xds.rio.write_nodata(
-        kwargs.pop("nodata", get_nodata_value_from_dtype(dtype)),
+        nodata,
         encoded=True,
         inplace=True,
     )
@@ -1125,10 +1130,38 @@ def write(
     if "_FillValue" in xds.attrs:
         xds.attrs.pop("_FillValue")
 
-    # Default compression to LZW
-    if "compress" not in kwargs:
-        kwargs["compress"] = "lzw"
+    # Bigtiff if needed
+    bigtiff = rasters_rio.bigtiff_value(xds)
 
+    # Force GTiff
+    kwargs["driver"] = kwargs.get("driver", "GTiff")
+
+    # Manage COGs or other drivers attributes
+    is_cog = kwargs["driver"] == "COG"
+    if is_cog:
+        kwargs.pop("tiled", None)
+
+        # Default compression to deflate for COGs
+        kwargs["compress"] = kwargs.get("compress", "deflate")
+
+        if dtype == np.int8:
+            LOGGER.warning(
+                "For some reason, it is impossible to write int8 COGs. "
+                "Your data will be converted to uint8. "
+                "In case of casting issues (i.e. negative values), please save it to int16."
+            )
+
+    else:
+        # Get default client's lock
+        kwargs["lock"] = kwargs.get("lock", get_dask_lock("rio"))
+
+        # Set tiles by default
+        kwargs["tiled"] = kwargs.get("tiled", True)
+
+        # Default compression to LZW
+        kwargs["compress"] = kwargs.get("compress", "lzw")
+
+    # Manage predictors according to dtype and compression
     if (
         kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs  # noqa: W503
@@ -1138,31 +1171,36 @@ def write(
         else:
             kwargs["predictor"] = "2"
 
-    # Bigtiff if needed
-    bigtiff = rasters_rio.bigtiff_value(xds)
+    # Write COGs
+    is_written = False
+    if write_cogs_with_dask and is_cog:
+        try:
+            from odc.geo import cog, xr  # noqa
 
-    # Force GTiff
-    kwargs["driver"] = kwargs.get("driver", "GTiff")
+            LOGGER.debug("Writing your COG with Dask!")
+            cog.save_cog_with_dask(
+                xds.copy(data=xds.fillna(nodata).astype(dtype)),
+                str(path),
+            ).compute()
+            is_written = True
 
-    # Manage tiles
-    if kwargs["driver"] == "GOG":
-        kwargs.pop("tiled", None)
-    elif "tiled" not in kwargs:
-        kwargs["tiled"] = True
+        except (ModuleNotFoundError, KeyError):
+            # COGs cannot be written via dask via rioxarray for the moment
+            LOGGER.debug(
+                "Loading raster in memory as COGs cannot be written with Dask via 'rioxarray' for the moment. "
+                "Please install 'odc-geo' and 'imagecodecs' for Dask handling."
+            )
+            xds = xds.load()
 
-    # Get default client
-    lock = get_dask_lock("rio")
-    if lock:
-        kwargs["lock"] = lock
-
-    # Write on disk
-    xds.rio.to_raster(
-        str(path),
-        BIGTIFF=bigtiff,
-        NUM_THREADS=MAX_CORES,
-        tags=tags,
-        **misc.remove_empty_values(kwargs),
-    )
+    # Default write on disk
+    if not is_written:
+        xds.rio.to_raster(
+            str(path),
+            BIGTIFF=bigtiff,
+            NUM_THREADS=MAX_CORES,
+            tags=tags,
+            **misc.remove_empty_values(kwargs),
+        )
 
 
 def collocate(
