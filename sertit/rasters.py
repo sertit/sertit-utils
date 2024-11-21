@@ -1126,10 +1126,6 @@ def write(
         inplace=True,
     )
 
-    # WORKAROUND: Pop _FillValue attribute (if existing)
-    if "_FillValue" in xds.attrs:
-        xds.attrs.pop("_FillValue")
-
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
 
@@ -1191,9 +1187,16 @@ def write(
                 "Please install 'odc-geo' and 'imagecodecs' for Dask handling."
             )
             xds = xds.load()
+        except AttributeError:
+            # Numpy array, not dask arrays
+            pass
 
     # Default write on disk
     if not is_written:
+        # WORKAROUND: Pop _FillValue attribute (if existing)
+        if "_FillValue" in xds.attrs:
+            xds.attrs.pop("_FillValue")
+
         xds.rio.to_raster(
             str(path),
             BIGTIFF=bigtiff,
