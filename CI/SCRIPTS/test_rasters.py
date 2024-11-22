@@ -537,6 +537,28 @@ def test_write():
                     if "uint" not in dtype_str:
                         assert ds.read()[:, 0, -1] == -3
 
+            # COGs without dask
+            if dtype not in [np.int8]:
+                curr_test_cog_path = test_cog_path.replace(".tif", f"_{dtype_str}.tif")
+                rasters.write(
+                    raster_xds,
+                    curr_test_cog_path,
+                    dtype=dtype,
+                    driver="COG",
+                    write_cogs_with_dask=False,
+                    **KAPUT_KWARGS,
+                )
+                with rasterio.open(curr_test_cog_path) as ds:
+                    assert (
+                        ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
+                    )
+                    assert ds.meta["nodata"] == nodata_val
+                    assert ds.read()[:, 0, 0] == nodata_val  # Check value
+
+                    # Test negative value
+                    if "uint" not in dtype_str:
+                        assert ds.read()[:, 0, -1] == -3
+
 
 def test_dim():
     """Test on BEAM-DIMAP function"""
