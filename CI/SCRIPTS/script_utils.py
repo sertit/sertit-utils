@@ -16,7 +16,6 @@
 # limitations under the License.
 import os
 import sys
-from collections.abc import Callable
 from enum import unique
 from functools import wraps
 
@@ -61,30 +60,28 @@ def get_ci_data_path():
         return get_proj_path().joinpath("CI", "sertit_utils", "DATA")
 
 
-def dask_env(function: Callable):
+def dask_env(function):
     """
     Create dask-using environment
-    Args:
-        function (Callable): Function to decorate
 
     Returns:
         Callable: decorated function
     """
 
     @wraps(function)
-    def dask_env_wrapper():
+    def dask_env_wrapper(*_args, **_kwargs):
         """S3 environment wrapper"""
         try:
             from dask.distributed import Client, LocalCluster
 
             with LocalCluster() as cluster, Client(cluster):
                 print("Using DASK")
-                function()
+                return function(*_args, **_kwargs)
         except ImportError:
             pass
 
         print("Using NUMPY")
-        function()
+        return function(*_args, **_kwargs)
 
     return dask_env_wrapper
 

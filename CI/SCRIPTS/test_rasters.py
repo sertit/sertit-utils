@@ -475,89 +475,75 @@ def test_merge_different_crs():
         )
 
 
+def _test_raster_after_write(test_path, dtype, nodata_val):
+    with rasterio.open(test_path) as ds:
+        assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
+        assert ds.meta["nodata"] == nodata_val
+        assert ds.read()[:, 0, 0] == nodata_val  # Check value
+
+        # Test negative value
+        if "uint" not in dtype.__name__:
+            assert ds.read()[:, 0, -1] == -3
+
+
 @s3_env
 @dask_env
-def test_write():
+@pytest.mark.parametrize(
+    ("dtype", "nodata_val"),
+    [
+        pytest.param(np.uint8, 255),
+        pytest.param(np.int8, -128),
+        pytest.param(np.uint16, 65535),
+        pytest.param(np.int16, -9999),
+        pytest.param(np.uint32, 65535),
+        pytest.param(np.int32, 65535),
+        pytest.param(np.float32, -9999),
+        pytest.param(np.float64, -9999),
+    ],
+)
+def test_write(dtype, nodata_val, tmp_path):
     raster_path = rasters_path().joinpath("raster.tif")
     raster_xds = rasters.read(raster_path)
 
-    nodata = {
-        np.uint8: 255,
-        np.int8: -128,
-        np.uint16: 65535,
-        np.int16: -9999,
-        np.uint32: 65535,
-        np.int32: 65535,
-        np.float32: -9999,
-        np.float64: -9999,
-    }
+    dtype_str = dtype.__name__
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        test_path = os.path.join(tmp_dir, "test_nodata.tif")
-        test_cog_path = os.path.join(tmp_dir, "test_cog.tif")
+    test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
+    test_cog_path = os.path.join(tmp_path, f"test_cog_{dtype_str}.tif")
+    test_cog_no_dask_path = os.path.join(tmp_path, f"test_cog_no_dask{dtype_str}.tif")
 
-        for dtype, nodata_val in nodata.items():
-            dtype_str = dtype.__name__
-            print(dtype_str)
+    # Force negative value if possible
+    if "uint" not in dtype_str:
+        raster_xds.data[:, 0, -1] = -3
 
-            # Force negative value
-            if "uint" not in dtype_str:
-                raster_xds.data[:, 0, -1] = -3
+    # -------------------------------------------------------------------------------------------------
+    # Test GeoTiffs
+    rasters.write(raster_xds, test_path, dtype=dtype, **KAPUT_KWARGS)
+    _test_raster_after_write(test_path, dtype, nodata_val)
 
-            curr_test_path = test_path.replace(".tif", f"_{dtype_str}.tif")
+    # -------------------------------------------------------------------------------------------------
+    # Test COGs
+    if dtype not in [np.int8]:
+        rasters.write(
+            raster_xds,
+            test_cog_path,
+            dtype=dtype,
+            driver="COG",
+            **KAPUT_KWARGS,
+        )
+        _test_raster_after_write(test_path, dtype, nodata_val)
 
-            rasters.write(raster_xds, curr_test_path, dtype=dtype, **KAPUT_KWARGS)
-            with rasterio.open(curr_test_path) as ds:
-                assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
-                assert ds.meta["nodata"] == nodata_val
-                assert ds.read()[:, 0, 0] == nodata_val  # Check value
-
-                # Test negative value
-                if "uint" not in dtype_str:
-                    assert ds.read()[:, 0, -1] == -3
-
-            # COGs
-            if dtype not in [np.int8]:
-                curr_test_cog_path = test_cog_path.replace(".tif", f"_{dtype_str}.tif")
-                rasters.write(
-                    raster_xds,
-                    curr_test_cog_path,
-                    dtype=dtype,
-                    driver="COG",
-                    **KAPUT_KWARGS,
-                )
-                with rasterio.open(curr_test_cog_path) as ds:
-                    assert (
-                        ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
-                    )
-                    assert ds.meta["nodata"] == nodata_val
-                    assert ds.read()[:, 0, 0] == nodata_val  # Check value
-
-                    # Test negative value
-                    if "uint" not in dtype_str:
-                        assert ds.read()[:, 0, -1] == -3
-
-            # COGs without dask
-            if dtype not in [np.int8]:
-                curr_test_cog_path = test_cog_path.replace(".tif", f"_{dtype_str}.tif")
-                rasters.write(
-                    raster_xds,
-                    curr_test_cog_path,
-                    dtype=dtype,
-                    driver="COG",
-                    write_cogs_with_dask=False,
-                    **KAPUT_KWARGS,
-                )
-                with rasterio.open(curr_test_cog_path) as ds:
-                    assert (
-                        ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
-                    )
-                    assert ds.meta["nodata"] == nodata_val
-                    assert ds.read()[:, 0, 0] == nodata_val  # Check value
-
-                    # Test negative value
-                    if "uint" not in dtype_str:
-                        assert ds.read()[:, 0, -1] == -3
+    # -------------------------------------------------------------------------------------------------
+    # COGs without dask
+    if dtype not in [np.int8]:
+        rasters.write(
+            raster_xds,
+            test_cog_no_dask_path,
+            dtype=dtype,
+            driver="COG",
+            write_cogs_with_dask=False,
+            **KAPUT_KWARGS,
+        )
+        _test_raster_after_write(test_path, dtype, nodata_val)
 
 
 def test_dim():
