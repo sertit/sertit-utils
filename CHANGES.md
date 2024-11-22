@@ -1,6 +1,6 @@
 # Release History
 
-## 1.43.1 (2024-mm-dd)
+## 1.43.1 (2024-11-22)
 
 - OPTIM: Manage dask correctly when writing a raster to disk in `rasters.write` (needs `odc-geo` and `imagecodecs` for COGs)
 - OPTIM: Write data with `windowed=True` when Dask is not enabled (for COGs)
