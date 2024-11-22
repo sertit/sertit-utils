@@ -1169,30 +1169,45 @@ def write(
 
     # Write COGs
     is_written = False
-    if write_cogs_with_dask and is_cog:
-        try:
-            from odc.geo import cog, xr  # noqa
+    if is_cog:
+        if write_cogs_with_dask:
+            try:
+                from odc.geo import cog, xr  # noqa
 
-            LOGGER.debug("Writing your COG with Dask!")
-            cog.save_cog_with_dask(
-                xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(nodata),
-                str(path),
-            ).compute()
-            is_written = True
+                LOGGER.debug("Writing your COG with Dask!")
+                cog.save_cog_with_dask(
+                    xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
+                        nodata
+                    ),
+                    str(path),
+                ).compute()
+                is_written = True
 
-        except (ModuleNotFoundError, KeyError):
-            # COGs cannot be written via dask via rioxarray for the moment
+            except (ModuleNotFoundError, KeyError):
+                # COGs cannot be written via dask via rioxarray for the moment
+                LOGGER.debug(
+                    "Loading raster in memory as COGs cannot be written with Dask via 'rioxarray' for the moment. "
+                    "Please install 'odc-geo' and 'imagecodecs' for Dask handling."
+                )
+
+                xds = xds.load()
+            except AttributeError:
+                # Numpy array, not dask arrays
+                pass
+        else:
             LOGGER.debug(
-                "Loading raster in memory as COGs cannot be written with Dask via 'rioxarray' for the moment. "
-                "Please install 'odc-geo' and 'imagecodecs' for Dask handling."
+                "Loading raster in memory as COG has been asked not to be written by Dask. Be careful about MemoryErrors!"
             )
             xds = xds.load()
-        except AttributeError:
-            # Numpy array, not dask arrays
-            pass
+
+        if not is_written:
+            # Write with windows as we don't want to_raster to blow up the RAM
+            kwargs["windowed"] = True
 
     # Default write on disk
     if not is_written:
+        LOGGER.debug("Writing your file to disk.")
+
         # WORKAROUND: Pop _FillValue attribute (if existing)
         if "_FillValue" in xds.attrs:
             xds.attrs.pop("_FillValue")

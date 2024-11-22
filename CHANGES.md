@@ -3,6 +3,7 @@
 ## 1.43.1 (2024-mm-dd)
 
 - OPTIM: Manage dask correctly when writing a raster to disk in `rasters.write` (needs `odc-geo` and `imagecodecs` for COGs)
+- OPTIM: Write data with `windowed=True` when Dask is not enabled (for COGs)
 - FIX: Don't compute dask array in case of `window` keyword in `rasters.read` function
 - FIX: Don't allow `window` keyword to go into `gpd.to_file` function
 - FIX: Add all `distributed` logers to `ci.reduce_verbosity`
