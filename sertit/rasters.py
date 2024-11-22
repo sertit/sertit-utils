@@ -1124,7 +1124,7 @@ def write(
         nodata,
         encoded=True,
         inplace=True,
-    ).rio.set_nodata(nodata, inplace=True)
+    )
 
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
@@ -1175,7 +1175,7 @@ def write(
 
             LOGGER.debug("Writing your COG with Dask!")
             cog.save_cog_with_dask(
-                xds.copy(data=xds.fillna(nodata).astype(dtype)),
+                xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(nodata),
                 str(path),
             ).compute()
             is_written = True
