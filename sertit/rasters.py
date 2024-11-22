@@ -1124,7 +1124,7 @@ def write(
         nodata,
         encoded=True,
         inplace=True,
-    )
+    ).rio.set_nodata(nodata, inplace=True)
 
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
