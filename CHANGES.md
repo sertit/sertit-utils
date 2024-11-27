@@ -1,6 +1,6 @@
 # Release History
 
-## 1.43.1 (2024-11-22)
+## 1.43.2 (2024-11-27)
 
 - ENH: Add a environment variable to update SNAP log level ([#25](https://github.com/sertit/sertit-utils/issues/25))
 - FIX: Better management of default SNAP values (called in `snap.get_gpt_cli`, not during initialization)
