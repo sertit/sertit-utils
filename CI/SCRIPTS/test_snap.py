@@ -21,7 +21,6 @@ import shutil
 import pytest
 
 from sertit import ci, misc, snap
-from sertit.snap import TILE_SIZE
 
 ci.reduce_verbosity()
 
@@ -37,14 +36,15 @@ def test_b2snap():
 def test_snap():
     # Do not test everything here, depends on the computer...
     cli = snap.get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
+    tile_size = 512
     must_appear = [
         "gpt",
         '"graph_path"',
         "-q",
         "-J-Dsnap.log.level=WARNING",
-        f"-J-Dsnap.jai.defaultTileSize={TILE_SIZE}",
-        f"-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}",
-        f"-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}",
+        f"-J-Dsnap.jai.defaultTileSize={tile_size}",
+        f"-J-Dsnap.dataio.reader.tileWidth={tile_size}",
+        f"-J-Dsnap.dataio.reader.tileHeight={tile_size}",
         "-J-Dsnap.jai.prefetchTiles=true",
     ]
 

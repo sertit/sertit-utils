@@ -28,23 +28,27 @@ from sertit import misc, strings
 from sertit.logs import SU_NAME
 
 SU_MAX_CORE = "SERTIT_UTILS_MAX_CORES"
-MAX_CORES = int(os.getenv(SU_MAX_CORE, os.cpu_count() - 2))
 """
 Maximum core to use, default is total of your CPU minus 2.
  You can update it with the environment variable :code:`SERTIT_UTILS_MAX_CORES`.
 """
 
-MAX_MEM = int(os.environ.get("JAVA_OPTS_XMX", 0.95 * psutil.virtual_memory().total))
+JAVA_OPTS_XMX = "JAVA_OPTS_XMX"
 """
 Maximum memory to use, default is 95% of the total virtual memory.
 You can update it with the environment variable :code:`JAVA_OPTS_XMX`.
 """
 
 SU_SNAP_TILE_SIZE = "SERTIT_UTILS_SNAP_TILE_SIZE"
-TILE_SIZE = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
 """
 SNAP tile size, 512 by default.
 You can update it with the environment variable :code:`SERTIT_UTILS_SNAP_TILE_SIZE`.
+"""
+
+SU_SNAP_LOG_LEVEL = "SERTIT_UTILS_SNAP_LOG_LEVEL"
+"""
+SNAP log level, WARNING by default.
+You can update it with the environment variable :code:`SERTIT_UTILS_SNAP_LOG_LEVEL`.
 """
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -113,18 +117,24 @@ def get_gpt_cli(
     Returns:
         list: GPT command line as a list
     """
+    # Overload with env variables
+    max_cores = int(os.getenv(SU_MAX_CORE, os.cpu_count() - 2))
+    tile_size = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
+    snap_log_level = os.getenv(SU_SNAP_LOG_LEVEL, "WARNING")
+    max_mem = int(os.environ.get(JAVA_OPTS_XMX, 0.95 * psutil.virtual_memory().total))
+
     gpt_cli = [
         "gpt",
         strings.to_cmd_string(graph_path),
         "-q",
-        MAX_CORES,  # Maximum parallelism
-        f"-J-Xms2G -J-Xmx{bytes2snap(MAX_MEM)}",  # Initially/max allocated memory
-        "-J-Dsnap.log.level=WARNING",
-        f"-J-Dsnap.jai.defaultTileSize={TILE_SIZE}",
-        f"-J-Dsnap.dataio.reader.tileWidth={TILE_SIZE}",
-        f"-J-Dsnap.dataio.reader.tileHeight={TILE_SIZE}",
+        max_cores,  # Maximum parallelism
+        f"-J-Xms2G -J-Xmx{bytes2snap(max_mem)}",  # Initially/max allocated memory
+        f"-J-Dsnap.log.level={snap_log_level}",
+        f"-J-Dsnap.jai.defaultTileSize={tile_size}",
+        f"-J-Dsnap.dataio.reader.tileWidth={tile_size}",
+        f"-J-Dsnap.dataio.reader.tileHeight={tile_size}",
         "-J-Dsnap.jai.prefetchTiles=true",
-        f"-c {bytes2snap(int(0.5 * MAX_MEM))}",  # Tile cache set to 50% of max memory (up to 75%)
+        f"-c {bytes2snap(int(0.5 * max_mem))}",  # Tile cache set to 50% of max memory (up to 75%)
         # '-x',
         *other_args,
     ]  # Clears the internal tile cache after writing a complete row to the target file
