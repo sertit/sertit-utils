@@ -24,8 +24,10 @@ import subprocess
 import psutil
 from packaging.version import Version
 
-from sertit import misc, strings
+from sertit import misc, rasters, strings
 from sertit.logs import SU_NAME
+
+MAX_CORES = rasters.MAX_CORES
 
 SU_MAX_CORE = "SERTIT_UTILS_MAX_CORES"
 """
@@ -118,7 +120,7 @@ def get_gpt_cli(
         list: GPT command line as a list
     """
     # Overload with env variables
-    max_cores = int(os.getenv(SU_MAX_CORE, os.cpu_count() - 2))
+    max_cores = int(os.getenv(SU_MAX_CORE, MAX_CORES))
     tile_size = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
     snap_log_level = os.getenv(SU_SNAP_LOG_LEVEL, "WARNING")
     max_mem = int(os.environ.get(JAVA_OPTS_XMX, 0.95 * psutil.virtual_memory().total))

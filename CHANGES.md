@@ -1,5 +1,9 @@
 # Release History
 
+## 1.43.3 (2024-11-27)
+
+- FIX: Set back `MAX_CORES` is `snap` as it breaks unexpectedly a fair number of libraries
+
 ## 1.43.2 (2024-11-27)
 
 - ENH: Add a environment variable to update SNAP log level ([#25](https://github.com/sertit/sertit-utils/issues/25))
