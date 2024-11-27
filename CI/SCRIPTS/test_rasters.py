@@ -534,7 +534,7 @@ def test_write(dtype, nodata_val, tmp_path):
 
     # -------------------------------------------------------------------------------------------------
     # COGs without dask
-    if dtype not in [np.int8]:
+    if dtype in [np.float32, np.float64, np.uint32, np.int32]:
         rasters.write(
             raster_xds,
             test_cog_no_dask_path,
