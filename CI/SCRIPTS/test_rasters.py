@@ -522,7 +522,9 @@ def test_write(dtype, nodata_val, tmp_path):
 
     # -------------------------------------------------------------------------------------------------
     # Test COGs
-    if dtype not in [np.int8]:
+    # Remove some problematic (for now) dtypes
+    # https://github.com/numpy/numpy/issues/25677#issuecomment-2236081970
+    if dtype in [np.float32, np.float64, np.uint32, np.int32]:
         rasters.write(
             raster_xds,
             test_cog_path,
@@ -534,7 +536,7 @@ def test_write(dtype, nodata_val, tmp_path):
 
     # -------------------------------------------------------------------------------------------------
     # COGs without dask
-    if dtype in [np.float32, np.float64, np.uint32, np.int32]:
+    if dtype not in [np.int8]:
         rasters.write(
             raster_xds,
             test_cog_no_dask_path,
