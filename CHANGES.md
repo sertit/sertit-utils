@@ -2,6 +2,11 @@
 
 ## 1.43.1 (2024-11-22)
 
+- FIX: Create threaded cluster by default in `rasters.get_or_create_dask_client`
+
+
+## 1.43.1 (2024-11-22)
+
 - OPTIM: Manage dask correctly when writing a raster to disk in `rasters.write` (needs `odc-geo` and `imagecodecs` for COGs)
 - OPTIM: Write data with `windowed=True` when Dask is not enabled (for COGs)
 - FIX: Don't compute dask array in case of `window` keyword in `rasters.read` function

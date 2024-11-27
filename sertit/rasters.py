@@ -97,7 +97,7 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     return nodata
 
 
-def get_or_create_dask_client():
+def get_or_create_dask_client(processes=False):
     """
     Return default Dask client or create a local cluster and linked  client if not existing
     Returns:
@@ -119,15 +119,23 @@ def get_or_create_dask_client():
             # Return default client
             return get_client()  # noqa
         except ValueError:
-            # Create a local cluster and return client
-            LOGGER.warning(
-                f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
-            )
-            return Client(
-                n_workers=int(n_workers),
-                threads_per_worker=4,
-                memory_limit=memory_limit,
-            )
+            if processes:
+                # Create a local cluster and return client
+                LOGGER.warning(
+                    f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
+                )
+                return Client(
+                    n_workers=int(n_workers),
+                    threads_per_worker=4,
+                    memory_limit=memory_limit,
+                )
+            else:
+                # Create a local cluster (threaded)
+                LOGGER.warning("Init local cluster (threaded)")
+                return Client(
+                    processes=processes,
+                )
+
     except ModuleNotFoundError:
         LOGGER.warning(
             "Can't import dask. If you experiment out of memory issue, consider installing dask."
