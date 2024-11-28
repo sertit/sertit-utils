@@ -1,6 +1,6 @@
 # Release History
 
-## 1.43.4 (2024-mm-dd)
+## 1.43.4 (2024-11-28)
 
 - FIX: Fix regression in `files.read_json` due to Python 3.11 where `datatime.fromsioformat` parses more than the output of `isoformat()`
 
