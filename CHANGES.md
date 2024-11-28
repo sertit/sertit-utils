@@ -1,5 +1,9 @@
 # Release History
 
+## 1.43.4 (2024-mm-dd)
+
+- FIX: Fix regression in `files.read_json` due to Python 3.11 where `datatime.fromsioformat` parses more than the output of `isoformat()`
+
 ## 1.43.3 (2024-11-27)
 
 - FIX: Set back `MAX_CORES` is `snap` as it breaks unexpectedly a fair number of libraries

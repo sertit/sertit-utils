@@ -38,6 +38,7 @@ from tqdm import tqdm
 
 from sertit import AnyPath, logs, path
 from sertit.logs import SU_NAME
+from sertit.strings import DATE_FORMAT
 from sertit.types import AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -827,12 +828,19 @@ class CustomDecoder(JSONDecoder):
         for key, val in obj.items():
             if isinstance(val, str):
                 try:
-                    # Date -> Encoder saves dates as isoformat
-                    obj[key] = date.fromisoformat(val)
+                    # Datetime -> Encoder saves dates as isoformat: "%Y-%m-%dT%H:%M:%S" (DATE_FORMAT)
+                    # Isoformat in Python 3.11 has been extended and has too many ways of reading datetimes
+                    # We just want the one reading the output of 'save_json' (see the encoder)
+                    # See controversy here: https://github.com/python/cpython/issues/107779
+                    obj[key] = datetime.strptime(val, DATE_FORMAT)
                 except ValueError:
                     try:
-                        # Datetime -> Encoder saves datetimes as isoformat
-                        obj[key] = datetime.fromisoformat(val)
+                        if "." in val:
+                            # We have microseconds...
+                            obj[key] = datetime.strptime(val, DATE_FORMAT + ".%f")
+                        else:
+                            # Date -> Encoder saves date as isoformat: %Y-%m-%d
+                            obj[key] = datetime.strptime(val, "%Y-%m-%d").date()
                     except ValueError:
                         obj[key] = val
             else:
