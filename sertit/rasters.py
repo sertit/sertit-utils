@@ -25,7 +25,6 @@ from typing import Any, Callable, Optional, Union
 
 import geopandas as gpd
 import numpy as np
-import psutil
 import xarray as xr
 from shapely.geometry import Polygon
 
@@ -40,7 +39,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
 
-from sertit import geometry, logs, misc, path, rasters_rio, vectors
+from sertit import dask, geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
 
 MAX_CORES = rasters_rio.MAX_CORES
@@ -95,75 +94,6 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
         pass
 
     return nodata
-
-
-def get_or_create_dask_client(processes=False):
-    """
-    Return default Dask client or create a local cluster and linked  client if not existing
-    Returns:
-    """
-
-    try:
-        from dask.distributed import Client, get_client  # noqa
-
-        ram_info = psutil.virtual_memory()
-        available_ram = ram_info.available / 1024 / 1024 / 1024
-        available_ram = 0.9 * available_ram
-
-        n_workers = 1
-        memory_limit = f"{available_ram}Gb"
-        if available_ram >= 16:
-            n_workers = available_ram // 16
-            memory_limit = f"{16}Gb"
-        try:
-            # Return default client
-            return get_client()  # noqa
-        except ValueError:
-            if processes:
-                # Create a local cluster and return client
-                LOGGER.warning(
-                    f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
-                )
-                return Client(
-                    n_workers=int(n_workers),
-                    threads_per_worker=4,
-                    memory_limit=memory_limit,
-                )
-            else:
-                # Create a local cluster (threaded)
-                LOGGER.warning("Init local cluster (threaded)")
-                return Client(
-                    processes=processes,
-                )
-
-    except ModuleNotFoundError:
-        LOGGER.warning(
-            "Can't import dask. If you experiment out of memory issue, consider installing dask."
-        )
-
-    return None
-
-
-def get_dask_lock(name):
-    """
-    Get a dask lock with given name. This lock uses the default client if existing;
-    or create a local cluster (get_or_create_dask_client) otherwise.
-    Args:
-        name: The name of the lock
-    Returns:
-    """
-
-    try:
-        client = get_or_create_dask_client()
-        from dask.diagnostics import ProgressBar  # noqa
-        from dask.distributed import Client, Lock, get_client  # noqa
-
-        return Lock(name, client=client)  # noqa
-    except ModuleNotFoundError:
-        LOGGER.warning(
-            "Can't import dask. If you experiment out of memory issue, consider installing dask."
-        )
-        return None
 
 
 def get_nodata_value_from_dtype(dtype) -> float:
@@ -1157,7 +1087,7 @@ def write(
 
     else:
         # Get default client's lock
-        kwargs["lock"] = kwargs.get("lock", get_dask_lock("rio"))
+        kwargs["lock"] = kwargs.get("lock", dask.get_dask_lock("rio"))
 
         # Set tiles by default
         kwargs["tiled"] = kwargs.get("tiled", True)

@@ -19,7 +19,7 @@ import sys
 from enum import unique
 from functools import wraps
 
-from sertit import AnyPath, unistra
+from sertit import AnyPath, dask, unistra
 from sertit.misc import ListEnum
 
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
@@ -72,9 +72,7 @@ def dask_env(function):
     def dask_env_wrapper(*_args, **_kwargs):
         """S3 environment wrapper"""
         try:
-            from dask.distributed import Client, LocalCluster
-
-            with LocalCluster() as cluster, Client(cluster):
+            with dask.get_or_create_dask_client():
                 print("Using DASK")
                 return function(*_args, **_kwargs)
         except ImportError:

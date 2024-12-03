@@ -3,6 +3,7 @@
 ## 1.43.5 (2024-mm-dd)
 
 - FIX: Fix the ability to save COGs with any dtype with Dask, with the workaround described [here](https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481) (don't compute statistics for problematic dtypes)
+- FIX: Better separability of `dask` (it has its own module now): don't create a client if the user doesn't specify it (as it is not required anymore in `Lock`). This should remove the force-use of `dask`.
 
 ## 1.43.4 (2024-11-28)
 
