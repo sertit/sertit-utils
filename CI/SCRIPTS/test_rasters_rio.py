@@ -419,3 +419,14 @@ def test_get_nodata_deprecation():
             ci.assert_val(
                 get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
             )
+
+
+@s3_env
+def test_write(tmp_path):
+    raster_path = rasters_path().joinpath("raster.tif")
+    test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
+    raster, mtd = rasters_rio.read(raster_path)
+
+    # test deprecation warning
+    with pytest.deprecated_call():
+        rasters_rio.write(raster, mtd, path=test_deprecated_path)

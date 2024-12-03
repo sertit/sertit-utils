@@ -549,6 +549,11 @@ def test_write(dtype, nodata_val, tmp_path):
         )
         _test_raster_after_write(test_path, dtype, nodata_val)
 
+    # test deprecation warning
+    test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
+    with pytest.deprecated_call():
+        rasters.write(raster_xds, path=test_deprecated_path, dtype=dtype)
+
 
 def test_dim():
     """Test on BEAM-DIMAP function"""

@@ -1000,7 +1000,7 @@ def read(
 @any_raster_to_xr_ds
 def write(
     xds: AnyXrDataStructure,
-    path: AnyPathStrType,
+    output_path: AnyPathStrType = None,
     tags: dict = None,
     write_cogs_with_dask: bool = True,
     **kwargs,
@@ -1029,7 +1029,7 @@ def write(
 
     Args:
         xds (AnyXrDataStructure): Path to the raster or a rasterio dataset or a xarray
-        path (AnyPathStrType): Path where to save it (directories should be existing)
+        output_path (AnyPathStrType): Path where to save it (directories should be existing)
         tags (dict): Tags that will be written in your file
         write_cogs_with_dask (bool): If odc-geo and imagecodecs are installed, write your COGs with Dask.
             Otherwise, the array will be loaded into memory before writing it on disk (and can cause MemoryErrors).
@@ -1045,6 +1045,12 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
+    if output_path is None:
+        logs.deprecation_warning(
+            "'path' is deprecated in 'rasters.write'. Use 'output_path' instead."
+        )
+        output_path = kwargs.pop("path")
+
     # Prune empty kwargs to avoid throwing GDAL warnings/errors
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
@@ -1123,7 +1129,7 @@ def write(
                     xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
                         nodata
                     ),
-                    str(path),
+                    str(output_path),
                     stats=compute_stats,
                 ).compute()
                 is_written = True
@@ -1151,14 +1157,14 @@ def write(
 
     # Default write on disk
     if not is_written:
-        LOGGER.debug("Writing your file to disk.")
+        LOGGER.debug(f"Writing your file {path.get_filename(output_path)} to disk.")
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
         if "_FillValue" in xds.attrs:
             xds.attrs.pop("_FillValue")
 
         xds.rio.to_raster(
-            str(path),
+            str(output_path),
             BIGTIFF=bigtiff,
             NUM_THREADS=MAX_CORES,
             tags=tags,

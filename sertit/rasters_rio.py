@@ -1065,9 +1065,9 @@ def read(
 
 
 def write(
-    raster: AnyNumpyArray,
+    raster: AnyRasterType,
     meta: dict,
-    path: AnyPathStrType,
+    output_path: AnyPathStrType = None,
     tags: dict = None,
     **kwargs,
 ) -> None:
@@ -1079,9 +1079,8 @@ def write(
     The file will be compressed if the raster is a mask (saved as uint8)
 
     Args:
-        raster (AnyNumpyArray): Raster to save on disk
-        meta (dict): Basic metadata that will be copied and updated with raster's information
-        path (AnyPathStrType): Path where to save it (directories should be existing)
+        raster (AnyRasterType): Raster to save on disk
+        output_path (AnyPathStrType): Path where to save it (directories should be existing)
         tags (dict): Tags to write to the GeoTiff
         **kwargs: Overloading metadata, ie :code:`nodata=255`
 
@@ -1095,6 +1094,12 @@ def write(
         >>> # Rewrite it on disk
         >>> write(raster, meta, raster_out)
     """
+    if output_path is None:
+        logs.deprecation_warning(
+            "'path' is deprecated in 'rasters_rio.write'. Use 'output_path' instead."
+        )
+        output_path = kwargs.pop("path")
+
     raster_out = raster.copy()
 
     # Prune empty kwargs to avoid throwing GDAL warnings/errors
@@ -1154,7 +1159,7 @@ def write(
         raster_out = np.expand_dims(raster_out, axis=0)
 
     # Write product
-    with rasterio.open(str(path), "w", **out_meta) as ds:
+    with rasterio.open(str(output_path), "w", **out_meta) as ds:
         ds.write(raster_out)
         if tags is not None:
             ds.update_tags(**tags)
