@@ -29,6 +29,10 @@ import xarray as xr
 from CI.SCRIPTS.script_utils import KAPUT_KWARGS, dask_env, rasters_path, s3_env
 from sertit import ci, path, rasters, vectors
 from sertit.rasters import (
+    FLOAT_NODATA,
+    INT8_NODATA,
+    UINT8_NODATA,
+    UINT16_NODATA,
     any_raster_to_xr_ds,
     get_nodata_value,
     get_nodata_value_from_dtype,
@@ -491,14 +495,14 @@ def _test_raster_after_write(test_path, dtype, nodata_val):
 @pytest.mark.parametrize(
     ("dtype", "nodata_val"),
     [
-        pytest.param(np.uint8, 255),
-        pytest.param(np.int8, -128),
-        pytest.param(np.uint16, 65535),
-        pytest.param(np.int16, -9999),
-        pytest.param(np.uint32, 65535),
-        pytest.param(np.int32, 65535),
-        pytest.param(np.float32, -9999),
-        pytest.param(np.float64, -9999),
+        pytest.param(np.uint8, UINT8_NODATA),
+        pytest.param(np.int8, INT8_NODATA),
+        pytest.param(np.uint16, UINT16_NODATA),
+        pytest.param(np.int16, FLOAT_NODATA),
+        pytest.param(np.uint32, UINT16_NODATA),
+        pytest.param(np.int32, UINT16_NODATA),
+        pytest.param(np.float32, FLOAT_NODATA),
+        pytest.param(np.float64, FLOAT_NODATA),
     ],
 )
 def test_write(dtype, nodata_val, tmp_path):
@@ -522,9 +526,7 @@ def test_write(dtype, nodata_val, tmp_path):
 
     # -------------------------------------------------------------------------------------------------
     # Test COGs
-    # Remove some problematic (for now) dtypes
-    # https://github.com/numpy/numpy/issues/25677#issuecomment-2236081970
-    if dtype in [np.float32, np.float64, np.uint32, np.int32]:
+    if dtype not in [np.int8]:
         rasters.write(
             raster_xds,
             test_cog_path,

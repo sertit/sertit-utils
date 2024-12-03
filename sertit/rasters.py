@@ -1170,7 +1170,7 @@ def write(
         kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs  # noqa: W503
     ):
-        if xds.encoding["dtype"] in [np.float32, np.float64, float]:
+        if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
             kwargs["predictor"] = "3"
         else:
             kwargs["predictor"] = "2"
@@ -1183,11 +1183,18 @@ def write(
                 from odc.geo import cog, xr  # noqa
 
                 LOGGER.debug("Writing your COG with Dask!")
+
+                # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
+                # OverflowError: Python integer 999999 out of bounds for xxx
+                # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
+                compute_stats = np.dtype(dtype).itemsize >= 4
+
                 cog.save_cog_with_dask(
                     xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
                         nodata
                     ),
                     str(path),
+                    stats=compute_stats,
                 ).compute()
                 is_written = True
 
