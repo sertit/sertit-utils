@@ -37,7 +37,8 @@ setuptools.setup(
             "rasterio>=1.3.10",
             "rioxarray>=0.10.0",
             "colorlog",
-            "dask[complete]",
+            "dask[complete]>=2024.5.1",
+            "odc-geo>=0.4.6",
         ],
         "rasters_rio": ["rasterio>=1.3.10"],
         "rasters": ["rasterio>=1.3.10", "rioxarray>=0.10.0"],
@@ -45,6 +46,7 @@ setuptools.setup(
             "rasterio[s3]>=1.3.10",
             "rioxarray>=0.10.0",
             "dask[complete]>=2024.5.1",
+            "odc-geo>=0.4.6",
         ],
     },
     classifiers=[

@@ -3,6 +3,7 @@
 ## 1.44.0 (2024-mm-dd)
 
 - **BREAKING CHANGE**: Renaming of `rasters(_rio).write` argument `path` to `output_path` to avoid shadowing `sertit.path` module. Older argument is deprecated.
+- ENH: Use `odc.geo.xr.mask` instead of `rasterio.mask` to be dask-compatible in `rasters` (true for `paint` and `mask`)
 - FIX: Fix the ability to save COGs with any dtype with Dask, with the workaround described [here](https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481) (don't compute statistics for problematic dtypes)
 - FIX: Better separability of `dask` (it has its own module now): don't create a client if the user doesn't specify it (as it is not required anymore in `Lock`). This should remove the force-use of `dask`.
 

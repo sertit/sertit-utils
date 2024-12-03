@@ -582,6 +582,31 @@ def get_nodata_vector(
     return nodata[nodata.raster_val == 0]
 
 
+def _to_odc_geometry(
+    xds: AnyXrDataStructure, shapes: Union[gpd.GeoDataFrame, Polygon, list]
+):
+    """"""
+    from odc.geo import geom
+
+    # Retrieve raster CRS
+    xds_crs = xds.rio.crs
+
+    # Convert input geometry in a GeoDataFrame
+    if isinstance(shapes, gpd.GeoSeries):
+        shapes = gpd.GeoDataFrame(geometry=shapes.geometry, crs=shapes.crs)
+    elif isinstance(shapes, list):
+        shapes = gpd.GeoDataFrame(geometry=shapes, crs=xds_crs)
+    elif isinstance(shapes, Polygon):
+        shapes = gpd.GeoDataFrame(geometry=[shapes], crs=xds_crs)
+
+    # Dissolve to get a unique polygon
+    shapes = geom.Geometry(
+        shapes.to_crs(xds_crs).dissolve().geometry.iat[0], crs=xds_crs
+    )
+
+    return shapes
+
+
 @any_raster_to_xr_ds
 def mask(
     xds: AnyRasterType,
@@ -591,7 +616,7 @@ def mask(
 ) -> AnyXrDataStructure:
     """
     Masking a dataset:
-    setting nodata outside of the given shapes, but without cropping the raster to the shapes extent.
+    setting nodata outside the given shapes, but without cropping the raster to the shapes extent.
 
     The original nodata is kept and completed with the nodata provided by the shapes.
 
@@ -604,7 +629,7 @@ def mask(
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
+        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
         **kwargs: Other rasterio.mask options
 
     Returns:
@@ -624,10 +649,31 @@ def mask(
         >>> mask1 == mask2
         True
     """
-    # Use classic option
-    arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+    try:
+        # Works with dask
+        from odc.geo import xr
 
-    masked_xds = xds.copy(data=arr)
+        LOGGER.debug("Using 'odc-geo' masking function")
+
+        # Get the only keyword that are existing in 'xr.mask'
+        invert = kwargs.get("invert")
+        all_touched = kwargs.get("all_touched")
+
+        # Convert input shapes to an odc.Geometry
+        shapes = _to_odc_geometry(xds, shapes)
+
+        # Mask data
+        masked_xds = xds.copy(
+            data=xr.mask(xds, poly=shapes, invert=invert, all_touched=all_touched)
+        )
+
+    except ImportError:
+        LOGGER.debug("Using 'rasterio' masking function")
+
+        # Use classic option if odc-geo is not installed
+        arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
+
+        masked_xds = xds.copy(data=arr)
 
     if nodata:
         masked_xds = set_nodata(masked_xds, nodata)
@@ -688,9 +734,7 @@ def paint(
         xds_fill = xds
 
     # Use classic option
-    arr, meta = rasters_rio.mask(
-        xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs
-    )
+    arr = mask(xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs)
 
     # Create and fill na values created by the mask to the wanted value
     painted_xds = xds.copy(data=arr)
@@ -1157,7 +1201,7 @@ def write(
 
     # Default write on disk
     if not is_written:
-        LOGGER.debug(f"Writing your file {path.get_filename(output_path)} to disk.")
+        LOGGER.debug(f"Writing your file '{path.get_filename(output_path)}' to disk.")
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
         if "_FillValue" in xds.attrs:
@@ -1256,6 +1300,8 @@ def sieve(
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
     """
+    # TODO: daskify this
+
     assert connectivity in [4, 8]
 
     # Use this trick to make the sieve work
@@ -1268,6 +1314,7 @@ def sieve(
             data, size=sieve_thresh, connectivity=connectivity, mask=mask
         )
     except TypeError:
+        LOGGER.debug("xr.apply_ufunc")
         # Manage dask arrays that fails with rasterio sieve
         sieved_arr = features.sieve(
             data.compute(),
@@ -1427,6 +1474,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
         >>> merge_gtiff(paths_utm32630, mosaic_32630)
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
     """
+    # TODO: daskify this
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
 
 
@@ -1460,6 +1508,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
                 [1, 1, 0, 0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
     """
+    # TODO: daskify this
     return rasters_rio.unpackbits(array, nof_bits)
 
 
@@ -1492,6 +1541,7 @@ def read_bit_array(
     if isinstance(bit_mask, xr.DataArray):
         bit_mask = bit_mask.data
 
+    # TODO: daskify this
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
@@ -1717,6 +1767,8 @@ def hillshade(
     Returns:
         AnyXrDataStructure: Hillshade
     """
+    # TODO: daskify this
+
     # Use classic option
     arr, meta = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
 
@@ -1740,6 +1792,8 @@ def slope(
     Returns:
         AnyXrDataStructure: Slope
     """
+    # TODO: daskify this
+
     # Use classic option
     arr, meta = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
 

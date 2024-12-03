@@ -22,6 +22,7 @@ geopandas>=0.14.4
 cloudpathlib[all]>=0.12.1
 xarray>=2024.06.0
 shapely >= 2.0.0
+odc-geo>=0.4.6
 
 # Colorlog
 colorlog
