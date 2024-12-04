@@ -1275,6 +1275,7 @@ def collocate(
         collocated_xds = _collocate_dataarray(reference, other, resampling, **kwargs)
     else:
         try:
+            # Code inspired by the 'reproject_match' code from RasterDataset
             collocated_xds = xr.Dataset(attrs=other.attrs)
             for var in other.rio.vars:
                 x_dim, y_dim = other[var].rio.x_dim, other[var].rio.y_dim
@@ -1309,7 +1310,7 @@ def collocate(
     collocated_xds.rio.update_attrs(other.attrs, inplace=True)
     collocated_xds.rio.update_encoding(other.encoding, inplace=True)
 
-    return collocated_xds.rename(other.name)
+    return collocated_xds
 
 
 @any_raster_to_xr_ds
