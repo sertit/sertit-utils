@@ -1216,6 +1216,32 @@ def write(
         )
 
 
+def _collocate_dataarray(
+    reference: xr.DataArray,
+    other: AnyXrDataStructure,
+    resampling: Resampling = Resampling.nearest,
+    **kwargs,
+) -> xr.DataArray:
+    if other.rio.shape == reference.rio.shape and other.rio.crs == reference.rio.crs:
+        # Same rasters, but just a bit shifted max (i.e. error in float64 coordinates)
+        # Should do this (but done anyway in the end)
+        # collocated_xda = other.assign_coords(
+        #     {
+        #         "x": reference.x,
+        #         "y": reference.y,
+        #     }
+        # )
+        collocated_xda = other
+    else:
+        old_dtype = other.dtype
+        collocated_xda = (
+            other.astype(reference.dtype)
+            .rio.reproject_match(reference, resampling=resampling)
+            .astype(old_dtype)
+        )
+    return collocated_xda
+
+
 def collocate(
     reference: AnyXrDataStructure,
     other: AnyXrDataStructure,
@@ -1246,16 +1272,30 @@ def collocate(
         >>> write(col_xds, col_path)
     """
     if isinstance(other, xr.DataArray):
-        old_dtype = other.dtype
-        collocated_xds = (
-            other.astype(reference.dtype)
-            .rio.reproject_match(reference, resampling=resampling)
-            .astype(old_dtype)
-        )
+        collocated_xds = _collocate_dataarray(reference, other, resampling, **kwargs)
     else:
-        collocated_xds = other.rio.reproject_match(
-            reference, resampling=resampling, **kwargs
-        )
+        try:
+            collocated_xds = xr.Dataset(attrs=other.attrs)
+            for var in other.rio.vars:
+                x_dim, y_dim = other[var].rio.x_dim, other[var].rio.y_dim
+                collocated_xds[var] = _collocate_dataarray(
+                    other[var].rio.set_spatial_dims(
+                        x_dim=x_dim, y_dim=y_dim, inplace=True
+                    ),
+                    reference[var].rio.set_spatial_dims(
+                        x_dim=x_dim, y_dim=y_dim, inplace=True
+                    ),
+                    resampling=resampling,
+                    **kwargs,
+                )
+            collocated_xds = collocated_xds.rio.set_spatial_dims(
+                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim, inplace=True
+            )
+        except Exception:
+            # For datasets, maybe the code here over is a bit much, so use the reproject match function as a backup (just in case)
+            collocated_xds = other.rio.reproject_match(
+                reference, resampling=resampling, **kwargs
+            )
 
     # Bug for now, tiny difference in coords
     collocated_xds = collocated_xds.assign_coords(
@@ -1269,7 +1309,7 @@ def collocate(
     collocated_xds.rio.update_attrs(other.attrs, inplace=True)
     collocated_xds.rio.update_encoding(other.encoding, inplace=True)
 
-    return collocated_xds
+    return collocated_xds.rename(other.name)
 
 
 @any_raster_to_xr_ds

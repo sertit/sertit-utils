@@ -110,7 +110,7 @@ def xds(raster_path, xda, ds_name):
 @s3_env
 @dask_env
 def test_read(tmp_path, raster_path, xda, xds, xda_dask, ds_name, ds_dtype):
-    """Test raster functions"""
+    """Test read function"""
     extent_path = rasters_path().joinpath("extent.geojson")
     footprint_path = rasters_path().joinpath("footprint.geojson")
 
@@ -164,7 +164,7 @@ def test_read(tmp_path, raster_path, xda, xds, xda_dask, ds_name, ds_dtype):
 @s3_env
 @dask_env
 def test_read_with_window(tmp_path, raster_path, mask_path, mask):
-    """Test raster functions"""
+    """Test read (with window) function"""
     raster_window_path = rasters_path().joinpath("window.tif")
     raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
@@ -193,7 +193,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
 @s3_env
 @dask_env
 def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
-    """Test raster functions"""
+    """Test write (basic) function"""
     # DataArray
     xda_out = os.path.join(tmp_path, "test_xda.tif")
     rasters.write(xda, xda_out, dtype=ds_dtype)
@@ -218,7 +218,7 @@ def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
 @s3_env
 @dask_env
 def test_mask(tmp_path, xda, xds, xda_dask, mask):
-    """Test raster functions"""
+    """Test mask function"""
     # DataArray
     xda_masked = os.path.join(tmp_path, "test_mask_xda.tif")
     mask_xda = rasters.mask(xda, mask.geometry, **KAPUT_KWARGS)
@@ -245,6 +245,7 @@ def test_mask(tmp_path, xda, xds, xda_dask, mask):
 @s3_env
 @dask_env
 def test_paint(tmp_path, xda, xds, xda_dask, mask):
+    """Test paint function"""
     # DataArray
     xda_paint_true = os.path.join(tmp_path, "test_paint_true_xda.tif")
     xda_paint_false = os.path.join(tmp_path, "test_paint_false_xda.tif")
@@ -284,7 +285,7 @@ def test_paint(tmp_path, xda, xds, xda_dask, mask):
 @s3_env
 @dask_env
 def test_crop(tmp_path, xda, xds, xda_dask, mask):
-    """Test raster functions"""
+    """Test crop function"""
     # DataArray
     xda_cropped = os.path.join(tmp_path, "test_crop_xda.tif")
     crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
@@ -311,7 +312,7 @@ def test_crop(tmp_path, xda, xds, xda_dask, mask):
 @s3_env
 @dask_env
 def test_sieve(tmp_path, xda, xds, xda_dask):
-    """Test raster functions"""
+    """Test sieve function"""
     # DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
     sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
@@ -347,24 +348,20 @@ def test_sieve(tmp_path, xda, xds, xda_dask):
 
 @s3_env
 @dask_env
-def test_collocate(tmp_path, xda, xds, xda_dask):
-    """Test raster functions"""
+def test_collocate_self(tmp_path, xda, xds, xda_dask):
+    """Test collocate (with itself) functions"""
     # DataArray
-    coll_xda = rasters.collocate(
-        xda, xda, **KAPUT_KWARGS
-    )  # Just hope that it doesn't crash
+    coll_xda = rasters.collocate(xda, xda, **KAPUT_KWARGS)
     xr.testing.assert_equal(coll_xda, xda)
     ci.assert_xr_encoding_attrs(xda, coll_xda)
 
     # Dataset
-    coll_xds = rasters.collocate(xds, xds)  # Just hope that it doesn't crash
+    coll_xds = rasters.collocate(xds, xds)
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
     # With dask
-    coll_xda_dask = rasters.collocate(
-        xda_dask, xda_dask
-    )  # Just hope that it doesnt crash
+    coll_xda_dask = rasters.collocate(xda_dask, xda_dask)
     # assert coll_xda_dask.chunks is not None TODO
     xr.testing.assert_equal(coll_xda_dask, xda_dask)
     ci.assert_xr_encoding_attrs(xda_dask, coll_xda_dask)
@@ -372,8 +369,48 @@ def test_collocate(tmp_path, xda, xds, xda_dask):
 
 @s3_env
 @dask_env
+def test_collocate(tmp_path, xda, xds, xda_dask):
+    """Test collocate functions"""
+
+    def __test_collocate_output(ref, other, coll, dtype):
+        """Test collocated outputs"""
+
+        # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
+        ci.assert_xr_encoding_attrs(other, coll)
+        ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")
+        ci.assert_val(coll.name, other.name, f"Collocated name ({float})")
+
+        # But located on the reference one
+        assert ref.coords.identical(coll.coords)
+        with pytest.raises(AssertionError):
+            ci.assert_val(ref.coords, other.coords, f"Raw coordinates ({dtype})")
+
+    # Inputs
+    other_float = rasters.read(
+        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m.tif")
+    )
+    other_uint8 = rasters.read(
+        rasters_path().joinpath(
+            "20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m_uint8.tif"
+        )
+    )
+    ref = rasters.read(
+        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_HILLSHADE_MERIT_DEM.tif")
+    )
+
+    # Other in float
+    coll_float = rasters.collocate(reference=ref, other=other_float)
+    __test_collocate_output(ref, other_float, coll_float, "float")
+
+    # Other in uint8
+    coll_uint8 = rasters.collocate(reference=ref, other=other_uint8)
+    __test_collocate_output(ref, other_uint8, coll_uint8, "uint8")
+
+
+@s3_env
+@dask_env
 def test_merge_gtiff(tmp_path, raster_path):
-    """Test raster functions"""
+    """Test merge_gtiff function"""
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
     rasters.merge_gtiff(
@@ -389,7 +426,7 @@ def test_merge_gtiff(tmp_path, raster_path):
 @s3_env
 @dask_env
 def test_vectorize(tmp_path, raster_path, ds_name, xda, xds, xda_dask):
-    """Test raster functions"""
+    """Test vectorize function"""
     if shapely.__version__ >= "1.8a1":
         vect_truth_path = rasters_path().joinpath("vector.geojson")
         diss_truth_path = rasters_path().joinpath("dissolved.geojson")
@@ -423,7 +460,7 @@ def test_vectorize(tmp_path, raster_path, ds_name, xda, xds, xda_dask):
 @s3_env
 @dask_env
 def test_get_valid_vec(tmp_path, xda, xds, xda_dask, ds_name):
-    """Test raster functions"""
+    """Test get_valid_vector function"""
     valid_truth_path = rasters_path().joinpath("valid.geojson")
 
     # ----------------------------------------------------------------------------------------------
@@ -446,7 +483,7 @@ def test_get_valid_vec(tmp_path, xda, xds, xda_dask, ds_name):
 @s3_env
 @dask_env
 def test_nodata_vec(tmp_path, xda, xds, xda_dask, ds_name):
-    """Test raster functions"""
+    """Test get_nodata_vector function"""
     nodata_truth_path = rasters_path().joinpath("nodata.geojson")
 
     # ----------------------------------------------------------------------------------------------
@@ -472,6 +509,7 @@ def test_nodata_vec(tmp_path, xda, xds, xda_dask, ds_name):
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt(tmp_path, raster_path):
+    """Test merge_vrt function"""
     # SAME CRS
     raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
@@ -498,6 +536,7 @@ def test_vrt(tmp_path, raster_path):
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_merge_different_crs(tmp_path):
+    """Test merge_vrt (with different CRS) function"""
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
     true_tif_path = rasters_path().joinpath("merge_32-31.tif")
@@ -556,6 +595,7 @@ def _test_raster_after_write(test_path, dtype, nodata_val):
     ],
 )
 def test_write(dtype, nodata_val, tmp_path, xda):
+    """Test write (global check + cogs) function"""
     dtype_str = dtype.__name__
 
     test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
