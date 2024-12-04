@@ -33,10 +33,8 @@ from sertit.rasters import (
     UINT8_NODATA,
     UINT16_NODATA,
     any_raster_to_xr_ds,
-    get_nodata_value,
     get_nodata_value_from_dtype,
     get_nodata_value_from_xr,
-    path_xarr_dst,
 )
 from sertit.vectors import EPSG_4326
 
@@ -756,10 +754,12 @@ def test_rasterize(tmp_path, raster_path):
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
     raster_true_path = rasters_path().joinpath("rasterized.tif")
 
+    chunks = {"band": 1, "x": 2048, "y": 2084}
+
     # Binary vector
     out_bin_path = os.path.join(tmp_path, "out_bin.tif")
     rast_bin = rasters.rasterize(
-        rasters.read(raster_path, chunks=[1, 2048, 2048]), vec_path, **KAPUT_KWARGS
+        rasters.read(raster_path, chunks=chunks), vec_path, **KAPUT_KWARGS
     )
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
@@ -768,7 +768,7 @@ def test_rasterize(tmp_path, raster_path):
     # Binary vector with floating point raster
     out_bin_path = os.path.join(tmp_path, "out_bin_float.tif")
     rast_bin = rasters.rasterize(
-        rasters.read(raster_float_path, chunks=[1, 2048, 2048]), vec_path
+        rasters.read(raster_float_path, chunks=chunks), vec_path
     )
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
@@ -786,6 +786,7 @@ def test_rasterize(tmp_path, raster_path):
 
 @s3_env
 def test_decorator_deprecation(raster_path):
+    from sertit.rasters import path_xarr_dst
 
     @any_raster_to_xr_ds
     def _ok_rasters(xds):
@@ -797,8 +798,8 @@ def test_decorator_deprecation(raster_path):
         assert isinstance(xds, xr.DataArray)
         return xds
 
-    # Not able to warn deprecation from inside the decorator
-    xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
+    with pytest.deprecated_call():
+        xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
 
 
 def test_get_nodata_deprecation():
@@ -821,6 +822,8 @@ def test_get_nodata_deprecation():
         "float",
     ]:
         with pytest.deprecated_call():
+            from sertit.rasters import get_nodata_value
+
             ci.assert_val(
                 get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
             )

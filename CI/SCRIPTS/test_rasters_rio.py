@@ -27,12 +27,7 @@ from rasterio.windows import Window
 
 from CI.SCRIPTS.script_utils import KAPUT_KWARGS, rasters_path, s3_env
 from sertit import ci, rasters_rio, vectors
-from sertit.rasters_rio import (
-    any_raster_to_rio_ds,
-    get_nodata_value,
-    get_nodata_value_from_dtype,
-    path_arr_dst,
-)
+from sertit.rasters_rio import any_raster_to_rio_ds, get_nodata_value_from_dtype
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
@@ -434,6 +429,8 @@ def test_read_idx():
 
 @s3_env
 def test_decorator_deprecation(raster_path):
+    from sertit.rasters_rio import path_arr_dst
+
     @any_raster_to_rio_ds
     def _ok_rasters(ds):
         return ds.read()
@@ -466,6 +463,8 @@ def test_get_nodata_deprecation():
         "float",
     ]:
         with pytest.deprecated_call():
+            from sertit.rasters_rio import get_nodata_value
+
             ci.assert_val(
                 get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
             )
