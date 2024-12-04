@@ -360,9 +360,14 @@ def test_collocate_self(tmp_path, xda, xds, xda_dask):
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
+    # Dataset with dataarray
+    coll_xds = rasters.collocate(reference=xda, other=xds)
+    xr.testing.assert_equal(coll_xds, xds)
+    ci.assert_xr_encoding_attrs(xds, coll_xds)
+
     # With dask
     coll_xda_dask = rasters.collocate(xda_dask, xda_dask)
-    # assert coll_xda_dask.chunks is not None TODO
+    assert coll_xda_dask.chunks is not None
     xr.testing.assert_equal(coll_xda_dask, xda_dask)
     ci.assert_xr_encoding_attrs(xda_dask, coll_xda_dask)
 

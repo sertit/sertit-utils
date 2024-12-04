@@ -1223,6 +1223,9 @@ def _collocate_dataarray(
     **kwargs,
 ) -> xr.DataArray:
     if other.rio.shape == reference.rio.shape and other.rio.crs == reference.rio.crs:
+        LOGGER.debug(
+            "Collocating equivalent rasters by only modifying their coordinates."
+        )
         # Same rasters, but just a bit shifted max (i.e. error in float64 coordinates)
         # Should do this (but done anyway in the end)
         # collocated_xda = other.assign_coords(
@@ -1233,7 +1236,30 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
-        collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
+        try:
+            from odc.geo import xr
+
+            LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
+            collocated_xda = xr.xr_reproject(
+                src=other,
+                how=reference.rio.crs,
+                shape=reference.rio.shape,
+                resampling=resampling,
+                num_threads=MAX_CORES,
+                dst_nodata=other.rio.nodata,
+            ).rename(other.name)
+
+            # Set nodata in rioxr's way and remove odc.geo nodata in attributes
+            collocated_xda.attrs.pop("nodata")
+            collocated_xda.rio.write_nodata(
+                other.rio.nodata, encoded=True, inplace=True
+            )
+            collocated_xda.rio.set_nodata(other.rio.nodata, inplace=True)
+
+        except ImportError:
+            LOGGER.debug("Collocating with 'rioxarray.reproject_match'")
+            # If odc-geo isn't installed, use rioxarray (not daskified!)
+            collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
     return collocated_xda
 
 
@@ -1267,20 +1293,31 @@ def collocate(
         >>> write(col_xds, col_path)
     """
     if isinstance(other, xr.DataArray):
-        collocated_xds = _collocate_dataarray(reference, other, resampling, **kwargs)
+        collocated_xds = _collocate_dataarray(
+            reference=reference, other=other, resampling=resampling, **kwargs
+        )
     else:
         try:
             # Code inspired by the 'reproject_match' code from RasterDataset
             collocated_xds = xr.Dataset(attrs=other.attrs)
             for var in other.rio.vars:
+                # Get spatial dimensions from current array
                 x_dim, y_dim = other[var].rio.x_dim, other[var].rio.y_dim
+
+                if isinstance(reference, xr.DataArray):
+                    ref = reference
+                else:
+                    # assert we have the same spatial dimensions in ref and other
+                    ref = reference[var].rio.set_spatial_dims(
+                        x_dim=x_dim, y_dim=y_dim, inplace=True
+                    )
+
+                # Colocate dataarray by dataarray
                 collocated_xds[var] = _collocate_dataarray(
-                    other[var].rio.set_spatial_dims(
+                    other=other[var].rio.set_spatial_dims(
                         x_dim=x_dim, y_dim=y_dim, inplace=True
                     ),
-                    reference[var].rio.set_spatial_dims(
-                        x_dim=x_dim, y_dim=y_dim, inplace=True
-                    ),
+                    reference=ref,
                     resampling=resampling,
                     **kwargs,
                 )
