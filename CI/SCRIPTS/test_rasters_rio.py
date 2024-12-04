@@ -38,23 +38,195 @@ from sertit.vectors import EPSG_4326
 ci.reduce_verbosity()
 
 
+@pytest.fixture
+def raster_path():
+    return rasters_path().joinpath("raster.tif")
+
+
+@pytest.fixture
+def raster_meta(raster_path):
+    return rasters_rio.read(raster_path, **KAPUT_KWARGS)
+
+
+@pytest.fixture
+def mask_path():
+    return rasters_path().joinpath("raster_mask.geojson")
+
+
+@pytest.fixture
+def mask(mask_path):
+    return vectors.read(mask_path)
+
+
+@pytest.fixture
+def ds_dtype(raster_path):
+    with rasterio.open(str(raster_path)) as ds:
+        return ds.meta["dtype"]
+
+
 @s3_env
-def test_rasters_rio():
-    """Test raster functions"""
-    # Rasters
-    raster_path = rasters_path().joinpath("raster.tif")
-    raster_masked_path = rasters_path().joinpath("raster_masked.tif")
-    raster_cropped_path = rasters_path().joinpath("raster_cropped.tif")
-    raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
-    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
-    raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
+def test_read(tmp_path, raster_path, mask_path, raster_meta):
+    """Test read functions"""
     raster_window_path = rasters_path().joinpath("window.tif")
     raster_window_20_path = rasters_path().joinpath("window_20.tif")
-
-    # Vectors
-    mask_path = rasters_path().joinpath("raster_mask.geojson")
     extent_path = rasters_path().joinpath("extent.geojson")
     footprint_path = rasters_path().joinpath("footprint.geojson")
+
+    # Get Extent
+    extent = rasters_rio.get_extent(raster_path)
+    truth_extent = vectors.read(extent_path)
+    ci.assert_geom_equal(extent, truth_extent)
+
+    # Get Footprint
+    footprint = rasters_rio.get_footprint(raster_path)
+    truth_footprint = vectors.read(footprint_path)
+    ci.assert_geom_equal(footprint, truth_footprint)
+
+    # Read
+    raster, meta = raster_meta
+    with rasterio.open(str(raster_path)) as ds:
+        raster_1, meta1 = rasters_rio.read(ds, resolution=20)
+        raster_2, _ = rasters_rio.read(ds, resolution=[20, 20])
+        raster_3, _ = rasters_rio.read(ds, size=(meta1["width"], meta1["height"]))
+        raster_4, _ = rasters_rio.read(raster_path, indexes=[1])
+        with pytest.raises(ValueError):
+            rasters_rio.read(ds, resolution=[20, 20, 20])
+
+        assert raster.shape == (ds.count, ds.height, ds.width)
+        assert meta["crs"] == ds.crs
+        assert meta["transform"] == ds.transform
+        np.testing.assert_array_equal(raster_1, raster_2)
+        np.testing.assert_array_equal(raster_1, raster_3)
+        np.testing.assert_array_equal(raster, raster_4)  # 2D array
+
+        # -- Read with window
+        window_out = os.path.join(tmp_path, "test_xda_window.tif")
+        window, w_mt = rasters_rio.read(
+            raster_path,
+            window=mask_path,
+        )
+        rasters_rio.write(window, w_mt, window_out, **KAPUT_KWARGS)
+        ci.assert_raster_equal(window_out, raster_window_path)
+
+        # Gdf
+        window_20_out = os.path.join(tmp_path, "test_xda_20_window.tif")
+        gdf = vectors.read(mask_path)
+        bounds = gdf.bounds.values[0]
+        window_20, w_mt_20 = rasters_rio.read(
+            raster_path, window=gdf.to_crs(EPSG_4326), resolution=20
+        )
+        rasters_rio.write(window_20, w_mt_20, window_20_out)
+        ci.assert_raster_equal(window_20_out, raster_window_20_path)
+
+        # Bounds
+        window_20_2, w_mt_20_2 = rasters_rio.read(
+            raster_path, window=bounds, resolution=20
+        )
+        np.testing.assert_array_equal(window_20, window_20_2)
+        ci.assert_meta(w_mt_20, w_mt_20_2)
+
+        # Window
+        window_20_3, w_mt_20_3 = rasters_rio.read(
+            raster_path,
+            window=Window(col_off=57, row_off=0, width=363, height=321),
+            resolution=20,
+        )
+        np.testing.assert_array_equal(window_20, window_20_3)
+        ci.assert_meta(w_mt_20, w_mt_20_3)
+
+        with pytest.raises(FileNotFoundError):
+            rasters_rio.read(
+                raster_path,
+                window=rasters_path().joinpath("non_existing_window.kml"),
+            )
+
+
+@s3_env
+def test_write(tmp_path, raster_path, raster_meta):
+    """Test write functions"""
+    raster_out = os.path.join(tmp_path, "test.tif")
+
+    rasters_rio.write(*raster_meta, raster_out)
+
+    assert os.path.isfile(raster_out)
+    ci.assert_raster_equal(raster_path, raster_out)
+
+
+@s3_env
+def test_mask(tmp_path, raster_path, mask):
+    """Test mask function"""
+    raster_masked_path = rasters_path().joinpath("raster_masked.tif")
+    raster_masked_out = os.path.join(tmp_path, "test_mask.tif")
+
+    with rasterio.open(str(raster_path)) as ds:
+        mask_arr, mask_meta = rasters_rio.mask(ds, mask.geometry)
+
+    rasters_rio.write(mask_arr, mask_meta, raster_masked_out)
+    ci.assert_raster_equal(raster_masked_out, raster_masked_path)
+
+
+@s3_env
+def test_crop(tmp_path, raster_path, mask):
+    """Test crop function"""
+    # Crop
+    raster_cropped_path = rasters_path().joinpath("raster_cropped.tif")
+    raster_cropped_out = os.path.join(tmp_path, "test_crop.tif")
+
+    with rasterio.open(str(raster_path)) as ds:
+        crop_arr, crop_meta = rasters_rio.crop(ds, mask)
+
+    rasters_rio.write(crop_arr, crop_meta, raster_cropped_out)
+    ci.assert_raster_equal(raster_cropped_out, raster_cropped_path)
+
+
+@s3_env
+def test_sieve(tmp_path, raster_meta):
+    """Test sieve function"""
+    raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
+
+    # Sieve
+    raster, meta = raster_meta
+    sieve_out = os.path.join(tmp_path, "test_sieved.tif")
+
+    sieve_arr, sieve_meta = rasters_rio.sieve(
+        raster, meta, sieve_thresh=20, connectivity=4
+    )
+
+    rasters_rio.write(sieve_arr, sieve_meta, sieve_out, nodata=255)
+    ci.assert_raster_equal(sieve_out, raster_sieved_path)
+
+
+@s3_env
+def test_collocate(raster_meta):
+    """Test collocate function"""
+    raster, meta = raster_meta
+
+    coll_arr, coll_meta = rasters_rio.collocate(
+        meta, raster, meta
+    )  # Just hope that it doesnt crash
+
+    assert coll_meta == meta
+
+
+@s3_env
+def test_merge_gtiff(tmp_path, raster_path):
+    """Test merge_gtiff function"""
+    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
+    raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
+    raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
+
+    rasters_rio.merge_gtiff(
+        [raster_path, raster_to_merge_path],
+        raster_merged_gtiff_out,
+        method="max",
+    )
+
+    ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
+
+
+@s3_env
+def test_vectorize(raster_path):
+    """Test vectorize function"""
     if shapely.__version__ >= "1.8a1":
         vect_truth_path = rasters_path().joinpath("vector.geojson")
         diss_truth_path = rasters_path().joinpath("dissolved.geojson")
@@ -62,155 +234,43 @@ def test_rasters_rio():
         print("USING OLD VECTORS")
         vect_truth_path = rasters_path().joinpath("vector_old.geojson")
         diss_truth_path = rasters_path().joinpath("dissolved_old.geojson")
-    nodata_truth_path = rasters_path().joinpath("nodata.geojson")
+
+    # Vectorize
+    val = 2
+    vect = rasters_rio.vectorize(raster_path)
+    vect_val = rasters_rio.vectorize(raster_path, values=val)
+    vect_val_diss = rasters_rio.vectorize(raster_path, values=val, dissolve=True)
+    vect_val_disc = rasters_rio.vectorize(
+        raster_path, values=[1, 255], keep_values=False
+    )
+    vect_truth = vectors.read(vect_truth_path)
+    diss_truth = vectors.read(diss_truth_path)
+    ci.assert_geom_equal(vect, vect_truth)
+    ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
+    ci.assert_geom_equal(vect_val_diss, diss_truth)
+    ci.assert_geom_equal(vect_val_disc, vect_truth.loc[vect_truth.raster_val == val])
+
+
+@s3_env
+def test_get_valid_vector(raster_path):
+    """Test get_valid_vector function"""
     valid_truth_path = rasters_path().joinpath("valid.geojson")
 
-    # Create tmp file
-    # VRT needs to be build on te same disk
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # tmp_dir = rasters_path().joinpath("OUTPUT_RASTERIO")
-        # os.makedirs(tmp_dir, exist_ok=True)
+    valid_vec = rasters_rio.get_valid_vector(raster_path)
 
-        # Get Extent
-        extent = rasters_rio.get_extent(raster_path)
-        truth_extent = vectors.read(extent_path)
-        ci.assert_geom_equal(extent, truth_extent)
+    valid_truth = vectors.read(valid_truth_path)
+    ci.assert_geom_equal(valid_vec, valid_truth)
 
-        # Get Footprint
-        footprint = rasters_rio.get_footprint(raster_path)
-        truth_footprint = vectors.read(footprint_path)
-        ci.assert_geom_equal(footprint, truth_footprint)
 
-        # Read
-        raster, meta = rasters_rio.read(raster_path, **KAPUT_KWARGS)
-        with rasterio.open(str(raster_path)) as dst:
-            raster_1, meta1 = rasters_rio.read(dst, resolution=20)
-            raster_2, _ = rasters_rio.read(dst, resolution=[20, 20])
-            raster_3, _ = rasters_rio.read(dst, size=(meta1["width"], meta1["height"]))
-            raster_4, _ = rasters_rio.read(raster_path, indexes=[1])
-            with pytest.raises(ValueError):
-                rasters_rio.read(dst, resolution=[20, 20, 20])
+@s3_env
+def test_nodata_vec(raster_path):
+    """Test get_nodata_vector function"""
+    nodata_truth_path = rasters_path().joinpath("nodata.geojson")
 
-            assert raster.shape == (dst.count, dst.height, dst.width)
-            assert meta["crs"] == dst.crs
-            assert meta["transform"] == dst.transform
-            np.testing.assert_array_equal(raster_1, raster_2)
-            np.testing.assert_array_equal(raster_1, raster_3)
-            np.testing.assert_array_equal(raster, raster_4)  # 2D array
+    nodata_vec = rasters_rio.get_nodata_vector(raster_path)
 
-            # -- Read with window
-            window_out = os.path.join(tmp_dir, "test_xda_window.tif")
-            window, w_mt = rasters_rio.read(
-                raster_path,
-                window=mask_path,
-            )
-            rasters_rio.write(window, w_mt, window_out, **KAPUT_KWARGS)
-            ci.assert_raster_equal(window_out, raster_window_path)
-
-            # Gdf
-            window_20_out = os.path.join(tmp_dir, "test_xda_20_window.tif")
-            gdf = vectors.read(mask_path)
-            bounds = gdf.bounds.values[0]
-            window_20, w_mt_20 = rasters_rio.read(
-                raster_path, window=gdf.to_crs(EPSG_4326), resolution=20
-            )
-            rasters_rio.write(window_20, w_mt_20, window_20_out)
-            ci.assert_raster_equal(window_20_out, raster_window_20_path)
-
-            # Bounds
-            window_20_2, w_mt_20_2 = rasters_rio.read(
-                raster_path, window=bounds, resolution=20
-            )
-            np.testing.assert_array_equal(window_20, window_20_2)
-            ci.assert_meta(w_mt_20, w_mt_20_2)
-
-            # Window
-            window_20_3, w_mt_20_3 = rasters_rio.read(
-                raster_path,
-                window=Window(col_off=57, row_off=0, width=363, height=321),
-                resolution=20,
-            )
-            np.testing.assert_array_equal(window_20, window_20_3)
-            ci.assert_meta(w_mt_20, w_mt_20_3)
-
-            with pytest.raises(FileNotFoundError):
-                rasters_rio.read(
-                    raster_path,
-                    window=rasters_path().joinpath("non_existing_window.kml"),
-                )
-
-            # Write
-            raster_out = os.path.join(tmp_dir, "test.tif")
-            rasters_rio.write(raster, meta, raster_out)
-            assert os.path.isfile(raster_out)
-
-            # Mask
-            raster_masked_out = os.path.join(tmp_dir, "test_mask.tif")
-            mask = vectors.read(mask_path)
-            mask_arr, mask_meta = rasters_rio.mask(dst, mask.geometry)
-            rasters_rio.write(mask_arr, mask_meta, raster_masked_out)
-
-            # Crop
-            raster_cropped_out = os.path.join(tmp_dir, "test_crop.tif")
-            crop_arr, crop_meta = rasters_rio.crop(dst, mask)
-            rasters_rio.write(crop_arr, crop_meta, raster_cropped_out)
-
-            # Sieve
-            sieve_out = os.path.join(tmp_dir, "test_sieved.tif")
-            sieve_arr, sieve_meta = rasters_rio.sieve(
-                raster, meta, sieve_thresh=20, connectivity=4
-            )
-            rasters_rio.write(sieve_arr, sieve_meta, sieve_out, nodata=255)
-
-            # Collocate
-            coll_arr, coll_meta = rasters_rio.collocate(
-                meta, raster, meta
-            )  # Just hope that it doesnt crash
-            assert coll_meta == meta
-
-            # Merge GTiff
-            raster_merged_gtiff_out = os.path.join(tmp_dir, "test_merged.tif")
-            rasters_rio.merge_gtiff(
-                [raster_path, raster_to_merge_path],
-                raster_merged_gtiff_out,
-                method="max",
-            )
-
-            # Vectorize
-            val = 2
-            vect = rasters_rio.vectorize(raster_path)
-            vect_val = rasters_rio.vectorize(raster_path, values=val)
-            vect_val_diss = rasters_rio.vectorize(
-                raster_path, values=val, dissolve=True
-            )
-            vect_val_disc = rasters_rio.vectorize(
-                raster_path, values=[1, 255], keep_values=False
-            )
-            vect_truth = vectors.read(vect_truth_path)
-            diss_truth = vectors.read(diss_truth_path)
-            ci.assert_geom_equal(vect, vect_truth)
-            ci.assert_geom_equal(vect_val, vect_truth.loc[vect_truth.raster_val == val])
-            ci.assert_geom_equal(vect_val_diss, diss_truth)
-            ci.assert_geom_equal(
-                vect_val_disc, vect_truth.loc[vect_truth.raster_val == val]
-            )
-
-            # Get valid vec
-            valid_vec = rasters_rio.get_valid_vector(raster_path)
-            valid_truth = vectors.read(valid_truth_path)
-            ci.assert_geom_equal(valid_vec, valid_truth)
-
-            # Get nodata vec
-            nodata_vec = rasters_rio.get_nodata_vector(raster_path)
-            nodata_truth = vectors.read(nodata_truth_path)
-            ci.assert_geom_equal(nodata_vec, nodata_truth)
-
-        # Tests
-        ci.assert_raster_equal(raster_path, raster_out)
-        ci.assert_raster_equal(raster_masked_out, raster_masked_path)
-        ci.assert_raster_equal(raster_cropped_out, raster_cropped_path)
-        ci.assert_raster_equal(sieve_out, raster_sieved_path)
-        ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
+    nodata_truth = vectors.read(nodata_truth_path)
+    ci.assert_geom_equal(nodata_vec, nodata_truth)
 
 
 @s3_env
@@ -218,28 +278,24 @@ def test_rasters_rio():
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
-def test_vrt():
+def test_vrt(tmp_path, raster_path):
     raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
-    raster_path = rasters_path().joinpath("raster.tif")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # Merge VRT
-        raster_merged_vrt_out = os.path.join(tmp_dir, "test_merged.vrt")
-        rasters_rio.merge_vrt(
-            [raster_path, raster_to_merge_path], raster_merged_vrt_out
-        )
-        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+    # Merge VRT
+    raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
+    rasters_rio.merge_vrt([raster_path, raster_to_merge_path], raster_merged_vrt_out)
+    ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
-        os.remove(raster_merged_vrt_out)
+    os.remove(raster_merged_vrt_out)
 
-        rasters_rio.merge_vrt(
-            [raster_path, raster_to_merge_path],
-            raster_merged_vrt_out,
-            abs_path=True,
-            **KAPUT_KWARGS,
-        )
-        ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
+    rasters_rio.merge_vrt(
+        [raster_path, raster_to_merge_path],
+        raster_merged_vrt_out,
+        abs_path=True,
+        **KAPUT_KWARGS,
+    )
+    ci.assert_raster_equal(raster_merged_vrt_out, raster_merged_vrt_path)
 
 
 def test_dim():
@@ -299,70 +355,66 @@ def test_dem_fct():
 
 
 @s3_env
-def test_reproj():
+def test_reproj(tmp_path, raster_path):
     """Test reproject fct"""
     dem_path = rasters_path().joinpath(
         "Copernicus_DSM_10_N43_00_W003_00_DEM_resampled.tif"
     )
-    raster_path = rasters_path().joinpath("raster.tif")
     reproj_path = rasters_path().joinpath("reproj_out.tif")
 
     with rasterio.open(str(dem_path)) as src:
-        with rasterio.open(str(raster_path)) as dst:
+        with rasterio.open(str(raster_path)) as ds:
             dst_arr, dst_meta = rasters_rio.reproject_match(
-                dst.meta, src.read(), src.meta, **KAPUT_KWARGS
+                ds.meta, src.read(), src.meta, **KAPUT_KWARGS
             )
 
-            # from dst
-            assert dst.meta["driver"] == dst_meta["driver"]
-            assert dst.meta["width"] == dst_meta["width"]
-            assert dst.meta["height"] == dst_meta["height"]
-            assert dst.meta["transform"] == dst_meta["transform"]
+            # from ds
+            assert ds.meta["driver"] == dst_meta["driver"]
+            assert ds.meta["width"] == dst_meta["width"]
+            assert ds.meta["height"] == dst_meta["height"]
+            assert ds.meta["transform"] == dst_meta["transform"]
 
             # from src
             assert src.meta["count"] == dst_meta["count"]
             assert src.meta["nodata"] == dst_meta["nodata"]
             assert src.meta["dtype"] == dst_meta["dtype"]
 
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                path_out = os.path.join(tmp_dir, "out.tif")
-                rasters_rio.write(dst_arr, dst_meta, path_out)
+            path_out = os.path.join(tmp_path, "out.tif")
+            rasters_rio.write(dst_arr, dst_meta, path_out)
 
-                ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)
+            ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)
 
 
 @s3_env
-def test_rasterize():
+def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
-    raster_path = rasters_path().joinpath("raster.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
     raster_true_path = rasters_path().joinpath("rasterized.tif")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # Binary vector
-        out_bin_path = os.path.join(tmp_dir, "out_bin.tif")
-        rast_bin, bin_meta = rasters_rio.rasterize(raster_path, vec_path)
-        rasters_rio.write(rast_bin, bin_meta, out_bin_path)
+    # Binary vector
+    out_bin_path = os.path.join(tmp_path, "out_bin.tif")
+    rast_bin, bin_meta = rasters_rio.rasterize(raster_path, vec_path)
+    rasters_rio.write(rast_bin, bin_meta, out_bin_path)
 
-        ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
+    ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
 
-        # Vector
-        out_path = os.path.join(tmp_dir, "out.tif")
-        rast, meta = rasters_rio.rasterize(
-            raster_path, vec_path, "raster_val", dtype=np.uint8
-        )
-        rasters_rio.write(rast, meta, out_path)
+    # Vector
+    out_path = os.path.join(tmp_path, "out.tif")
+    rast, meta = rasters_rio.rasterize(
+        raster_path, vec_path, "raster_val", dtype=np.uint8
+    )
+    rasters_rio.write(rast, meta, out_path)
 
-        ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
+    ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
 
 
 def test_read_idx():
     """Test mtd after reading with index"""
-    raster_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
+    l1_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
 
     def _test_idx(idx_list):
-        raster, meta = rasters_rio.read(raster_path, indexes=idx_list)
+        raster, meta = rasters_rio.read(l1_path, indexes=idx_list)
 
         if isinstance(idx_list, list):
             nof_idx = len(idx_list)
@@ -381,9 +433,7 @@ def test_read_idx():
 
 
 @s3_env
-def test_decorator_deprecation():
-    raster_path = rasters_path().joinpath("raster.tif")
-
+def test_decorator_deprecation(raster_path):
     @any_raster_to_rio_ds
     def _ok_rasters(ds):
         return ds.read()
@@ -422,8 +472,7 @@ def test_get_nodata_deprecation():
 
 
 @s3_env
-def test_write(tmp_path):
-    raster_path = rasters_path().joinpath("raster.tif")
+def test_write_deprecated(tmp_path, raster_path):
     test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
     raster, mtd = rasters_rio.read(raster_path)
 
