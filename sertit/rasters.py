@@ -1233,12 +1233,7 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
-        old_dtype = other.dtype
-        collocated_xda = (
-            other.astype(reference.dtype)
-            .rio.reproject_match(reference, resampling=resampling)
-            .astype(old_dtype)
-        )
+        collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
     return collocated_xda
 
 
