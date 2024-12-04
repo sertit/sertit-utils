@@ -1373,7 +1373,7 @@ def sieve(
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
     """
-    # TODO: daskify this
+    # TODO: daskify this: use xr.apply_ufunc?
 
     assert connectivity in [4, 8]
 
@@ -1387,7 +1387,6 @@ def sieve(
             data, size=sieve_thresh, connectivity=connectivity, mask=mask
         )
     except TypeError:
-        LOGGER.debug("xr.apply_ufunc")
         # Manage dask arrays that fails with rasterio sieve
         sieved_arr = features.sieve(
             data.compute(),
@@ -1547,7 +1546,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
         >>> merge_gtiff(paths_utm32630, mosaic_32630)
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
     """
-    # TODO: daskify this
+    # TODO: daskify this. How?
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
 
 
@@ -1581,7 +1580,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
                 [1, 1, 0, 0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
     """
-    # TODO: daskify this
+    # TODO: daskify this, but np.unpackbits don't exist in dask
     return rasters_rio.unpackbits(array, nof_bits)
 
 
@@ -1614,7 +1613,7 @@ def read_bit_array(
     if isinstance(bit_mask, xr.DataArray):
         bit_mask = bit_mask.data
 
-    # TODO: daskify this
+    # TODO: daskify this, should be straightforward if unpackbits is daskified
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
@@ -1840,10 +1839,10 @@ def hillshade(
     Returns:
         AnyXrDataStructure: Hillshade
     """
-    # TODO: daskify this
+    # TODO: daskify this: use xarray-spatial?
 
     # Use classic option
-    arr, meta = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
+    arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
 
     return xds.copy(data=arr)
 
@@ -1865,9 +1864,12 @@ def slope(
     Returns:
         AnyXrDataStructure: Slope
     """
-    # TODO: daskify this
+    # TODO: daskify this: use xarray-spatial?
 
     # Use classic option
-    arr, meta = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
+    arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
 
     return xds.copy(data=arr)
+
+
+# TODO: add other dem-related functions like 'aspect'. Create a dedicated module?
