@@ -39,6 +39,7 @@ setuptools.setup(
             "colorlog",
             "dask[complete]>=2024.5.1",
             "odc-geo>=0.4.6",
+            "xarray-spatial>=0.3.6",
         ],
         "rasters_rio": ["rasterio>=1.3.10"],
         "rasters": ["rasterio>=1.3.10", "rioxarray>=0.10.0"],
@@ -47,6 +48,7 @@ setuptools.setup(
             "rioxarray>=0.10.0",
             "dask[complete]>=2024.5.1",
             "odc-geo>=0.4.6",
+            "xarray-spatial>=0.3.6",
         ],
     },
     classifiers=[
