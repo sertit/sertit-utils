@@ -542,6 +542,7 @@ def test_vrt(tmp_path, raster_path):
 )
 def test_merge_different_crs(tmp_path):
     """Test merge_vrt (with different CRS) function"""
+    tmp_path = "/home/data/CI"
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
     true_tif_path = rasters_path().joinpath("merge_32-31.tif")
@@ -760,18 +761,27 @@ def test_where():
 @dask_env
 def test_dem_fct(tmp_path):
     """Test DEM fct, i.e. slope and hillshade"""
+    tmp_path = "/home/data/CI"
+
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
+    aspect_path = rasters_path().joinpath("aspect.tif")
     hlsd_path = rasters_path().joinpath("hillshade.tif")
     slope_path = rasters_path().joinpath("slope.tif")
     slope_r_path = rasters_path().joinpath("slope_r.tif")
     slope_p_path = rasters_path().joinpath("slope_p.tif")
 
     # Path OUT
+    aspect_path_out = os.path.join(tmp_path, "aspect_out.tif")
     hlsd_path_out = os.path.join(tmp_path, "hillshade_out.tif")
-    slope_path_out = os.path.join(tmp_path, "slope.tif")
-    slope_r_path_out = os.path.join(tmp_path, "slope_r.tif")
-    slope_p_path_out = os.path.join(tmp_path, "slope_p.tif")
+    slope_path_out = os.path.join(tmp_path, "slope_out.tif")
+    slope_r_path_out = os.path.join(tmp_path, "slope_r_out.tif")
+    slope_p_path_out = os.path.join(tmp_path, "slope_p_out.tif")
+
+    # Aspect
+    aspect = rasters.aspect(dem_path)
+    rasters.write(aspect, aspect_path_out, dtype="float32")
+    ci.assert_raster_almost_equal(aspect_path, aspect_path_out, decimal=4)
 
     # Hillshade
     hlsd = rasters.hillshade(dem_path, 34.0, 45.2)

@@ -1879,7 +1879,7 @@ def hillshade(
     - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
 
     Args:
-        xds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
         zenith (float): Zenith angle in degrees
 
@@ -1951,7 +1951,7 @@ def slope(
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
-        xds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         in_pct (bool): Outputs slope in percents
         in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
 
@@ -1981,4 +1981,26 @@ def slope(
     return xds
 
 
-# TODO: add other dem-related functions like 'aspect'. Create a dedicated module?
+@any_raster_to_xr_ds
+@_3d_to_2d
+def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
+    """
+    Compute the aspect of a DEM.
+
+    Args:
+        xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+
+    Returns:
+        AnyXrDataStructure: Aspect
+    """
+    try:
+        from xrspatial import aspect
+
+        return aspect(xds, name=kwargs.get("name", "aspect"))
+    except ImportError:
+        raise NotImplementedError(
+            "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
+        )
+
+
+# TODO: add other DEM-related functions like 'curvature', etc if needed. Create a dedicated module?
