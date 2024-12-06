@@ -757,6 +757,7 @@ def test_where():
 
 
 @s3_env
+@dask_env
 def test_dem_fct(tmp_path):
     """Test DEM fct, i.e. slope and hillshade"""
     # Paths IN
@@ -772,26 +773,29 @@ def test_dem_fct(tmp_path):
     slope_r_path_out = os.path.join(tmp_path, "slope_r.tif")
     slope_p_path_out = os.path.join(tmp_path, "slope_p.tif")
 
-    # Compute
+    # Hillshade
     hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
-    slp = rasters.slope(dem_path)
-    slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
-    slp_p = rasters.slope(dem_path, in_pct=True)
-
-    # Write
     rasters.write(hlsd, hlsd_path_out, dtype="float32")
-    rasters.write(slp, slope_path_out, dtype="float32")
-    rasters.write(slp_r, slope_r_path_out, dtype="float32")
-    rasters.write(slp_p, slope_p_path_out, dtype="float32")
-
-    # Test
     ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
+
+    # Slope
+    slp = rasters.slope(dem_path)
+    rasters.write(slp, slope_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
+
+    # Slope rad
+    slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
+    rasters.write(slp_r, slope_r_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
+
+    # Slope pct
+    slp_p = rasters.slope(dem_path, in_pct=True)
+    rasters.write(slp_p, slope_p_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
 
 
 @s3_env
+@dask_env
 def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
@@ -874,6 +878,8 @@ def test_get_nodata_deprecation():
             )
 
 
+@s3_env
+@dask_env
 def test_get_notata_from_xr(raster_path):
     """Test get_nodata_value_from_xr"""
     ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), 255, "nodata")

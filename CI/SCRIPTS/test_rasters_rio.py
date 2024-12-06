@@ -17,7 +17,6 @@
 """ Script testing raster function (with rasterio) """
 import os
 import shutil
-import tempfile
 
 import numpy as np
 import pytest
@@ -312,41 +311,39 @@ def test_bit():
 
 
 @s3_env
-def test_dem_fct():
+def test_dem_fct(tmp_path):
     """Test DEM fct, i.e. slope and hillshade"""
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
-    hlsd_path = rasters_path().joinpath("hillshade.tif")
-    slope_path = rasters_path().joinpath("slope.tif")
-    slope_r_path = rasters_path().joinpath("slope_r.tif")
-    slope_p_path = rasters_path().joinpath("slope_p.tif")
+    hlsd_path = rasters_path().joinpath("hillshade_rio.tif")
+    slope_path = rasters_path().joinpath("slope_rio.tif")
+    slope_r_path = rasters_path().joinpath("slope_r_rio.tif")
+    slope_p_path = rasters_path().joinpath("slope_p_rio.tif")
 
-    # Create tmp file
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # Path OUT
-        hlsd_path_out = os.path.join(tmp_dir, "hillshade_out.tif")
-        slope_path_out = os.path.join(tmp_dir, "slope.tif")
-        slope_r_path_out = os.path.join(tmp_dir, "slope_r.tif")
-        slope_p_path_out = os.path.join(tmp_dir, "slope_p.tif")
+    # Path OUT
+    hlsd_path_out = os.path.join(tmp_path, "hillshade_out_rio.tif")
+    slope_path_out = os.path.join(tmp_path, "slope_out_rio.tif")
+    slope_r_path_out = os.path.join(tmp_path, "slope_out_r_rio.tif")
+    slope_p_path_out = os.path.join(tmp_path, "slope_out_p_rio.tif")
 
-        # Compute
-        hlsd, meta = rasters_rio.hillshade(dem_path, 34.0, 45.2)
-        rasters_rio.write(hlsd, meta, hlsd_path_out, dtype="float32")
+    # Compute
+    hlsd, meta = rasters_rio.hillshade(dem_path, 34.0, 45.2)
+    rasters_rio.write(hlsd, meta, hlsd_path_out, dtype="float32")
 
-        slp, meta = rasters_rio.slope(dem_path)
-        rasters_rio.write(slp, meta, slope_path_out, dtype="float32")
+    slp, meta = rasters_rio.slope(dem_path)
+    rasters_rio.write(slp, meta, slope_path_out, dtype="float32")
 
-        slp_r, meta = rasters_rio.slope(dem_path, in_pct=False, in_rad=True)
-        rasters_rio.write(slp_r, meta, slope_r_path_out, dtype="float32")
+    slp_r, meta = rasters_rio.slope(dem_path, in_pct=False, in_rad=True)
+    rasters_rio.write(slp_r, meta, slope_r_path_out, dtype="float32")
 
-        slp_p, meta = rasters_rio.slope(dem_path, in_pct=True)
-        rasters_rio.write(slp_p, meta, slope_p_path_out, dtype="float32")
+    slp_p, meta = rasters_rio.slope(dem_path, in_pct=True)
+    rasters_rio.write(slp_p, meta, slope_p_path_out, dtype="float32")
 
-        # Test
-        ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
-        ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
-        ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
-        ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
+    # Test
+    ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
+    ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
+    ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
+    ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
 
 
 @s3_env

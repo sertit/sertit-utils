@@ -28,6 +28,8 @@ import numpy as np
 import xarray as xr
 from shapely.geometry import Polygon
 
+from sertit.rasters_rio import DEG_2_RAD
+
 try:
     import rasterio
     import rioxarray
@@ -893,6 +895,26 @@ def _any_raster_to_rio_ds(function: Callable) -> Callable:
     return wrapper
 
 
+def _3d_to_2d(function):
+    """
+    Change temporary the shape of a raster (as a xr.dataArray), from rasterio 3D representaion (band, x, y) to 2D, mandatory for some functions (sieving, hillshade, slope, aspect...)
+    """
+
+    @wraps(function)
+    def wrapper(xda: xr.DataArray, *_args, **_kwargs):
+        """S3 environment wrapper"""
+        expand_dim = len(xda.shape) == 3
+        if expand_dim:
+            xda = xda.squeeze(dim="band")
+        out_xda = function(xda, *_args, **_kwargs)
+        if expand_dim:
+            out_xda = out_xda.expand_dims(dim="band")
+
+        return out_xda
+
+    return wrapper
+
+
 @_any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
@@ -1346,6 +1368,7 @@ def collocate(
 
 
 @any_raster_to_xr_ds
+@_3d_to_2d
 def sieve(
     xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4
 ) -> AnyXrDataStructure:
@@ -1378,8 +1401,8 @@ def sieve(
     assert connectivity in [4, 8]
 
     # Use this trick to make the sieve work
-    mask = np.squeeze(np.where(np.isnan(xds.data), 0, 1).astype(np.uint8))
-    data = np.squeeze(xds.data.astype(np.uint8))
+    mask = np.where(np.isnan(xds.data), 0, 1).astype(np.uint8)
+    data = xds.data.astype(np.uint8)
 
     # Sieve
     try:
@@ -1402,7 +1425,6 @@ def sieve(
     except ValueError:
         # Manage integer files
         pass
-    sieved_arr = np.expand_dims(sieved_arr, axis=0)
     sieved_xds = xds.copy(data=sieved_arr)
 
     return sieved_xds
@@ -1815,12 +1837,35 @@ def where(
     return where_xda
 
 
+def _run_hillshade(data, az_rad, alt_rad, res):
+    """
+    Workaround function for xarray-spatial hillshade
+    TO BE REMOVED when https://github.com/makepath/xarray-spatial/issues/748 is solved
+    """
+    # Compute slope and aspect
+    dx, dy = np.gradient(data, *res)
+    x2_y2 = dx**2 + dy**2
+    aspect = np.arctan2(dx, dy)
+
+    # Compute hillshade (GDAL algo)
+    hshade = (
+        np.sin(alt_rad) + np.cos(alt_rad) * np.sqrt(x2_y2) * np.sin(aspect - az_rad)
+    ) / np.sqrt(1 + x2_y2)
+    hshade = np.where(hshade <= 0, 1.0, 254.0 * hshade + 1)
+
+    hshade[(0, -1), :] = np.nan
+    hshade[:, (0, -1)] = np.nan
+
+    return hshade
+
+
 @any_raster_to_xr_ds
+@_3d_to_2d
 def hillshade(
-    xds: AnyRasterType, azimuth: float = 315, zenith: float = 45
+    xds: AnyRasterType, azimuth: float = 315, zenith: float = 45, **kwargs
 ) -> AnyXrDataStructure:
     """
-    Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
+    Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
 
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
@@ -1833,23 +1878,61 @@ def hillshade(
 
     Args:
         xds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        azimuth (float): Azimuth angle in degrees
+        azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
         zenith (float): Zenith angle in degrees
 
     Returns:
         AnyXrDataStructure: Hillshade
     """
-    # TODO: daskify this: use xarray-spatial?
+    try:
+        issue_solved = False
+        if issue_solved:
+            from xrspatial import hillshade
 
-    # Use classic option
-    arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
+            xds = hillshade(
+                xds,
+                azimuth=int(azimuth),
+                angle_altitude=90 - int(zenith),
+                name=kwargs.get("name", "hillshade"),
+                shadows=kwargs.get("shadows"),
+            )
+            # Output result is different: result = (shaded + 1) / 2; shaded = 2 * result - 1
+            xds = 2 * xds - 1
 
-    return xds.copy(data=arr)
+            # We want: result_gdal = np.where(shaded <= 0, 1.0, 254.0 * shaded + 1)
+            xds = where(xds <= 0, 1.0, 254.0 * xds + 1, xds)
+        else:
+            # replace xarray-spatial fct with GDAL compatible one
+            from functools import partial
+
+            _func = partial(
+                _run_hillshade,
+                az_rad=azimuth * DEG_2_RAD,
+                alt_rad=(90 - zenith) * DEG_2_RAD,
+                res=np.abs(xds.rio.resolution()),
+            )
+            out = xds.data.map_overlap(
+                _func, depth=(1, 1), boundary=np.nan, meta=np.array(())
+            )
+
+            xds = xds.copy(data=out).rename(kwargs.get("name", "hillshade"))
+
+    except ImportError:
+        LOGGER.debug(
+            "'Hillshade' not computed with Dask as 'xarray-spatial' is not installed."
+        )
+        # Use classic option
+        arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
+
+        xds = xds.copy(data=arr)
+
+    return xds
 
 
 @any_raster_to_xr_ds
+@_3d_to_2d
 def slope(
-    xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False
+    xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False, **kwargs
 ) -> AnyXrDataStructure:
     """
     Compute the slope of a DEM (in degrees).
@@ -1864,12 +1947,27 @@ def slope(
     Returns:
         AnyXrDataStructure: Slope
     """
-    # TODO: daskify this: use xarray-spatial?
+    try:
+        from xarray.ufuncs import tan
+        from xrspatial import slope
 
-    # Use classic option
-    arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
+        xds = slope(xds, name=kwargs.get("name", "slope"))
 
-    return xds.copy(data=arr)
+        if in_pct:
+            xds = 100 * tan(xds * DEG_2_RAD)
+        elif in_rad:
+            xds = xds * DEG_2_RAD
+    except ImportError:
+        LOGGER.debug(
+            "'Slope' not computed with Dask as 'xarray-spatial' is not installed."
+        )
+
+        # Use classic option
+        arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
+
+        xds = xds.copy(data=arr)
+
+    return xds
 
 
 # TODO: add other dem-related functions like 'aspect'. Create a dedicated module?

@@ -22,3 +22,8 @@ dist
 
 # dask
 dask-worker-space/*
+
+# Data in CI
+CI/*.tif
+CI/*.zip
+CI/*.vrt

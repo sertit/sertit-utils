@@ -1688,7 +1688,7 @@ def hillshade(
     ds: AnyRasterType, azimuth: float = 315, zenith: float = 45
 ) -> (np.ma.masked_array, dict):
     """
-     Compute the hillshade of a DEM from an azimuth and elevation angle (in degrees).
+     Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
 
      Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
@@ -1700,11 +1700,11 @@ def hillshade(
          - z_factor is fixed to 1.0
          - scale managed by ds resolution
 
-    `Reference <https://git.earthdata.nasa.gov/projects/GEE/repos/gdal-enhancements-for-esdis/browse/gdal-1.10.0/apps/gdaldem.cpp>`_
+    `Reference <https://github.com/nasa/World-Wind-Java/blob/7c9886ab67ac03d53bdb04f161b9605d3f3dd810/GDAL/GDAL-1.7.2/apps/gdaldem.cpp#L349>`_
 
      Args:
          ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-         azimuth (float): Azimuth angle in degrees
+         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
          zenith (float): Zenith angle in degrees
 
      Returns:
