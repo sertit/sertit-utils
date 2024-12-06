@@ -540,11 +540,10 @@ def test_vrt(tmp_path, raster_path):
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
-def test_merge_different_crs(tmp_path):
+def test_merge_different_crs_rel(tmp_path):
     """Test merge_vrt (with different CRS) function"""
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
-    true_tif_path = rasters_path().joinpath("merge_32-31.tif")
 
     raster_1_path = rasters_path().joinpath(
         "20220228T102849_S2_T31TGN_L2A_134712_RED.tif"
@@ -558,13 +557,43 @@ def test_merge_different_crs(tmp_path):
     rasters.merge_vrt([raster_1_path, raster_2_path], raster_merged_vrt_out)
     ci.assert_raster_equal(raster_merged_vrt_out, true_vrt_path)
 
-    os.remove(raster_merged_vrt_out)
 
+@s3_env
+@pytest.mark.skipif(
+    shutil.which("gdalbuildvrt") is None,
+    reason="Only works if gdalbuildvrt can be found.",
+)
+def test_merge_different_crs_abs(tmp_path):
+    """Test merge_vrt (with different CRS) function"""
+    # DIFFERENT CRS
+    true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
+
+    raster_1_path = rasters_path().joinpath(
+        "20220228T102849_S2_T31TGN_L2A_134712_RED.tif"
+    )
+    raster_2_path = rasters_path().joinpath(
+        "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
+    )
+
+    raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
     rasters.merge_vrt(
         [raster_1_path, raster_2_path], raster_merged_vrt_out, abs_path=True
     )
     ci.assert_raster_equal(raster_merged_vrt_out, true_vrt_path)
 
+
+@s3_env
+def test_merge_different_crs_gtiff(tmp_path):
+    """Test merge_vrt (with different CRS) function"""
+    # DIFFERENT CRS
+    true_tif_path = rasters_path().joinpath("merge_32-31.tif")
+
+    raster_1_path = rasters_path().joinpath(
+        "20220228T102849_S2_T31TGN_L2A_134712_RED.tif"
+    )
+    raster_2_path = rasters_path().joinpath(
+        "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
+    )
     # Merge GTiff
     raster_merged_tif_out = os.path.join(tmp_path, "test_merged.tif")
     rasters.merge_gtiff([raster_1_path, raster_2_path], raster_merged_tif_out)
