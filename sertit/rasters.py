@@ -1926,7 +1926,7 @@ def hillshade(
                     res=np.abs(xds.rio.resolution()),
                 )
 
-            xds = xds.copy(data=out).rename(kwargs.get("name", "hillshade"))
+            xds = xds.copy(data=out)
 
     except ImportError:
         LOGGER.debug(
@@ -1936,6 +1936,9 @@ def hillshade(
         arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
 
         xds = xds.copy(data=arr)
+
+    xds = xds.rename(kwargs.get("name", "hillshade"))
+    xds.attrs["long_name"] = "hillshade"
 
     return xds
 
@@ -1962,7 +1965,7 @@ def slope(
         from xarray.ufuncs import tan
         from xrspatial import slope
 
-        xds = slope(xds, name=kwargs.get("name", "slope"))
+        xds = slope(xds)
 
         if in_pct:
             xds = 100 * tan(xds * DEG_2_RAD)
@@ -1977,6 +1980,9 @@ def slope(
         arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
 
         xds = xds.copy(data=arr)
+
+    xds = xds.rename(kwargs.get("name", "slope"))
+    xds.attrs["long_name"] = "slope"
 
     return xds
 
@@ -1996,7 +2002,9 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     try:
         from xrspatial import aspect
 
-        return aspect(xds, name=kwargs.get("name", "aspect"))
+        xds = aspect(xds, name=kwargs.get("name", "aspect"))
+        xds.attrs["long_name"] = "aspect"
+        return xds
     except ImportError:
         raise NotImplementedError(
             "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
