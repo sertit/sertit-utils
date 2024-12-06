@@ -74,12 +74,12 @@ def dask_env(function):
         try:
             with dask.get_or_create_dask_client():
                 print("Using DASK")
-                return function(*_args, **_kwargs)
+                function(*_args, **_kwargs)
         except ImportError:
             pass
 
         print("Using NUMPY")
-        return function(*_args, **_kwargs)
+        function(*_args, **_kwargs)
 
     return dask_env_wrapper
 
