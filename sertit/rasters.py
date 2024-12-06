@@ -189,6 +189,8 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
         if any_raster_type is None:
             raise ValueError("'any_raster_type' shouldn't be None!")
 
+        default_chunks = True if dask.get_client() is not None else None
+
         # By default, try with the input fct
         try:
             out = function(any_raster_type, *args, **kwargs)
@@ -227,7 +229,7 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                             any_raster_type,
                             masked=True,
                             default_name=ds.name,
-                            chunks=kwargs.pop("chunks", True),
+                            chunks=kwargs.pop("chunks", default_chunks),
                         ) as xds:
                             out = function(xds, *args, **kwargs)
             else:
@@ -244,7 +246,7 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                     any_raster_type,
                     masked=True,
                     default_name=name,
-                    chunks=kwargs.pop("chunks", True),
+                    chunks=kwargs.pop("chunks", default_chunks),
                 ) as xds:
                     out = function(xds, *args, **kwargs)
 
@@ -1905,15 +1907,24 @@ def hillshade(
             # replace xarray-spatial fct with GDAL compatible one
             from functools import partial
 
-            _func = partial(
-                _run_hillshade,
-                az_rad=azimuth * DEG_2_RAD,
-                alt_rad=(90 - zenith) * DEG_2_RAD,
-                res=np.abs(xds.rio.resolution()),
-            )
-            out = xds.data.map_overlap(
-                _func, depth=(1, 1), boundary=np.nan, meta=np.array(())
-            )
+            try:
+                _func = partial(
+                    _run_hillshade,
+                    az_rad=azimuth * DEG_2_RAD,
+                    alt_rad=(90 - zenith) * DEG_2_RAD,
+                    res=np.abs(xds.rio.resolution()),
+                )
+                out = xds.data.map_overlap(
+                    _func, depth=(1, 1), boundary=np.nan, meta=np.array(())
+                )
+            except AttributeError:
+                # Without dask
+                out = _run_hillshade(
+                    xds.data,
+                    az_rad=azimuth * DEG_2_RAD,
+                    alt_rad=(90 - zenith) * DEG_2_RAD,
+                    res=np.abs(xds.rio.resolution()),
+                )
 
             xds = xds.copy(data=out).rename(kwargs.get("name", "hillshade"))
 

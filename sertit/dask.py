@@ -8,6 +8,24 @@ from sertit import logs
 LOGGER = logging.getLogger(logs.SU_NAME)
 
 
+def get_client():
+    client = None
+    try:
+        from dask.distributed import get_client
+
+        try:
+            # Return default client
+            client = get_client()
+        except ValueError:
+            pass
+    except ModuleNotFoundError:
+        LOGGER.warning(
+            "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
+        )
+
+    return client
+
+
 @contextmanager
 def get_or_create_dask_client(processes=False):
     """
@@ -72,13 +90,14 @@ def get_dask_lock(name):
         name: The name of the lock
     Returns:
     """
-
+    lock = None
     try:
         from dask.distributed import Lock
 
-        return Lock(name)
+        if get_client():
+            lock = Lock(name)
     except ModuleNotFoundError:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
-        return None
+    return lock

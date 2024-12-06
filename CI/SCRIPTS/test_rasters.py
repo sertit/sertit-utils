@@ -847,8 +847,8 @@ def test_decorator_deprecation(raster_path):
         assert isinstance(xds, xr.DataArray)
         return xds
 
-    with pytest.deprecated_call():
-        xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
+    # Not able to warn deprecation from inside the decorator
+    xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
 
 
 def test_get_nodata_deprecation():
