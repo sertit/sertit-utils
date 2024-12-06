@@ -542,7 +542,6 @@ def test_vrt(tmp_path, raster_path):
 )
 def test_merge_different_crs(tmp_path):
     """Test merge_vrt (with different CRS) function"""
-    tmp_path = "/home/data/CI"
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
     true_tif_path = rasters_path().joinpath("merge_32-31.tif")
@@ -761,8 +760,6 @@ def test_where():
 @dask_env
 def test_dem_fct(tmp_path):
     """Test DEM fct, i.e. slope and hillshade"""
-    tmp_path = "/home/data/CI"
-
     # Paths IN
     dem_path = rasters_path().joinpath("dem.tif")
     aspect_path = rasters_path().joinpath("aspect.tif")
