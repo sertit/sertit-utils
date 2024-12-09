@@ -703,6 +703,7 @@ def ogr2geojson(
     # Convert to strings to make it work with CLI
     vector_path = AnyPath(vector_path)
 
+    # archived vector_path are extracted in a tmp folder so no need to be downloaded
     if vector_path.suffix == ".zip":
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
