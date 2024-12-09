@@ -10,6 +10,8 @@
 - FIX: Fix the ability to save COGs with any dtype with Dask, with the workaround described [here](https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481) (don't compute statistics for problematic dtypes)
 - FIX: Better separability of `dask` (it has its own module now): don't create a client if the user doesn't specify it (as it is not required anymore in `Lock`). This should remove the force-use of `dask`.
 - OPTIM: For arrays with same shape and CRS, replace only the coordinates of `other` by `ref`'s in `rasters.collocate`
+- OPTIM: Call `dask.optimize` before any dask computation ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- FIX: Fix vectorization with dask arrays (and remove the silent failure in case of exception when computing) ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - DEPS: Add an optional dependency to `xarray-spatial` for daskified surface tools, such as `hillshade` and `slope`
 
 ## 1.43.4 (2024-11-28)

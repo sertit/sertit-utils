@@ -1637,7 +1637,12 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
             unpacked = uint8_packed.reshape(xshape + [nof_bits])
         except IndexError:
             # Workaround for weird bug in reshape with dask
-            unpacked = uint8_packed.compute().reshape(xshape + [nof_bits])
+            import dask
+
+            (unpacked,) = dask.optimize(uint8_packed)
+            unpacked = unpacked.compute(optimize_graph=True).reshape(
+                xshape + [nof_bits]
+            )
 
     return unpacked
 

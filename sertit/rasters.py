@@ -441,15 +441,15 @@ def _vectorize(
 
     # WARNING: features.shapes do NOT accept dask arrays !
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
-        try:
-            data = data.compute()
-        except Exception:
-            data = None
+        # TODO: daskify this (geoutils ?)
+        from dask import optimize
 
-    if nodata_arr is not None and not isinstance(
-        nodata_arr, (np.ndarray, np.ma.masked_array)
-    ):
-        nodata_arr = nodata_arr.compute()
+        (data,) = optimize(data)
+        data = data.compute(optimize_graph=True)
+
+        if nodata_arr is not None:
+            (nodata_arr,) = optimize(nodata_arr)
+            nodata_arr = nodata_arr.compute(optimize_graph=True)
 
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
@@ -1184,6 +1184,7 @@ def write(
     if is_cog:
         if write_cogs_with_dask:
             try:
+                from dask import optimize
                 from odc.geo import cog, xr  # noqa
 
                 LOGGER.debug("Writing your COG with Dask!")
@@ -1193,13 +1194,16 @@ def write(
                 # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
                 compute_stats = np.dtype(dtype).itemsize >= 4
 
-                cog.save_cog_with_dask(
+                delayed = cog.save_cog_with_dask(
                     xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
                         nodata
                     ),
                     str(output_path),
                     stats=compute_stats,
-                ).compute()
+                )
+
+                (delayed,) = optimize(delayed)
+                delayed.compute(optimize_graph=True)
                 is_written = True
 
             except (ModuleNotFoundError, KeyError):
@@ -1408,16 +1412,12 @@ def sieve(
 
     # Sieve
     try:
+        sieved_arr = xr.apply_ufunc(
+            features.sieve, data, sieve_thresh, connectivity, mask
+        )
+    except ValueError:
         sieved_arr = features.sieve(
             data, size=sieve_thresh, connectivity=connectivity, mask=mask
-        )
-    except TypeError:
-        # Manage dask arrays that fails with rasterio sieve
-        sieved_arr = features.sieve(
-            data.compute(),
-            size=sieve_thresh,
-            connectivity=connectivity,
-            mask=mask.compute(),
         )
 
     # Set back nodata and expand back dim
