@@ -1,6 +1,6 @@
 # Release History
 
-## 1.44.0.rc1 (2024-12-09)
+## 1.44.0 (2024-12-09)
 
 - **BREAKING CHANGE**: Renaming of `rasters(_rio).write` argument `path` to `output_path` to avoid shadowing `sertit.path` module. Older argument is deprecated.
 - **ENH: Use `odc.geo.xr.mask` instead of `rasterio.mask` to be dask-compatible in `rasters` (true for `paint` and `mask`)** ([#27](https://github.com/sertit/sertit-utils/issues/27))
