@@ -700,21 +700,20 @@ def ogr2geojson(
     """
     assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
 
-    out_dir = str(out_dir)
+    # Convert to strings to make it work with CLI
+    vector_path = AnyPath(vector_path)
 
-    # vector_path should be downloaded to work with ogr2ogr
-    if path.is_cloud_path(vector_path):
-        vector_path = AnyPath(vector_path).fspath
-
-    vector_path = str(vector_path)
-    if vector_path.endswith(".zip"):
+    if vector_path.suffix == ".zip":
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
-    elif vector_path.endswith(".tar"):
+    elif vector_path.suffix == ".tar":
         with tarfile.open(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
+        # vector_path should be downloaded to work with 'ogr2ogr'
+        if path.is_cloud_path(vector_path):
+            vector_path = AnyPath(vector_path).fspath
         vect_path = vector_path
 
     vect_path_gj = os.path.join(
