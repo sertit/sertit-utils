@@ -476,9 +476,6 @@ def read(
 
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
-            if path.is_cloud_path(vector_path):
-                vector_path = AnyPath(vector_path.fspath)
-
             prefix = vector_path.suffix[-3:]
             file_list = path.get_archived_file_list(vector_path)
 

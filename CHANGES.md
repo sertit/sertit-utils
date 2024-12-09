@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.1 (2024-mm-dd)
+
+- OPTIM: Don't download an archive when reading a vector stored inside it
+
 ## 1.44.0 (2024-12-09)
 
 - **BREAKING CHANGE**: Renaming of `rasters(_rio).write` argument `path` to `output_path` to avoid shadowing `sertit.path` module. Older argument is deprecated.
