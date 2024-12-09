@@ -30,7 +30,7 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, files, path, s3, unistra
+from sertit import AnyPath, files, s3, unistra
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
@@ -140,14 +140,8 @@ def assert_files_equal(file_1: AnyPathStrType, file_2: AnyPathStrType):
         file_1 (str): Path to file 1
         file_2 (str): Path to file 2
     """
-    if path.is_cloud_path(file_1):
-        file_1 = file_1.fspath
-
-    if path.is_cloud_path(file_2):
-        file_2 = file_2.fspath
-
-    with open(str(file_1), "r") as f1:
-        with open(str(file_2), "r") as f2:
+    with file_1.open("r") as f1:
+        with file_2.open("r") as f2:
             assert files.hash_file_content(f1.read()) == files.hash_file_content(
                 f2.read()
             )
@@ -409,8 +403,8 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
             dcmp.right_only == []
         ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
     except FileNotFoundError:
-        files_1 = [AnyPath(path).name for path in AnyPath(path_1).iterdir()]
-        files_2 = [AnyPath(path).name for path in AnyPath(path_2).iterdir()]
+        files_1 = [AnyPath(p).name for p in AnyPath(path_1).iterdir()]
+        files_2 = [AnyPath(p).name for p in AnyPath(path_2).iterdir()]
 
         for f1 in files_1:
             assert (
