@@ -14,6 +14,10 @@
 - FIX: Fix vectorization with dask arrays (and remove the silent failure in case of exception when computing) ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - DEPS: Add an optional dependency to `xarray-spatial` for daskified surface tools, such as `hillshade` and `slope`
 
+:warning: We selected for now `xarray-spatial` dependency for DEM-related functiions, but this may not be the final selection.
+When a bit more mature, it is rather likely that `geoutils` and `xdem` will be selected instead.
+See [this issue](https://github.com/sertit/sertit-utils/issues/27) for `dask`-related choices.
+
 ## 1.43.4 (2024-11-28)
 
 - FIX: Fix regression in `files.read_json` due to Python 3.11 where `datatime.fromsioformat` parses more than the output of `isoformat()`
