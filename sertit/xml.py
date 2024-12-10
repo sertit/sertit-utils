@@ -73,7 +73,9 @@ def read(xml_path: AnyPathStrType) -> _Element:
     return root
 
 
-def read_archive(path: AnyPathStrType, regex: str = None) -> _Element:
+def read_archive(
+    path: AnyPathStrType, regex: str = None, file_list: list = None
+) -> _Element:
     """
     Read an XML file from inside an archive (zip or tar)
     Convenient duplicate of :code:`files.read_archived_xml`
@@ -86,6 +88,7 @@ def read_archive(path: AnyPathStrType, regex: str = None) -> _Element:
     Args:
         path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
         regex (str): Optional. If specified, the path should be the archive path and the regex should be the key to find the XML file inside the archive.
+        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
         _Element: XML Root
@@ -98,7 +101,7 @@ def read_archive(path: AnyPathStrType, regex: str = None) -> _Element:
             if path.startswith("zip://") or path.startswith("tar://"):
                 path = path[5:]
 
-        return files.read_archived_xml(path, regex)
+        return files.read_archived_xml(path, regex, file_list=file_list)
 
     except XMLSyntaxError:
         raise ValueError(f"Invalid metadata XML for {path}!")
