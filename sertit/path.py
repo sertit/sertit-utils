@@ -268,6 +268,7 @@ def get_archived_rio_path(
         archive_path (AnyPathStrType): Archive path
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
+        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
         Union[list, str]: Band path that can be read by rasterio

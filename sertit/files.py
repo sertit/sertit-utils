@@ -377,7 +377,9 @@ def get_archived_rio_path(
     return path.get_archived_rio_path(archive_path, file_regex, as_list)
 
 
-def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
+def read_archived_file(
+    archive_path: AnyPathStrType, regex: str, file_list: list = None
+) -> bytes:
     """
     Read archived file (in bytes) from :code:`zip` or :code:`tar` archives.
 
@@ -386,6 +388,7 @@ def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
     Args:
         archive_path (AnyPathStrType): Archive path
         regex (str): Regex (used by re) as it can be found in the getmembers() list
+        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
          bytes: Archived file in bytes
@@ -399,16 +402,19 @@ def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
     try:
         if archive_path.suffix == ".tar":
             with tarfile.open(archive_path) as tar_ds:
-                tar_mb = tar_ds.getmembers()
-                name_list = [mb.name for mb in tar_mb]
-                band_name = list(filter(regex.match, name_list))[0]
-                tarinfo = [mb for mb in tar_mb if mb.name == band_name][0]
+                # file_list is not very useful for TAR files...
+                if file_list is None:
+                    tar_mb = tar_ds.getmembers()
+                    file_list = [mb.name for mb in tar_mb]
+                name = list(filter(regex.match, file_list))[0]
+                tarinfo = tar_ds.getmember(name)
                 file_str = tar_ds.extractfile(tarinfo).read()
         elif archive_path.suffix == ".zip":
             with zipfile.ZipFile(archive_path) as zip_ds:
-                name_list = [f.filename for f in zip_ds.filelist]
-                band_name = list(filter(regex.match, name_list))[0]
-                file_str = zip_ds.read(band_name)
+                if file_list is None:
+                    file_list = [f.filename for f in zip_ds.filelist]
+                name = list(filter(regex.match, file_list))[0]
+                file_str = zip_ds.read(name)
 
         elif archive_path.suffix == ".tar.gz":
             raise TypeError(
@@ -426,7 +432,9 @@ def read_archived_file(archive_path: AnyPathStrType, regex: str) -> bytes:
     return file_str
 
 
-def read_archived_xml(archive_path: AnyPathStrType, xml_regex: str) -> etree._Element:
+def read_archived_xml(
+    archive_path: AnyPathStrType, xml_regex: str, file_list: list = None
+) -> etree._Element:
     """
     Read archived XML from :code:`zip` or :code:`tar` archives.
 
@@ -435,6 +443,7 @@ def read_archived_xml(archive_path: AnyPathStrType, xml_regex: str) -> etree._El
     Args:
         archive_path (AnyPathStrType): Archive path
         xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list
+        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
          etree._Element: XML file
@@ -445,12 +454,14 @@ def read_archived_xml(archive_path: AnyPathStrType, xml_regex: str) -> etree._El
         >>> read_archived_xml(arch_path, file_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
-    xml_bytes = read_archived_file(archive_path, xml_regex)
+    xml_bytes = read_archived_file(archive_path, xml_regex, file_list=file_list)
 
     return etree.fromstring(xml_bytes)
 
 
-def read_archived_html(archive_path: AnyPathStrType, regex: str) -> html.HtmlElement:
+def read_archived_html(
+    archive_path: AnyPathStrType, regex: str, file_list: list = None
+) -> html.HtmlElement:
     """
     Read archived HTML from :code:`zip` or :code:`tar` archives.
 
@@ -459,6 +470,7 @@ def read_archived_html(archive_path: AnyPathStrType, regex: str) -> html.HtmlEle
     Args:
         archive_path (AnyPathStrType): Archive path
         regex (str): HTML regex (used by re) as it can be found in the getmembers() list
+        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
          html._Element: HTML file
@@ -469,7 +481,7 @@ def read_archived_html(archive_path: AnyPathStrType, regex: str) -> html.HtmlEle
         >>> read_archived_html(arch_path, file_regex)
         <Element html at 0x1c90007f8c8>
     """
-    html_bytes = read_archived_file(archive_path, regex)
+    html_bytes = read_archived_file(archive_path, regex, file_list=file_list)
 
     return html.fromstring(html_bytes)
 

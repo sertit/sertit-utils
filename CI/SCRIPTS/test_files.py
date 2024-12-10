@@ -149,11 +149,27 @@ def test_archived_files():
         ci.assert_html_equal(html_ok, html.fromstring(file_zip))
         ci.assert_html_equal(html_ok, html.fromstring(file_tar))
 
+        file_list = path.get_archived_file_list(html_zip_file)
+        ci.assert_html_equal(
+            html_ok,
+            html.fromstring(
+                files.read_archived_file(html_zip_file, html_regex, file_list=file_list)
+            ),
+        )
+
         # HTML
         html_zip = files.read_archived_html(html_zip_file, html_regex)
         html_tar = files.read_archived_html(html_tar_file, html_regex)
         ci.assert_html_equal(html_ok, html_zip)
         ci.assert_html_equal(html_ok, html_tar)
+        ci.assert_html_equal(
+            html_ok,
+            files.read_archived_html(
+                html_tar_file,
+                html_regex,
+                file_list=path.get_archived_file_list(html_tar_file),
+            ),
+        )
 
         # ERRORS
         with pytest.raises(TypeError):
