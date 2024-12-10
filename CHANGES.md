@@ -1,6 +1,6 @@
 # Release History
 
-## 1.44.1.dev0 (2024-mm-dd)
+## 1.44.1.dev1 (2024-mm-dd)
 
 - OPTIM: Don't download an archive stored on the cloud when trying to read a vector stored inside it in `vectors.read`
 - OPTIM: Don't download files stored on cloud when applying `ci.assert_files_equal` on them
