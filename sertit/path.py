@@ -188,6 +188,7 @@ def get_archived_path(
     file_regex: str,
     as_list: bool = False,
     case_sensitive: bool = False,
+    file_list: list = None,
 ) -> Union[list, AnyPathType]:
     """
     Get archived file path from inside the archive.
@@ -202,6 +203,7 @@ def get_archived_path(
         file_regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
         case_sensitive (bool): If true, the regex is case-sensitive.
+        file_list (list): List of files to get archived from. Optional, if not given it will be re-computed.
 
     Returns:
         Union[list, str]: Path from inside the zipfile
@@ -214,7 +216,10 @@ def get_archived_path(
     """
     # Get file list
     archive_path = AnyPath(archive_path)
-    file_list = get_archived_file_list(archive_path)
+
+    # Offer the ability to give the file list directly, as this operation is expensive when done with large archives stored on the cloud
+    if file_list is None:
+        file_list = get_archived_file_list(archive_path)
 
     # Search for file
     regex = (
@@ -236,7 +241,10 @@ def get_archived_path(
 
 
 def get_archived_rio_path(
-    archive_path: AnyPathStrType, file_regex: str, as_list: bool = False
+    archive_path: AnyPathStrType,
+    file_regex: str,
+    as_list: bool = False,
+    file_list: list = None,
 ) -> Union[list, AnyPathType]:
     """
     Get archived file path from inside the archive, to be read with rasterio:
@@ -283,7 +291,9 @@ def get_archived_rio_path(
         raise TypeError("Only .zip and .tar files can be read from inside its archive.")
 
     # Search for file
-    archived_band_paths = get_archived_path(archive_path, file_regex, as_list=True)
+    archived_band_paths = get_archived_path(
+        archive_path, file_regex, as_list=True, file_list=file_list
+    )
 
     # Convert to rio path
     if is_cloud_path(archive_path):

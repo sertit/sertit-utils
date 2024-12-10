@@ -91,6 +91,11 @@ def test_archived_paths():
     ci.assert_raster_equal(tif_ok, tif_list[0])
     ci.assert_raster_equal(tif_ok, tif_tar)
 
+    file_list = path.get_archived_file_list(zip_file)
+    ci.assert_raster_equal(
+        tif_ok, path.get_archived_rio_path(zip_file, tif_regex, file_list=file_list)
+    )
+
     # VECTORS
     vect_name = "map-overlay.kml"
     vec_ok_path = ok_folder.joinpath(vect_name)

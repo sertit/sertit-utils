@@ -290,6 +290,12 @@ def test_read_archived():
         vectors.read(tar_landsat, archive_regex=map_overlay_regex),
     )
 
+    file_list = path.get_archived_file_list(tar_landsat)
+    ci.assert_geom_equal(
+        map_overlay_extracted,
+        vectors.read(tar_landsat, archive_regex=map_overlay_regex, file_list=file_list),
+    )
+
 
 def test_window():
     """Test read with window"""

@@ -422,7 +422,8 @@ def read(
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
             In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
-        **kwargs: Additional arguments used in gpd.read_file
+        **kwargs: Additional arguments used in gpd.read_file.
+            You can also give :code:`file_list`, the list of files of the archive to get the vector from, as this operation is expensive when done with large archives stored on the cloud.
 
     Returns:
         gpd.GeoDataFrame: Read vector as a GeoDataFrame
@@ -477,7 +478,9 @@ def read(
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
             prefix = vector_path.suffix[-3:]
-            file_list = path.get_archived_file_list(vector_path)
+            file_list = kwargs.pop(
+                "file_list", path.get_archived_file_list(vector_path)
+            )
 
             try:
                 regex = re.compile(archive_regex)
