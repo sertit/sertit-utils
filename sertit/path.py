@@ -26,7 +26,7 @@ import tempfile
 import zipfile
 from typing import Any, Union
 
-from sertit import AnyPath
+from sertit import AnyPath, logs
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -185,10 +185,11 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
 
 def get_archived_path(
     archive_path: AnyPathStrType,
-    file_regex: str,
+    regex: str,
     as_list: bool = False,
     case_sensitive: bool = False,
     file_list: list = None,
+    **kwargs,
 ) -> Union[list, AnyPathType]:
     """
     Get archived file path from inside the archive.
@@ -200,7 +201,7 @@ def get_archived_path(
 
     Args:
         archive_path (AnyPathStrType): Archive path
-        file_regex (str): File regex (used by re) as it can be found in the getmembers() list
+        regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
         case_sensitive (bool): If true, the regex is case-sensitive.
         file_list (list): List of files to get archived from. Optional, if not given it will be re-computed.
@@ -214,6 +215,12 @@ def get_archived_path(
         >>> path = get_archived_path(arch_path, file_regex)
         'dir/filename.tif'
     """
+    if regex is None:
+        logs.deprecation_warning(
+            "'file_regex' is deprecated, please use 'regex' instead."
+        )
+        regex = kwargs.pop("file_regex")
+
     # Get file list
     archive_path = AnyPath(archive_path)
 
@@ -222,15 +229,11 @@ def get_archived_path(
         file_list = get_archived_file_list(archive_path)
 
     # Search for file
-    regex = (
-        re.compile(file_regex)
-        if case_sensitive
-        else re.compile(file_regex, re.IGNORECASE)
-    )
-    archived_band_paths = list(filter(regex.match, file_list))
+    re_rgx = re.compile(regex) if case_sensitive else re.compile(regex, re.IGNORECASE)
+    archived_band_paths = list(filter(re_rgx.match, file_list))
     if not archived_band_paths:
         raise FileNotFoundError(
-            f"Impossible to find file {file_regex} in {get_filename(archive_path)}"
+            f"Impossible to find file {regex} in {get_filename(archive_path)}"
         )
 
     # Convert to str if needed
@@ -242,9 +245,10 @@ def get_archived_path(
 
 def get_archived_rio_path(
     archive_path: AnyPathStrType,
-    file_regex: str,
+    regex: str,
     as_list: bool = False,
     file_list: list = None,
+    **kwargs,
 ) -> Union[list, AnyPathType]:
     """
     Get archived file path from inside the archive, to be read with rasterio:
@@ -266,7 +270,7 @@ def get_archived_rio_path(
 
     Args:
         archive_path (AnyPathStrType): Archive path
-        file_regex (str): File regex (used by re) as it can be found in the getmembers() list
+        regex (str): File regex (used by re) as it can be found in the getmembers() list
         as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
@@ -281,6 +285,12 @@ def get_archived_rio_path(
         >>> rasterio.open(path)
         <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
+    if regex is None:
+        logs.deprecation_warning(
+            "'file_regex' is deprecated, please use 'regex' instead."
+        )
+        regex = kwargs.pop("file_regex")
+
     archive_path = AnyPath(archive_path)
     if archive_path.suffix in [".tar", ".zip"]:
         prefix = archive_path.suffix[-3:]
@@ -293,7 +303,7 @@ def get_archived_rio_path(
 
     # Search for file
     archived_band_paths = get_archived_path(
-        archive_path, file_regex, as_list=True, file_list=file_list
+        archive_path, regex=regex, as_list=True, file_list=file_list
     )
 
     # Convert to rio path

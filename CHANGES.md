@@ -6,6 +6,7 @@
 - OPTIM: Don't download files stored on cloud when applying `ci.assert_files_equal` on them
 - OPTIM: Offer the ability to give the archived file list directly to `path.get_archived_file_list` and `files.read_archived_file`, as this operation is expensive when done with large archives stored on the cloud (and thus better done only once).
   Propagated into `path.get_archived_path`, `path.get_archived_rio_path`, `vectors.read`, `xml.read_archive`, files.read_archived_xml` and `files.read_archived_html`
+- DEPR: Deprecate `xml_regex` and `file_regex` arguments from above-mentioned functions in favor of an harmonized `regex` argument.
 
 ## 1.44.0 (2024-12-09)
 

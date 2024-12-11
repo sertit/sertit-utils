@@ -433,7 +433,7 @@ def read_archived_file(
 
 
 def read_archived_xml(
-    archive_path: AnyPathStrType, xml_regex: str, file_list: list = None
+    archive_path: AnyPathStrType, regex: str = None, file_list: list = None, **kwargs
 ) -> etree._Element:
     """
     Read archived XML from :code:`zip` or :code:`tar` archives.
@@ -442,7 +442,7 @@ def read_archived_xml(
 
     Args:
         archive_path (AnyPathStrType): Archive path
-        xml_regex (str): XML regex (used by re) as it can be found in the getmembers() list
+        regex (str): XML regex (used by re) as it can be found in the getmembers() list
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
@@ -454,7 +454,13 @@ def read_archived_xml(
         >>> read_archived_xml(arch_path, file_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
-    xml_bytes = read_archived_file(archive_path, xml_regex, file_list=file_list)
+    if regex is None:
+        logs.deprecation_warning(
+            "'xml_regex' is deprecated, please use 'regex' instead."
+        )
+        regex = kwargs.pop("xml_regex")
+
+    xml_bytes = read_archived_file(archive_path, regex=regex, file_list=file_list)
 
     return etree.fromstring(xml_bytes)
 
