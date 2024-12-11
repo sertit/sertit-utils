@@ -1,12 +1,13 @@
 # Release History
 
-## 1.44.1.dev1 (2024-mm-dd)
+## 1.44.1.dev2 (2024-mm-dd)
 
 - OPTIM: Don't download an archive stored on the cloud when trying to read a vector stored inside it in `vectors.read`
 - OPTIM: Don't download files stored on cloud when applying `ci.assert_files_equal` on them
 - OPTIM: Offer the ability to give the archived file list directly to `path.get_archived_file_list` and `files.read_archived_file`, as this operation is expensive when done with large archives stored on the cloud (and thus better done only once).
   Propagated into `path.get_archived_path`, `path.get_archived_rio_path`, `vectors.read`, `xml.read_archive`, files.read_archived_xml` and `files.read_archived_html`
 - DEPR: Deprecate `xml_regex` and `file_regex` arguments from above-mentioned functions in favor of an harmonized `regex` argument.
+- DEPS: Only require `dask[distributed]` and not `dask[complete]` as we don't need it here.
 
 ## 1.44.0 (2024-12-09)
 
