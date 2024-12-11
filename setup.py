@@ -37,7 +37,12 @@ setuptools.setup(
             "rasterio>=1.3.10",
             "rioxarray>=0.10.0",
             "colorlog",
-            "dask[complete]>=2024.5.1",
+            # dask related libraries (to not use dask[complete])
+            "dask>=2024.5.1",
+            "distributed",
+            "s3fs",
+            "cytoolz",
+            # rasters libraries leveraging dask
             "odc-geo>=0.4.6",
             "xarray-spatial>=0.3.6",
         ],
@@ -46,7 +51,12 @@ setuptools.setup(
         "dask": [
             "rasterio[s3]>=1.3.10",
             "rioxarray>=0.10.0",
-            "dask[complete]>=2024.5.1",
+            # dask related libraries (to not use dask[complete])
+            "dask>=2024.5.1",
+            "distributed",
+            "s3fs",
+            "cytoolz",
+            # rasters libraries leveraging dask
             "odc-geo>=0.4.6",
             "xarray-spatial>=0.3.6",
         ],
