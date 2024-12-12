@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import sertit
 
 # -- General configuration ------------------------------------------------
@@ -36,6 +37,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "myst_nb",
+    "IPython.sphinxext.ipython_console_highlighting"
 ]
 myst_enable_extensions = [
     "amsmath",
@@ -52,7 +54,12 @@ myst_enable_extensions = [
 
 # Notebook integration parameters
 nb_execution_mode = "cache"
-nb_execution_timeout = 3600
+nb_execution_timeout = -1
+
+# Manage new READTHEDOCS output mechanism
+cache_path = os.getenv('READTHEDOCS_OUTPUT')
+if cache_path is not None:
+    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""

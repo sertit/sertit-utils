@@ -9,6 +9,7 @@
 - CI: Test both Dask's multithreaded and local cluster in CI
 - DEPR: Deprecate `xml_regex` and `file_regex` arguments from above-mentioned functions in favor of an harmonized `regex` argument.
 - DEPS: Reduce `dask`-related dependencies to the libraries related to this project (abandon `dask[complete]` as we don't need most of the embedded libraries).
+- DOCS: Add notebooks to document best practises
 
 ## 1.44.0 (2024-12-09)
 
