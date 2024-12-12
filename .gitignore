@@ -27,3 +27,9 @@ dask-worker-space/*
 CI/*.tif
 CI/*.zip
 CI/*.vrt
+
+# Docs & Notebooks
+docs/_build/*
+!docs/_build/.jupyter_cache
+docs/api
+.ipynb_checkpoints
