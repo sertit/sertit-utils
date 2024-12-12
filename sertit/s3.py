@@ -59,9 +59,10 @@ def s3_env(*args, **kwargs):
     It does apply configuration variables precedence, and you might have a use for it.
     Here is the order of precedence from least to greatest
     (the last listed configuration variables override all other variables):
-        1. AWS profile
-        2. Given endpoint_url as function argument
-        3. AWS environment variable
+
+    1. AWS profile
+    2. Given endpoint_url as function argument
+    3. AWS environment variable
 
     Returns:
         Callable: decorated function
@@ -144,9 +145,10 @@ def temp_s3(
     It does apply configuration variables precedence, and you might have a use for it.
     Here is the order of precedence from least to greatest
     (the last listed configuration variables override all other variables):
-        1. AWS profile
-        2. Given endpoint_url as function argument
-        3. AWS environment variable
+
+    1. AWS profile
+    2. Given endpoint_url as function argument
+    3. AWS environment variable
 
     Args:
         endpoint: Endpoint to s3 path in the form s3.yourdomain.com
@@ -207,14 +209,14 @@ def define_s3_client(
 ):
     """
     Define S3 client
-
     This function searches for S3 configuration in many places.
     It does apply configuration variables precedence, and you might have a use for it.
     Here is the order of precedence from least to greatest
     (the last listed configuration variables override all other variables):
-        1. AWS profile
-        2. Given endpoint_url as function argument
-        3. AWS environment variable
+
+    1. AWS profile
+    2. Given endpoint_url as function argument
+    3. AWS environment variable
 
     Args:
         endpoint_url: The endpoint url in the form https://s3.yourdomain.com

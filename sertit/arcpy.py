@@ -57,7 +57,7 @@ class ArcPyLogger:
         It writes outputs to a temporary file and to the ArcGis console.
         The temporary file is removed when the user closes ArcGis.
 
-        If you need a logger in an outside module or function, use `logging.getLogger(LOGGER_NAME)`
+        If you need a logger in an outside module or function, use :code:`logging.getLogger(LOGGER_NAME)`
         to get your logger.
 
         Args:
@@ -66,6 +66,7 @@ class ArcPyLogger:
                 The default value is "{{ name }}_".
 
         Example:
+            >>> import logging
             >>> from sertit.arcpy import ArcPyLogger
             >>> arcpy_logger = ArcPyLogger(name="MyArcgisTool")
             Outputs written to file: C:\\Users\\bcoriat\\AppData\\Local\\Temp\\ArcGISProTemp15788\\MyArcgisTool_1bv0c1cl

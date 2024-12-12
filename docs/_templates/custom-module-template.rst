@@ -2,19 +2,6 @@
 
 .. automodule:: {{ fullname }}
 
-   {% block attributes %}
-   {% if attributes %}
-   .. rubric:: Module Attributes
-
-   .. autosummary::
-      :toctree:
-      :template: custom-base-template.rst
-   {% for item in attributes %}
-      {{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
-
    {% block functions %}
    {% if functions %}
    .. rubric:: {{ _('Functions') }}
@@ -49,6 +36,19 @@
       :toctree:
       :template: custom-base-template.rst
    {% for item in exceptions %}
+      {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base-template.rst
+   {% for item in attributes %}
       {{ item }}
    {%- endfor %}
    {% endif %}

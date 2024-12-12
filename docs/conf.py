@@ -148,6 +148,7 @@ htmlhelp_basename = "sertitdoc"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "python-request": ("https://docs.python-requests.org/en/master/", None),
+    "rasterio": ("https://rasterio.readthedocs.io/en/latest", None),
 }
 
 add_function_parentheses = False

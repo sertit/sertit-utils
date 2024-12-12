@@ -773,7 +773,7 @@ def crop(
     function in order to create a masked_array.
 
     Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
+        xds (:any:`AnyRasterType`): Path to the raster or a rasterio dataset or a xarray
         shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
@@ -1302,9 +1302,9 @@ def collocate(
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
     Args:
-        reference (AnyXrDataStructure): Reference xarray
-        other (AnyXrDataStructure): Other xarray
-        resampling (Resampling): Resampling method
+        reference (:any:`AnyXrDataStructure`): Reference xarray
+        other (:any:`AnyXrDataStructure`): Other xarray
+        resampling (:class:`rasterio:rasterio.enums.Resampling`): Resampling method
 
     Returns:
         AnyXrDataStructure: Collocated xarray

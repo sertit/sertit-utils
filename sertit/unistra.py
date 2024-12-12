@@ -40,8 +40,16 @@ UNISTRA_S3_ENPOINT = UNISTRA_S3_ENDPOINT
 def s3_env(*args, **kwargs):
     """
     Create Unistra's S3 compatible storage environment.
-    You must export the variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your environement. Y
-    ou can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+
+    #. AWS profile
+    #. AWS environment variable
+
+    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
     Args:
         function (Callable): Function to decorate
@@ -70,6 +78,16 @@ def unistra_s3() -> None:
     """
     Initialize a temporary S3 environment as a context manager, with Unistra endpoint
 
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+
+    #. AWS profile
+    #. AWS environment variable
+
+    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+
     Args:
         default_endpoint (str):Default Endpoint to look for
 
@@ -93,6 +111,17 @@ def unistra_s3() -> None:
 def define_s3_client():
     """
     Define Unistra's S3 client
+
+    This function searches for S3 configuration in many places.
+    It does apply configuration variables precedence, and you might have a use for it.
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+
+    #. AWS profile
+    #. AWS environment variable
+
+    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+
     """
     return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT)
 
@@ -101,15 +130,18 @@ def get_geodatastore() -> AnyPathType:
     """
     Get database directory.
 
-    If the environment variable USE_S3_STORAGE=1, this function returns `AnyPath("s3://sertit-geodatastore")`.
+    If :any:`USE_S3_STORAGE` is set to ``1``, this function returns ``AnyPath("s3://sertit-geodatastore")``.
 
-    If USE_S3_STORAGE=0, it returns path to the DS2: `AnyPath("//ds2/database02/BASES_DE_DONNEES")` or `AnyPath(/home/ds2_db2/BASE_DE_DONNESS`)`
+    If :any:`USE_S3_STORAGE` is set to ``0`` it returns:
+
+    * ``AnyPath("//ds2/database02/BASES_DE_DONNEES")`` if code is running on Windows
+    * ``AnyPath(/home/ds2_db2/BASE_DE_DONNESS`)`` if code is running in a Docker containers on Windows
 
     Returns:
         AnyPath: Database directory
 
     Example:
-        Don't set manually USE_S3_STORAGE with os.environ !
+        Don't set manually ``USE_S3_STORAGE`` with ``os.environ`` !
 
         >>> from sertit.unistra import get_geodatastore
         >>> import os
@@ -147,7 +179,7 @@ def get_mnt_path() -> str:
     """
     Return mounting directory :code:`/mnt`.
 
-    .. WARNING::
+    Warnings:
         This won't work on Windows !
 
     Returns:

@@ -85,7 +85,7 @@ def get_or_create_dask_client(processes=False):
 def get_dask_lock(name):
     """
     Get a dask lock with given name. This lock uses the default client if existing;
-    or create a local cluster (get_or_create_dask_client) otherwise.
+    or create a local cluster (:py:func:`get_or_create_dask_client`) otherwise.
     Args:
         name: The name of the lock
     Returns:
