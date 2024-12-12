@@ -73,7 +73,11 @@ def dask_env(function):
         """S3 environment wrapper"""
         try:
             with dask.get_or_create_dask_client():
-                print("Using DASK")
+                print("Using DASK multithreaded.")
+                function(*_args, **_kwargs)
+
+            with dask.get_or_create_dask_client():
+                print("Using DASK with local cluster")
                 function(*_args, **_kwargs)
         except ImportError:
             pass
