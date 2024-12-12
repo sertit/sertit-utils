@@ -9,6 +9,15 @@
    :caption: For Users
 ```
 
+
+```{toctree}
+---
+maxdepth: 2
+caption: Contents:
+---
+notebooks/01_getting_started.ipynb
+```
+
 ```{eval-rst}
 .. autosummary::
     :toctree: api
