@@ -1,5 +1,10 @@
 # Release History
 
+## 1.44.x (20xx-xx-xx)
+
+- **ENH: Drop isort, black and flake8 and use ruff**
+- **ENH: Use pyproject.toml instead of setup.py**
+
 ## 1.44.1 (2024-12-12)
 
 - OPTIM: Don't download an archive stored on the cloud when trying to read a vector stored inside it in `vectors.read`
