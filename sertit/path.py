@@ -593,11 +593,22 @@ def is_cloud_path(path: AnyPathStrType):
         bool: True if the file is store on the cloud.
     """
     try:
-        from cloudpathlib import CloudPath
+        return AnyPath(path).protocol in [
+            "s3",
+            "az",
+            "adl",
+            "abfs",
+            "abfss",
+            "gs",
+            "gcs",
+        ]
+    except ImportError:
+        try:
+            from cloudpathlib import CloudPath
 
-        return isinstance(AnyPath(path), CloudPath)
-    except Exception:
-        return False
+            return isinstance(AnyPath(path), CloudPath)
+        except Exception:
+            return False
 
 
 def is_path(path: Any) -> bool:
@@ -613,5 +624,6 @@ def is_path(path: Any) -> bool:
     from pathlib import Path
 
     from cloudpathlib import CloudPath
+    from upath import UPath
 
-    return isinstance(path, (str, Path, CloudPath))
+    return isinstance(path, (str, Path, CloudPath, UPath))

@@ -8,11 +8,12 @@ import xarray as xr
 from cloudpathlib import CloudPath
 from rasterio.io import DatasetReader, DatasetWriter
 from shapely import MultiPolygon, Polygon
+from upath import UPath
 
-AnyPathType = Union[CloudPath, Path]
-"""Any Path Type (derived from Pathlib and CloudpathLib)"""
+AnyPathType = Union[CloudPath, Path, UPath]
+"""Any Path Type (derived from Pathlib, Universal Pathlib and CloudpathLib)"""
 
-AnyPathStrType = Union[str, CloudPath, Path]
+AnyPathStrType = Union[str, AnyPathType]
 """Same as :code:`AnyPathType` but appened with :code:`str`"""
 
 AnyXrDataStructure = Union[xr.DataArray, xr.Dataset]

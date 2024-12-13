@@ -16,11 +16,11 @@
 # limitations under the License.
 """ Script testing the CI """
 import pytest
-from cloudpathlib import AnyPath, S3Client
+from cloudpathlib import S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3
-from sertit import ci, misc, rasters, s3
+from sertit import AnyPath, ci, misc, rasters, s3
 from sertit.unistra import (
     _get_db_path,
     get_db2_path,

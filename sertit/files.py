@@ -36,7 +36,7 @@ import numpy as np
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import AnyPath, logs, path
+from sertit import AnyPath, logs, path, s3
 from sertit.logs import SU_NAME
 from sertit.strings import DATE_FORMAT
 from sertit.types import AnyPathStrType, AnyPathType
@@ -515,26 +515,20 @@ def archive(
         'D:/path/to/output/folder_to_archive.tar.gz'
     """
     archive_path = AnyPath(archive_path)
-    folder_path = AnyPath(folder_path)
 
-    tmp_dir = None
-    if path.is_cloud_path(folder_path):
-        tmp_dir = tempfile.TemporaryDirectory()
-        folder_path = folder_path.download_to(tmp_dir.name)
+    with tempfile.TemporaryDirectory() as tmp_path:
+        folder_path = s3.download(AnyPath(folder_path), tmp_path)
 
-    # Shutil make_archive needs a path without extension
-    archive_base = os.path.splitext(archive_path)[0]
+        # Shutil make_archive needs a path without extension
+        archive_base = os.path.splitext(archive_path)[0]
 
-    # Archive the folder
-    archive_fn = shutil.make_archive(
-        archive_base,
-        format=fmt,
-        root_dir=folder_path.parent,
-        base_dir=folder_path.name,
-    )
-
-    if tmp_dir is not None:
-        tmp_dir.cleanup()
+        # Archive the folder
+        archive_fn = shutil.make_archive(
+            archive_base,
+            format=fmt,
+            root_dir=folder_path.parent,
+            base_dir=folder_path.name,
+        )
 
     return AnyPath(archive_fn)
 
@@ -755,7 +749,7 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
     src = AnyPath(src)
 
     if path.is_cloud_path(src):
-        out = src.download_to(dst)
+        out = s3.download(src, dst)
     else:
         out = None
         try:

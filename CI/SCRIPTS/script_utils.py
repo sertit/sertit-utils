@@ -39,8 +39,13 @@ class Polarization(ListEnum):
 
 def get_s3_ci_path():
     """Get S3 CI path"""
-    unistra.define_s3_client()
-    return AnyPath("s3://sertit-sertit-utils-ci")
+    # unistra.define_s3_client()
+
+    from sertit.unistra import UNISTRA_S3_ENDPOINT
+
+    return AnyPath(
+        "s3://sertit-sertit-utils-ci", endpoint_url=f"https://{UNISTRA_S3_ENDPOINT}"
+    )
 
 
 def get_proj_path():

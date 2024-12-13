@@ -24,6 +24,7 @@ from functools import wraps
 
 from cloudpathlib import S3Client
 
+from sertit import AnyPath, path
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -272,3 +273,35 @@ def define_s3_client(
     client = S3Client(**args_s3_client)
 
     client.set_as_default_client()
+
+
+def download(src, dst):
+
+    # By default, use the src path
+    downloaded_path = src
+
+    if path.is_path(src):
+        from cloudpathlib import CloudPath
+        from upath import UPath
+
+        # Universal pathlib
+        if isinstance(src, UPath):
+            import shutil
+
+            dst = AnyPath(dst)
+            if dst.is_dir():
+                downloaded_path = dst / src.name
+            else:
+                downloaded_path = dst
+
+            with src.open("rb") as f0, downloaded_path.open("wb") as f1:
+                shutil.copyfileobj(f0, f1)
+
+        # cloudpathlib
+        elif isinstance(src, CloudPath):
+            if dst is None:
+                downloaded_path = src.fspath
+            else:
+                downloaded_path = src.download_to(dst)
+
+    return downloaded_path

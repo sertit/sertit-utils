@@ -44,7 +44,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
+from sertit import AnyPath, geometry, logs, misc, path, s3, strings, vectors, xml
 from sertit.logs import SU_NAME
 from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
 
@@ -1435,7 +1435,7 @@ def merge_vrt(
         crs_path = AnyPath(crs_path)
         # Download file if VRT is needed
         if path.is_cloud_path(crs_path):
-            crs_path = crs_path.download_to(merged_path.parent)
+            crs_path = s3.download(crs_path, merged_path.parent)
 
         with rasterio.open(str(crs_path)) as src:
             if first_crs is None:

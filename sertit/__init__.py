@@ -20,11 +20,17 @@
 .. include:: ../README.md
 """
 try:
-    from cloudpathlib import AnyPath
+    from upath import UPath
 
-    AnyPath = AnyPath
+    AnyPath = UPath
+
 except ImportError:
-    pass
+    try:
+        from cloudpathlib import AnyPath
+
+        AnyPath = AnyPath
+    except ImportError:
+        pass
 
 # flake8: noqa
 from .__meta__ import (

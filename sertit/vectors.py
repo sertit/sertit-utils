@@ -35,7 +35,7 @@ import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 
-from sertit import AnyPath, files, geometry, logs, misc, path, strings
+from sertit import AnyPath, files, geometry, logs, misc, path, s3, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -717,7 +717,7 @@ def ogr2geojson(
     else:
         # vector_path should be downloaded to work with 'ogr2ogr'
         if path.is_cloud_path(vector_path):
-            vector_path = AnyPath(vector_path).fspath
+            vector_path = s3.download(vector_path, out_dir)
         vect_path = vector_path
 
     vect_path_gj = os.path.join(
