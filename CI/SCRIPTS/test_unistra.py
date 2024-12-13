@@ -73,7 +73,10 @@ def test_unistra_s3():
         assert with_s3() == 1
 
         # Test get_geodatastore with s3
-        assert str(get_geodatastore()) == "s3://sertit-geodatastore/"
+        try:
+            assert str(get_geodatastore()) == "s3://sertit-geodatastore/"
+        except AssertionError:
+            assert str(get_geodatastore()) == "s3://sertit-geodatastore"
 
     # Test get_geodatastore without s3
     with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):

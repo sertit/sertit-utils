@@ -382,11 +382,14 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     assert path_1.is_dir(), f"{path_1} is not a directory!"
     assert path_2.is_dir(), f"{path_2} is not a directory!"
 
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with (
+        tempfile.TemporaryDirectory() as tmpdir,
+        tempfile.TemporaryDirectory() as tmpdir2,
+    ):
         if path.is_cloud_path(path_1):
             path_1 = s3.download(path_1, tmpdir)
         if path.is_cloud_path(path_2):
-            path_2 = s3.download(path_2, tmpdir)
+            path_2 = s3.download(path_2, tmpdir2)
 
         dcmp = filecmp.dircmp(path_1, path_2)
         try:

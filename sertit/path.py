@@ -15,6 +15,7 @@
 # limitations under the License.
 """Tools for paths"""
 
+import contextlib
 import errno
 import logging
 import os
@@ -420,7 +421,7 @@ def is_cloud_path(path: AnyPathStrType):
             "gs",
             "gcs",
         ]
-    except ImportError:
+    except AttributeError:
         try:
             from cloudpathlib import CloudPath
 
@@ -431,17 +432,26 @@ def is_cloud_path(path: AnyPathStrType):
 
 def is_path(path: Any) -> bool:
     """
-    Determine whether the path corresponds to a file stored on the cloud or not.
+    Determine whether the path is really a path or not: either str, Path, UPath or CloudPath
 
     Args:
         path (AnyPathStrType): File path
 
     Returns:
-        bool: True if the file is store on the cloud.
+        bool: True if the file is a path
     """
     from pathlib import Path
 
-    from cloudpathlib import CloudPath
-    from upath import UPath
+    is_path = isinstance(path, (str, Path))
 
-    return isinstance(path, (str, Path, CloudPath, UPath))
+    with contextlib.suppress(ImportError):
+        from upath import UPath
+
+        is_path = is_path or isinstance(path, UPath)
+
+    with contextlib.suppress(ImportError):
+        from cloudpathlib import CloudPath
+
+        is_path = is_path or isinstance(path, CloudPath)
+
+    return is_path

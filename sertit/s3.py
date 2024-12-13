@@ -17,6 +17,7 @@
 S3 tools
 """
 
+import contextlib
 import logging
 import os
 from contextlib import contextmanager
@@ -279,34 +280,39 @@ def download(src, dst):
     # By default, use the src path
     downloaded_path = src
 
-    if path.is_path(src):
-        from cloudpathlib import CloudPath
-        from upath import UPath
+    # Universal pathlib
+    if path.is_cloud_path(src):
+        import shutil
 
-        # Universal pathlib
-        if isinstance(src, UPath):
-            import shutil
+        with contextlib.suppress(ImportError):
+            from upath import UPath
 
-            dst = AnyPath(dst)
-            if dst.is_dir() and src.name != dst.name:
-                downloaded_path = dst / src.name
-            else:
-                downloaded_path = dst
+            if isinstance(src, UPath):
+                dst = AnyPath(dst)
+                if dst.is_dir() and src.name != dst.name:
+                    downloaded_path = dst / src.name
+                else:
+                    downloaded_path = dst
 
-            if src.is_file():
-                with src.open("rb") as f0, downloaded_path.open("wb") as f1:
-                    shutil.copyfileobj(f0, f1)
-            else:
-                for f in src.glob("**"):
-                    dst_file = downloaded_path / f.name
-                    if f.is_file():
-                        dst_file.parent.mkdir(parents=True, exist_ok=True)
-                        with f.open("rb") as f0, dst_file.open("wb") as f1:
-                            shutil.copyfileobj(f0, f1)
+                if src.is_file():
+                    with src.open("rb") as f0, downloaded_path.open("wb") as f1:
+                        shutil.copyfileobj(f0, f1)
+                else:
+                    downloaded_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    for f in src.glob("**"):
+                        dst_file = downloaded_path / f.name
+                        if f.is_file():
+                            dst_file.parent.mkdir(parents=True, exist_ok=True)
+                            with f.open("rb") as f0, dst_file.open("wb") as f1:
+                                shutil.copyfileobj(f0, f1)
 
         # cloudpathlib
-        elif isinstance(src, CloudPath):
-            downloaded_path = src.fspath if dst is None else src.download_to(dst)
+        with contextlib.suppress(ImportError):
+            from cloudpathlib import CloudPath
+
+            if isinstance(src, CloudPath):
+                downloaded_path = src.fspath if dst is None else src.download_to(dst)
 
     return downloaded_path
 
