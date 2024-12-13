@@ -221,16 +221,25 @@ def extract_file(
             arch.extractall(archive_output)
 
     # Manage archive type
+
     if file_path.suffix == ".zip":
+        if path.is_cloud_path(file_path):
+            file_path = s3.read(file_path)
         with zipfile.ZipFile(file_path, "r") as zip_file:
             extract_sub_dir(zip_file, zip_file.namelist())
     elif file_path.suffix == ".tar" or file_path.suffixes == [".tar", ".gz"]:
-        with tarfile.open(file_path, "r") as tar_file:
+        if path.is_cloud_path(file_path):
+            args = {"fileobj": s3.read(file_path), "mode": "r"}
+        else:
+            args = {"name": file_path, "mode": "r"}
+        with tarfile.open(**args) as tar_file:
             extract_sub_dir(tar_file, tar_file.getnames())
     elif file_path.suffix == ".7z":
         try:
             import py7zr
 
+            if path.is_cloud_path(file_path):
+                file_path = s3.read(file_path)
             with py7zr.SevenZipFile(file_path, "r") as z7_file:
                 extract_sub_dir(z7_file, z7_file.getnames())
         except ModuleNotFoundError:
@@ -394,14 +403,18 @@ def read_archived_file(
          bytes: Archived file in bytes
     """
     archive_path = AnyPath(archive_path)
-
+    archive_fn = get_filename(archive_path)
     # Compile regex
     regex = re.compile(regex)
 
     # Open tar and zip XML
     try:
         if archive_path.suffix == ".tar":
-            with tarfile.open(archive_path) as tar_ds:
+            if path.is_cloud_path(archive_path):
+                args = {"fileobj": s3.read(archive_path), "mode": "r"}
+            else:
+                args = {"name": archive_path, "mode": "r"}
+            with tarfile.open(**args) as tar_ds:
                 # file_list is not very useful for TAR files...
                 if file_list is None:
                     tar_mb = tar_ds.getmembers()
@@ -410,6 +423,8 @@ def read_archived_file(
                 tarinfo = tar_ds.getmember(name)
                 file_str = tar_ds.extractfile(tarinfo).read()
         elif archive_path.suffix == ".zip":
+            if path.is_cloud_path(archive_path):
+                archive_path = s3.read(archive_path)
             with zipfile.ZipFile(archive_path) as zip_ds:
                 if file_list is None:
                     file_list = [f.filename for f in zip_ds.filelist]
@@ -425,9 +440,7 @@ def read_archived_file(
                 "Only .zip and .tar files can be read from inside its archive."
             )
     except IndexError:
-        raise FileNotFoundError(
-            f"Impossible to find file {regex} in {path.get_filename(archive_path)}"
-        )
+        raise FileNotFoundError(f"Impossible to find file {regex} in {archive_fn}")
 
     return file_str
 

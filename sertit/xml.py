@@ -29,7 +29,7 @@ from lxml.etree import (
 )
 from lxml.html.builder import E
 
-from sertit import AnyPath, files, path
+from sertit import AnyPath, files, path, s3
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
@@ -55,12 +55,12 @@ def read(xml_path: AnyPathStrType) -> _Element:
             try:
                 # Try using read_text (faster)
                 root = fromstring(xml_path.read_text())
-            except ValueError:
+            except (ValueError, PermissionError):
                 # Try using read_bytes
                 # Slower but works with:
                 # {ValueError}Unicode strings with encoding declaration are not supported.
                 # Please use bytes input or XML fragments without declaration.
-                root = fromstring(xml_path.read_bytes())
+                root = fromstring(s3.read(xml_path))
         else:
             # pylint: disable=I1101:
             # Module 'lxml.etree' has no 'parse' member, but source is unavailable.

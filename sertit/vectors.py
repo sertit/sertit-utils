@@ -255,8 +255,11 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     if aoi_path.suffix == ".wkt":
         try:
-            with open(aoi_path, "r") as aoi_f:
-                aoi = wkt.load(aoi_f)
+            if path.is_cloud_path(aoi_path):
+                aoi = wkt.load(s3.read(aoi_path))
+            else:
+                with open(aoi_path, "r") as aoi_f:
+                    aoi = wkt.load(aoi_f)
         except Exception as ex:
             raise ValueError("AOI WKT cannot be read") from ex
     else:
@@ -707,11 +710,19 @@ def ogr2geojson(
     vector_path = AnyPath(vector_path)
 
     # archived vector_path are extracted in a tmp folder so no need to be downloaded
+
     if vector_path.suffix == ".zip":
+        if path.is_cloud_path(vector_path):
+            vector_path = s3.read(vector_path)
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
     elif vector_path.suffix == ".tar":
-        with tarfile.open(vector_path, "r") as tar_ds:
+        if path.is_cloud_path(vector_path):
+            args = {"fileobj": s3.read(vector_path), "mode": "r"}
+        else:
+            args = {"name": vector_path, "mode": "r"}
+
+        with tarfile.open(**args) as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:

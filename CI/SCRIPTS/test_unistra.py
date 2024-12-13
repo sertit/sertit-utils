@@ -16,11 +16,11 @@
 # limitations under the License.
 """ Script testing the CI """
 import pytest
-from cloudpathlib import S3Client
+from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from CI.SCRIPTS.script_utils import CI_SERTIT_S3
-from sertit import AnyPath, ci, misc, rasters, s3
+from sertit import ci, misc, rasters, s3
 from sertit.unistra import (
     _get_db_path,
     get_db2_path,
@@ -73,7 +73,7 @@ def test_unistra_s3():
         assert with_s3() == 1
 
         # Test get_geodatastore with s3
-        assert str(get_geodatastore()) == "s3://sertit-geodatastore"
+        assert str(get_geodatastore()) == "s3://sertit-geodatastore/"
 
     # Test get_geodatastore without s3
     with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):

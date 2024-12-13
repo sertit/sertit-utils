@@ -3,6 +3,7 @@ from typing import Union
 
 import numpy as np
 from cloudpathlib import CloudPath
+from upath import UPath
 
 from sertit import AnyPath
 from sertit.types import AnyPathType, is_iterable, make_iterable
@@ -10,7 +11,7 @@ from sertit.types import AnyPathType, is_iterable, make_iterable
 
 def test_types():
     """Test some type aliases"""
-    assert AnyPathType == Union[Path, CloudPath]
+    assert AnyPathType == Union[Path, CloudPath, UPath]
 
 
 def test_is_iterable():

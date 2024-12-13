@@ -21,6 +21,7 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import wraps
+from io import BytesIO
 
 from cloudpathlib import S3Client
 
@@ -305,3 +306,14 @@ def download(src, dst):
                 downloaded_path = src.download_to(dst)
 
     return downloaded_path
+
+
+def read(src):
+    src = AnyPath(src)
+    try:
+        b = src.read_bytes()
+    except Exception:
+        with src.open("rb") as f:
+            b = f.read()
+
+    return BytesIO(b)

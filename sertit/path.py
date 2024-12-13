@@ -26,7 +26,7 @@ import tempfile
 import zipfile
 from typing import Any, Union
 
-from sertit import AnyPath, logs
+from sertit import AnyPath, logs, s3
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -167,18 +167,27 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
         ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
     """
     archive_path = AnyPath(archive_path)
-    if archive_path.suffix == ".zip":
+
+    is_zip = archive_path.suffix == ".zip"
+    archive_fn = get_filename(archive_path)
+    if is_zip:
+
+        if is_cloud_path(archive_path):
+            archive_path = s3.read(archive_path)
+
         with zipfile.ZipFile(archive_path) as zip_ds:
             file_list = [f.filename for f in zip_ds.filelist]
     else:
         try:
-            with tarfile.open(archive_path) as tar_ds:
+            if is_cloud_path(archive_path):
+                args = {"fileobj": s3.read(archive_path), "mode": "r"}
+            else:
+                args = {"name": archive_path, "mode": "r"}
+            with tarfile.open(**args) as tar_ds:
                 tar_mb = tar_ds.getmembers()
                 file_list = [mb.name for mb in tar_mb]
         except tarfile.ReadError as ex:
-            raise tarfile.ReadError(
-                f"Impossible to open archive: {archive_path}"
-            ) from ex
+            raise tarfile.ReadError(f"Impossible to open archive: {archive_fn}") from ex
 
     return file_list
 
