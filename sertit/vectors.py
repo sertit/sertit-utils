@@ -476,7 +476,11 @@ def read(
         if "!" in str(vector_path):
             split_vect = str(vector_path).split("!")
             archive_regex = ".*{0}".format(split_vect[1].replace(".", r"\."))
-            vector_path = AnyPath(split_vect[0])
+            try:
+                vector_path = AnyPath(split_vect[0], **vector_path.storage_options)
+            except Exception:
+                # Cloudpathlib
+                vector_path = AnyPath(split_vect[0])
 
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:

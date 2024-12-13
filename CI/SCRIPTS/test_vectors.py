@@ -279,7 +279,10 @@ def test_read_archived():
     map_overlay_extracted = vectors.read(map_overlay_extracted_path)
 
     ci.assert_geom_equal(
-        map_overlay_extracted, vectors.read(f"{zip_landsat}!{landsat}/{map_overlay}")
+        map_overlay_extracted,
+        vectors.read(
+            zip_landsat.parent / (zip_landsat.name + f"!{landsat}/{map_overlay}")
+        ),
     )
     ci.assert_geom_equal(
         map_overlay_extracted,
