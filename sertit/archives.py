@@ -285,10 +285,14 @@ def archive(
     archive_path = AnyPath(archive_path)
     folder_path = AnyPath(folder_path)
 
+    # with zipfile.ZipFile(archive_path, mode='w', compression=zipfile.ZIP_DEFLATED) as zipf:
+    #     for f in folder_path.glob("**"):
+    #         zipf.write(f, f.relative_to(folder_path.name))
+
     tmp_dir = None
     if path.is_cloud_path(folder_path):
         tmp_dir = tempfile.TemporaryDirectory()
-        folder_path = folder_path.download_to(tmp_dir.name)
+        folder_path = s3.download(folder_path, tmp_dir.name)
 
     # Shutil make_archive needs a path without extension
     archive_base = os.path.splitext(archive_path)[0]
@@ -304,7 +308,12 @@ def archive(
     if tmp_dir is not None:
         tmp_dir.cleanup()
 
-    return AnyPath(archive_fn)
+    try:
+        arch = AnyPath(archive_fn, folder_path.storage_options)
+    except Exception:
+        arch = AnyPath(archive_fn)
+
+    return arch
 
 
 def add_to_zip(
@@ -329,55 +338,54 @@ def add_to_zip(
     """
     zip_path = AnyPath(zip_path)
 
-    # If the zip is on the cloud, cache it (zipfile doesn't like cloud paths)
-    if path.is_cloud_path(zip_path):
-        zip_path = AnyPath(zip_path.fspath)
-
-    # Check if existing zipfile
-    if not zip_path.is_file():
-        raise FileNotFoundError(f"Non existing {zip_path}")
-
-    # Convert to list if needed
-    if not isinstance(dirs_to_add, list):
-        dirs_to_add = [dirs_to_add]
-
-    # Add all folders to the existing zip
-    # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
-    with open_zipfile(zip_path, "a") as zip_file:
-        progress_bar = tqdm(dirs_to_add)
-        for dir_to_add_path in progress_bar:
-            # Just to be sure, use str instead of Paths
-            if isinstance(dir_to_add_path, Path):
-                dir_to_add = str(dir_to_add_path)
-            elif path.is_cloud_path(dir_to_add_path):
-                dir_to_add = dir_to_add_path.fspath
-            else:
-                dir_to_add = dir_to_add_path
-
-            progress_bar.set_description(
-                f"Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}"
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # If the zip is on the cloud, cache it (zipfile doesn't like cloud paths)
+        if path.is_cloud_path(zip_path):
+            raise NotImplementedError(
+                "Impossible (for now) to update a zip stored in the cloud!"
             )
-            tmp = tempfile.TemporaryDirectory()
-            if os.path.isfile(dir_to_add):
-                dir_to_add = extract_file(dir_to_add, tmp.name)
 
-            for root, _, files in os.walk(dir_to_add):
-                base_path = os.path.join(dir_to_add, "..")
+        # Check if existing zipfile
+        if not zip_path.is_file():
+            raise FileNotFoundError(f"Non existing {zip_path}")
 
-                # Write dir (in namelist at least)
-                zip_file.write(root, os.path.relpath(root, base_path))
+        # Convert to list if needed
+        if not isinstance(dirs_to_add, list):
+            dirs_to_add = [dirs_to_add]
 
-                # Write files
-                for file in files:
-                    zip_file.write(
-                        os.path.join(root, file),
-                        os.path.relpath(
-                            os.path.join(root, file), os.path.join(dir_to_add, "..")
-                        ),
-                    )
+        # Add all folders to the existing zip
+        # Forced to use ZipFile because make_archive only works with one folder and not existing zipfile
+        with open_zipfile(zip_path, "a") as zip_file:
+            progress_bar = tqdm(dirs_to_add)
+            for dir_to_add_path in progress_bar:
+                # Just to be sure, use str instead of Paths
+                if isinstance(dir_to_add_path, Path):
+                    dir_to_add = str(dir_to_add_path)
+                elif path.is_cloud_path(dir_to_add_path):
+                    dir_to_add = dir_to_add_path.fspath
+                else:
+                    dir_to_add = dir_to_add_path
 
-            # Clean tmp
-            tmp.cleanup()
+                progress_bar.set_description(
+                    f"Adding {os.path.basename(dir_to_add)} to {os.path.basename(zip_path)}"
+                )
+                if os.path.isfile(dir_to_add):
+                    dir_to_add = extract_file(dir_to_add, tmp_dir)
+
+                for root, _, files in os.walk(dir_to_add):
+                    base_path = os.path.join(dir_to_add, "..")
+
+                    # Write dir (in namelist at least)
+                    zip_file.write(root, os.path.relpath(root, base_path))
+
+                    # Write files
+                    for file in files:
+                        zip_file.write(
+                            os.path.join(root, file),
+                            os.path.relpath(
+                                os.path.join(root, file), os.path.join(dir_to_add, "..")
+                            ),
+                        )
 
     return zip_path
 

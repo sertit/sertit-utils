@@ -20,6 +20,7 @@ CI tools
 import filecmp
 import logging
 import pprint
+import tempfile
 from doctest import Example
 from typing import Any, Union
 
@@ -30,7 +31,7 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, files, s3, unistra
+from sertit import AnyPath, files, path, s3, unistra
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
@@ -381,27 +382,33 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     assert path_1.is_dir(), f"{path_1} is not a directory!"
     assert path_2.is_dir(), f"{path_2} is not a directory!"
 
-    dcmp = filecmp.dircmp(path_1, path_2)
-    try:
-        assert (
-            dcmp.left_only == []
-        ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
-        assert (
-            dcmp.right_only == []
-        ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
-    except FileNotFoundError:
-        files_1 = [AnyPath(p).name for p in AnyPath(path_1).iterdir()]
-        files_2 = [AnyPath(p).name for p in AnyPath(path_2).iterdir()]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        if path.is_cloud_path(path_1):
+            path_1 = s3.download(path_1, tmpdir)
+        if path.is_cloud_path(path_2):
+            path_2 = s3.download(path_2, tmpdir)
 
-        for f1 in files_1:
+        dcmp = filecmp.dircmp(path_1, path_2)
+        try:
             assert (
-                f1 in files_2
-            ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+                dcmp.left_only == []
+            ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
+            assert (
+                dcmp.right_only == []
+            ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
+        except FileNotFoundError:
+            files_1 = [p.name for p in path_1.iterdir()]
+            files_2 = [p.name for p in path_2.iterdir()]
 
-        for f2 in files_2:
-            assert (
-                f2 in files_1
-            ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
+            for f1 in files_1:
+                assert (
+                    f1 in files_2
+                ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+
+            for f2 in files_2:
+                assert (
+                    f2 in files_1
+                ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
 
 
 def assert_geom_equal(

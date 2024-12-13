@@ -288,10 +288,21 @@ def download(src, dst):
             import shutil
 
             dst = AnyPath(dst)
-            downloaded_path = dst / src.name if dst.is_dir() else dst
+            if dst.is_dir() and src.name != dst.name:
+                downloaded_path = dst / src.name
+            else:
+                downloaded_path = dst
 
-            with src.open("rb") as f0, downloaded_path.open("wb") as f1:
-                shutil.copyfileobj(f0, f1)
+            if src.is_file():
+                with src.open("rb") as f0, downloaded_path.open("wb") as f1:
+                    shutil.copyfileobj(f0, f1)
+            else:
+                for f in src.glob("**"):
+                    dst_file = downloaded_path / f.name
+                    if f.is_file():
+                        dst_file.parent.mkdir(parents=True, exist_ok=True)
+                        with f.open("rb") as f0, dst_file.open("wb") as f1:
+                            shutil.copyfileobj(f0, f1)
 
         # cloudpathlib
         elif isinstance(src, CloudPath):

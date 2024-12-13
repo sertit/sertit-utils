@@ -8,6 +8,7 @@ from CI.SCRIPTS.script_utils import files_path, s3_env
 from sertit import archives, ci, files, path, s3, vectors
 
 
+@s3_env
 def test_archive(tmp_path):
     """Test extracting functions"""
     # Archives
@@ -31,6 +32,11 @@ def test_archive(tmp_path):
 
     # Extract
     extracted_dirs = archives.extract_files(arch, tmp_path, overwrite=True)
+
+    # Test
+    for ex_dir in extracted_dirs:
+        ci.assert_dir_equal(core_dir, ex_dir)
+
     archives.extract_files([zip2_file], tmp_path, overwrite=False)  # Already existing
 
     # Test
@@ -54,7 +60,7 @@ def test_archive(tmp_path):
     # Add to zip
     zip_out = zip2_file if path.is_cloud_path(zip2_file) else archive_base + ".zip"
     core_copy = files.copy(core_dir, os.path.join(tmp_path, "core2"))
-    zip_out = archives.add_to_zip(zip_out, core_copy)
+    zip_out = archives.add_to_zip(s3.download(zip_out, tmp_path), core_copy)
 
     # Extract
     unzip_out = os.path.join(tmp_path, "out")
