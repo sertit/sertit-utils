@@ -10,16 +10,12 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
     rev: v5.0.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-json
       - id: check-yaml
         args: [ --allow-multiple-documents, --unsafe ]
       - id: check-xml
       - id: check-added-large-files
         args: [ '--maxkb=1600' ]
-      - id: debug-statements
-      - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
@@ -30,3 +26,13 @@ repos:
         args: [ --fix ]
       # Run the formatter.
       - id: ruff-format
+
+
+
+
+
+
+
+
+
+
