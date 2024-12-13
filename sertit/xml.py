@@ -260,7 +260,7 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
             elif isinstance(val, datetime):
                 str_val = val.isoformat()
             else:
-                with contextlib.supress(AttributeError):
+                with contextlib.suppress(AttributeError):
                     # gpd, pd...
                     val = val.iat[0]
                 str_val = str(val)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -16,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+
 import sertit
 
 # -- General configuration ------------------------------------------------
@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "myst_nb",
-    "IPython.sphinxext.ipython_console_highlighting"
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 myst_enable_extensions = [
     "amsmath",
@@ -57,7 +57,7 @@ nb_execution_mode = "cache"
 nb_execution_timeout = -1
 
 # Manage new READTHEDOCS output mechanism
-cache_path = os.getenv('READTHEDOCS_OUTPUT')
+cache_path = os.getenv("READTHEDOCS_OUTPUT")
 if cache_path is not None:
     nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
 
