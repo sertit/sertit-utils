@@ -120,7 +120,7 @@ html_theme = "sphinx_book_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "repository_url": sertit.__url__,
+    "repository_url": "https://github.com/sertit/sertit-utils",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": False,
