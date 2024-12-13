@@ -12,7 +12,7 @@ from typing import Union
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import AnyPath, logs, path, s3
+from sertit import AnyPath, path, s3
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -222,12 +222,6 @@ def read_archived_xml(
         >>> read_archived_xml(arch_path, file_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'xml_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("xml_regex")
-
     xml_bytes = read_archived_file(archive_path, regex=regex, file_list=file_list)
 
     return etree.fromstring(xml_bytes)
@@ -455,12 +449,6 @@ def get_archived_path(
         >>> path = get_archived_path(arch_path, file_regex)
         'dir/filename.tif'
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
     # Get file list
     archive_path = AnyPath(archive_path)
 
@@ -525,12 +513,6 @@ def get_archived_rio_path(
         >>> rasterio.open(path)
         <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
     archive_path = AnyPath(archive_path)
     if archive_path.suffix in [".tar", ".zip"]:
         prefix = archive_path.suffix[-3:]

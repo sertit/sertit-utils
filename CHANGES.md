@@ -2,6 +2,12 @@
 
 ## 2.0.0 (20xx-xx-xx)
 
+- **BREAKING CHANGE**: Remove all deprecations from `sertit==1.*` ([#3](https://github.com/sertit/sertit-utils/issues/3)): 
+   - Duplication between `path` and `files` modules
+   - Duplication between `ci`, `s3` and `unistra` modules
+   - Arguments in functions
+   - Renaming functions
+   - Others
 - **ENH: Use `universal_pathlib` instead of `cloudpathlib` (even if the code is still compatible with `cloudpathlib`)** ([#4](https://github.com/sertit/sertit-utils/issues/4))
  
 ## 1.44.x (20xx-xx-xx)

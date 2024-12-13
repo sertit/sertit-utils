@@ -43,7 +43,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, geometry, logs, misc, path, s3, strings, vectors, xml
+from sertit import AnyPath, geometry, misc, path, s3, strings, vectors, xml
 from sertit.logs import SU_NAME
 from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
 
@@ -110,25 +110,6 @@ def get_nodata_value_from_dtype(dtype) -> float:
         nodata = FLOAT_NODATA
 
     return nodata
-
-
-def get_nodata_value(dtype) -> float:
-    """
-    .. deprecated:: 1.41.0
-       Use :code:`get_nodata_value_from_dtype` instead.
-
-    Get default nodata value:
-
-    Args:
-        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
-
-    Returns:
-        float: Nodata value
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Use 'get_nodata_value_from_dtype' instead."
-    )
-    return get_nodata_value_from_dtype(dtype)
 
 
 def bigtiff_value(arr: Any) -> str:
@@ -248,17 +229,6 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
         return out
 
     return wrapper
-
-
-def path_arr_dst(function: Callable) -> Callable:
-    """
-    .. deprecated:: 1.40.0
-       Use :py:func:`rasters.any_raster_to_rio_ds` instead.
-    """
-    logs.deprecation_warning(
-        "Deprecated 'path_arr_dst' decorator. Please use 'any_raster_to_rio_ds' instead."
-    )
-    return any_raster_to_rio_ds(function)
 
 
 @any_raster_to_rio_ds
@@ -424,19 +394,6 @@ def update_meta(arr: AnyNumpyArray, meta: dict) -> dict:
     return out_meta
 
 
-def get_nodata_mask(
-    array: AnyNumpyArray,
-    has_nodata: bool,
-    default_nodata: int = 0,
-) -> np.ndarray:
-    """
-    .. deprecated:: 1.36.0
-       Use :py:func:`rasters_rio.get_data_mask` instead.
-    """
-    logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
-    return get_data_mask(array, has_nodata, default_nodata)
-
-
 def get_data_mask(
     array: AnyNumpyArray,
     has_nodata: bool,
@@ -540,7 +497,7 @@ def rasterize(
 
     if not np.can_cast(np.array(nodata, dtype=ds.dtypes[0]), dtype):
         old_nodata = nodata
-        nodata = get_nodata_value(dtype)
+        nodata = get_nodata_value_from_dtype(dtype)
 
         # Only throw a warning if the value is really different  (we don't care about 255.0 being replaced by 255)
         if old_nodata - nodata != 0.0:
@@ -1090,12 +1047,6 @@ def write(
         >>> # Rewrite it on disk
         >>> write(raster, meta, raster_out)
     """
-    if output_path is None:
-        logs.deprecation_warning(
-            "'path' is deprecated in 'rasters_rio.write'. Use 'output_path' instead."
-        )
-        output_path = kwargs.pop("path")
-
     raster_out = raster.copy()
 
     # Prune empty kwargs to avoid throwing GDAL warnings/errors

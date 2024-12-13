@@ -30,7 +30,7 @@ from lxml.etree import (
 )
 from lxml.html.builder import E
 
-from sertit import AnyPath, archives, logs, path, s3
+from sertit import AnyPath, archives, path, s3
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
@@ -97,12 +97,6 @@ def read_archive(
     Returns:
         _Element: XML Root
     """
-    if archive_path is None:
-        logs.deprecation_warning(
-            "'path' argument is deprecated, use 'archive_path' instead."
-        )
-        archive_path = kwargs.pop("path")
-
     try:
         if not regex:
             archive_base_path, basename = str(archive_path).split("!")

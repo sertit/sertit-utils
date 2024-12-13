@@ -24,191 +24,17 @@ from datetime import date, datetime
 from enum import Enum
 from json import JSONDecoder, JSONEncoder
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import dill
 import numpy as np
 
-from sertit import AnyPath, logs, path, s3
+from sertit import AnyPath, path, s3
 from sertit.logs import SU_NAME
 from sertit.strings import DATE_FORMAT
 from sertit.types import AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
-
-
-def get_root_path() -> AnyPathType:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Get the root path of the current disk:
-
-    - On Linux this returns :code:`/`
-    - On Windows this returns :code:`C:/` or whatever the current drive is
-
-    Example:
-        >>> get_root_path()
-        "/" on Linux
-        "C:/" on Windows (if you run this code from the C: drive)
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.get_root_path()
-
-
-def listdir_abspath(directory: AnyPathStrType) -> list:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Get absolute path of all files in the given directory.
-
-    It is the same function than :code:`os.listdir` but returning absolute paths.
-
-    Args:
-        directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
-
-    Returns:
-        str: Absolute path of all files in the given directory
-
-    Example:
-        >>> folder = "."
-        >>> listdir_abspath(folder)
-        ['D:/_SERTIT_UTILS/sertit-utils/sertit/files.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/logs.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/misc.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/network.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/rasters_rio.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/strings.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/vectors.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/version.py',
-        'D:/_SERTIT_UTILS/sertit-utils/sertit/__init__.py']
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.listdir_abspath(directory)
-
-
-def to_abspath(
-    raw_path: AnyPathStrType,
-    create: bool = True,
-    raise_file_not_found: bool = True,
-) -> AnyPathType:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Return the absolute path of the specified path and check if it exists
-
-    If not:
-
-    - If it is a file (aka has an extension), it raises an exception
-    - If it is a folder, it creates it
-
-    To be used with argparse to retrieve the absolute path of a file, like:
-
-    Args:
-        raw_path (AnyPathStrType): Path as a string (relative or absolute)
-        create (bool): Create directory if not existing
-
-    Returns:
-        AnyPathType: Absolute path
-
-    Example:
-        >>> parser = argparse.ArgumentParser()
-        >>> # Add config file path key
-        >>> parser.add_argument(
-        >>>     "--config",
-        >>>     help="Config file path (absolute or relative)",
-        >>>     type=to_abspath
-        >>> )
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.to_abspath(raw_path, create, raise_file_not_found)
-
-
-def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathType:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Gives the real relative path from a starting folder.
-    (and not just adding :code:`../..` between the start and the target)
-
-    Args:
-        raw_path (AnyPathStrType): Path to make relative
-        start (AnyPathStrType): Start, the path being relative from this folder.
-
-    Returns:
-        Relative path
-
-    Example:
-        >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
-        >>> start = os.path.join(".", "..", "..")
-        >>> real_rel_path(path, start)
-        'sertit-utils/sertit'
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.real_rel_path(raw_path, start)
-
-
-def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None) -> str:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Get file name (without extension) from file path, i.e.:
-
-    Args:
-        file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
-        other_exts (Union[list, str]): Other double extensions to discard
-
-    Returns:
-        str: File name (without extension)
-
-    Example:
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_file_name(file_path)
-        'filename'
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.get_filename(file_path, other_exts)
-
-
-def get_ext(file_path: AnyPathStrType) -> str:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Get file extension from file path.
-
-    .. WARNING::
-        Extension is given WITHOUT THE FIRST POINT
-
-    Args:
-        file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
-
-    Returns:
-        str: File name (without extension)
-
-    Example:
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_ext(file_path)
-        'zip'
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.get_ext(file_path)
 
 
 def remove(path: AnyPathStrType) -> None:
@@ -318,54 +144,6 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
     return out
 
 
-def find_files(
-    names: Union[list, str],
-    root_paths: Union[list, AnyPathStrType],
-    max_nof_files: int = -1,
-    get_as_str: bool = False,
-) -> Union[list, str]:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Returns matching files recursively from a list of root paths.
-
-    Regex are allowed (using glob)
-
-    Args:
-        names (Union[list, str]): File names.
-        root_paths (Union[list, str]): Root paths
-        max_nof_files (int): Maximum number of files (set to -1 for unlimited)
-        get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list
-
-    Returns:
-        list: File name
-
-    Examples:
-        >>> root_path = 'D:/root'
-        >>> dir1_path = 'D:/root/dir1'
-        >>> dir2_path = 'D:/root/dir2'
-        >>>
-        >>> os.listdir(dir1_path)
-        ["haha.txt", "huhu.txt", "hoho.txt"]
-        >>> os.listdir(dir2_path)
-        ["huhu.txt", "hehe.txt"]
-        >>>
-        >>> find_files("huhu.txt", root_path)
-        ['D:/root/dir1/huhu.txt', 'D:/root/dir2/huhu.txt']
-        >>>
-        >>> find_files("huhu.txt", root_path, max_nof_files=1)
-        ['D:/root/dir1/huhu.txt']
-
-        >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
-        found = 'D:/root/dir1/huhu.txt'
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.find_files(names, root_paths, max_nof_files, get_as_str)
-
-
 # subclass JSONDecoder
 class CustomDecoder(JSONDecoder):
     """Decoder for JSON with methods for datetimes"""
@@ -473,15 +251,6 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
         >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
         >>> save_json(output_json, json_dict)
     """
-    if isinstance(output_json, dict):
-        # Old order. Swap the variables.
-        logs.deprecation_warning(
-            "The order of the function has changed. Please set json_dict in first!"
-        )
-        tmp = output_json
-        output_json = json_dict
-        json_dict = tmp
-
     kwargs["indent"] = kwargs.get("indent", 3)
     kwargs["cls"] = kwargs.get("cls", CustomEncoder)
 
@@ -528,66 +297,6 @@ def load_obj(path: AnyPathStrType) -> Any:
         return dill.load(file)
 
 
-# too many arguments
-# pylint: disable=R0913
-def get_file_in_dir(
-    directory: AnyPathStrType,
-    pattern_str: str,
-    extension: str = None,
-    filename_only: bool = False,
-    get_list: bool = False,
-    exact_name: bool = False,
-) -> Union[AnyPathType, list]:
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Get one or all matching files (pattern + extension) from inside a directory.
-
-    Note that the pattern is a regex with glob's convention, i.e. :code:`*pattern*`.
-
-    If :code:`exact_name` is :code:`False`, the searched pattern will be :code:`*{pattern}*.{extension}`,
-    else :code:`{pattern}.{extension}`.
-
-    Args:
-        directory (str): Directory where to find the files
-        pattern_str (str): Pattern wanted as a string, with glob's convention.
-        extension (str): Extension wanted, optional. With or without point. (:code:`yaml` or :code:`.yaml` accepted)
-        filename_only (bool): Get only the filename
-        get_list (bool): Get the whole list of matching files
-        exact_name (bool): Get the exact name (without adding :code:`*` before and after the given pattern)
-
-    Returns:
-        Union[AnyPathType, list]: File
-
-    Example:
-        >>> directory = 'D:/path/to/dir'
-        >>> os.listdir(directory)
-        ["haha.txt", "huhu1.txt", "huhu1.geojson", "hoho.txt"]
-        >>>
-        >>> get_file_in_dir(directory, "huhu")
-        'D:/path/to/dir/huhu1.geojson'
-        >>>
-        >>> get_file_in_dir(directory, "huhu", extension="txt")
-        'D:/path/to/dir/huhu1.txt'
-        >>>
-        >>> get_file_in_dir(directory, "huhu", get_list=True)
-        ['D:/path/to/dir/huhu1.txt', 'D:/path/to/dir/huhu1.geojson']
-        >>>
-        >>> get_file_in_dir(directory, "huhu", filename_only=True, get_list=True)
-        ['huhu1.txt', 'huhu1.geojson']
-        >>>
-        >>> get_file_in_dir(directory, "huhu", get_list=True, exact_name=True)
-        []
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.get_file_in_dir(
-        directory, pattern_str, extension, filename_only, get_list, exact_name
-    )
-
-
 # pylint: disable=E1121
 def hash_file_content(file_content: str, len_param: int = 5) -> str:
     """
@@ -610,22 +319,3 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
     hasher = hashlib.shake_256()
     hasher.update(str.encode(file_content))
     return hasher.hexdigest(len_param)
-
-
-def is_writable(dir_path: AnyPathStrType):
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.path` instead of :py:mod:`sertit.files`
-
-    Determine whether the directory is writeable or not.
-
-    Args:
-        dir_path (AnyPathStrType): Directory path
-
-    Returns:
-        bool: True if the directory is writable
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.path' instead of 'sertit.files'"
-    )
-    return path.is_writable(dir_path)

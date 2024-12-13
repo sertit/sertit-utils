@@ -20,7 +20,6 @@ import tempfile
 from datetime import date, datetime
 
 import numpy as np
-import pytest
 
 from CI.SCRIPTS.script_utils import Polarization
 from sertit import AnyPath, ci, files
@@ -92,10 +91,6 @@ def test_json():
             test_dict.pop("H")
         )  # Enum are stored following their value
         assert obj == test_dict
-
-        # Test deprecation
-        with pytest.deprecated_call():
-            files.save_json(json_file, test_dict)
 
 
 def test_pickle():
