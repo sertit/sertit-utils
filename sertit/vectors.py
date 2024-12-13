@@ -433,9 +433,7 @@ def read(
             split_vect = str(vector_path).split("!")
             archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
             try:
-                vector_path = AnyPath(
-                    split_vect[0], storage_options=vector_path.storage_options
-                )
+                vector_path = AnyPath(split_vect[0], **vector_path.storage_options)
             except AttributeError:
                 # Cloudpathlib
                 vector_path = AnyPath(split_vect[0])

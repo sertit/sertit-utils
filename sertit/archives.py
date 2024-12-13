@@ -303,7 +303,7 @@ def archive(
         tmp_dir.cleanup()
 
     try:
-        arch = AnyPath(archive_fn, storage_options=folder_path.storage_options)
+        arch = AnyPath(archive_fn, **folder_path.storage_options)
     except AttributeError:
         arch = AnyPath(archive_fn)
 

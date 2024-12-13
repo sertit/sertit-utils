@@ -109,7 +109,7 @@ def read_archive(
             # For UPath
             with contextlib.suppress(AttributeError):
                 archive_base_path = AnyPath(
-                    archive_base_path, storage_options=archive_path.storage_options
+                    archive_base_path, **archive_path.storage_options
                 )
         else:
             archive_base_path = archive_path
