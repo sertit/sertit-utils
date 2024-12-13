@@ -2,8 +2,9 @@
 
 ## 1.44.x (20xx-xx-xx)
 
-- **ENH: Drop isort, black and flake8 and use ruff**
-- **ENH: Use pyproject.toml instead of setup.py**
+- **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
+- **ENH: Use `pyproject.toml` instead of `setup.py`**
+- FIX: Fix too broad exception in case of `geopandas >= 1.0`
 
 ## 1.44.1 (2024-12-12)
 

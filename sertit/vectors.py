@@ -567,6 +567,10 @@ def _read_vector_core(
             LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
     except CPLE_AppDefinedError as ex:
+        # CPLE_AppDefinedError is not a pyogrio exception and this is therefore too broad
+        if is_geopandas_1_0() and kwargs.get("engine") != "fiona":
+            raise ex
+
         # Last try to read this vector
         # Needs ogr2ogr here
         if shutil.which("ogr2ogr"):
