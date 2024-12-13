@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Tools concerning strings """
+"""Tools concerning strings"""
 
 import argparse
 import logging
@@ -310,7 +309,7 @@ def snake_to_camel_case(snake_str: str) -> str:
         >>> snake_to_camel_case("snake_case")
         "SnakeCase"
     """
-    return "".join((w.capitalize() for w in snake_str.split("_")))
+    return "".join(w.capitalize() for w in snake_str.split("_"))
 
 
 def camel_to_snake_case(snake_str: str) -> str:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -19,6 +18,7 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters]
 """
+
 import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Union
@@ -40,6 +40,8 @@ except ModuleNotFoundError as ex:
     raise ModuleNotFoundError(
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
+
+import contextlib
 
 from sertit import dask, geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
@@ -209,29 +211,28 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                             convert_to_xdataset = True
 
                     # Convert in dataset if we have DataArrays, else keep the dict
-                    if convert_to_xdataset:
-                        xds = xr.Dataset(xds_dict)
-                    else:
-                        xds = xds_dict
+                    xds = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
                     return xds
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
 
             elif isinstance(any_raster_type, tuple):
                 arr, meta = any_raster_type
-                with MemoryFile() as memfile:
-                    with memfile.open(
+                with (
+                    MemoryFile() as memfile,
+                    memfile.open(
                         **meta, BIGTIFF=rasters_rio.bigtiff_value(any_raster_type)
-                    ) as ds:
-                        ds.write(arr.data)
+                    ) as ds,
+                ):
+                    ds.write(arr.data)
 
-                        with rioxarray.open_rasterio(
-                            any_raster_type,
-                            masked=True,
-                            default_name=ds.name,
-                            chunks=kwargs.pop("chunks", default_chunks),
-                        ) as xds:
-                            out = function(xds, *args, **kwargs)
+                    with rioxarray.open_rasterio(
+                        any_raster_type,
+                        masked=True,
+                        default_name=ds.name,
+                        chunks=kwargs.pop("chunks", default_chunks),
+                    ) as xds:
+                        out = function(xds, *args, **kwargs)
             else:
                 # Get the path from the input
                 if path.is_path(any_raster_type):
@@ -314,10 +315,7 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
     except TypeError:
         is_nan = False
 
-    if is_nan:
-        nodata_pos = np.isnan(xds.data)
-    else:
-        nodata_pos = xds.data == nodata
+    nodata_pos = np.isnan(xds.data) if is_nan else xds.data == nodata
 
     return np.where(nodata_pos, 0, 1).astype(np.uint8)
 
@@ -732,10 +730,7 @@ def paint(
     """
     # Fill na values in order to not interfere with the mask function
     nodata = get_nodata_value_from_xr(xds)
-    if nodata is not None:
-        xds_fill = xds.fillna(nodata)
-    else:
-        xds_fill = xds
+    xds_fill = xds.fillna(nodata) if nodata is not None else xds
 
     # Use classic option
     arr = mask(xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs)
@@ -871,12 +866,12 @@ def _any_raster_to_rio_ds(function: Callable) -> Callable:
                 arr, meta = any_raster_type
                 from rasterio import MemoryFile
 
-                with MemoryFile() as memfile:
-                    with memfile.open(
-                        **meta, BIGTIFF=rasters_rio.bigtiff_value(arr)
-                    ) as ds:
-                        ds.write(arr)
-                        out = function(ds, *args, **kwargs)
+                with (
+                    MemoryFile() as memfile,
+                    memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds,
+                ):
+                    ds.write(arr)
+                    out = function(ds, *args, **kwargs)
             else:
                 # Try if xarray is importable
                 try:
@@ -890,8 +885,8 @@ def _any_raster_to_rio_ds(function: Callable) -> Callable:
                             return any_raster_type
                     else:
                         raise ex
-                except Exception:
-                    raise ex
+                except Exception as exc:
+                    raise ex from exc
         return out
 
     return wrapper
@@ -988,79 +983,75 @@ def read(
     )
 
     # Read data (and load it to discard lock)
-    with xr.set_options(keep_attrs=True):
-        with rioxarray.set_options(export_grid_mapping=False):
-            with rioxarray.open_rasterio(
-                ds,
-                lock=False,
-                default_name=path.get_filename(ds.name),
-                chunks=chunks,
-                **kwargs,
-            ) as xda:
-                orig_dtype = xda.dtype
+    with (
+        xr.set_options(keep_attrs=True),
+        rioxarray.set_options(export_grid_mapping=False),
+        rioxarray.open_rasterio(
+            ds,
+            lock=False,
+            default_name=path.get_filename(ds.name),
+            chunks=chunks,
+            **kwargs,
+        ) as xda,
+    ):
+        orig_dtype = xda.dtype
 
-                # Windows
-                if window is not None:
-                    xda = xda.rio.isel_window(window)
+        # Windows
+        if window is not None:
+            xda = xda.rio.isel_window(window)
 
-                # Indexes
-                if indexes is not None:
-                    if not isinstance(indexes, list):
-                        indexes = [indexes]
+        # Indexes
+        if indexes is not None:
+            if not isinstance(indexes, list):
+                indexes = [indexes]
 
-                    # Open only wanted bands
-                    if 0 in indexes:
-                        raise ValueError("Indexes should start at 1.")
+            # Open only wanted bands
+            if 0 in indexes:
+                raise ValueError("Indexes should start at 1.")
 
-                    ok_indexes = np.isin(indexes, xda.band)
-                    if any(~ok_indexes):
-                        LOGGER.warning(
-                            f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
-                        )
+            ok_indexes = np.isin(indexes, xda.band)
+            if any(~ok_indexes):
+                LOGGER.warning(
+                    f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
+                )
 
-                    xda = xda.isel(
-                        band=[idx - 1 for ok, idx in zip(ok_indexes, indexes) if ok]
-                    )
+            xda = xda.isel(band=[idx - 1 for ok, idx in zip(ok_indexes, indexes) if ok])
 
-                    try:
-                        # Set new long name: Bands nb are idx + 1
-                        xda.long_name = tuple(
-                            name
-                            for i, name in enumerate(xda.long_name)
-                            if i + 1 in indexes
-                        )
-                    except AttributeError:
-                        pass
+            with contextlib.suppress(AttributeError):
+                # Set new long name: Bands nb are idx + 1
+                xda.long_name = tuple(
+                    name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+                )
 
-                # Manage resampling
-                if do_resampling:
-                    factor_h = xda.rio.height / new_height
-                    factor_w = xda.rio.width / new_width
+        # Manage resampling
+        if do_resampling:
+            factor_h = xda.rio.height / new_height
+            factor_w = xda.rio.width / new_width
 
-                    # Manage 2 ways of resampling, coarsen being faster than reprojection
-                    # TODO: find a way to match rasterio's speed
-                    if factor_h.is_integer() and factor_w.is_integer():
-                        xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
-                    else:
-                        xda = xda.rio.reproject(
-                            xda.rio.crs,
-                            shape=(new_height, new_width),
-                            resampling=resampling,
-                        )
+            # Manage 2 ways of resampling, coarsen being faster than reprojection
+            # TODO: find a way to match rasterio's speed
+            if factor_h.is_integer() and factor_w.is_integer():
+                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+            else:
+                xda = xda.rio.reproject(
+                    xda.rio.crs,
+                    shape=(new_height, new_width),
+                    resampling=resampling,
+                )
 
-                # Convert to wanted type
-                if as_type:
-                    # Modify the type as wanted by the user
-                    # TODO: manage nodata and uint/int numbers
-                    xda = xda.astype(as_type)
+        # Convert to wanted type
+        if as_type:
+            # Modify the type as wanted by the user
+            # TODO: manage nodata and uint/int numbers
+            xda = xda.astype(as_type)
 
-                # Mask if necessary
-                if masked:
-                    # Set nodata not in opening due to some performance issues
-                    xda = set_nodata(xda, ds.meta["nodata"])
+        # Mask if necessary
+        if masked:
+            # Set nodata not in opening due to some performance issues
+            xda = set_nodata(xda, ds.meta["nodata"])
 
-                # Set original dtype
-                xda.encoding["dtype"] = orig_dtype
+        # Set original dtype
+        xda.encoding["dtype"] = orig_dtype
 
     return xda
 
@@ -1422,11 +1413,10 @@ def sieve(
 
     # Set back nodata and expand back dim
     sieved_arr = sieved_arr.astype(xds.dtype)
-    try:
+    # Manage integer files
+    with contextlib.suppress(ValueError):
         sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
-    except ValueError:
-        # Manage integer files
-        pass
+
     sieved_xds = xds.copy(data=sieved_arr)
 
     return sieved_xds
@@ -1723,10 +1713,8 @@ def set_metadata(
             STATISTICS_VALID_PERCENT:  80.07
             original_dtype:            uint8
     """
-    try:
+    with contextlib.suppress(MissingCRS):
         naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
-    except MissingCRS:
-        pass
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
@@ -2005,10 +1993,10 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
         xds = aspect(xds, name=kwargs.get("name", "aspect"))
         xds.attrs["long_name"] = "aspect"
         return xds
-    except ImportError:
+    except ImportError as exc:
         raise NotImplementedError(
             "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
-        )
+        ) from exc
 
 
 # TODO: add other DEM-related functions like 'curvature', etc if needed. Create a dedicated module?

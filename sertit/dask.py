@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from contextlib import contextmanager
 
@@ -13,11 +14,9 @@ def get_client():
     try:
         from dask.distributed import get_client
 
-        try:
+        with contextlib.suppress(ValueError):
             # Return default client
             client = get_client()
-        except ValueError:
-            pass
     except ModuleNotFoundError:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."

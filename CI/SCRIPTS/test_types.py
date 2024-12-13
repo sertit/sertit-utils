@@ -32,10 +32,7 @@ def test_make_iterable():
         if not is_it:
             val = [val]
 
-        if val is None:
-            comp = True
-        else:
-            comp = val == make_iterable(val, **kwargs)
+        comp = True if val is None else val == make_iterable(val, **kwargs)
         try:
             assert comp
         except ValueError:

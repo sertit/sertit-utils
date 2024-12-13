@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -19,6 +18,7 @@ Vectors tools
 
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
+
 import logging
 import os
 import re
@@ -26,8 +26,9 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator, Union
+from typing import Any, Union
 
 import geopandas as gpd
 import numpy as np
@@ -255,7 +256,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     if aoi_path.suffix == ".wkt":
         try:
-            with open(aoi_path, "r") as aoi_f:
+            with open(aoi_path) as aoi_f:
                 aoi = wkt.load(aoi_f)
         except Exception as ex:
             raise ValueError("AOI WKT cannot be read") from ex
@@ -458,10 +459,7 @@ def read(
             bbox = read(window)
         except (FileNotFoundError, TypeError):
             # Convert ndarray to tuple
-            if isinstance(window, np.ndarray):
-                bbox = tuple(window)
-            else:
-                bbox = window
+            bbox = tuple(window) if isinstance(window, np.ndarray) else window
 
         kwargs["bbox"] = bbox
 
@@ -472,7 +470,7 @@ def read(
         # Manage formatted archive file (fsspec style for example)
         if "!" in str(vector_path):
             split_vect = str(vector_path).split("!")
-            archive_regex = ".*{0}".format(split_vect[1].replace(".", r"\."))
+            archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
             vector_path = AnyPath(split_vect[0])
 
         # Manage archive case
@@ -491,10 +489,10 @@ def read(
                     gpd_vect_path = f"{prefix}+{vector_path}!{arch_path}"
                 else:
                     gpd_vect_path = f"{prefix}://{vector_path}!{arch_path}"
-            except IndexError:
+            except IndexError as exc:
                 raise FileNotFoundError(
                     f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
-                )
+                ) from exc
         # Don't read tar.gz archives (way too slow)
         elif vector_path.suffixes == [".tar", ".gz"]:
             raise TypeError(

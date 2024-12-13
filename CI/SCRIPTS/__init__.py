@@ -1,1 +1,1 @@
-""" CI tests """
+"""CI tests"""

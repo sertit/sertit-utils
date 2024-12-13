@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -17,6 +16,7 @@
 """
 CI tools
 """
+
 import filecmp
 import logging
 import pprint
@@ -140,11 +140,8 @@ def assert_files_equal(file_1: AnyPathStrType, file_2: AnyPathStrType):
         file_1 (str): Path to file 1
         file_2 (str): Path to file 2
     """
-    with file_1.open("r") as f1:
-        with file_2.open("r") as f2:
-            assert files.hash_file_content(f1.read()) == files.hash_file_content(
-                f2.read()
-            )
+    with file_1.open("r") as f1, file_2.open("r") as f2:
+        assert files.hash_file_content(f1.read()) == files.hash_file_content(f2.read())
 
 
 def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
@@ -192,13 +189,12 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
             "Please install 'rasterio' to use assert_raster_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
-            # Metadata
-            assert_meta(ds_1.meta, ds_2.meta)
+    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+        # Metadata
+        assert_meta(ds_1.meta, ds_2.meta)
 
-            # Assert equal
-            np.testing.assert_array_equal(ds_1.read(), ds_2.read())
+        # Assert equal
+        np.testing.assert_array_equal(ds_1.read(), ds_2.read())
 
 
 def assert_raster_almost_equal(
@@ -230,33 +226,28 @@ def assert_raster_almost_equal(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
-            # Metadata
-            assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
+    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+        # Metadata
+        assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
-            # Assert almost equal
-            errors = []
-            for i in range(ds_1.count):
-                desc = (
-                    f": {ds_1.descriptions[i]}"
-                    if ds_1.descriptions[i] is not None
-                    else ""
-                )
-                LOGGER.info(f"Checking Band {i + 1}{desc}")
-                try:
-                    marr_1 = ds_1.read(i + 1)
-                    marr_2 = ds_2.read(i + 1)
-                    np.testing.assert_array_almost_equal(
-                        marr_1, marr_2, decimal=decimal
-                    )
-                except AssertionError:
-                    text = f"Band {i + 1}{desc} failed"
-                    errors.append(text)
-                    LOGGER.error(text, exc_info=True)
+        # Assert almost equal
+        errors = []
+        for i in range(ds_1.count):
+            desc = (
+                f": {ds_1.descriptions[i]}" if ds_1.descriptions[i] is not None else ""
+            )
+            LOGGER.info(f"Checking Band {i + 1}{desc}")
+            try:
+                marr_1 = ds_1.read(i + 1)
+                marr_2 = ds_2.read(i + 1)
+                np.testing.assert_array_almost_equal(marr_1, marr_2, decimal=decimal)
+            except AssertionError:
+                text = f"Band {i + 1}{desc} failed"
+                errors.append(text)
+                LOGGER.error(text, exc_info=True)
 
-            if errors:
-                raise AssertionError(errors)
+        if errors:
+            raise AssertionError(errors)
 
 
 def assert_raster_almost_equal_magnitude(
@@ -290,41 +281,38 @@ def assert_raster_almost_equal_magnitude(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
-            # Metadata
-            assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
+    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+        # Metadata
+        assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
-            # Assert almost equal
-            errors = []
-            for i in range(ds_1.count):
-                desc = (
-                    f": {ds_1.descriptions[i]}"
-                    if ds_1.descriptions[i] is not None
-                    else ""
+        # Assert almost equal
+        errors = []
+        for i in range(ds_1.count):
+            desc = (
+                f": {ds_1.descriptions[i]}" if ds_1.descriptions[i] is not None else ""
+            )
+            LOGGER.info(f"Checking Band {i + 1}{desc}")
+            try:
+                marr_1 = ds_1.read(i + 1)
+                marr_2 = ds_2.read(i + 1)
+
+                # Manage better the number of (decimals are for a magnitude of 0)
+                magnitude = np.floor(np.log10(abs(np.nanmedian(marr_1))))
+                if np.isinf(magnitude):
+                    magnitude = 0
+
+                np.testing.assert_array_almost_equal(
+                    marr_1 / 10**magnitude,
+                    marr_2 / 10**magnitude,
+                    decimal=decimal,
                 )
-                LOGGER.info(f"Checking Band {i + 1}{desc}")
-                try:
-                    marr_1 = ds_1.read(i + 1)
-                    marr_2 = ds_2.read(i + 1)
+            except AssertionError:
+                text = f"Band {i + 1}{desc} failed"
+                errors.append(text)
+                LOGGER.error(text, exc_info=True)
 
-                    # Manage better the number of (decimals are for a magnitude of 0)
-                    magnitude = np.floor(np.log10(abs(np.nanmedian(marr_1))))
-                    if np.isinf(magnitude):
-                        magnitude = 0
-
-                    np.testing.assert_array_almost_equal(
-                        marr_1 / 10**magnitude,
-                        marr_2 / 10**magnitude,
-                        decimal=decimal,
-                    )
-                except AssertionError:
-                    text = f"Band {i + 1}{desc} failed"
-                    errors.append(text)
-                    LOGGER.error(text, exc_info=True)
-
-            if errors:
-                raise AssertionError(errors)
+        if errors:
+            raise AssertionError(errors)
 
 
 def assert_raster_max_mismatch(
@@ -358,20 +346,19 @@ def assert_raster_max_mismatch(
             "Please install 'rasterio' to use assert_raster_max_mismatch."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1:
-        with rasterio.open(str(path_2)) as ds_2:
-            # Metadata
-            assert_meta(ds_1.meta, ds_2.meta)
+    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+        # Metadata
+        assert_meta(ds_1.meta, ds_2.meta)
 
-            # Compute the number of mismatch
-            nof_mismatch = np.count_nonzero(ds_1.read() != ds_2.read())
-            nof_elements = ds_1.count * ds_1.width * ds_1.height
-            pct_mismatch = nof_mismatch / nof_elements * 100.0
-            assert pct_mismatch < max_mismatch_pct, (
-                f"Too many mismatches !\n"
-                f"Number of mismatches: {nof_mismatch} / {nof_elements},\n"
-                f"Percentage of mismatches: {pct_mismatch}% > {max_mismatch_pct}%,"
-            )
+        # Compute the number of mismatch
+        nof_mismatch = np.count_nonzero(ds_1.read() != ds_2.read())
+        nof_elements = ds_1.count * ds_1.width * ds_1.height
+        pct_mismatch = nof_mismatch / nof_elements * 100.0
+        assert pct_mismatch < max_mismatch_pct, (
+            f"Too many mismatches !\n"
+            f"Number of mismatches: {nof_mismatch} / {nof_elements},\n"
+            f"Percentage of mismatches: {pct_mismatch}% > {max_mismatch_pct}%,"
+        )
 
 
 def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
@@ -625,42 +612,42 @@ def assert_xr_encoding_attrs(
         assert xda_1.attrs == xda_2.attrs
     except AssertionError:
         try:
-            for key, val in xda_1.attrs.items():
+            for key, _ in xda_1.attrs.items():
                 if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.attrs[key] == xda_2.attrs[key]
                     ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
 
-            for key, val in xda_2.attrs.items():
+            for key, _ in xda_2.attrs.items():
                 if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.attrs[key] == xda_2.attrs[key]
                     ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-        except KeyError as ex:
+        except KeyError as exc:
             raise AssertionError(
-                f"Missing key {ex} in attributes of one DataArray/Dataset"
-            )
+                f"Missing key {exc} in attributes of one DataArray/Dataset"
+            ) from exc
 
     # Encoding
     try:
         assert xda_1.encoding == xda_2.encoding
     except AssertionError:
         try:
-            for key, val in xda_1.encoding.items():
+            for key, _ in xda_1.encoding.items():
                 if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.encoding[key] == xda_2.encoding[key]
                     ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
 
-            for key, val in xda_2.encoding.items():
+            for key, _ in xda_2.encoding.items():
                 if not key.startswith("_") and key not in unchecked_attr:
                     assert (
                         xda_1.encoding[key] == xda_2.encoding[key]
                     ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-        except KeyError as ex:
+        except KeyError as exc:
             raise AssertionError(
-                f"Missing key {ex} in attributes of one DataArray/Dataset"
-            )
+                f"Missing key {exc} in attributes of one DataArray/Dataset"
+            ) from exc
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:

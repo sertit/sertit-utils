@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Tools concerning XML management, simplifying lxml.etree """
+"""Tools concerning XML management, simplifying lxml.etree"""
+
+import contextlib
 import logging
 from datetime import datetime
 from typing import Any, Callable
@@ -67,8 +68,8 @@ def read(xml_path: AnyPathStrType) -> _Element:
             xml_tree = parse(str(xml_path))
             root = xml_tree.getroot()
 
-    except XMLSyntaxError:
-        raise ValueError(f"Invalid metadata XML for {xml_path}!")
+    except XMLSyntaxError as exc:
+        raise ValueError(f"Invalid metadata XML for {xml_path}!") from exc
 
     return root
 
@@ -103,8 +104,8 @@ def read_archive(
 
         return files.read_archived_xml(path, regex, file_list=file_list)
 
-    except XMLSyntaxError:
-        raise ValueError(f"Invalid metadata XML for {path}!")
+    except XMLSyntaxError as exc:
+        raise ValueError(f"Invalid metadata XML for {path}!") from exc
 
 
 def write(xml: _Element, path: str) -> None:
@@ -212,11 +213,9 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
             elif isinstance(val, datetime):
                 str_val = val.isoformat()
             else:
-                try:
+                with contextlib.suppress(AttributeError):
                     # gpd, pd...
                     val = val.iat[0]
-                except AttributeError:
-                    pass
                 str_val = str(val)
             global_attr.append(E(attr, str_val))
 
@@ -261,11 +260,9 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
             elif isinstance(val, datetime):
                 str_val = val.isoformat()
             else:
-                try:
+                with contextlib.supress(AttributeError):
                     # gpd, pd...
                     val = val.iat[0]
-                except AttributeError:
-                    pass
                 str_val = str(val)
             global_attr.append(
                 E(attr.replace(" ", "_").replace("(", "_").replace(")", ""), str_val)

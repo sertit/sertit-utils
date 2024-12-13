@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Tools for paths and files """
+"""Tools for paths and files"""
 
 import hashlib
 import json
@@ -233,8 +232,8 @@ def extract_file(
 
             with py7zr.SevenZipFile(file_path, "r") as z7_file:
                 extract_sub_dir(z7_file, z7_file.getnames())
-        except ModuleNotFoundError:
-            raise TypeError("Please install 'py7zr' to extract .7z files")
+        except ModuleNotFoundError as exc:
+            raise TypeError("Please install 'py7zr' to extract .7z files") from exc
     else:
         raise TypeError(
             f"Only .zip, .tar, .tar.gz and .7z files can be extracted, not {file_path}"
@@ -424,10 +423,10 @@ def read_archived_file(
             raise TypeError(
                 "Only .zip and .tar files can be read from inside its archive."
             )
-    except IndexError:
+    except IndexError as exc:
         raise FileNotFoundError(
             f"Impossible to find file {regex} in {path.get_filename(archive_path)}"
-        )
+        ) from exc
 
     return file_str
 
@@ -767,8 +766,8 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
             LOGGER.debug("Error in copy!", exc_info=True)
             out = src
             # eg. source or destination doesn't exist
-        except IOError as ex:
-            raise IOError(f"Copy error: {ex.strerror}") from ex
+        except OSError as ex:
+            raise OSError(f"Copy error: {ex.strerror}") from ex
 
     return out
 
@@ -828,7 +827,7 @@ class CustomDecoder(JSONDecoder):
     # pylint: disable=W0221
     # Override the default method
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)  # noqa: B026
 
     # pylint: disable=E0202, R0201
     # - An attribute defined in json.decoder line 319 hides this method (method-hidden)
@@ -879,9 +878,7 @@ class CustomEncoder(JSONEncoder):
             out = int(obj)
         elif isinstance(obj, Enum):
             out = obj.value
-        elif isinstance(obj, set):
-            out = str(obj)
-        elif isinstance(obj, Path) or path.is_cloud_path(obj):
+        elif isinstance(obj, set | Path) or path.is_cloud_path(obj):
             out = str(obj)
         else:
             out = json.JSONEncoder.default(self, obj)

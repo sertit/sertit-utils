@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Script testing the files """
+"""Script testing the files"""
+
 import os
 import shutil
 import tempfile
@@ -138,7 +138,7 @@ def test_get_file_name():
         r"/test/S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004.SEN3.zip"
     )
     file_name = path.get_filename(fn)
-    assert "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004" == file_name
+    assert file_name == "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004"
 
     fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.zip"
     file_name = path.get_filename(fn)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -17,6 +16,7 @@
 """
 Unistra tools
 """
+
 import logging
 import os
 from contextlib import contextmanager

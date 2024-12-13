@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -17,6 +16,7 @@
 """
 S3 tools
 """
+
 import logging
 import os
 from contextlib import contextmanager
@@ -83,14 +83,13 @@ def s3_env(*args, **kwargs):
     requester_pays = kwargs.get("requester_pays")
     no_sign_request = kwargs.get("no_sign_request")
     endpoint = os.getenv(AWS_S3_ENDPOINT, kwargs.get("endpoint"))
-    profile_name = kwargs.get("profile_name", None)
+    profile_name = kwargs.get("profile_name")
 
     def decorator(function):
         @wraps(function)
         def s3_env_wrapper(*_args, **_kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)):
-
                 args_rasterio = {
                     "profile_name": profile_name,
                     "CPL_CURL_VERBOSE": False,

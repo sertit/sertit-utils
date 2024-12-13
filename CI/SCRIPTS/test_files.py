@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Script testing the files """
+"""Script testing the files"""
+
 import os
 import shutil
 import tempfile
@@ -75,10 +75,7 @@ def test_archive():
             files.remove(out)
 
         # Add to zip
-        if path.is_cloud_path(zip2_file):
-            zip_out = zip2_file
-        else:
-            zip_out = archive_base + ".zip"
+        zip_out = zip2_file if path.is_cloud_path(zip2_file) else archive_base + ".zip"
         core_copy = files.copy(core_dir, os.path.join(tmp_dir, "core2"))
         zip_out = files.add_to_zip(zip_out, core_copy)
 
