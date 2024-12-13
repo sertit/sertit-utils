@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Script testing raster function (with rasterio) """
+"""Script testing raster function (with rasterio)"""
+
 import os
 import shutil
 
@@ -354,27 +354,26 @@ def test_reproj(tmp_path, raster_path):
     )
     reproj_path = rasters_path().joinpath("reproj_out.tif")
 
-    with rasterio.open(str(dem_path)) as src:
-        with rasterio.open(str(raster_path)) as ds:
-            dst_arr, dst_meta = rasters_rio.reproject_match(
-                ds.meta, src.read(), src.meta, **KAPUT_KWARGS
-            )
+    with rasterio.open(str(dem_path)) as src, rasterio.open(str(raster_path)) as ds:
+        dst_arr, dst_meta = rasters_rio.reproject_match(
+            ds.meta, src.read(), src.meta, **KAPUT_KWARGS
+        )
 
-            # from ds
-            assert ds.meta["driver"] == dst_meta["driver"]
-            assert ds.meta["width"] == dst_meta["width"]
-            assert ds.meta["height"] == dst_meta["height"]
-            assert ds.meta["transform"] == dst_meta["transform"]
+        # from ds
+        assert ds.meta["driver"] == dst_meta["driver"]
+        assert ds.meta["width"] == dst_meta["width"]
+        assert ds.meta["height"] == dst_meta["height"]
+        assert ds.meta["transform"] == dst_meta["transform"]
 
-            # from src
-            assert src.meta["count"] == dst_meta["count"]
-            assert src.meta["nodata"] == dst_meta["nodata"]
-            assert src.meta["dtype"] == dst_meta["dtype"]
+        # from src
+        assert src.meta["count"] == dst_meta["count"]
+        assert src.meta["nodata"] == dst_meta["nodata"]
+        assert src.meta["dtype"] == dst_meta["dtype"]
 
-            path_out = os.path.join(tmp_path, "out.tif")
-            rasters_rio.write(dst_arr, dst_meta, path_out)
+        path_out = os.path.join(tmp_path, "out.tif")
+        rasters_rio.write(dst_arr, dst_meta, path_out)
 
-            ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)
+        ci.assert_raster_almost_equal(path_out, reproj_path, decimal=4)
 
 
 @s3_env

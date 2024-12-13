@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -17,6 +16,7 @@
 """
 S3 tools
 """
+
 import logging
 import os
 from contextlib import contextmanager
@@ -85,14 +85,13 @@ def s3_env(*args, **kwargs):
     requester_pays = kwargs.get("requester_pays")
     no_sign_request = kwargs.get("no_sign_request")
     endpoint = os.getenv(AWS_S3_ENDPOINT, kwargs.get("endpoint"))
-    profile_name = kwargs.get("profile_name", None)
+    profile_name = kwargs.get("profile_name")
 
     def decorator(function):
         @wraps(function)
         def s3_env_wrapper(*_args, **_kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)):
-
                 args_rasterio = {
                     "profile_name": profile_name,
                     "CPL_CURL_VERBOSE": False,
@@ -277,7 +276,6 @@ def define_s3_client(
 
 
 def download(src, dst):
-
     # By default, use the src path
     downloaded_path = src
 
@@ -290,20 +288,14 @@ def download(src, dst):
             import shutil
 
             dst = AnyPath(dst)
-            if dst.is_dir():
-                downloaded_path = dst / src.name
-            else:
-                downloaded_path = dst
+            downloaded_path = dst / src.name if dst.is_dir() else dst
 
             with src.open("rb") as f0, downloaded_path.open("wb") as f1:
                 shutil.copyfileobj(f0, f1)
 
         # cloudpathlib
         elif isinstance(src, CloudPath):
-            if dst is None:
-                downloaded_path = src.fspath
-            else:
-                downloaded_path = src.download_to(dst)
+            downloaded_path = src.fspath if dst is None else src.download_to(dst)
 
     return downloaded_path
 

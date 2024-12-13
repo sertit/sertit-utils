@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Script testing vector functions """
+"""Script testing vector functions"""
+
 import os
 import tempfile
 import warnings
@@ -82,8 +82,9 @@ def test_vectors():
     _assert_attributes(aoi, kml_path)
 
     with pytest.deprecated_call():
-        assert "EPSG:32638" == vectors.corresponding_utm_projection(
-            aoi.centroid.x, aoi.centroid.y
+        assert (
+            vectors.corresponding_utm_projection(aoi.centroid.x, aoi.centroid.y)
+            == "EPSG:32638"
         )
         assert CRS.from_string("EPSG:32638") == vectors.to_utm_crs(
             aoi.centroid.x, aoi.centroid.y
@@ -271,7 +272,7 @@ def test_read_archived():
     """Test archived vectors"""
     landsat = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
     map_overlay = "map-overlay.kml"
-    map_overlay_regex = ".*{0}".format(map_overlay.replace(".", r"\."))
+    map_overlay_regex = ".*{}".format(map_overlay.replace(".", r"\."))
     map_overlay_extracted_path = files_path() / landsat / map_overlay
     zip_landsat = files_path() / f"{landsat}.zip"
     tar_landsat = files_path() / f"{landsat}.tar"

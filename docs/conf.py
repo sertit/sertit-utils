@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -16,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+
 import sertit
 
 # -- General configuration ------------------------------------------------
@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "myst_nb",
-    "IPython.sphinxext.ipython_console_highlighting"
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 myst_enable_extensions = [
     "amsmath",
@@ -57,7 +57,7 @@ nb_execution_mode = "cache"
 nb_execution_timeout = -1
 
 # Manage new READTHEDOCS output mechanism
-cache_path = os.getenv('READTHEDOCS_OUTPUT')
+cache_path = os.getenv("READTHEDOCS_OUTPUT")
 if cache_path is not None:
     nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
 
@@ -79,9 +79,9 @@ templates_path = ["_templates"]
 master_doc = "index"
 
 # General information about the project.
-project = sertit.__title__
-copyright = sertit.__copyright__[10:]
-author = sertit.__author__
+project = "sertit"
+copyright = "Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/"
+author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -120,7 +120,7 @@ html_theme = "sphinx_book_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "repository_url": sertit.__url__,
+    "repository_url": "https://github.com/sertit/sertit-utils",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": False,
@@ -156,6 +156,11 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "python-request": ("https://docs.python-requests.org/en/master/", None),
     "rasterio": ("https://rasterio.readthedocs.io/en/latest", None),
+    "rioxarray": ("https://corteva.github.io/rioxarray/latest/", None),
+    "geopandas": ("https://geopandas.org/en/latest", None),
+    "xarray": ("https://docs.xarray.dev/en/latest", None),
+    "cloudpathlib": ("https://cloudpathlib.drivendata.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
 add_function_parentheses = False

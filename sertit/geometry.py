@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -19,6 +18,7 @@ Geometry tools
 
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
+
 import logging
 
 import geopandas as gpd
@@ -377,13 +377,13 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
         try:
             # LineStrings
             out = (
-                out.map(lambda geom: ops.split(geom, boundary).geoms).explode().dropna()
+                out.map(lambda geom: ops.split(geom, boundary).geoms).explode().dropna()  # noqa: B023
             )
         except GeometryTypeError:
             # MultiLineStrings
             for line in boundary.geoms:
                 out = (
-                    out.map(lambda geom: ops.split(geom, line).geoms).explode().dropna()
+                    out.map(lambda geom: ops.split(geom, line).geoms).explode().dropna()  # noqa: B023
                 )
 
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)

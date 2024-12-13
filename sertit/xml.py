@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Tools concerning XML management, simplifying lxml.etree """
+"""Tools concerning XML management, simplifying lxml.etree"""
+
+import contextlib
 import logging
 from datetime import datetime
 from typing import Any, Callable
@@ -29,7 +30,7 @@ from lxml.etree import (
 )
 from lxml.html.builder import E
 
-from sertit import AnyPath, files, logs, path, s3
+from sertit import AnyPath, files, path
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
@@ -55,29 +56,26 @@ def read(xml_path: AnyPathStrType) -> _Element:
             try:
                 # Try using read_text (faster)
                 root = fromstring(xml_path.read_text())
-            except (ValueError, PermissionError):
+            except ValueError:
                 # Try using read_bytes
                 # Slower but works with:
                 # {ValueError}Unicode strings with encoding declaration are not supported.
                 # Please use bytes input or XML fragments without declaration.
-                root = fromstring(s3.read(xml_path).read())
+                root = fromstring(xml_path.read_bytes())
         else:
             # pylint: disable=I1101:
             # Module 'lxml.etree' has no 'parse' member, but source is unavailable.
             xml_tree = parse(str(xml_path))
             root = xml_tree.getroot()
 
-    except XMLSyntaxError:
-        raise ValueError(f"Invalid metadata XML for {xml_path}!")
+    except XMLSyntaxError as exc:
+        raise ValueError(f"Invalid metadata XML for {xml_path}!") from exc
 
     return root
 
 
 def read_archive(
-    archive_path: AnyPathStrType = None,
-    regex: str = None,
-    file_list: list = None,
-    **kwargs,
+    path: AnyPathStrType, regex: str = None, file_list: list = None
 ) -> _Element:
     """
     Read an XML file from inside an archive (zip or tar)
@@ -89,42 +87,25 @@ def read_archive(
     - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :py:func:`files.read_archived_xml`
 
     Args:
-        archive_path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
+        path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
         regex (str): Optional. If specified, the path should be the archive path and the regex should be the key to find the XML file inside the archive.
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
         _Element: XML Root
     """
-    if archive_path is None:
-        logs.deprecation_warning(
-            "'path' argument is deprecated, use 'archive_path' instead."
-        )
-        archive_path = kwargs.pop("path")
 
     try:
         if not regex:
-            archive_base_path, basename = str(archive_path).split("!")
+            path, basename = str(path).split("!")
             regex = basename
-            if archive_base_path.startswith("zip://") or archive_base_path.startswith(
-                "tar://"
-            ):
-                archive_base_path = archive_base_path[5:]
+            if path.startswith("zip://") or path.startswith("tar://"):
+                path = path[5:]
 
-            # For UPath
-            try:
-                archive_base_path = AnyPath(
-                    archive_base_path, **archive_path.storage_options
-                )
-            except Exception:
-                pass
-        else:
-            archive_base_path = archive_path
+        return files.read_archived_xml(path, regex, file_list=file_list)
 
-        return files.read_archived_xml(archive_base_path, regex, file_list=file_list)
-
-    except XMLSyntaxError:
-        raise ValueError(f"Invalid metadata XML for {archive_path}!")
+    except XMLSyntaxError as exc:
+        raise ValueError(f"Invalid metadata XML for {path}!") from exc
 
 
 def write(xml: _Element, path: str) -> None:
@@ -232,11 +213,9 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
             elif isinstance(val, datetime):
                 str_val = val.isoformat()
             else:
-                try:
+                with contextlib.suppress(AttributeError):
                     # gpd, pd...
                     val = val.iat[0]
-                except AttributeError:
-                    pass
                 str_val = str(val)
             global_attr.append(E(attr, str_val))
 
@@ -281,11 +260,9 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
             elif isinstance(val, datetime):
                 str_val = val.isoformat()
             else:
-                try:
+                with contextlib.suppress(AttributeError):
                     # gpd, pd...
                     val = val.iat[0]
-                except AttributeError:
-                    pass
                 str_val = str(val)
             global_attr.append(
                 E(attr.replace(" ", "_").replace("(", "_").replace(")", ""), str_val)

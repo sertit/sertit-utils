@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -19,6 +18,7 @@ Vectors tools
 
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
+
 import logging
 import os
 import re
@@ -26,8 +26,9 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator, Union
+from typing import Any, Union
 
 import geopandas as gpd
 import numpy as np
@@ -35,7 +36,7 @@ import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 
-from sertit import AnyPath, files, geometry, logs, misc, path, s3, strings
+from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -255,11 +256,8 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     if aoi_path.suffix == ".wkt":
         try:
-            if path.is_cloud_path(aoi_path):
-                aoi = wkt.load(s3.read(aoi_path))
-            else:
-                with open(aoi_path, "r") as aoi_f:
-                    aoi = wkt.load(aoi_f)
+            with open(aoi_path) as aoi_f:
+                aoi = wkt.load(aoi_f)
         except Exception as ex:
             raise ValueError("AOI WKT cannot be read") from ex
     else:
@@ -461,10 +459,7 @@ def read(
             bbox = read(window)
         except (FileNotFoundError, TypeError):
             # Convert ndarray to tuple
-            if isinstance(window, np.ndarray):
-                bbox = tuple(window)
-            else:
-                bbox = window
+            bbox = tuple(window) if isinstance(window, np.ndarray) else window
 
         kwargs["bbox"] = bbox
 
@@ -475,12 +470,8 @@ def read(
         # Manage formatted archive file (fsspec style for example)
         if "!" in str(vector_path):
             split_vect = str(vector_path).split("!")
-            archive_regex = ".*{0}".format(split_vect[1].replace(".", r"\."))
-            try:
-                vector_path = AnyPath(split_vect[0], **vector_path.storage_options)
-            except Exception:
-                # Cloudpathlib
-                vector_path = AnyPath(split_vect[0])
+            archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
+            vector_path = AnyPath(split_vect[0])
 
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
@@ -498,10 +489,10 @@ def read(
                     gpd_vect_path = f"{prefix}+{vector_path}!{arch_path}"
                 else:
                     gpd_vect_path = f"{prefix}://{vector_path}!{arch_path}"
-            except IndexError:
+            except IndexError as exc:
                 raise FileNotFoundError(
                     f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
-                )
+                ) from exc
         # Don't read tar.gz archives (way too slow)
         elif vector_path.suffixes == [".tar", ".gz"]:
             raise TypeError(
@@ -576,6 +567,10 @@ def _read_vector_core(
             LOGGER.warning(ex)
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
     except CPLE_AppDefinedError as ex:
+        # CPLE_AppDefinedError is not a pyogrio exception and this is therefore too broad
+        if is_geopandas_1_0() and kwargs.get("engine") != "fiona":
+            raise ex
+
         # Last try to read this vector
         # Needs ogr2ogr here
         if shutil.which("ogr2ogr"):
@@ -714,25 +709,17 @@ def ogr2geojson(
     vector_path = AnyPath(vector_path)
 
     # archived vector_path are extracted in a tmp folder so no need to be downloaded
-
     if vector_path.suffix == ".zip":
-        if path.is_cloud_path(vector_path):
-            vector_path = s3.read(vector_path)
         with zipfile.ZipFile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
     elif vector_path.suffix == ".tar":
-        if path.is_cloud_path(vector_path):
-            args = {"fileobj": s3.read(vector_path), "mode": "r"}
-        else:
-            args = {"name": vector_path, "mode": "r"}
-
-        with tarfile.open(**args) as tar_ds:
+        with tarfile.open(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
         # vector_path should be downloaded to work with 'ogr2ogr'
         if path.is_cloud_path(vector_path):
-            vector_path = s3.download(vector_path, out_dir)
+            vector_path = AnyPath(vector_path).fspath
         vect_path = vector_path
 
     vect_path_gj = os.path.join(

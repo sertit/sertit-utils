@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -118,4 +117,4 @@ def xml_path():
 
 
 def s3_env(*args, **kwargs):
-    return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)
+    return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026

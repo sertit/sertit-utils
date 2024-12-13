@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["sertit*"]
+namespaces = false
+
+[project]
+name = "sertit"
+authors = [
+    {name = "ICube-SERTIT", email = "dev-sertit@unistra.fr"},
+]
+description = "SERTIT python library for generic tools"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "tqdm",
+    "lxml",
+    "dill",
+    "psutil",
+    "geopandas>=0.14.4",
+    "cloudpathlib[all]>=0.12.1",
+    "xarray>=2024.06.0",
+]
+
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "sertit.__version__"}
+
+[project.optional-dependencies]
+colorlog = ["colorlog"]
+rasters_rio = ["rasterio>=1.3.10"]
+rasters = ["rasterio>=1.3.10", "rioxarray>=0.10.0"]
+dask =  [
+    "rasterio[s3]>=1.3.10",
+    "rioxarray>=0.10.0",
+    # dask related libraries (to not use dask[complete])
+    "dask>=2024.5.1",
+    "distributed",
+    "s3fs",
+    "cytoolz",
+    # rasters libraries leveraging dask
+    "odc-geo>=0.4.6",
+    "xarray-spatial>=0.3.6",
+]
+full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
+
+[project.urls]
+Bug_Tracker = "https://github.com/sertit/sertit-utils/issues"
+Documentation =  "https://sertit-utils.readthedocs.io/en/latest/"
+Source_Code = "https://github.com/sertit/sertit-utils"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = ["E501"]
+
+
+# Pytest options
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_format = "%(asctime)s - [%(levelname)s] - %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+log_cli_level = "INFO"
+
+[tool.coverage.run]
+omit = ["*/__init__.py"]

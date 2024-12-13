@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Tools for paths """
+"""Tools for paths"""
 
 import errno
 import logging
@@ -171,7 +170,6 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     is_zip = archive_path.suffix == ".zip"
     archive_fn = get_filename(archive_path)
     if is_zip:
-
         if is_cloud_path(archive_path):
             archive_path = s3.read(archive_path)
 
@@ -529,10 +527,7 @@ def get_file_in_dir(
     directory = AnyPath(directory)
 
     # Glob pattern
-    if exact_name:
-        glob_pattern = pattern_str
-    else:
-        glob_pattern = "*" + pattern_str + "*"
+    glob_pattern = pattern_str if exact_name else "*" + pattern_str + "*"
     if extension:
         if not extension.startswith("."):
             extension = "." + extension
@@ -575,9 +570,9 @@ def is_writable(dir_path: AnyPathStrType):
         bool: True if the directory is writable
     """
     try:
-        testfile = tempfile.TemporaryFile(dir=str(dir_path))
-        testfile.close()
-    except (OSError, IOError, FileNotFoundError) as e:
+        with tempfile.TemporaryFile(dir=str(dir_path)):
+            pass
+    except (OSError, FileNotFoundError) as e:
         if e.errno in [
             errno.EACCES,
             errno.EEXIST,

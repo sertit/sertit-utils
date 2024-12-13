@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -14,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Miscellaneous Tools """
+"""Miscellaneous Tools"""
 
 import logging
 import os
@@ -453,7 +452,7 @@ def in_docker() -> bool:
         >>>    print("We are safe")
     """
     try:
-        with open("/proc/1/cgroup", "rt") as ifh:
+        with open("/proc/1/cgroup") as ifh:
             in_dck = "docker" in ifh.read()
     # pylint: disable=W0703
     except Exception:

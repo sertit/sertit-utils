@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -17,6 +16,7 @@
 """
 SNAP tools
 """
+
 import logging
 import os
 import subprocess
@@ -78,8 +78,8 @@ def bytes2snap(nof_bytes: int) -> str:
     for sym in reversed(symbols):
         if nof_bytes >= prefix[sym]:
             value = int(float(nof_bytes) / prefix[sym])
-            return "%s%s" % (value, sym)
-    return "%sB" % nof_bytes
+            return f"{value}{sym}"
+    return f"{nof_bytes}B"
 
 
 def get_gpt_cli(
@@ -154,8 +154,8 @@ def get_snap_version() -> Version:
     snap_version = None
     try:
         output = subprocess.run(["gpt", "--diag"], capture_output=True)
-    except FileNotFoundError:
-        raise FileNotFoundError("'gpt' not found in your PATH")
+    except FileNotFoundError as exc:
+        raise FileNotFoundError("'gpt' not found in your PATH") from exc
 
     stdout = output.stdout.decode("utf-8")
 

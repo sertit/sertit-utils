@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Tuple, Union
+from typing import Any, Union
 
 import geopandas as gpd
 import numpy as np
@@ -29,21 +29,23 @@ AnyRioDatasetType = Union[DatasetReader, DatasetWriter]
 """ Any Rasterio Dataset Type (both Reader, Writer) """
 
 AnyRasterType = Union[
-    AnyPathStrType, Tuple[AnyNumpyArray, dict], AnyXrDataStructure, AnyRioDatasetType
+    AnyPathStrType, tuple[AnyNumpyArray, dict], AnyXrDataStructure, AnyRioDatasetType
 ]
 """
 Any object potentially describing a raster:
+
 - its path,
-- its xarray representation (Dataset or DataArray),
-- its rasterio representation (DatasetReader or Writer)
-- or its array + metadata (np.ndarray + dict)
+- its ``xarray`` representation (:class:`xarray:xarray.Dataset` or :class:`xarray:xarray.DataArray`),
+- its ``rasterio`` representation (``DatasetReader`` or ``DatasetWriter``)
+- or its array + metadata (``np.ndarray`` + dict)
 """
 
 AnyVectorType = Union[AnyPathStrType, gpd.GeoDataFrame]
 """
 Any object potentially describing a vector:
+
 - its path,
-- its GeoDataFrame
+- its :class:`geopandas:geopandas.GeoDataFrame`
 """
 
 

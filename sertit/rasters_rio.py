@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
@@ -19,6 +18,8 @@ Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
+
+import contextlib
 import logging
 import os
 import tempfile
@@ -31,11 +32,9 @@ from shapely.geometry import Polygon
 
 try:
     import rasterio
-    from rasterio import MemoryFile, features
+    from rasterio import MemoryFile, features, merge, warp
     from rasterio import mask as rio_mask
-    from rasterio import merge
     from rasterio import shutil as rio_shutil
-    from rasterio import warp
     from rasterio.enums import Resampling
     from rasterio.vrt import WarpedVRT
     from rasterio.windows import Window, from_bounds
@@ -95,10 +94,8 @@ def get_nodata_value_from_dtype(dtype) -> float:
         -9999
     """
     # Convert type to numpy if needed
-    try:
+    with contextlib.suppress(AttributeError, TypeError):
         dtype = getattr(np, dtype)
-    except (AttributeError, TypeError):
-        pass
 
     if dtype == np.uint8:
         nodata = UINT8_NODATA
@@ -151,10 +148,7 @@ def bigtiff_value(arr: Any) -> str:
         itemsize = arr.data.itemsize
 
     # Check size
-    if arr.size * itemsize / 1024 / 1024 / 1024 > 4:
-        bigtiff = "YES"
-    else:
-        bigtiff = "IF_NEEDED"
+    bigtiff = "YES" if arr.size * itemsize / 1024 / 1024 / 1024 > 4 else "IF_NEEDED"
 
     return bigtiff
 
@@ -210,15 +204,17 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                     out = function(ds, *args, **kwargs)
             elif isinstance(any_raster_type, tuple):
                 arr, meta = any_raster_type
-                with MemoryFile() as memfile:
-                    with memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds:
-                        ds.write(arr)
-                        out = function(ds, *args, **kwargs)
+                with (
+                    MemoryFile() as memfile,
+                    memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds,
+                ):
+                    ds.write(arr)
+                    out = function(ds, *args, **kwargs)
             else:
                 try:
                     import xarray as xr
                 except ModuleNotFoundError:
-                    raise ex
+                    raise ex  # noqa: B904
                 else:
                     if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
                         from sertit.rasters import get_nodata_value_from_xr
@@ -235,16 +231,18 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                             "crs": any_raster_type.rio.crs,
                             "transform": any_raster_type.rio.transform(),
                         }
-                        with MemoryFile() as memfile:
-                            with memfile.open(
+                        with (
+                            MemoryFile() as memfile,
+                            memfile.open(
                                 **meta, BIGTIFF=bigtiff_value(any_raster_type)
-                            ) as ds:
-                                if nodata is not None:
-                                    arr = any_raster_type.fillna(nodata)
-                                else:
-                                    arr = any_raster_type
-                                ds.write(arr.data)
-                                out = function(ds, *args, **kwargs)
+                            ) as ds,
+                        ):
+                            if nodata is not None:
+                                arr = any_raster_type.fillna(nodata)
+                            else:
+                                arr = any_raster_type
+                            ds.write(arr.data)
+                            out = function(ds, *args, **kwargs)
                     else:
                         raise ex
         return out
@@ -330,10 +328,10 @@ def get_new_shape(
                     new_height, do_resampling = _get_new_dim(
                         new_height, ds.res[1], resolution[1]
                     )
-            except (TypeError, KeyError):
+            except (TypeError, KeyError) as exc:
                 raise ValueError(
                     f"Resolution should be None, 2 floats or a castable to a list: {resolution}"
-                )
+                ) from exc
     elif size is not None:
         try:
             if new_height == size[1] and new_width == size[0]:
@@ -341,8 +339,10 @@ def get_new_shape(
             else:
                 new_height = size[1]
                 new_width = size[0]
-        except (TypeError, KeyError):
-            raise ValueError(f"Size should be None or a castable to a list: {size}")
+        except (TypeError, KeyError) as exc:
+            raise ValueError(
+                f"Size should be None or a castable to a list: {size}"
+            ) from exc
     else:
         do_resampling = False
 
@@ -796,10 +796,7 @@ def _mask(
 
     # Set nodata
     if not nodata:
-        if ds.nodata:
-            nodata = ds.nodata
-        else:
-            nodata = 0
+        nodata = ds.nodata if ds.nodata else 0
 
     # Crop dataset
     possible_kwargs = ["all_touched", "invert", "filled", "pad", "pad_width", "indexes"]
@@ -925,21 +922,20 @@ def get_window(ds: AnyRasterType, window: Any):
         Window: Rasterio window
 
     """
-    if window is not None:
-        if not isinstance(window, Window):
-            if isinstance(window, gpd.GeoDataFrame):
-                bounds = window.to_crs(ds.crs).total_bounds
-            elif path.is_path(window):
-                bounds = vectors.read(window).to_crs(ds.crs).total_bounds
-            else:
-                bounds = window
+    if window is not None and not isinstance(window, Window):
+        if isinstance(window, gpd.GeoDataFrame):
+            bounds = window.to_crs(ds.crs).total_bounds
+        elif path.is_path(window):
+            bounds = vectors.read(window).to_crs(ds.crs).total_bounds
+        else:
+            bounds = window
 
-            try:
-                window = from_bounds(*bounds, ds.transform)
-            except Exception:
-                raise TypeError(
-                    "Window should either be a GeoDataFrame, tuple, list, Window, readable as a vector or set to None"
-                )
+        try:
+            window = from_bounds(*bounds, ds.transform)
+        except Exception as exc:
+            raise TypeError(
+                "Window should either be a GeoDataFrame, tuple, list, Window, readable as a vector or set to None"
+            ) from exc
 
     # Use rioxarray way to convert window to integer
     (row_start, row_stop), (col_start, col_stop) = window.toranges()
@@ -1116,9 +1112,8 @@ def write(
     nodata = kwargs.get("nodata")
     if nodata is None:
         nodata = meta.get("nodata")
-        if nodata is None:
-            if isinstance(raster_out, np.ma.masked_array):
-                nodata = raster_out.fill_value
+        if nodata is None and isinstance(raster_out, np.ma.masked_array):
+            nodata = raster_out.fill_value
 
     # TODO: change this with rasterio 1.3.0 (masked option in write)
     if isinstance(raster_out, np.ma.masked_array):
@@ -1280,10 +1275,7 @@ def sieve(
         expand = True
 
     # Get nodata mask
-    if isinstance(array, np.ma.masked_array):
-        msk = ~array.mask
-    else:
-        msk = np.ones_like(array)
+    msk = ~array.mask if isinstance(array, np.ma.masked_array) else np.ones_like(array)
 
     if expand:
         msk = np.squeeze(msk)
