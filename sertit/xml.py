@@ -30,7 +30,7 @@ from lxml.etree import (
 )
 from lxml.html.builder import E
 
-from sertit import AnyPath, files, path
+from sertit import AnyPath, archives, logs, path, s3
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
@@ -61,7 +61,7 @@ def read(xml_path: AnyPathStrType) -> _Element:
                 # Slower but works with:
                 # {ValueError}Unicode strings with encoding declaration are not supported.
                 # Please use bytes input or XML fragments without declaration.
-                root = fromstring(xml_path.read_bytes())
+                root = fromstring(s3.read(xml_path).read())
         else:
             # pylint: disable=I1101:
             # Module 'lxml.etree' has no 'parse' member, but source is unavailable.
@@ -75,7 +75,10 @@ def read(xml_path: AnyPathStrType) -> _Element:
 
 
 def read_archive(
-    path: AnyPathStrType, regex: str = None, file_list: list = None
+    archive_path: AnyPathStrType,
+    regex: str = None,
+    file_list: list = None,
+    **kwargs,
 ) -> _Element:
     """
     Read an XML file from inside an archive (zip or tar)
@@ -87,25 +90,40 @@ def read_archive(
     - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :py:func:`files.read_archived_xml`
 
     Args:
-        path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
+        archive_path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
         regex (str): Optional. If specified, the path should be the archive path and the regex should be the key to find the XML file inside the archive.
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
         _Element: XML Root
     """
+    if archive_path is None:
+        logs.deprecation_warning(
+            "'path' argument is deprecated, use 'archive_path' instead."
+        )
+        archive_path = kwargs.pop("path")
 
     try:
         if not regex:
-            path, basename = str(path).split("!")
+            archive_base_path, basename = str(archive_path).split("!")
             regex = basename
-            if path.startswith("zip://") or path.startswith("tar://"):
-                path = path[5:]
+            if archive_base_path.startswith("zip://") or archive_base_path.startswith(
+                "tar://"
+            ):
+                archive_base_path = archive_base_path[5:]
 
-        return files.read_archived_xml(path, regex, file_list=file_list)
+            # For UPath
+            with contextlib.suppress(Exception):
+                archive_base_path = AnyPath(
+                    archive_base_path, **archive_path.storage_options
+                )
+        else:
+            archive_base_path = archive_path
+
+        return archives.read_archived_xml(archive_base_path, regex, file_list=file_list)
 
     except XMLSyntaxError as exc:
-        raise ValueError(f"Invalid metadata XML for {path}!") from exc
+        raise ValueError(f"Invalid metadata XML for {archive_path}!") from exc
 
 
 def write(xml: _Element, path: str) -> None:

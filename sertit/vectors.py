@@ -23,9 +23,7 @@ import logging
 import os
 import re
 import shutil
-import tarfile
 import tempfile
-import zipfile
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Union
@@ -36,7 +34,7 @@ import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 
-from sertit import AnyPath, files, geometry, logs, misc, path, strings
+from sertit import AnyPath, archives, files, geometry, logs, misc, path, s3, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -256,8 +254,11 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     if aoi_path.suffix == ".wkt":
         try:
-            with open(aoi_path) as aoi_f:
-                aoi = wkt.load(aoi_f)
+            if path.is_cloud_path(aoi_path):
+                aoi = wkt.load(s3.read(aoi_path))
+            else:
+                with open(aoi_path) as aoi_f:
+                    aoi = wkt.load(aoi_f)
         except Exception as ex:
             raise ValueError("AOI WKT cannot be read") from ex
     else:
@@ -471,13 +472,17 @@ def read(
         if "!" in str(vector_path):
             split_vect = str(vector_path).split("!")
             archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
-            vector_path = AnyPath(split_vect[0])
+            try:
+                vector_path = AnyPath(split_vect[0], **vector_path.storage_options)
+            except Exception:
+                # Cloudpathlib
+                vector_path = AnyPath(split_vect[0])
 
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
             prefix = vector_path.suffix[-3:]
             file_list = kwargs.pop(
-                "file_list", path.get_archived_file_list(vector_path)
+                "file_list", archives.get_archived_file_list(vector_path)
             )
 
             try:
@@ -710,16 +715,16 @@ def ogr2geojson(
 
     # archived vector_path are extracted in a tmp folder so no need to be downloaded
     if vector_path.suffix == ".zip":
-        with zipfile.ZipFile(vector_path, "r") as zip_ds:
+        with archives.open_zipfile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
     elif vector_path.suffix == ".tar":
-        with tarfile.open(vector_path, "r") as tar_ds:
+        with archives.open_tarfile(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
         # vector_path should be downloaded to work with 'ogr2ogr'
         if path.is_cloud_path(vector_path):
-            vector_path = AnyPath(vector_path).fspath
+            vector_path = s3.download(vector_path, out_dir)
         vect_path = vector_path
 
     vect_path_gj = os.path.join(

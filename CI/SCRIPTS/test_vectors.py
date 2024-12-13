@@ -25,7 +25,7 @@ from rasterio import CRS
 from shapely import wkt
 
 from CI.SCRIPTS.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
-from sertit import ci, files, path, vectors
+from sertit import archives, ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 
 ci.reduce_verbosity()
@@ -294,7 +294,7 @@ def test_read_archived():
         vectors.read(tar_landsat, archive_regex=map_overlay_regex),
     )
 
-    file_list = path.get_archived_file_list(tar_landsat)
+    file_list = archives.get_archived_file_list(tar_landsat)
     ci.assert_geom_equal(
         map_overlay_extracted,
         vectors.read(tar_landsat, archive_regex=map_overlay_regex, file_list=file_list),
