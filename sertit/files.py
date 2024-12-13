@@ -824,14 +824,10 @@ def find_files(
 class CustomDecoder(JSONDecoder):
     """Decoder for JSON with methods for datetimes"""
 
-    # pylint: disable=W0221
     # Override the default method
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)  # noqa: B026
+        json.JSONDecoder.__init__(self, *args, object_hook=self.object_hook, **kwargs)
 
-    # pylint: disable=E0202, R0201
-    # - An attribute defined in json.decoder line 319 hides this method (method-hidden)
-    # - Method could be a function (no-self-use)
     def object_hook(self, obj: Any):
         """
         Overload of object_hook function that deals with :code:`datetime.datetime`
