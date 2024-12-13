@@ -79,9 +79,9 @@ templates_path = ["_templates"]
 master_doc = "index"
 
 # General information about the project.
-project = sertit.__title__
-copyright = sertit.__copyright__[10:]
-author = sertit.__author__
+project = "sertit"
+copyright = "Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/"
+author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
