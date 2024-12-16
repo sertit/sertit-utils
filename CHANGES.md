@@ -5,6 +5,7 @@
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
 - FIX: Fix too broad exception in case of `geopandas >= 1.0`
+- FIX: Fix deprecation warning for `get_nodata_value_from_dtype` in `rasters_rio`
 
 ## 1.44.1 (2024-12-12)
 

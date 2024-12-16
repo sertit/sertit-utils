@@ -540,7 +540,7 @@ def rasterize(
 
     if not np.can_cast(np.array(nodata, dtype=ds.dtypes[0]), dtype):
         old_nodata = nodata
-        nodata = get_nodata_value(dtype)
+        nodata = get_nodata_value_from_dtype(dtype)
 
         # Only throw a warning if the value is really different  (we don't care about 255.0 being replaced by 255)
         if old_nodata - nodata != 0.0:
