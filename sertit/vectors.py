@@ -425,6 +425,7 @@ def read(
             In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
         **kwargs: Additional arguments used in gpd.read_file.
             You can also give :code:`file_list`, the list of files of the archive to get the vector from, as this operation is expensive when done with large archives stored on the cloud.
+            You can also set :code:`compute_sindex=False` to avoid computing the spatial index of the vector.
 
     Returns:
         gpd.GeoDataFrame: Read vector as a GeoDataFrame
@@ -511,6 +512,10 @@ def read(
     # Add some attributes
     vect.attrs["path"] = str(vector_path)
     vect.attrs["name"] = path.get_filename(vector_path)
+
+    # Generate spatial index for optimization
+    if kwargs.get("compute_sindex", True) and not vect.has_sindex:
+        vect.sindex  # noqa
 
     return vect
 
