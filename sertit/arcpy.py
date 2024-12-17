@@ -1,8 +1,6 @@
 import logging
 import logging.handlers
 
-from sertit.logs import deprecation_warning
-
 # Arcpy types from inside a schema
 SHORT = "int32:4"
 """ 'Short' type for ArcGis GDB """
@@ -151,32 +149,6 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
             arcpy.AddMessage(msg)
 
         super(ArcPyLogHandler, self).emit(record)
-
-
-def feature_layer_to_path(feature_layer) -> str:
-    """
-    .. deprecated:: 1.36.0
-       Use :py:func:`gp_layer_to_path` instead.
-
-    Use :func:`gp_layer_to_path` instead.
-
-    Convert a feature layer to its source path.
-
-    Args:
-        feature_layer: Feature layer
-
-    Returns:
-        str: Path to the feature layer source
-
-    """
-    deprecation_warning("This function is deprecated. Use gp_layer_to_path instead.")
-    # Get path
-    if hasattr(feature_layer, "dataSource"):
-        path = feature_layer.dataSource
-    else:
-        path = str(feature_layer)
-
-    return path
 
 
 def gp_layer_to_path(feature_layer) -> str:

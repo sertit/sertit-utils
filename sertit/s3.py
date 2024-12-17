@@ -17,13 +17,16 @@
 S3 tools
 """
 
+import contextlib
 import logging
 import os
 from contextlib import contextmanager
 from functools import wraps
+from io import BytesIO
 
 from cloudpathlib import S3Client
 
+from sertit import AnyPath, path
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -271,3 +274,55 @@ def define_s3_client(
     client = S3Client(**args_s3_client)
 
     client.set_as_default_client()
+
+
+def download(src, dst):
+    # By default, use the src path
+    downloaded_path = src
+
+    # Universal pathlib
+    if path.is_cloud_path(src):
+        import shutil
+
+        with contextlib.suppress(ImportError):
+            from upath import UPath
+
+            if isinstance(src, UPath):
+                dst = AnyPath(dst)
+                if dst.is_dir() and src.name != dst.name:
+                    downloaded_path = dst / src.name
+                else:
+                    downloaded_path = dst
+
+                if src.is_file():
+                    with src.open("rb") as f0, downloaded_path.open("wb") as f1:
+                        shutil.copyfileobj(f0, f1)
+                else:
+                    downloaded_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    for f in src.glob("**"):
+                        dst_file = downloaded_path / f.name
+                        if f.is_file():
+                            dst_file.parent.mkdir(parents=True, exist_ok=True)
+                            with f.open("rb") as f0, dst_file.open("wb") as f1:
+                                shutil.copyfileobj(f0, f1)
+
+        # cloudpathlib
+        with contextlib.suppress(ImportError):
+            from cloudpathlib import CloudPath
+
+            if isinstance(src, CloudPath):
+                downloaded_path = src.fspath if dst is None else src.download_to(dst)
+
+    return downloaded_path
+
+
+def read(src):
+    src = AnyPath(src)
+    try:
+        b = src.read_bytes()
+    except Exception:
+        with src.open("rb") as f:
+            b = f.read()
+
+    return BytesIO(b)
