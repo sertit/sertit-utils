@@ -68,6 +68,11 @@ Bug_Tracker = "https://github.com/sertit/sertit-utils/issues"
 Documentation =  "https://sertit-utils.readthedocs.io/en/latest/"
 Source_Code = "https://github.com/sertit/sertit-utils"
 
+[tool.ruff]
+exclude = [
+    "docs"
+]
+
 [tool.ruff.lint]
 select = [
     # pycodestyle
@@ -85,11 +90,14 @@ select = [
 ]
 ignore = ["E501"]
 
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
 
 # Pytest options
 [tool.pytest.ini_options]
 log_cli = true
-log_cli_format = "%(asctime)s - [%(levelname)s] - %(message)s"
+log_cli_format = "%(name)s: %(asctime)s - [%(levelname)s] - %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 log_cli_level = "INFO"
 
