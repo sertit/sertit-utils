@@ -33,7 +33,7 @@ from sertit.rasters_rio import DEG_2_RAD
 try:
     import rasterio
     import rioxarray
-    from rasterio import MemoryFile, features
+    from rasterio import features
     from rasterio.enums import Resampling
     from rioxarray.exceptions import MissingCRS
 except ModuleNotFoundError as ex:
@@ -191,8 +191,8 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
         if any_raster_type is None:
             raise ValueError("'any_raster_type' shouldn't be None!")
 
-        default_chunks = True if dask.get_client() is not None else None
-
+        default_chunks = "auto" if dask.get_client() is not None else None
+        masked = kwargs.get("masked", True)
         # By default, try with the input fct
         try:
             out = function(any_raster_type, *args, **kwargs)
@@ -216,41 +216,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
 
-            elif isinstance(any_raster_type, tuple):
-                arr, meta = any_raster_type
-                with (
-                    MemoryFile() as memfile,
-                    memfile.open(
-                        **meta, BIGTIFF=rasters_rio.bigtiff_value(any_raster_type)
-                    ) as ds,
-                ):
-                    ds.write(arr.data)
-
-                    with rioxarray.open_rasterio(
-                        any_raster_type,
-                        masked=True,
-                        default_name=ds.name,
-                        chunks=kwargs.pop("chunks", default_chunks),
-                    ) as xds:
-                        out = function(xds, *args, **kwargs)
             else:
-                # Get the path from the input
-                if path.is_path(any_raster_type):
-                    name = str(any_raster_type)
-                    any_raster_type = str(any_raster_type)
-                else:
-                    # For rasterio datasets, '.name' gives the path
-                    name = any_raster_type.name
-
-                # Convert path or rasterio.dataset to xr.dataset
-                with rioxarray.open_rasterio(
-                    any_raster_type,
-                    masked=True,
-                    default_name=name,
-                    chunks=kwargs.pop("chunks", default_chunks),
-                ) as xds:
-                    out = function(xds, *args, **kwargs)
-
+                out = function(
+                    read(any_raster_type, chunks=default_chunks, masked=masked),
+                    *args,
+                    **kwargs,
+                )
         return out
 
     return wrapper
@@ -988,13 +959,19 @@ def read(
         rioxarray.set_options(export_grid_mapping=False),
         rioxarray.open_rasterio(
             ds,
-            lock=False,
             default_name=path.get_filename(ds.name),
             chunks=chunks,
+            masked=masked,
             **kwargs,
         ) as xda,
     ):
-        orig_dtype = xda.dtype
+        orig_dtype = xda.encoding.get(
+            "rasterio_dtype", xda.encoding.get("dtype", xda.dtype)
+        )
+
+        if isinstance(orig_dtype, str):
+            with contextlib.suppress(AttributeError):
+                orig_dtype = getattr(np, orig_dtype)
 
         # Windows
         if window is not None:

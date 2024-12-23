@@ -104,7 +104,7 @@ def ds_name(raster_path):
 @pytest.fixture
 def ds_dtype(raster_path):
     with rasterio.open(str(raster_path)) as ds:
-        return ds.meta["dtype"]
+        return getattr(np, ds.meta["dtype"])
 
 
 @pytest.fixture
