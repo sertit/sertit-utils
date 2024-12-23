@@ -1172,7 +1172,10 @@ def write(
 
     # Write COGs
     is_written = False
+    blocksize = None
     if is_cog:
+        blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else None
+
         if write_cogs_with_dask:
             try:
                 from dask import optimize
@@ -1191,6 +1194,7 @@ def write(
                     ),
                     str(output_path),
                     stats=compute_stats,
+                    blocksize=blocksize,
                 )
 
                 (delayed,) = optimize(delayed)
@@ -1213,6 +1217,8 @@ def write(
                 "Loading raster in memory as COG has been asked not to be written by Dask. Be careful about MemoryErrors!"
             )
             xds = xds.load()
+            if blocksize is not None:
+                kwargs["BLOCKSIZE"] = blocksize
 
         if not is_written:
             # Write with windows as we don't want to_raster to blow up the RAM
