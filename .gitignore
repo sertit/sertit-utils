@@ -24,9 +24,9 @@ dist
 dask-worker-space/*
 
 # Data in CI
-CI/*.tif
-CI/*.zip
-CI/*.vrt
+ci/*.tif
+ci/*.zip
+ci/*.vrt
 
 # Docs & Notebooks
 docs/_build/*
