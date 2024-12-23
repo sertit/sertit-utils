@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 from lxml import etree, html
 
-from CI.SCRIPTS.script_utils import Polarization, files_path, s3_env
+from ci.script_utils import Polarization, files_path, s3_env
 from sertit import AnyPath, ci, files, path, vectors
 
 ci.reduce_verbosity()

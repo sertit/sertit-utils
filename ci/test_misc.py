@@ -19,7 +19,7 @@ import os
 
 import pytest
 
-from CI.SCRIPTS.script_utils import Polarization
+from ci.script_utils import Polarization
 from sertit import ci, misc
 from sertit.misc import compare, compare_version
 

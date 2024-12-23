@@ -21,7 +21,7 @@ import tempfile
 
 import pandas as pd
 
-from CI.SCRIPTS.script_utils import files_path, xml_path
+from ci.script_utils import files_path, xml_path
 from sertit import ci, xml
 
 ci.reduce_verbosity()

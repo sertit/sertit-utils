@@ -21,7 +21,7 @@ import tempfile
 import pytest
 from lxml import etree
 
-from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
+from ci.script_utils import files_path, rasters_path, s3_env, vectors_path
 from sertit import ci, path, rasters, rasters_rio, vectors
 
 ci.reduce_verbosity()

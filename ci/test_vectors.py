@@ -24,7 +24,7 @@ import pytest
 from rasterio import CRS
 from shapely import wkt
 
-from CI.SCRIPTS.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
+from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
 from sertit import ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 

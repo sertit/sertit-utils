@@ -17,7 +17,7 @@
 
 import numpy as np
 
-from CI.SCRIPTS.script_utils import dask_env, display_path, s3_env
+from ci.script_utils import dask_env, display_path, s3_env
 from sertit import ci, display, rasters_rio
 
 ci.reduce_verbosity()

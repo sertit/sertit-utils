@@ -21,7 +21,7 @@ import tempfile
 
 import pytest
 
-from CI.SCRIPTS.script_utils import files_path, get_s3_ci_path, s3_env
+from ci.script_utils import files_path, get_s3_ci_path, s3_env
 from sertit import AnyPath, ci, misc, path, vectors
 
 ci.reduce_verbosity()
