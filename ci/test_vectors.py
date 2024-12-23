@@ -21,9 +21,9 @@ import warnings
 
 import geopandas as gpd
 import pytest
-from CI.SCRIPTS.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
 from shapely import wkt
 
+from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
 from sertit import archives, ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 

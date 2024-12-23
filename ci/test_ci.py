@@ -19,9 +19,9 @@ import os
 import tempfile
 
 import pytest
-from CI.SCRIPTS.script_utils import files_path, rasters_path, s3_env, vectors_path
 from lxml import etree
 
+from ci.script_utils import files_path, rasters_path, s3_env, vectors_path
 from sertit import ci, path, rasters, rasters_rio, s3, vectors
 
 ci.reduce_verbosity()
@@ -67,13 +67,16 @@ def test_assert_dir():
 
 
 @s3_env
-def test_assert_files():
+def test_assert_files(tmp_path):
     """Test CI functions"""
     ok_path = files_path().joinpath("productPreview.html")
     false_path = files_path().joinpath("false.html")
 
     ci.assert_files_equal(ok_path, ok_path)
-    ci.assert_files_equal(str(ok_path), str(ok_path))
+    if path.is_cloud_path(ok_path):
+        str_ok_path = str(s3.download(ok_path, tmp_path))
+
+    ci.assert_files_equal(str_ok_path, str_ok_path)
     with pytest.raises(AssertionError):
         ci.assert_files_equal(ok_path, false_path)
 
