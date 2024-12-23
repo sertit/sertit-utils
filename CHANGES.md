@@ -1,6 +1,6 @@
 # Release History
 
-## 1.44.x (20xx-xx-xx)
+## 1.44.2 (2024-12-23)
 
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
