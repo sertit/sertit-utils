@@ -20,6 +20,7 @@
 - FIX: Use `np.tan` in `rasters.slope`
 - FIX: Allow str as paths in `ci.assert_files_equal`
 - FIX: Better alignement between `rasters.read` function and `rasters.any_raster_to_xr_ds` decorator
+- FIX: Fix `rasters.sieve` function with `xr.apply_ufunc`
 - OPTIM: Compute the spatial index by default in `vectors.read` (set `vectors.read(..., compute_sindex=False)` if you don't want to compute them)
 - CI: Rename CI folder and remove unnecessary intermediate folder
 

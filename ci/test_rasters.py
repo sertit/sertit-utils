@@ -314,7 +314,7 @@ def test_crop(tmp_path, xda, xds, xda_dask, mask):
 
 @s3_env
 @dask_env
-def test_sieve(tmp_path, xda, xds, xda_dask):
+def test_sieve(tmp_path, raster_path, xda, xds, xda_dask):
     """Test sieve function"""
     # DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
@@ -347,6 +347,10 @@ def test_sieve(tmp_path, xda, xds, xda_dask):
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
     ci.assert_raster_equal(xda_sieved, raster_sieved_path)
     ci.assert_raster_equal(xds_sieved, raster_sieved_path)
+
+    # From path
+    sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
+    np.testing.assert_array_equal(sieve_xda, sieve_xda_path)
 
 
 @s3_env
