@@ -73,6 +73,7 @@ def test_assert_files():
     false_path = files_path().joinpath("false.html")
 
     ci.assert_files_equal(ok_path, ok_path)
+    ci.assert_files_equal(str(ok_path), str(ok_path))
     with pytest.raises(AssertionError):
         ci.assert_files_equal(ok_path, false_path)
 
