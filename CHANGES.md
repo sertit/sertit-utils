@@ -18,6 +18,7 @@
 - FIX: Fix deprecation warning for `get_nodata_value_from_dtype` in `rasters_rio`
 - FIX: Force blocksize to 128 when writing small COGs on disk (in order to have multiple overview levels)
 - FIX: Use `np.tan` in `rasters.slope`
+- FIX: Allow str as paths in `ci.assert_files_equal`
 - OPTIM: Compute the spatial index by default in `vectors.read` (set `vectors.read(..., compute_sindex=False)` if you don't want to compute them)
 - CI: Rename CI folder and remove unnecessary intermediate folder
 

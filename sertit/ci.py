@@ -86,7 +86,7 @@ def assert_files_equal(file_1: AnyPathStrType, file_2: AnyPathStrType):
         file_1 (str): Path to file 1
         file_2 (str): Path to file 2
     """
-    with file_1.open("r") as f1, file_2.open("r") as f2:
+    with AnyPath(file_1).open("r") as f1, AnyPath(file_2).open("r") as f2:
         assert files.hash_file_content(f1.read()) == files.hash_file_content(f2.read())
 
 
