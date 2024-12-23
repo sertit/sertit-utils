@@ -1956,13 +1956,12 @@ def slope(
         AnyXrDataStructure: Slope
     """
     try:
-        from xarray.ufuncs import tan
         from xrspatial import slope
 
         xds = slope(xds)
 
         if in_pct:
-            xds = 100 * tan(xds * DEG_2_RAD)
+            xds = 100 * np.tan(xds * DEG_2_RAD)
         elif in_rad:
             xds = xds * DEG_2_RAD
     except ImportError:
