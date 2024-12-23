@@ -75,6 +75,8 @@ def test_assert_files(tmp_path):
     ci.assert_files_equal(ok_path, ok_path)
     if path.is_cloud_path(ok_path):
         str_ok_path = str(s3.download(ok_path, tmp_path))
+    else:
+        str_ok_path = ok_path
 
     ci.assert_files_equal(str_ok_path, str_ok_path)
     with pytest.raises(AssertionError):
