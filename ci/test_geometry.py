@@ -15,7 +15,7 @@
 # limitations under the License.
 """Script testing vector functions"""
 
-from CI.SCRIPTS.script_utils import KAPUT_KWARGS, geometry_path, s3_env, vectors_path
+from ci.script_utils import KAPUT_KWARGS, geometry_path, s3_env, vectors_path
 from sertit import ci, geometry, vectors
 from sertit.geometry import (
     buffer,

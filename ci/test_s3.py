@@ -22,7 +22,7 @@ import rasterio
 from cloudpathlib import AnyPath
 from tempenv import tempenv
 
-from CI.SCRIPTS.script_utils import CI_SERTIT_S3
+from ci.script_utils import CI_SERTIT_S3
 from sertit import rasters
 from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
 

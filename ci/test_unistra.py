@@ -19,7 +19,7 @@ import pytest
 from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
-from CI.SCRIPTS.script_utils import CI_SERTIT_S3
+from ci.script_utils import CI_SERTIT_S3
 from sertit import ci, misc, rasters, s3
 from sertit.unistra import (
     _get_db_path,

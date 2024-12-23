@@ -16,7 +16,10 @@
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
 - FIX: Fix too broad exception in case of `geopandas >= 1.0`
 - FIX: Fix deprecation warning for `get_nodata_value_from_dtype` in `rasters_rio`
+- FIX: Force blocksize to 128 when writing small COGs on disk (in order to have multiple overview levels)
+- FIX: Use `np.tan` in `rasters.slope`
 - OPTIM: Compute the spatial index by default in `vectors.read` (set `vectors.read(..., compute_sindex=False)` if you don't want to compute them)
+- CI: Rename CI folder and remove unnecessary intermediate folder
 
 ## 1.44.1 (2024-12-12)
 
