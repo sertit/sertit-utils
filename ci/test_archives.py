@@ -2,9 +2,9 @@ import os
 import shutil
 
 import pytest
+from CI.SCRIPTS.script_utils import files_path, s3_env
 from lxml import etree, html
 
-from CI.SCRIPTS.script_utils import files_path, s3_env
 from sertit import archives, ci, files, path, s3, vectors
 
 

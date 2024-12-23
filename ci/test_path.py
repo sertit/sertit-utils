@@ -19,8 +19,8 @@ import os
 import tempfile
 
 import pytest
-
 from CI.SCRIPTS.script_utils import get_s3_ci_path
+
 from sertit import AnyPath, ci, misc, path
 
 ci.reduce_verbosity()

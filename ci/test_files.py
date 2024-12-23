@@ -20,8 +20,8 @@ import tempfile
 from datetime import date, datetime
 
 import numpy as np
-
 from CI.SCRIPTS.script_utils import Polarization
+
 from sertit import AnyPath, ci, files
 
 ci.reduce_verbosity()
