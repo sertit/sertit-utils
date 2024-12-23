@@ -1380,14 +1380,15 @@ def sieve(
 
     assert connectivity in [4, 8]
 
-    # Use this trick to make the sieve work
-    mask = np.where(np.isnan(xds.data), 0, 1).astype(np.uint8)
-    data = xds.data.astype(np.uint8)
+    mask = xr.where(np.isnan(xds), 0, 1).astype(np.uint8).data
+    data = xds.astype(np.uint8).data
 
     # Sieve
     try:
         sieved_arr = xr.apply_ufunc(
-            features.sieve, data, sieve_thresh, connectivity, mask
+            features.sieve,
+            data,
+            kwargs={"size": sieve_thresh, "connectivity": connectivity, "mask": mask},
         )
     except ValueError:
         sieved_arr = features.sieve(
