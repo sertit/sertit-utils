@@ -42,21 +42,12 @@ def get_s3_ci_path():
     return AnyPath("s3://sertit-sertit-utils-ci")
 
 
-def get_proj_path():
-    """Get project path"""
-    if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
-        return get_s3_ci_path()
-    else:
-        # ON DISK
-        return AnyPath(unistra.get_db3_path())
-
-
 def get_ci_data_path():
     """Get CI DATA path"""
     if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
-        return get_proj_path().joinpath("DATA")
+        return get_s3_ci_path() / "DATA"
     else:
-        return get_proj_path().joinpath("CI", "sertit_utils", "DATA")
+        return AnyPath(unistra.get_db3_path()) / "CI" / "sertit_utils" / "DATA"
 
 
 def dask_env(function):
