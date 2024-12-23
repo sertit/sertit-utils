@@ -35,8 +35,8 @@ dependencies = [
     "dill",
     "psutil",
     "geopandas>=0.14.4",
-    "cloudpathlib[all]>=0.12.1",
     "xarray>=2024.06.0",
+    "universal_pathlib>=0.2.6"
 ]
 
 dynamic = ["version"]
@@ -60,7 +60,8 @@ dask =  [
     "odc-geo>=0.4.6",
     "xarray-spatial>=0.3.6",
 ]
-full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
+cloudpathlib = ["cloudpathlib[all]>=0.12.1"]
+full = ["sertit[colorlog,rasters_rio,rasters,dask,cloudpathlib]"]
 
 [project.urls]
 Bug_Tracker = "https://github.com/sertit/sertit-utils/issues"

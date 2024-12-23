@@ -5,14 +5,23 @@ from typing import Any, Union
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from cloudpathlib import CloudPath
 from rasterio.io import DatasetReader, DatasetWriter
 from shapely import MultiPolygon, Polygon
 
-AnyPathType = Union[CloudPath, Path]
-"""Any Path Type (derived from Pathlib and CloudpathLib)"""
+try:
+    from upath import UPath
+except ImportError:
+    UPath = None
 
-AnyPathStrType = Union[str, CloudPath, Path]
+try:
+    from cloudpathlib import CloudPath
+except ImportError:
+    CloudPath = None
+
+AnyPathType = Union[CloudPath, Path, UPath]
+"""Any Path Type (derived from Pathlib, Universal Pathlib and CloudpathLib)"""
+
+AnyPathStrType = Union[str, AnyPathType]
 """Same as :code:`AnyPathType` but appened with :code:`str`"""
 
 AnyXrDataStructure = Union[xr.DataArray, xr.Dataset]
