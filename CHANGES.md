@@ -9,8 +9,7 @@
    - Renaming functions
    - Others
 - **ENH: Use `universal_pathlib` instead of `cloudpathlib` (even if the code is still compatible with `cloudpathlib`)** ([#4](https://github.com/sertit/sertit-utils/issues/4))
- 
-## 1.44.x (20xx-xx-xx)
+## 1.44.2 (2024-12-23)
 
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
