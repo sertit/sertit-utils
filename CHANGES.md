@@ -3,6 +3,7 @@
 ## 1.44.3 (2025-mm-dd)
 
 - FIX: Manage case where we have a `pd.Dataframe` instead of a `gpd.GeoDataFrame` in `vectors.read` (reading a `.dbf` file for instance)
+- FIX: Simplify decorator function of `rasters.read`, to better check the input types and to have a clearer function name and clearer exceptions
 
 ## 1.44.2 (2024-12-23)
 

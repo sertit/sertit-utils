@@ -612,7 +612,7 @@ def test_merge_different_crs_gtiff(tmp_path):
 
 
 def _test_raster_after_write(test_path, dtype, nodata_val):
-    with rasterio.open(test_path) as ds:
+    with rasterio.open(str(test_path)) as ds:
         assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
         assert ds.meta["nodata"] == nodata_val
         assert ds.read()[:, 0, 0] == nodata_val  # Check value
