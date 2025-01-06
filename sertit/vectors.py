@@ -24,9 +24,7 @@ import logging
 import os
 import re
 import shutil
-import tarfile
 import tempfile
-import zipfile
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, Union
@@ -37,7 +35,7 @@ import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 
-from sertit import AnyPath, files, geometry, logs, misc, path, strings
+from sertit import AnyPath, archives, files, geometry, misc, path, s3, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -81,9 +79,6 @@ CPLE_AppDefinedError = CPLE_AppDefinedError
 
 def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     """
-    .. deprecated:: 1.29.1
-       Use `estimate_utm_crs <https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html>`_ instead, which directly returs a CRS instead of a string.
-
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
     Args:
@@ -117,43 +112,6 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
         point = gpd.points_from_xy(lon, lat)
 
     return gpd.GeoDataFrame(geometry=point, crs=EPSG_4326).estimate_utm_crs()
-
-
-def corresponding_utm_projection(lon: float, lat: float) -> str:
-    """
-    .. deprecated:: 1.29.1
-       Use `estimate_utm_crs <https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html>`_ instead, which directly returs a CRS instead of a string.
-
-    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
-
-    Args:
-        lon (float): Longitude (WGS84, epsg:4326)
-        lat (float): Latitude (WGS84, epsg:4326)
-
-    Returns:
-        CRS: UTM CRS
-
-    Example:
-        >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
-        <Derived Projected CRS: EPSG:32632>
-        Name: WGS 84 / UTM zone 32N
-        Axis Info [cartesian]:
-        - E[east]: Easting (metre)
-        - N[north]: Northing (metre)
-        Area of Use:
-        - bounds: (6.0, 0.0, 12.0, 84.0)
-        Coordinate Operation:
-        - name: UTM zone 32N
-        - method: Transverse Mercator
-        Datum: World Geodetic System 1984 ensemble
-        - Ellipsoid: WGS 84
-        - Prime Meridian: Greenwich
-
-    """
-    logs.deprecation_warning(
-        "Deprecated, use 'to_utm_crs' instead, which directly returs a CRS instead of a string."
-    )
-    return to_utm_crs(lon, lat).to_string()
 
 
 def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
@@ -257,8 +215,11 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
     if aoi_path.suffix == ".wkt":
         try:
-            with open(aoi_path) as aoi_f:
-                aoi = wkt.load(aoi_f)
+            if path.is_cloud_path(aoi_path):
+                aoi = wkt.load(s3.read(aoi_path))
+            else:
+                with open(aoi_path) as aoi_f:
+                    aoi = wkt.load(aoi_f)
         except Exception as ex:
             raise ValueError("AOI WKT cannot be read") from ex
     else:
@@ -473,13 +434,17 @@ def read(
         if "!" in str(vector_path):
             split_vect = str(vector_path).split("!")
             archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
-            vector_path = AnyPath(split_vect[0])
+            try:
+                vector_path = AnyPath(split_vect[0], **vector_path.storage_options)
+            except AttributeError:
+                # Cloudpathlib
+                vector_path = AnyPath(split_vect[0])
 
         # Manage archive case
         if vector_path.suffix in [".tar", ".zip"]:
             prefix = vector_path.suffix[-3:]
             file_list = kwargs.pop(
-                "file_list", path.get_archived_file_list(vector_path)
+                "file_list", archives.get_archived_file_list(vector_path)
             )
 
             try:
@@ -717,16 +682,16 @@ def ogr2geojson(
 
     # archived vector_path are extracted in a tmp folder so no need to be downloaded
     if vector_path.suffix == ".zip":
-        with zipfile.ZipFile(vector_path, "r") as zip_ds:
+        with archives.open_zipfile(vector_path, "r") as zip_ds:
             vect_path = zip_ds.extract(arch_vect_path, out_dir)
     elif vector_path.suffix == ".tar":
-        with tarfile.open(vector_path, "r") as tar_ds:
+        with archives.open_tarfile(vector_path, "r") as tar_ds:
             tar_ds.extract(arch_vect_path, out_dir)
             vect_path = os.path.join(out_dir, arch_vect_path)
     else:
         # vector_path should be downloaded to work with 'ogr2ogr'
         if path.is_cloud_path(vector_path):
-            vector_path = AnyPath(vector_path).fspath
+            vector_path = s3.download(vector_path, out_dir)
         vect_path = vector_path
 
     vect_path_gj = os.path.join(

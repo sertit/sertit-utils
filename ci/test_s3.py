@@ -19,7 +19,7 @@ import os
 
 import pytest
 import rasterio
-from cloudpathlib import AnyPath, S3Client
+from cloudpathlib import AnyPath
 from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
@@ -43,6 +43,8 @@ def with_s3(variable_1, variable_2):
 
 
 def without_s3():
+    from cloudpathlib import S3Client
+
     S3Client().set_as_default_client()
     return base_fct(None)
 
