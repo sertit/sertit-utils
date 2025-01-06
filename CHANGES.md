@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.3 (2025-mm-dd)
+
+- FIX: Manage case where we have a `pd.Dataframe` instead of a `gpd.GeoDataFrame` in `vectors.read` (reading a `.dbf` file for instance)
+
 ## 1.44.2 (2024-12-23)
 
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
