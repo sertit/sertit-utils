@@ -26,7 +26,7 @@ import shapely
 import xarray as xr
 
 from ci.script_utils import KAPUT_KWARGS, dask_env, rasters_path, s3_env
-from sertit import ci, path, rasters, vectors
+from sertit import ci, path, rasters, unistra, vectors
 from sertit.rasters import (
     FLOAT_NODATA,
     INT8_NODATA,
@@ -191,6 +191,21 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
             raster_path,
             window=rasters_path().joinpath("non_existing_window.kml"),
         )
+
+
+@s3_env
+@dask_env
+@pytest.mark.timeout(2, func_only=True)
+def test_very_big_file(tmp_path, mask_path):
+    """Test read with big files function (should be fast, if not there is something going on...)"""
+    dem_path = unistra.get_geodatastore() / "GLOBAL" / "EUDEM_v2" / "eudem_wgs84.tif"
+    aoi_path = rasters_path() / "DAX.shp"
+    with rasterio.open(dem_path) as ds:
+        dem_res = ds.res[0]  # noqa
+        dem_crs = ds.crs  # noqa
+
+    aoi = vectors.read(aoi_path)
+    rasters.crop(rasters.read(dem_path, window=aoi), aoi, nodata=0)
 
 
 @s3_env
@@ -610,7 +625,7 @@ def test_merge_different_crs_gtiff(tmp_path):
 
 
 def _test_raster_after_write(test_path, dtype, nodata_val):
-    with rasterio.open(test_path) as ds:
+    with rasterio.open(str(test_path)) as ds:
         assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
         assert ds.meta["nodata"] == nodata_val
         assert ds.read()[:, 0, 0] == nodata_val  # Check value

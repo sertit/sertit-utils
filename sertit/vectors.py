@@ -19,6 +19,7 @@ Vectors tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
+import contextlib
 import logging
 import os
 import re
@@ -479,8 +480,9 @@ def read(
     vect.attrs["name"] = path.get_filename(vector_path)
 
     # Generate spatial index for optimization
-    if kwargs.get("compute_sindex", True) and not vect.has_sindex:
-        vect.sindex  # noqa
+    with contextlib.suppress(AttributeError):
+        if kwargs.get("compute_sindex", True) and not vect.has_sindex:
+            vect.sindex  # noqa
 
     return vect
 

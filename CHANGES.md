@@ -9,6 +9,13 @@
    - Renaming functions
    - Others
 - **ENH: Use `universal_pathlib` instead of `cloudpathlib` (even if the code is still compatible with `cloudpathlib`)** ([#4](https://github.com/sertit/sertit-utils/issues/4))
+
+## 1.44.3 (2025-01-06)
+
+- FIX: Manage case where we have a `pd.Dataframe` instead of a `gpd.GeoDataFrame` in `vectors.read` (reading a `.dbf` file for instance)
+- FIX: Simplify decorator function of `rasters.read`, to better check the input types and to have a clearer function name and clearer exceptions
+- FIX: Simplify decorators `rasters.any_raster_to_xr_ds` and `rasters_rio.any_raster_to_rio_ds` to better check the input types and to have clearer exceptions
+
 ## 1.44.2 (2024-12-23)
 
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**

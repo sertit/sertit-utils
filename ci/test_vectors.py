@@ -342,9 +342,14 @@ def test_read_gdb():
 
 def test_read_dbf():
     """Test read from GDB"""
+    # DataFrame DBF (just check it works)
+    dbf_path = vectors_path() / "a0_source.dbf"
+    vectors.read(dbf_path)
+
+    # GeoDataFrame DBF
     dbf_path = vectors_path() / "aoi.dbf"
 
-    fiona = vectors.read(dbf_path)
+    fiona = vectors.read(dbf_path, engine="fiona")
     pyogrio = vectors.read(dbf_path, engine="pyogrio")
 
     ci.assert_geom_equal(fiona, pyogrio)

@@ -1,12 +1,9 @@
 # Tests & lint
-tox
 pre-commit
-black
 pytest
 coverage
 pytest-cov
-flake8
-pylint
+pytest-timeout
 tempenv
 
 # Deploy

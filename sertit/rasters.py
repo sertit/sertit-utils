@@ -174,15 +174,18 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
 
         default_chunks = "auto" if dask.get_client() is not None else None
         masked = kwargs.get("masked", True)
-        # By default, try with the input fct
+
+        # By default, try with the read fct: this fct returns the xr data structure as is and manages other input types such as tuple, rasterio datasets, paths...
         try:
-            out = function(any_raster_type, *args, **kwargs)
-        except Exception as ex:
-            if isinstance(any_raster_type, xr.DataArray):
-                # Should work with a DataArray
-                raise ex
-            elif isinstance(any_raster_type, xr.Dataset):
-                # Try on every DataArray of the Dataset
+            out = function(
+                read(any_raster_type, chunks=default_chunks, masked=masked),
+                *args,
+                **kwargs,
+            )
+        except Exception:
+            # Try on every DataArray of the Dataset
+            # TODO: handle DataTrees?
+            if isinstance(any_raster_type, xr.Dataset):
                 try:
                     xds_dict = {}
                     convert_to_xdataset = False
@@ -196,13 +199,6 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                     return xds
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
-
-            else:
-                out = function(
-                    read(any_raster_type, chunks=default_chunks, masked=masked),
-                    *args,
-                    **kwargs,
-                )
         return out
 
     return wrapper
@@ -741,7 +737,7 @@ def crop(
     )
 
 
-def _any_raster_to_rio_ds(function: Callable) -> Callable:
+def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
     """
     Specific declination of rasters_rio.any_raster_to_rio_ds for this specific case, handling the xarray object differently.
 
@@ -787,37 +783,39 @@ def _any_raster_to_rio_ds(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        try:
-            out = function(any_raster_type, *args, **kwargs)
-        except Exception as ex:
-            if path.is_path(any_raster_type):
-                with rasterio.open(str(any_raster_type)) as ds:
-                    out = function(ds, *args, **kwargs)
-            elif isinstance(any_raster_type, tuple):
+        # Input is a path: open it with rasterio
+        if path.is_path(any_raster_type):
+            # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
+            # This is really not ideal, so use the string conversion instead
+            with rasterio.open(str(any_raster_type)) as ds:
+                out = function(ds, *args, **kwargs)
+        # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict
+        elif isinstance(any_raster_type, tuple):
+            try:
                 arr, meta = any_raster_type
-                from rasterio import MemoryFile
+                assert isinstance(arr, np.ndarray)
+                assert isinstance(meta, dict)
+            except (ValueError, AssertionError) as exc:
+                raise TypeError(
+                    "Input tuple should be composed of a numpy array of your data and the corresponding metadata dictionary, is rasterio's sense."
+                ) from exc
 
-                with (
-                    MemoryFile() as memfile,
-                    memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds,
-                ):
-                    ds.write(arr)
-                    out = function(ds, *args, **kwargs)
-            else:
-                # Try if xarray is importable
-                try:
-                    if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
-                        try:
-                            file_path = any_raster_type.encoding["source"]
-                            with rasterio.open(file_path) as ds:
-                                out = function(ds, *args, **kwargs)
-                        except Exception:
-                            # Return given xarray object
-                            return any_raster_type
-                    else:
-                        raise ex
-                except Exception as exc:
-                    raise ex from exc
+            from rasterio import MemoryFile
+
+            with (
+                MemoryFile() as memfile,
+                memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds,
+            ):
+                ds.write(arr)
+                out = function(ds, *args, **kwargs)
+
+        # Return given xarray object as is
+        elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
+            out = any_raster_type
+
+        # Run the fct directly on the input (which should be a rasterio Dataset). If not, this will fail and it's expected.
+        else:
+            out = function(any_raster_type, *args, **kwargs)
         return out
 
     return wrapper
@@ -843,7 +841,7 @@ def _3d_to_2d(function):
     return wrapper
 
 
-@_any_raster_to_rio_ds
+@__read__any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
     resolution: Union[tuple, list, float] = None,
