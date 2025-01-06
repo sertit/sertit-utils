@@ -193,15 +193,18 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
 
         default_chunks = "auto" if dask.get_client() is not None else None
         masked = kwargs.get("masked", True)
-        # By default, try with the input fct
+
+        # By default, try with the read fct: this fct returns the xr data structure as is and manages other input types such as tuple, rasterio datasets, paths...
         try:
-            out = function(any_raster_type, *args, **kwargs)
-        except Exception as ex:
-            if isinstance(any_raster_type, xr.DataArray):
-                # Should work with a DataArray
-                raise ex
-            elif isinstance(any_raster_type, xr.Dataset):
-                # Try on every DataArray of the Dataset
+            out = function(
+                read(any_raster_type, chunks=default_chunks, masked=masked),
+                *args,
+                **kwargs,
+            )
+        except Exception:
+            # Try on every DataArray of the Dataset
+            # TODO: handle DataTrees?
+            if isinstance(any_raster_type, xr.Dataset):
                 try:
                     xds_dict = {}
                     convert_to_xdataset = False
@@ -215,13 +218,6 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                     return xds
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
-
-            else:
-                out = function(
-                    read(any_raster_type, chunks=default_chunks, masked=masked),
-                    *args,
-                    **kwargs,
-                )
         return out
 
     return wrapper
@@ -829,6 +825,8 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
         """
         # Input is a path: open it with rasterio
         if path.is_path(any_raster_type):
+            # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
+            # This is really not ideal, so use the string conversion instead
             with rasterio.open(str(any_raster_type)) as ds:
                 out = function(ds, *args, **kwargs)
         # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict

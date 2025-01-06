@@ -28,6 +28,7 @@ from typing import Any, Callable, Optional, Union
 
 import geopandas as gpd
 import numpy as np
+import xarray as xr
 from shapely.geometry import Polygon
 
 try:
@@ -196,55 +197,61 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
-        try:
-            out = function(any_raster_type, *args, **kwargs)
-        except Exception as ex:
-            if path.is_path(any_raster_type):
-                with rasterio.open(str(any_raster_type)) as ds:
-                    out = function(ds, *args, **kwargs)
-            elif isinstance(any_raster_type, tuple):
+        # Input is a path: open it with rasterio
+        if path.is_path(any_raster_type):
+            # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
+            # This is really not ideal, so use the string conversion instead
+            with rasterio.open(str(any_raster_type)) as ds:
+                out = function(ds, *args, **kwargs)
+        # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict
+        elif isinstance(any_raster_type, tuple):
+            try:
                 arr, meta = any_raster_type
-                with (
-                    MemoryFile() as memfile,
-                    memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds,
-                ):
-                    ds.write(arr)
-                    out = function(ds, *args, **kwargs)
-            else:
-                try:
-                    import xarray as xr
-                except ModuleNotFoundError:
-                    raise ex  # noqa: B904
+                assert isinstance(arr, np.ndarray)
+                assert isinstance(meta, dict)
+            except (ValueError, AssertionError) as exc:
+                raise TypeError(
+                    "Input tuple should be composed of a numpy array of your data and the corresponding metadata dictionary, is rasterio's sense."
+                ) from exc
+
+            with (
+                MemoryFile() as memfile,
+                memfile.open(**meta, BIGTIFF=bigtiff_value(arr)) as ds,
+            ):
+                ds.write(arr)
+                out = function(ds, *args, **kwargs)
+
+        # Return given xarray object as is
+        elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
+            from sertit.rasters import get_nodata_value_from_xr
+
+            nodata = get_nodata_value_from_xr(any_raster_type)
+
+            meta = {
+                "driver": "GTiff",
+                "dtype": any_raster_type.dtype,
+                "nodata": nodata,
+                "width": any_raster_type.rio.width,
+                "height": any_raster_type.rio.height,
+                "count": any_raster_type.rio.count,
+                "crs": any_raster_type.rio.crs,
+                "transform": any_raster_type.rio.transform(),
+            }
+            with (
+                MemoryFile() as memfile,
+                memfile.open(**meta, BIGTIFF=bigtiff_value(any_raster_type)) as ds,
+            ):
+                if nodata is not None:
+                    arr = any_raster_type.fillna(nodata)
                 else:
-                    if isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
-                        from sertit.rasters import get_nodata_value_from_xr
+                    arr = any_raster_type
+                ds.write(arr.data)
+                out = function(ds, *args, **kwargs)
 
-                        nodata = get_nodata_value_from_xr(any_raster_type)
+        # Run the fct directly on the input (which should be a rasterio Dataset). If not, this will fail and it's expected.
+        else:
+            out = function(any_raster_type, *args, **kwargs)
 
-                        meta = {
-                            "driver": "GTiff",
-                            "dtype": any_raster_type.dtype,
-                            "nodata": nodata,
-                            "width": any_raster_type.rio.width,
-                            "height": any_raster_type.rio.height,
-                            "count": any_raster_type.rio.count,
-                            "crs": any_raster_type.rio.crs,
-                            "transform": any_raster_type.rio.transform(),
-                        }
-                        with (
-                            MemoryFile() as memfile,
-                            memfile.open(
-                                **meta, BIGTIFF=bigtiff_value(any_raster_type)
-                            ) as ds,
-                        ):
-                            if nodata is not None:
-                                arr = any_raster_type.fillna(nodata)
-                            else:
-                                arr = any_raster_type
-                            ds.write(arr.data)
-                            out = function(ds, *args, **kwargs)
-                    else:
-                        raise ex
         return out
 
     return wrapper
