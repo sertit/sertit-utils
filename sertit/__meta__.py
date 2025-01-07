@@ -17,4 +17,4 @@
 Sertit Utils library
 """
 
-__version__ = "1.44.4.dev0"
+__version__ = "1.44.4"

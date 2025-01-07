@@ -1,8 +1,8 @@
 # Release History
 
-## 1.44.4 (2025-01-dd)
+## 1.44.4 (2025-01-07)
 
-- FIX: Fix regression in `rasters.any_raster_to_xr_ds`
+- FIX: Fix regression in `rasters.any_raster_to_xr_ds` (right `Exception` not thrown, `UnboundLocalError` thrown instead when trying to return non-existing variable)
 
 ## 1.44.3 (2025-01-06)
 
