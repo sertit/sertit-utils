@@ -201,7 +201,7 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                 *args,
                 **kwargs,
             )
-        except Exception:
+        except Exception as exc:
             # Try on every DataArray of the Dataset
             # TODO: handle DataTrees?
             if isinstance(any_raster_type, xr.Dataset):
@@ -214,10 +214,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                             convert_to_xdataset = True
 
                     # Convert in dataset if we have DataArrays, else keep the dict
-                    xds = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
-                    return xds
+                    out = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
+            else:
+                raise exc
+
         return out
 
     return wrapper

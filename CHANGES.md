@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.4 (2025-01-dd)
+
+- FIX: Fix regression in `rasters.any_raster_to_xr_ds`
+
 ## 1.44.3 (2025-01-06)
 
 - FIX: Manage case where we have a `pd.Dataframe` instead of a `gpd.GeoDataFrame` in `vectors.read` (reading a `.dbf` file for instance)
