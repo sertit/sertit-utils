@@ -1242,10 +1242,13 @@ def _collocate_dataarray(
             from odc.geo import xr
 
             LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
+            from odc.geo.geobox import GeoBox
+
             collocated_xda = xr.xr_reproject(
                 src=other,
-                how=reference.rio.crs,
-                shape=reference.rio.shape,
+                how=GeoBox(
+                    reference.rio.shape, reference.rio.transform(), reference.rio.crs
+                ),
                 resampling=resampling,
                 num_threads=MAX_CORES,
                 dst_nodata=other.rio.nodata,

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.5 (2025-01-dd)
+
+- FIX: Fix regression in `rasters.collocate` where `odc.geo.xr_reproject` was not used correctly.
+
 ## 1.44.4 (2025-01-07)
 
 - FIX: Fix regression in `rasters.any_raster_to_xr_ds` (right `Exception` not thrown, `UnboundLocalError` thrown instead when trying to return non-existing variable)
