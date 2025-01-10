@@ -1255,7 +1255,7 @@ def _collocate_dataarray(
             ).rename(other.name)
 
             # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-            collocated_xda.attrs.pop("nodata")
+            collocated_xda.attrs.pop("nodata", None)
             collocated_xda.rio.write_nodata(
                 other.rio.nodata, encoded=True, inplace=True
             )

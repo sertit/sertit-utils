@@ -3,6 +3,7 @@
 ## 1.44.5 (2025-01-dd)
 
 - FIX: Fix regression in `rasters.collocate` where `odc.geo.xr_reproject` was not used correctly.
+- FIX: Fix when trying to pop non-existing `nodata` keyword in `rasters.collocate`
 
 ## 1.44.4 (2025-01-07)
 
