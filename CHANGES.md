@@ -2,6 +2,7 @@
 
 ## 1.44.5 (2025-01-dd)
 
+- ENH: Add the ability to round rasters values in `ci.assert_raster_max_mismatch`
 - FIX: Fix regression in `rasters.collocate` where `odc.geo.xr_reproject` was not used correctly.
 - FIX: Fix when trying to pop non-existing `nodata` keyword in `rasters.collocate`
 
