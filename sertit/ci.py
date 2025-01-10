@@ -367,7 +367,7 @@ def assert_raster_max_mismatch(
             f"Too many mismatches !\n"
             f"Number of mismatches: {nof_mismatch} / {nof_elements},\n"
             f"Percentage of mismatches: {pct_mismatch:0.2f}% > {max_mismatch_pct}%\n"
-            f"Mean of mismatches: {np.mean(np.where(diffs != 0)):0.2f}"
+            f"Mean of mismatches: {np.nanmean(np.where(diffs != 0, diffs, np.nan)):0.2f}"
         )
 
 
