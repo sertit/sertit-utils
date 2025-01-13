@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.6 (2025-01-13)
+
+- DEPS: Only ask for `cloudpathlib[s3]` as a dependency (and not cloudpathlib[all])
+
 ## 1.44.5 (2025-01-10)
 
 - ENH: Add the ability to round rasters values in `ci.assert_raster_max_mismatch`

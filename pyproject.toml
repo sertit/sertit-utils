@@ -35,7 +35,7 @@ dependencies = [
     "dill",
     "psutil",
     "geopandas>=0.14.4",
-    "cloudpathlib[all]>=0.12.1",
+    "cloudpathlib[s3]>=0.12.1",
     "xarray>=2024.06.0",
 ]
 
