@@ -16,8 +16,6 @@
 # limitations under the License.
 """
 **Source Code**: https://github.com/sertit/sertit-utils
-
-.. include:: ../README.md
 """
 
 try:

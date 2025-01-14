@@ -59,7 +59,7 @@ nb_execution_timeout = -1
 # Manage new READTHEDOCS output mechanism
 cache_path = os.getenv("READTHEDOCS_OUTPUT")
 if cache_path is not None:
-    nb_execution_cache_path = f"{cache_path}_build/.jupyter_cache"
+    nb_execution_cache_path = f"{cache_path}../docs/_build/.jupyter_cache"
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
