@@ -10,7 +10,7 @@
 
 Library gathering functions for all SERTIT's projects.
 
-Find the API documentation [**here**](https://sertit-utils.readthedocs.io/en/latest/).
+Find the API documentation [**here**](https://sertit-utils.readthedocs.io/latest/).
 
 ## Installing
 

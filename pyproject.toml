@@ -64,7 +64,7 @@ full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
 
 [project.urls]
 Bug_Tracker = "https://github.com/sertit/sertit-utils/issues"
-Documentation =  "https://sertit-utils.readthedocs.io/en/latest/"
+Documentation =  "https://sertit-utils.readthedocs.io/latest/"
 Source_Code = "https://github.com/sertit/sertit-utils"
 
 [tool.ruff]
