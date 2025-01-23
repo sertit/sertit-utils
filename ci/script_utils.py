@@ -104,3 +104,12 @@ def xml_path():
 
 def s3_env(*args, **kwargs):
     return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026
+
+
+def get_output(tmp, file, debug=False):
+    if debug:
+        out_path = AnyPath(__file__).resolve().parent / "ci_output"
+        out_path.mkdir(parents=True, exist_ok=True)
+        return out_path / file
+    else:
+        return AnyPath(tmp, file)

@@ -19,6 +19,7 @@ Raster tools
 You can use this only if you have installed sertit[full] or sertit[rasters]
 """
 
+import contextlib
 import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Union
@@ -41,7 +42,6 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
 
-import contextlib
 
 from sertit import dask, geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
@@ -763,20 +763,44 @@ def crop(
     if nodata:
         xds = set_nodata(xds, nodata)
 
-    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        shapes = shapes.to_crs(xds.rio.crs).geometry
+    try:
+        from odc.geo import (
+            Geometry,
+            xr,  # noqa
+        )
 
-    if "from_disk" not in kwargs:
-        kwargs["from_disk"] = True  # WAY FASTER
+        # Convert the shapes in the right format
+        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+            shapes = shapes.to_crs(xds.rio.crs)
 
-    # Clip keeps encoding and attrs
-    return xds.rio.clip(
-        shapes,
-        **misc.select_dict(
-            kwargs,
-            ["crs", "all_touched", "drop", "invert", "from_disk"],
-        ),
-    )
+            try:
+                shapes = shapes.union_all()
+            except AttributeError:
+                # Geopandas < 1.1.0
+                shapes = shapes.unary_union
+
+        shapes_geom = Geometry(shapes, crs=xds.rio.crs)
+
+        # Crop
+        cropped = xds.odc.crop(shapes_geom, apply_mask=True)
+
+        return set_metadata(cropped, xds)
+
+    except ImportError:
+        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+            shapes = shapes.to_crs(xds.rio.crs).geometry
+
+        if "from_disk" not in kwargs:
+            kwargs["from_disk"] = True  # WAY FASTER
+
+        # Clip keeps encoding and attrs
+        return xds.rio.clip(
+            shapes,
+            **misc.select_dict(
+                kwargs,
+                ["crs", "all_touched", "drop", "invert", "from_disk"],
+            ),
+        )
 
 
 def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
@@ -1651,8 +1675,8 @@ def read_uint8_array(
 
 
 def set_metadata(
-    naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
-) -> xr.DataArray:
+    naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name=None
+) -> AnyXrDataStructure:
     """
     Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
 

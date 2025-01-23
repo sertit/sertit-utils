@@ -25,7 +25,7 @@ import rasterio
 import shapely
 import xarray as xr
 
-from ci.script_utils import KAPUT_KWARGS, dask_env, rasters_path, s3_env
+from ci.script_utils import KAPUT_KWARGS, dask_env, get_output, rasters_path, s3_env
 from sertit import ci, path, rasters, unistra, vectors
 from sertit.rasters import (
     FLOAT_NODATA,
@@ -39,6 +39,8 @@ from sertit.rasters import (
 from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
+
+DEBUG = False
 
 
 def test_indexes(caplog):
@@ -307,13 +309,13 @@ def test_paint(tmp_path, xda, xds, xda_dask, mask):
 def test_crop(tmp_path, xda, xds, xda_dask, mask):
     """Test crop function"""
     # DataArray
-    xda_cropped = os.path.join(tmp_path, "test_crop_xda.tif")
+    xda_cropped = get_output(tmp_path, "test_crop_xda.tif", DEBUG)
     crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
     rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, crop_xda)
 
     # Dataset
-    xds_cropped = os.path.join(tmp_path, "test_crop_xds.tif")
+    xds_cropped = get_output(tmp_path, "test_crop_xds.tif", DEBUG)
     crop_xds = rasters.crop(xds, mask, nodata=get_nodata_value_from_xr(xds))
     rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, crop_xds)
