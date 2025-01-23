@@ -1,5 +1,9 @@
 # Release History
 
+## 1.44.7 (2025-mm-dd)
+
+- FIX: Fixes when trying to write COGs with dask in `rasters.write`
+
 ## 1.44.6 (2025-01-13)
 
 - DEPS: Only ask for `cloudpathlib[s3]` as a dependency (and not cloudpathlib[all])

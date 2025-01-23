@@ -1033,6 +1033,20 @@ def read(
     return xda
 
 
+def __save_cog_with_dask(xds: AnyXrDataStructure, nodata, dtype, output_path, kwargs):
+    from dask import optimize
+    from odc.geo import cog, xr  # noqa
+
+    delayed = cog.save_cog_with_dask(
+        xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(nodata),
+        str(output_path),
+        **kwargs,
+    )
+
+    (delayed,) = optimize(delayed)
+    delayed.compute(optimize_graph=True)
+
+
 @any_raster_to_xr_ds
 def write(
     xds: AnyXrDataStructure,
@@ -1155,27 +1169,24 @@ def write(
 
         if write_cogs_with_dask:
             try:
-                from dask import optimize
-                from odc.geo import cog, xr  # noqa
-
                 LOGGER.debug("Writing your COG with Dask!")
 
                 # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
                 # OverflowError: Python integer 999999 out of bounds for xxx
                 # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
-                compute_stats = np.dtype(dtype).itemsize >= 4
+                da_kwargs = {"stats": np.dtype(dtype).itemsize >= 4}
 
-                delayed = cog.save_cog_with_dask(
-                    xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
-                        nodata
-                    ),
-                    str(output_path),
-                    stats=compute_stats,
-                    blocksize=blocksize,
-                )
+                # Cannot give a None blockwise to "save_cog_with_dask"
+                if blocksize is not None:
+                    da_kwargs["blocksize"] = blocksize
 
-                (delayed,) = optimize(delayed)
-                delayed.compute(optimize_graph=True)
+                # Write cog on disk
+                try:
+                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+                except Exception:
+                    da_kwargs["stats"] = False
+                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+
                 is_written = True
 
             except (ModuleNotFoundError, KeyError):
