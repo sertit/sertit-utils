@@ -1195,14 +1195,26 @@ def write(
             try:
                 LOGGER.debug("Writing your COG with Dask!")
 
-                # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
-                # OverflowError: Python integer 999999 out of bounds for xxx
-                # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
-                da_kwargs = {"stats": np.dtype(dtype).itemsize >= 4}
+                # Filter out and convert kwargs to avoid any error
+                da_kwargs = {
+                    # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
+                    # OverflowError: Python integer 999999 out of bounds for xxx
+                    # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
+                    "stats": np.dtype(dtype).itemsize >= 4,
+                    # Other default arguments
+                    "compression": kwargs["compress"].upper(),
+                    "level": kwargs.get("level"),
+                    "compressionargs": kwargs.get("compressionargs"),
+                    "overview_resampling": kwargs.get("overview_resampling", "nearest"),
+                }
 
                 # Cannot give a None blockwise to "save_cog_with_dask"
                 if blocksize is not None:
                     da_kwargs["blocksize"] = blocksize
+
+                predictor = kwargs.get("predictor")
+                if predictor is not None:
+                    da_kwargs["predictor"] = int(predictor)
 
                 # Write cog on disk
                 try:
