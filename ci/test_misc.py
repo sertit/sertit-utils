@@ -20,7 +20,7 @@ import os
 import pytest
 
 from ci.script_utils import Polarization
-from sertit import ci, misc
+from sertit import __version__, ci, misc
 from sertit.misc import compare, compare_version
 
 ci.reduce_verbosity()
@@ -159,3 +159,5 @@ def test_compare_versions():
     """"""
     assert compare_version("geopandas", "0.10.0", ">=")
     assert compare_version("geopandas", "5.0.0", "<")
+    assert compare_version(__version__, "5.0.0", "<")
+    assert compare_version(__version__, "1.0.0", ">")

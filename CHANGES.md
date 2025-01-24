@@ -3,6 +3,7 @@
 ## 1.45.0 (2025-mm-dd)
 
 - **ENH: Use `odc.geo.xr.crop` instead of `rio.clip` to make `rasters.crop` dask-compatible** ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- ENH: Allow to pass the version number as a string to `misc.compare_versions`
 - FIX: Fixes when trying to write COGs with dask in `rasters.write`
 
 ## 1.44.6 (2025-01-13)

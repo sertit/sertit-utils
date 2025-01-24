@@ -521,7 +521,7 @@ def compare_version(
     Compare the version of a librarie to a reference, giving the operator.
 
     Args:
-        lib (str): Name of the library
+        lib (str): Name of the library, it's version as a string or as a Version object
         version_to_check (str): Version of the library to be compared
         operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
 
@@ -531,14 +531,19 @@ def compare_version(
     Example:
         >>> compare_version("geopandas", "0.10.0", ">=")
         True
+        >>> compare_version(sertit.__version__, "1.0.0", ">=")
+        True
 
     """
-    from importlib.metadata import version
+    from importlib.metadata import PackageNotFoundError, version
 
     if isinstance(lib, Version):
         lib_version = lib
     elif isinstance(lib, str):
-        lib_version = Version(version(lib))
+        try:
+            lib_version = Version(version(lib))
+        except PackageNotFoundError:
+            lib_version = Version(lib)
     else:
         raise TypeError(
             "'lib' should either be the name of your library as a string or directly a 'Version' object."
