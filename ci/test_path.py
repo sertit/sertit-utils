@@ -16,13 +16,12 @@
 """Script testing the files"""
 
 import os
-import shutil
 import tempfile
 
 import pytest
 
-from ci.script_utils import files_path, get_s3_ci_path, s3_env
-from sertit import AnyPath, ci, misc, path, vectors
+from ci.script_utils import get_s3_ci_path
+from sertit import AnyPath, ci, misc, path
 
 ci.reduce_verbosity()
 
@@ -63,58 +62,6 @@ def test_paths():
 
         assert not path.is_writable(get_s3_ci_path())  # Not writable
         assert not path.is_writable("cvfgbherth")  # Non-existing
-
-
-@s3_env
-def test_archived_paths():
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = files_path().joinpath(landsat_name)
-    zip_file = files_path().joinpath(f"{landsat_name}.zip")
-    tar_file = files_path().joinpath(f"{landsat_name}.tar")
-    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
-    sz_file = files_path().joinpath(f"{landsat_name}.7z")
-
-    # Archive file
-    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
-    tif_ok = f"{ok_folder.name}/{tif_name}"
-    tif_regex = f".*{tif_name}"
-    assert tif_ok == path.get_archived_path(zip_file, tif_regex)
-    assert tif_ok == path.get_archived_path(zip_file, tif_regex, as_list=True)[0]
-    assert tif_ok == path.get_archived_path(tar_file, ".*RADSAT")
-
-    # RASTERIO
-    tif_zip = path.get_archived_rio_path(zip_file, tif_regex)
-    tif_list = path.get_archived_rio_path(zip_file, tif_regex, as_list=True)
-    tif_tar = path.get_archived_rio_path(tar_file, ".*RADSAT")
-    tif_ok = ok_folder.joinpath(tif_name)
-    ci.assert_raster_equal(tif_ok, tif_zip)
-    ci.assert_raster_equal(tif_ok, tif_list[0])
-    ci.assert_raster_equal(tif_ok, tif_tar)
-
-    file_list = path.get_archived_file_list(zip_file)
-    ci.assert_raster_equal(
-        tif_ok, path.get_archived_rio_path(zip_file, tif_regex, file_list=file_list)
-    )
-
-    # VECTORS
-    vect_name = "map-overlay.kml"
-    vec_ok_path = ok_folder.joinpath(vect_name)
-    if shutil.which("ogr2ogr"):  # Only works if ogr2ogr can be found.
-        vect_regex = f".*{vect_name}"
-        vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
-        vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
-        vect_ok = vectors.read(vec_ok_path)
-        assert not vect_ok.empty
-        ci.assert_geom_equal(vect_ok, vect_zip)
-        ci.assert_geom_equal(vect_ok, vect_tar)
-
-    # ERRORS
-    with pytest.raises(TypeError):
-        path.get_archived_rio_path(targz_file, tif_regex)
-    with pytest.raises(TypeError):
-        path.get_archived_rio_path(sz_file, tif_regex)
-    with pytest.raises(FileNotFoundError):
-        path.get_archived_rio_path(zip_file, "cdzeferf")
 
 
 def test_get_file_name():

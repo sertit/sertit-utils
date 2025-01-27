@@ -20,6 +20,7 @@ CI tools
 import filecmp
 import logging
 import pprint
+import tempfile
 from doctest import Example
 from typing import Any, Union
 
@@ -30,8 +31,8 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, files, s3, unistra
-from sertit.logs import SU_NAME, deprecation_warning
+from sertit import AnyPath, files, path, s3
+from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -40,61 +41,6 @@ LOGGER = logging.getLogger(SU_NAME)
 AWS_ACCESS_KEY_ID = s3.AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY = s3.AWS_SECRET_ACCESS_KEY
 AWS_S3_ENDPOINT = s3.AWS_S3_ENDPOINT
-
-
-def s3_env(*args, **kwargs):
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.s3_env(*args, **kwargs)
-
-
-def define_s3_client():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.define_s3_client()
-
-
-def get_db2_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db2_path()
-
-
-def get_db3_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db3_path()
-
-
-def get_db4_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db4_path()
 
 
 def assert_val(val_1: Any, val_2: Any, field: str) -> None:
@@ -391,27 +337,36 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     assert path_1.is_dir(), f"{path_1} is not a directory!"
     assert path_2.is_dir(), f"{path_2} is not a directory!"
 
-    dcmp = filecmp.dircmp(path_1, path_2)
-    try:
-        assert (
-            dcmp.left_only == []
-        ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
-        assert (
-            dcmp.right_only == []
-        ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
-    except FileNotFoundError:
-        files_1 = [AnyPath(p).name for p in AnyPath(path_1).iterdir()]
-        files_2 = [AnyPath(p).name for p in AnyPath(path_2).iterdir()]
+    with (
+        tempfile.TemporaryDirectory() as tmpdir,
+        tempfile.TemporaryDirectory() as tmpdir2,
+    ):
+        if path.is_cloud_path(path_1):
+            path_1 = s3.download(path_1, tmpdir)
+        if path.is_cloud_path(path_2):
+            path_2 = s3.download(path_2, tmpdir2)
 
-        for f1 in files_1:
+        dcmp = filecmp.dircmp(path_1, path_2)
+        try:
             assert (
-                f1 in files_2
-            ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+                dcmp.left_only == []
+            ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
+            assert (
+                dcmp.right_only == []
+            ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
+        except FileNotFoundError:
+            files_1 = [p.name for p in path_1.iterdir()]
+            files_2 = [p.name for p in path_2.iterdir()]
 
-        for f2 in files_2:
-            assert (
-                f2 in files_1
-            ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
+            for f1 in files_1:
+                assert (
+                    f1 in files_2
+                ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+
+            for f2 in files_2:
+                assert (
+                    f2 in files_1
+                ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
 
 
 def assert_geom_equal(

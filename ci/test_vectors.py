@@ -21,11 +21,10 @@ import warnings
 
 import geopandas as gpd
 import pytest
-from rasterio import CRS
 from shapely import wkt
 
 from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
-from sertit import ci, files, path, vectors
+from sertit import archives, ci, files, path, vectors
 from sertit.vectors import EPSG_4326, DataSourceError
 
 ci.reduce_verbosity()
@@ -80,15 +79,6 @@ def test_vectors():
     # UTM and bounds
     aoi = vectors.read(kml_path, **KAPUT_KWARGS)
     _assert_attributes(aoi, kml_path)
-
-    with pytest.deprecated_call():
-        assert (
-            vectors.corresponding_utm_projection(aoi.centroid.x, aoi.centroid.y)
-            == "EPSG:32638"
-        )
-        assert CRS.from_string("EPSG:32638") == vectors.to_utm_crs(
-            aoi.centroid.x, aoi.centroid.y
-        )
 
     env = aoi.envelope[0]
 
@@ -280,7 +270,10 @@ def test_read_archived():
     map_overlay_extracted = vectors.read(map_overlay_extracted_path)
 
     ci.assert_geom_equal(
-        map_overlay_extracted, vectors.read(f"{zip_landsat}!{landsat}/{map_overlay}")
+        map_overlay_extracted,
+        vectors.read(
+            zip_landsat.parent / (zip_landsat.name + f"!{landsat}/{map_overlay}")
+        ),
     )
     ci.assert_geom_equal(
         map_overlay_extracted,
@@ -291,7 +284,7 @@ def test_read_archived():
         vectors.read(tar_landsat, archive_regex=map_overlay_regex),
     )
 
-    file_list = path.get_archived_file_list(tar_landsat)
+    file_list = archives.get_archived_file_list(tar_landsat)
     ci.assert_geom_equal(
         map_overlay_extracted,
         vectors.read(tar_landsat, archive_regex=map_overlay_regex, file_list=file_list),

@@ -22,7 +22,7 @@ import pytest
 from lxml import etree
 
 from ci.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, path, rasters, rasters_rio, vectors
+from sertit import ci, path, rasters, rasters_rio, s3, vectors
 
 ci.reduce_verbosity()
 
@@ -67,13 +67,18 @@ def test_assert_dir():
 
 
 @s3_env
-def test_assert_files():
+def test_assert_files(tmp_path):
     """Test CI functions"""
     ok_path = files_path().joinpath("productPreview.html")
     false_path = files_path().joinpath("false.html")
 
     ci.assert_files_equal(ok_path, ok_path)
-    ci.assert_files_equal(str(ok_path), str(ok_path))
+    if path.is_cloud_path(ok_path):
+        str_ok_path = str(s3.download(ok_path, tmp_path))
+    else:
+        str_ok_path = ok_path
+
+    ci.assert_files_equal(str_ok_path, str_ok_path)
     with pytest.raises(AssertionError):
         ci.assert_files_equal(ok_path, false_path)
 
@@ -170,15 +175,15 @@ def test_assert_raster():
 
 
 @s3_env
-def test_assert_xml():
+def test_assert_xml(tmp_path):
     # XML
     xml_folder = files_path().joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
     xml_path = xml_folder.joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml")
     xml_bad_path = xml_folder.joinpath("false_xml.xml")
 
     if path.is_cloud_path(files_path()):
-        xml_path = xml_path.fspath
-        xml_bad_path = xml_bad_path.fspath
+        xml_path = s3.download(xml_path, tmp_path)
+        xml_bad_path = s3.download(xml_bad_path, tmp_path)
 
     xml_ok = etree.parse(str(xml_path)).getroot()
     xml_nok = etree.parse(str(xml_bad_path)).getroot()
@@ -189,19 +194,18 @@ def test_assert_xml():
 
 
 @s3_env
-def test_assert_html():
+def test_assert_html(tmp_path):
     # HTML
     html_path = files_path().joinpath("productPreview.html")
     html_bad_path = files_path().joinpath("false.html")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        if path.is_cloud_path(files_path()):
-            html_path = html_path.download_to(tmp_dir)
-            html_bad_path = html_bad_path.download_to(tmp_dir)
+    if path.is_cloud_path(files_path()):
+        html_path = s3.download(html_path, tmp_path)
+        html_bad_path = s3.download(html_bad_path, tmp_path)
 
-        html_ok = etree.parse(str(html_path)).getroot()
-        html_nok = etree.parse(str(html_bad_path)).getroot()
+    html_ok = etree.parse(str(html_path)).getroot()
+    html_nok = etree.parse(str(html_bad_path)).getroot()
 
-        ci.assert_xml_equal(html_ok, html_ok)
-        with pytest.raises(AssertionError):
-            ci.assert_xml_equal(html_ok, html_nok)
+    ci.assert_xml_equal(html_ok, html_ok)
+    with pytest.raises(AssertionError):
+        ci.assert_xml_equal(html_ok, html_nok)

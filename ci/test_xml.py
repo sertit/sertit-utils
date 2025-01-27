@@ -111,7 +111,7 @@ def test_xml():
     _assert_str(cv_xml.findtext(".//Age"), "20")
 
     # Write
-    true_xml = str(xml_path() / "true.xml")
+    true_xml = xml_path() / "true.xml"
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_xml = os.path.join(tmp_dir, "tmp.xml")
         xml.write(cv_xml, tmp_xml)
@@ -121,7 +121,8 @@ def test_xml():
     # Based on `files.read_archived_xml`, so it is considered to work.
     # Just test the case with complete path to the archive
     l8_archived = files_path() / "LM05_L1TP_200030_20121230_20200820_02_T2_CI.zip"
-    xml_archived = f"{l8_archived}!LM05_L1TP_200030_20121230_20200820_02_T2_CI/LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_path_in_zip = "!LM05_L1TP_200030_20121230_20200820_02_T2_CI/LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_archived = l8_archived.parent / (l8_archived.name + xml_path_in_zip)
 
     ci.assert_xml_equal(
         xml.read_archive(l8_archived, r".*_MTL\.xml"), xml.read_archive(xml_archived)

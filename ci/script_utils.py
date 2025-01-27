@@ -38,8 +38,18 @@ class Polarization(ListEnum):
 
 def get_s3_ci_path():
     """Get S3 CI path"""
-    unistra.define_s3_client()
-    return AnyPath("s3://sertit-sertit-utils-ci")
+
+    from sertit.unistra import UNISTRA_S3_ENDPOINT
+
+    try:
+        ci_path = AnyPath(
+            "s3://sertit-sertit-utils-ci", endpoint_url=f"https://{UNISTRA_S3_ENDPOINT}"
+        )
+    except TypeError:
+        unistra.define_s3_client()
+        ci_path = AnyPath("s3://sertit-sertit-utils-ci")
+
+    return ci_path
 
 
 def get_ci_data_path():

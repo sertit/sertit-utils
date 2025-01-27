@@ -15,17 +15,15 @@
 # limitations under the License.
 """Tools for paths"""
 
+import contextlib
 import errno
 import logging
 import os
 import pprint
-import re
-import tarfile
 import tempfile
-import zipfile
 from typing import Any, Union
 
-from sertit import AnyPath, logs
+from sertit import AnyPath
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -148,181 +146,6 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
         rel_path = raw_path
 
     return rel_path
-
-
-def get_archived_file_list(archive_path: AnyPathStrType) -> list:
-    """
-    Get the list of all the files contained in an archive.
-
-    Args:
-        archive_path (AnyPathStrType): Archive path
-
-    Returns:
-        list: All files contained in the given archive
-
-    Example:
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> get_archived_file_list(arch_path, file_regex)
-        ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
-    """
-    archive_path = AnyPath(archive_path)
-    if archive_path.suffix == ".zip":
-        with zipfile.ZipFile(archive_path) as zip_ds:
-            file_list = [f.filename for f in zip_ds.filelist]
-    else:
-        try:
-            with tarfile.open(archive_path) as tar_ds:
-                tar_mb = tar_ds.getmembers()
-                file_list = [mb.name for mb in tar_mb]
-        except tarfile.ReadError as ex:
-            raise tarfile.ReadError(
-                f"Impossible to open archive: {archive_path}"
-            ) from ex
-
-    return file_list
-
-
-def get_archived_path(
-    archive_path: AnyPathStrType,
-    regex: str,
-    as_list: bool = False,
-    case_sensitive: bool = False,
-    file_list: list = None,
-    **kwargs,
-) -> Union[list, AnyPathType]:
-    """
-    Get archived file path from inside the archive.
-
-    .. WARNING::
-        If :code:`as_list` is :code:`False`, it will only return the first file matched !
-
-    You can use this `site <https://regexr.com/>`_ to build your regex.
-
-    Args:
-        archive_path (AnyPathStrType): Archive path
-        regex (str): File regex (used by re) as it can be found in the getmembers() list
-        as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
-        case_sensitive (bool): If true, the regex is case-sensitive.
-        file_list (list): List of files to get archived from. Optional, if not given it will be re-computed.
-
-    Returns:
-        Union[list, str]: Path from inside the zipfile
-
-    Example:
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_path(arch_path, file_regex)
-        'dir/filename.tif'
-    """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
-    # Get file list
-    archive_path = AnyPath(archive_path)
-
-    # Offer the ability to give the file list directly, as this operation is expensive when done with large archives stored on the cloud
-    if file_list is None:
-        file_list = get_archived_file_list(archive_path)
-
-    # Search for file
-    re_rgx = re.compile(regex) if case_sensitive else re.compile(regex, re.IGNORECASE)
-    archived_band_paths = list(filter(re_rgx.match, file_list))
-    if not archived_band_paths:
-        raise FileNotFoundError(
-            f"Impossible to find file {regex} in {get_filename(archive_path)}"
-        )
-
-    # Convert to str if needed
-    if not as_list:
-        archived_band_paths = archived_band_paths[0]
-
-    return archived_band_paths
-
-
-def get_archived_rio_path(
-    archive_path: AnyPathStrType,
-    regex: str,
-    as_list: bool = False,
-    file_list: list = None,
-    **kwargs,
-) -> Union[list, AnyPathType]:
-    """
-    Get archived file path from inside the archive, to be read with rasterio:
-
-    - :code:`zip+file://{zip_path}!{file_name}`
-    - :code:`tar+file://{tar_path}!{file_name}`
-
-
-    See `here <https://rasterio.readthedocs.io/en/latest/topics/datasets.html?highlight=zip#dataset-identifiers>`_
-    for more information.
-
-    .. WARNING::
-        It wont be readable by pandas, geopandas or xmltree !
-
-    .. WARNING::
-        If :code:`as_list` is :code:`False`, it will only return the first file matched !
-
-    You can use this `site <https://regexr.com/>`_ to build your regex.
-
-    Args:
-        archive_path (AnyPathStrType): Archive path
-        regex (str): File regex (used by re) as it can be found in the getmembers() list
-        as_list (bool): If true, returns a list (including all found files). If false, returns only the first match
-        file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
-
-    Returns:
-        Union[list, str]: Band path that can be read by rasterio
-
-    Example:
-        >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_tif_path(arch_path, file_regex)
-        'zip+file://D:/path/to/output.zip!dir/filename.tif'
-        >>> rasterio.open(path)
-        <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
-    """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
-    archive_path = AnyPath(archive_path)
-    if archive_path.suffix in [".tar", ".zip"]:
-        prefix = archive_path.suffix[-3:]
-    elif archive_path.suffix == ".tar.gz":
-        raise TypeError(
-            ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
-        )
-    else:
-        raise TypeError("Only .zip and .tar files can be read from inside its archive.")
-
-    # Search for file
-    archived_band_paths = get_archived_path(
-        archive_path, regex=regex, as_list=True, file_list=file_list
-    )
-
-    # Convert to rio path
-    if is_cloud_path(archive_path):
-        archived_band_paths = [
-            f"{prefix}+file+{archive_path}!{path}" for path in archived_band_paths
-        ]
-    else:
-        # archived_band_paths = [
-        #     f"{prefix}+file://{archive_path}!{path}" for path in archived_band_paths
-        # ]
-        archived_band_paths = [
-            f"/vsi{prefix}/{archive_path}/{path}" for path in archived_band_paths
-        ]
-
-    # Convert to str if needed
-    if not as_list:
-        archived_band_paths = archived_band_paths[0]
-
-    return archived_band_paths
 
 
 def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None) -> str:
@@ -589,25 +412,46 @@ def is_cloud_path(path: AnyPathStrType):
         bool: True if the file is store on the cloud.
     """
     try:
-        from cloudpathlib import CloudPath
+        return AnyPath(path).protocol in [
+            "s3",
+            "az",
+            "adl",
+            "abfs",
+            "abfss",
+            "gs",
+            "gcs",
+        ]
+    except AttributeError:
+        try:
+            from cloudpathlib import CloudPath
 
-        return isinstance(AnyPath(path), CloudPath)
-    except Exception:
-        return False
+            return isinstance(AnyPath(path), CloudPath)
+        except Exception:
+            return False
 
 
 def is_path(path: Any) -> bool:
     """
-    Determine whether the path corresponds to a file stored on the cloud or not.
+    Determine whether the path is really a path or not: either str, Path, UPath or CloudPath
 
     Args:
         path (AnyPathStrType): File path
 
     Returns:
-        bool: True if the file is store on the cloud.
+        bool: True if the file is a path
     """
     from pathlib import Path
 
-    from cloudpathlib import CloudPath
+    is_path = isinstance(path, (str, Path))
 
-    return isinstance(path, (str, Path, CloudPath))
+    with contextlib.suppress(ImportError):
+        from upath import UPath
+
+        is_path = is_path or isinstance(path, UPath)
+
+    with contextlib.suppress(ImportError):
+        from cloudpathlib import CloudPath
+
+        is_path = is_path or isinstance(path, CloudPath)
+
+    return is_path
