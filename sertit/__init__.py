@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
@@ -16,8 +16,6 @@
 # limitations under the License.
 """
 **Source Code**: https://github.com/sertit/sertit-utils
-
-.. include:: ../README.md
 """
 
 try:

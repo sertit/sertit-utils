@@ -10,6 +10,27 @@
    - Others
 - **ENH: Use `universal_pathlib` instead of `cloudpathlib` (even if the code is still compatible with `cloudpathlib`)** ([#4](https://github.com/sertit/sertit-utils/issues/4))
 
+## 1.45.0 (2025-01-27)
+
+- **ENH: Use `odc.geo.xr.crop` instead of `rio.clip` to make `rasters.crop` dask-compatible** ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- ENH: Allow to pass the version number as a string to `misc.compare_versions`
+- FIX: Fixes when trying to write COGs with dask in `rasters.write`
+- FIX: Propagate correctly kwargs when writing COGs with dask in `rasters.write`
+
+## 1.44.6 (2025-01-13)
+
+- DEPS: Only ask for `cloudpathlib[s3]` as a dependency (and not cloudpathlib[all])
+
+## 1.44.5 (2025-01-10)
+
+- ENH: Add the ability to round rasters values in `ci.assert_raster_max_mismatch`
+- FIX: Fix regression in `rasters.collocate` where `odc.geo.xr_reproject` was not used correctly.
+- FIX: Fix when trying to pop non-existing `nodata` keyword in `rasters.collocate`
+
+## 1.44.4 (2025-01-07)
+
+- FIX: Fix regression in `rasters.any_raster_to_xr_ds` (right `Exception` not thrown, `UnboundLocalError` thrown instead when trying to return non-existing variable)
+
 ## 1.44.3 (2025-01-06)
 
 - FIX: Manage case where we have a `pd.Dataframe` instead of a `gpd.GeoDataFrame` in `vectors.read` (reading a `.dbf` file for instance)

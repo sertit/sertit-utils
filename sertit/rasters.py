@@ -1,4 +1,4 @@
-# Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
@@ -19,6 +19,7 @@ Raster tools
 You can use this only if you have installed sertit[full] or sertit[rasters]
 """
 
+import contextlib
 import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Union
@@ -41,7 +42,6 @@ except ModuleNotFoundError as ex:
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
 
-import contextlib
 
 from sertit import dask, geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
@@ -182,7 +182,7 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                 *args,
                 **kwargs,
             )
-        except Exception:
+        except Exception as exc:
             # Try on every DataArray of the Dataset
             # TODO: handle DataTrees?
             if isinstance(any_raster_type, xr.Dataset):
@@ -195,10 +195,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
                             convert_to_xdataset = True
 
                     # Convert in dataset if we have DataArrays, else keep the dict
-                    xds = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
-                    return xds
+                    out = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
                 except Exception as ex:
                     raise TypeError("Function not available for xarray.Dataset") from ex
+            else:
+                raise exc
+
         return out
 
     return wrapper
@@ -721,20 +723,44 @@ def crop(
     if nodata:
         xds = set_nodata(xds, nodata)
 
-    if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        shapes = shapes.to_crs(xds.rio.crs).geometry
+    try:
+        from odc.geo import (
+            Geometry,
+            xr,  # noqa
+        )
 
-    if "from_disk" not in kwargs:
-        kwargs["from_disk"] = True  # WAY FASTER
+        # Convert the shapes in the right format
+        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+            shapes = shapes.to_crs(xds.rio.crs)
 
-    # Clip keeps encoding and attrs
-    return xds.rio.clip(
-        shapes,
-        **misc.select_dict(
-            kwargs,
-            ["crs", "all_touched", "drop", "invert", "from_disk"],
-        ),
-    )
+            try:
+                shapes = shapes.union_all()
+            except AttributeError:
+                # Geopandas < 1.1.0
+                shapes = shapes.unary_union
+
+        shapes_geom = Geometry(shapes, crs=xds.rio.crs)
+
+        # Crop
+        cropped = xds.odc.crop(shapes_geom, apply_mask=True)
+
+        return set_metadata(cropped, xds)
+
+    except ImportError:
+        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
+            shapes = shapes.to_crs(xds.rio.crs).geometry
+
+        if "from_disk" not in kwargs:
+            kwargs["from_disk"] = True  # WAY FASTER
+
+        # Clip keeps encoding and attrs
+        return xds.rio.clip(
+            shapes,
+            **misc.select_dict(
+                kwargs,
+                ["crs", "all_touched", "drop", "invert", "from_disk"],
+            ),
+        )
 
 
 def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
@@ -991,6 +1017,20 @@ def read(
     return xda
 
 
+def __save_cog_with_dask(xds: AnyXrDataStructure, nodata, dtype, output_path, kwargs):
+    from dask import optimize
+    from odc.geo import cog, xr  # noqa
+
+    delayed = cog.save_cog_with_dask(
+        xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(nodata),
+        str(output_path),
+        **kwargs,
+    )
+
+    (delayed,) = optimize(delayed)
+    delayed.compute(optimize_graph=True)
+
+
 @any_raster_to_xr_ds
 def write(
     xds: AnyXrDataStructure,
@@ -1107,27 +1147,36 @@ def write(
 
         if write_cogs_with_dask:
             try:
-                from dask import optimize
-                from odc.geo import cog, xr  # noqa
-
                 LOGGER.debug("Writing your COG with Dask!")
 
-                # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
-                # OverflowError: Python integer 999999 out of bounds for xxx
-                # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
-                compute_stats = np.dtype(dtype).itemsize >= 4
+                # Filter out and convert kwargs to avoid any error
+                da_kwargs = {
+                    # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
+                    # OverflowError: Python integer 999999 out of bounds for xxx
+                    # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
+                    "stats": np.dtype(dtype).itemsize >= 4,
+                    # Other default arguments
+                    "compression": kwargs["compress"].upper(),
+                    "level": kwargs.get("level"),
+                    "compressionargs": kwargs.get("compressionargs"),
+                    "overview_resampling": kwargs.get("overview_resampling", "nearest"),
+                }
 
-                delayed = cog.save_cog_with_dask(
-                    xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(
-                        nodata
-                    ),
-                    str(output_path),
-                    stats=compute_stats,
-                    blocksize=blocksize,
-                )
+                # Cannot give a None blockwise to "save_cog_with_dask"
+                if blocksize is not None:
+                    da_kwargs["blocksize"] = blocksize
 
-                (delayed,) = optimize(delayed)
-                delayed.compute(optimize_graph=True)
+                predictor = kwargs.get("predictor")
+                if predictor is not None:
+                    da_kwargs["predictor"] = int(predictor)
+
+                # Write cog on disk
+                try:
+                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+                except Exception:
+                    da_kwargs["stats"] = False
+                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+
                 is_written = True
 
             except (ModuleNotFoundError, KeyError):
@@ -1194,17 +1243,20 @@ def _collocate_dataarray(
             from odc.geo import xr
 
             LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
+            from odc.geo.geobox import GeoBox
+
             collocated_xda = xr.xr_reproject(
                 src=other,
-                how=reference.rio.crs,
-                shape=reference.rio.shape,
+                how=GeoBox(
+                    reference.rio.shape, reference.rio.transform(), reference.rio.crs
+                ),
                 resampling=resampling,
                 num_threads=MAX_CORES,
                 dst_nodata=other.rio.nodata,
             ).rename(other.name)
 
             # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-            collocated_xda.attrs.pop("nodata")
+            collocated_xda.attrs.pop("nodata", None)
             collocated_xda.rio.write_nodata(
                 other.rio.nodata, encoded=True, inplace=True
             )
@@ -1589,8 +1641,8 @@ def read_uint8_array(
 
 
 def set_metadata(
-    naked_xda: xr.DataArray, mtd_xda: xr.DataArray, new_name=None
-) -> xr.DataArray:
+    naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name=None
+) -> AnyXrDataStructure:
     """
     Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
 

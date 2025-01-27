@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
@@ -59,7 +59,7 @@ nb_execution_timeout = -1
 # Manage new READTHEDOCS output mechanism
 cache_path = os.getenv("READTHEDOCS_OUTPUT")
 if cache_path is not None:
-    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
+    nb_execution_cache_path = f"{cache_path}../docs/_build/.jupyter_cache"
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
@@ -80,7 +80,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "sertit"
-copyright = "Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/"
+copyright = "Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/"
 author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for
