@@ -16,6 +16,7 @@ lxml
 dill
 psutil
 geopandas>=0.14.4
+universal_pathlib>=0.2.6
 cloudpathlib[s3]>=0.12.1
 xarray>=2024.06.0
 shapely >= 2.0.0
