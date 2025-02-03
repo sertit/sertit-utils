@@ -155,7 +155,7 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         geos_logger = logging.getLogger("shapely.geos")
         previous_level = geos_logger.level
         if verbose:
-            logging.debug("Invalid geometries:\n" f"\t{gdf[~gdf.is_valid]}")
+            logging.debug(f"Invalid geometries:\n\t{gdf[~gdf.is_valid]}")
         else:
             geos_logger.setLevel(logging.CRITICAL)
 
