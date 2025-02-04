@@ -164,7 +164,7 @@ def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
 
     assert meta_1["transform"].almost_equals(
         meta_2["transform"], precision=tf_precision
-    ), f'transform incoherent:\n{meta_1["transform"]}\n!=\n{meta_2["transform"]}'
+    ), f"transform incoherent:\n{meta_1['transform']}\n!=\n{meta_2['transform']}"
 
 
 def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
@@ -393,25 +393,25 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
 
     dcmp = filecmp.dircmp(path_1, path_2)
     try:
-        assert (
-            dcmp.left_only == []
-        ), f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
-        assert (
-            dcmp.right_only == []
-        ), f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
+        assert dcmp.left_only == [], (
+            f"More files in {path_1}!\n{pprint.pformat(list(dcmp.left_only))}"
+        )
+        assert dcmp.right_only == [], (
+            f"More files in {path_2}!\n{pprint.pformat(list(dcmp.right_only))}"
+        )
     except FileNotFoundError:
         files_1 = [AnyPath(p).name for p in AnyPath(path_1).iterdir()]
         files_2 = [AnyPath(p).name for p in AnyPath(path_2).iterdir()]
 
         for f1 in files_1:
-            assert (
-                f1 in files_2
-            ), f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+            assert f1 in files_2, (
+                f"File missing!\n{f1} not in {pprint.pformat(files_2)}"
+            )
 
         for f2 in files_2:
-            assert (
-                f2 in files_1
-            ), f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
+            assert f2 in files_1, (
+                f"File missing!\n{f2} not in {pprint.pformat(files_1)}"
+            )
 
 
 def assert_geom_equal(
@@ -453,12 +453,12 @@ def assert_geom_equal(
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_2 = vectors.read(geom_2)
 
-    assert len(geom_1) == len(
-        geom_2
-    ), f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
-    assert (
-        geom_1.crs == geom_2.crs
-    ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+    assert len(geom_1) == len(geom_2), (
+        f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
+    )
+    assert geom_1.crs == geom_2.crs, (
+        f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+    )
 
     for idx in range(len(geom_1)):
         curr_geom_1 = normalize(geom_1.geometry.iat[idx])
@@ -471,9 +471,9 @@ def assert_geom_equal(
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
             try:
-                assert curr_geom_1.equals(
-                    curr_geom_2
-                ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+                assert curr_geom_1.equals(curr_geom_2), (
+                    f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+                )
             except AssertionError:
                 # Get tolerance
                 tol = 1e-7 if geom_1.crs.is_geographic else 1e-3
@@ -530,12 +530,12 @@ def assert_geom_almost_equal(
     if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
         geom_2 = vectors.read(geom_2)
 
-    assert len(geom_1) == len(
-        geom_2
-    ), f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
-    assert (
-        geom_1.crs == geom_2.crs
-    ), f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+    assert len(geom_1) == len(geom_2), (
+        f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
+    )
+    assert geom_1.crs == geom_2.crs, (
+        f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
+    )
 
     for idx in range(len(geom_1)):
         curr_geom_1 = normalize(geom_1.geometry.iat[idx])
@@ -548,9 +548,9 @@ def assert_geom_almost_equal(
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:
             try:
-                assert curr_geom_1.equals_exact(
-                    curr_geom_2, tolerance=10**-decimal
-                ), f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+                assert curr_geom_1.equals_exact(curr_geom_2, tolerance=10**-decimal), (
+                    f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
+                )
             except AssertionError:
                 # This functions tests differently than equals
                 assert_geometries_equal(
@@ -624,15 +624,15 @@ def assert_xr_encoding_attrs(
         try:
             for key, _ in xda_1.attrs.items():
                 if not key.startswith("_") and key not in unchecked_attr:
-                    assert (
-                        xda_1.attrs[key] == xda_2.attrs[key]
-                    ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+                    assert xda_1.attrs[key] == xda_2.attrs[key], (
+                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+                    )
 
             for key, _ in xda_2.attrs.items():
                 if not key.startswith("_") and key not in unchecked_attr:
-                    assert (
-                        xda_1.attrs[key] == xda_2.attrs[key]
-                    ), f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+                    assert xda_1.attrs[key] == xda_2.attrs[key], (
+                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
+                    )
         except KeyError as exc:
             raise AssertionError(
                 f"Missing key {exc} in attributes of one DataArray/Dataset"
@@ -645,15 +645,15 @@ def assert_xr_encoding_attrs(
         try:
             for key, _ in xda_1.encoding.items():
                 if not key.startswith("_") and key not in unchecked_attr:
-                    assert (
-                        xda_1.encoding[key] == xda_2.encoding[key]
-                    ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+                    assert xda_1.encoding[key] == xda_2.encoding[key], (
+                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+                    )
 
             for key, _ in xda_2.encoding.items():
                 if not key.startswith("_") and key not in unchecked_attr:
-                    assert (
-                        xda_1.encoding[key] == xda_2.encoding[key]
-                    ), f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+                    assert xda_1.encoding[key] == xda_2.encoding[key], (
+                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
+                    )
         except KeyError as exc:
             raise AssertionError(
                 f"Missing key {exc} in attributes of one DataArray/Dataset"

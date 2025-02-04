@@ -173,9 +173,9 @@ def test_nearest_neighbors():
     )
     for curr_closest, curr_dist in zip(closest, distances):
         ci.assert_val(len(curr_closest), 1, "length")
-        assert (
-            curr_dist[0] < radius
-        ), f"distance superior to radius: {curr_dist[0]} > {radius}"
+        assert curr_dist[0] < radius, (
+            f"distance superior to radius: {curr_dist[0]} > {radius}"
+        )
 
     # Nof neighbors
     nof_neighbors = 1
@@ -184,9 +184,9 @@ def test_nearest_neighbors():
     )
     for curr_closest, curr_dist in zip(closest, distances):
         ci.assert_val(len(curr_closest), nof_neighbors, "length")
-        assert (
-            curr_dist[0] < radius
-        ), f"distance superior to wanted distance: {curr_dist[0]} > {radius}"
+        assert curr_dist[0] < radius, (
+            f"distance superior to wanted distance: {curr_dist[0]} > {radius}"
+        )
 
     # Ensure it works with k > nof candidates
     closest, distances = nearest_neighbors(
