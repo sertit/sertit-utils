@@ -1,5 +1,9 @@
 # Release History
 
+## 1.xx.x 
+
+- CI: Refactor `.gitlab-ci.yml` file with new GitLab templates
+
 ## 1.45.0 (2025-01-27)
 
 - **ENH: Use `odc.geo.xr.crop` instead of `rio.clip` to make `rasters.crop` dask-compatible** ([#27](https://github.com/sertit/sertit-utils/issues/27))
