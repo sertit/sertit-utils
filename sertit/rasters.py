@@ -1246,7 +1246,7 @@ def write(
 
         if not is_written:
             # Write with windows as we don't want to_raster to blow up the RAM
-            kwargs["windowed"] = True
+            kwargs["windowed"] = xds.rio.height * xds.rio.width > 20000 * 20000
 
     # Default write on disk
     if not is_written:

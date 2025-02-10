@@ -2,6 +2,7 @@
 
 ## 1.xx.x 
 
+- OPTIM: Only write rasters on disk with `windowed=True` in case of big rasters _(w/*h > 20,000*20,000 pixels)_
 - CI: Refactor `.gitlab-ci.yml` file with new GitLab templates
 
 ## 1.45.0 (2025-01-27)
