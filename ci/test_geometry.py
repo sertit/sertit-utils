@@ -192,3 +192,19 @@ def test_nearest_neighbors():
     closest, distances = nearest_neighbors(
         src, candidates, method="k_neighbors", k_neighbors=len(candidates) + 10
     )
+
+
+def test_force_2_or_3d():
+    """Force 2D or 3D"""
+    aoi_kml = vectors.read(vectors_path().joinpath("aoi.kml"))
+
+    assert aoi_kml.has_z.any()
+
+    # Check equality
+    ci.assert_geom_equal(
+        aoi_kml, geometry.force_3d(geometry.force_2d(aoi_kml)), ignore_z=False
+    )
+
+    # Check Z type
+    assert not geometry.force_2d(aoi_kml).has_z.any()
+    assert geometry.force_3d(geometry.force_2d(aoi_kml)).has_z.any()

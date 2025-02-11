@@ -603,3 +603,21 @@ def _get_radius_nearest(
 
     # Return indices and distances
     return closest, closest_dist
+
+
+def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Have the force_2d function even with geopandas < 1.0.0"""
+    try:
+        return vect.force_2d()
+    except AttributeError:
+        vect.geometry = vect.geometry.apply(shapely.force_2d)
+        return vect
+
+
+def force_3d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Have the force_3d function even with geopandas < 1.0.0"""
+    try:
+        return vect.force_3d()
+    except AttributeError:
+        vect.geometry = vect.geometry.apply(shapely.force_3d)
+        return vect

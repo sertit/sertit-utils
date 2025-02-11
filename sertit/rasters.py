@@ -771,7 +771,7 @@ def crop(
 
         # Convert the shapes in the right format
         if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-            shapes = shapes.to_crs(xds.rio.crs)
+            shapes = geometry.force_2d(shapes.to_crs(xds.rio.crs))
 
             try:
                 shapes = shapes.union_all()

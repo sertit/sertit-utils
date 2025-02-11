@@ -26,7 +26,7 @@ import shapely
 import xarray as xr
 
 from ci.script_utils import KAPUT_KWARGS, dask_env, get_output, rasters_path, s3_env
-from sertit import ci, path, rasters, unistra, vectors
+from sertit import ci, geometry, path, rasters, unistra, vectors
 from sertit.rasters import (
     FLOAT_NODATA,
     INT8_NODATA,
@@ -329,6 +329,13 @@ def test_crop(tmp_path, xda, xds, xda_dask, mask):
     raster_cropped_xarray_path = rasters_path().joinpath("raster_cropped_xarray.tif")
     ci.assert_raster_equal(xda_cropped, raster_cropped_xarray_path)
     ci.assert_raster_equal(xds_cropped, raster_cropped_xarray_path)
+
+    # Test with mask with Z
+    mask_z = geometry.force_3d(mask)
+    crop_z = rasters.crop(xda, mask_z)
+    assert crop_z.chunks is not None
+    np.testing.assert_array_equal(crop_xda, crop_z)
+    ci.assert_xr_encoding_attrs(crop_xda, crop_z)
 
 
 @s3_env
