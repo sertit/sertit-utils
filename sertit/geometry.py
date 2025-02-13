@@ -209,7 +209,7 @@ def simplify_footprint(
         29
     """
     # Number of pixels of tolerance
-    tolerance = [1, 2, 4, 8, 16, 32, 64]
+    tolerance = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
     # Process only if given footprint is too complex (too many vertices)
     def simplify_geom(value):
@@ -225,6 +225,15 @@ def simplify_footprint(
                 nof_vertices = len(value.exterior.coords)
                 if nof_vertices <= max_nof_vertices:
                     break
+
+        # WARNING if nof_vertices > max_nof_vertices
+        nof_vertices = len(footprint.union_all().exterior.coords)
+        if nof_vertices > max_nof_vertices:
+            LOGGER.warning(
+                f"The number of vertices ({nof_vertices}) of your simplified footprint is higher than {max_nof_vertices}."
+                f"However, it cannot be simplified further according to the given resolution ({resolution})."
+            )
+
         return value
 
     footprint = footprint.explode(index_parts=True)
