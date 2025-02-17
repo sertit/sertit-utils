@@ -36,14 +36,3 @@ You can install it via conda (but you will automatically have the full version):
 `conda config --env --set channel_priority strict`
 
 `conda install -c conda-forge sertit`
-
-
-## Documentation
-
-An HTML documentation is provided to document the code.
-It can be found:
-
-- online ([here](https://sertit.github.io/sertit-utils/)),
-- on git, in `docs`.
-  To consult it, just open the `index.html` file in a web browser (you need first to clone this project)
-  To generate the HTML documentation, just type `pdoc sertit -o docs\html -f --html -c sort_identifiers=False`

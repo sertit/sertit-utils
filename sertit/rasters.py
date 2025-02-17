@@ -1273,7 +1273,7 @@ def _collocate_dataarray(
 ) -> xr.DataArray:
     if other.rio.shape == reference.rio.shape and other.rio.crs == reference.rio.crs:
         LOGGER.debug(
-            "Collocating equivalent rasters by only modifying their coordinates."
+            "Collocating equivalent rasters by aligning the coordinates onto the reference's ones."
         )
         # Same rasters, but just a bit shifted max (i.e. error in float64 coordinates)
         # Should do this (but done anyway in the end)
