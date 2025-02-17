@@ -1,6 +1,6 @@
 # Release History
 
-## 1.xx.x 
+## 1.45.1 (2025-02-17)
 
 - FIX: Add more tolerances in `geometry.simplify_footprint` to allow further simplification, and a warning in case of failure
 - FIX: Force 2D geometries in `rasters.crop` as `odc.geo.xr.crop` don't work with 3D geometries
