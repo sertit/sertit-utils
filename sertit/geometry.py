@@ -227,7 +227,7 @@ def simplify_footprint(
                     break
 
         # WARNING if nof_vertices > max_nof_vertices
-        nof_vertices = len(value.union_all().exterior.coords)
+        nof_vertices = len(value.exterior.coords)
         if nof_vertices > max_nof_vertices:
             LOGGER.warning(
                 f"The number of vertices ({nof_vertices}) of your simplified footprint is higher than {max_nof_vertices}."
