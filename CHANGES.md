@@ -5,6 +5,7 @@
 - FIX: Add more tolerances in `geometry.simplify_footprint` to allow further simplification, and a warning in case of failure
 - FIX: Force 2D geometries in `rasters.crop` as `odc.geo.xr.crop` don't work with 3D geometries
 - OPTIM: Only write rasters on disk with `windowed=True` in case of big rasters _(w/*h > 20,000*20,000 pixels)_
+- DEPR: Remove mention to DS2 in Unistra (keep only the mounting points for legacy purposes)
 - CI: Refactor `.gitlab-ci.yml` file with new GitLab templates
 
 ## 1.45.0 (2025-01-27)

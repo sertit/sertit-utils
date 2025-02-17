@@ -160,14 +160,10 @@ def get_geodatastore() -> AnyPathType:
         s3.define_s3_client()
         return AnyPath("s3://sertit-geodatastore")
     else:
-        # on the DS2
-        db_dir = AnyPath(r"//ds2/database02/BASES_DE_DONNEES")
-
-        if not db_dir.is_dir():
-            try:
-                db_dir = AnyPath(get_db2_path(), "BASES_DE_DONNEES")
-            except NotADirectoryError:
-                db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
+        try:
+            db_dir = AnyPath(get_db2_path(), "BASES_DE_DONNEES")
+        except NotADirectoryError:
+            db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
 
         if not db_dir.is_dir():
             raise NotADirectoryError("Impossible to open database directory !")
@@ -197,15 +193,11 @@ def _get_db_path(db_nb=2) -> str:
     Returns DSx database0x path
 
     - :code:`/mnt/ds2_dbx` when mounted (docker...)
-    - :code:`//ds2/database0x` on windows
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
     if not os.path.isdir(db_path):
-        db_path = rf"\\DS2\database0{db_nb}"
-
-    if not os.path.isdir(db_path):
-        raise NotADirectoryError(f"Impossible to open ds2/database0{db_nb}!")
+        raise NotADirectoryError(f"Impossible to open {db_path}!")
     return db_path
 
 
@@ -214,7 +206,6 @@ def get_db2_path() -> str:
     Returns DS2 database02 path
 
     - :code:`/mnt/ds2_db2` when mounted (docker...)
-    - :code:`//ds2/database02` on windows
 
     Returns:
         str: Mounted directory
@@ -231,7 +222,6 @@ def get_db3_path() -> str:
     Returns DS2 database03 path
 
     - :code:`/mnt/ds2_db3` when mounted (docker...)
-    - :code:`//ds2/database03` on windows
 
     Returns:
         str: Mounted directory
@@ -248,7 +238,6 @@ def get_db4_path() -> str:
     Returns DS2 database04 path
 
     - :code:`/mnt/ds2_db4` when mounted (docker...)
-    - :code:`//ds2/database04` on windows
 
     Returns:
         str: Mounted directory
