@@ -1,5 +1,9 @@
 # Release History
 
+## 1.45.2 (2025-02-17)
+
+- FIX: Fix regression in `geometry.simplify_footprint`
+
 ## 1.45.1 (2025-02-17)
 
 - FIX: Add more tolerances in `geometry.simplify_footprint` to allow further simplification, and a warning in case of failure
