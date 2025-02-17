@@ -545,7 +545,11 @@ def rasterize(
     else:
         nodata = default_nodata
 
-    if not np.can_cast(np.array(nodata, dtype=ds.dtypes[0]), dtype):
+    # Check if the nodata value can be casted into the new dtype
+    # Floating point values that can be converted to integers are allowed
+    if not np.can_cast(np.array(nodata, dtype=ds.dtypes[0]), dtype) and not (
+        "int" in str(dtype) and abs(nodata - int(nodata)) == 0
+    ):
         old_nodata = nodata
         nodata = get_nodata_value_from_dtype(dtype)
 
@@ -554,6 +558,9 @@ def rasterize(
             LOGGER.warning(
                 f"Impossible to cast nodata value ({old_nodata}) into the wanted dtype ({str(dtype)}). "
                 f"Default nodata value for this current dtype will be used ({nodata})."
+            )
+            LOGGER.debug(
+                f"input nodata: {old_nodata} - nodata coming from dtype: {nodata}."
             )
 
     # Rasterize vector
