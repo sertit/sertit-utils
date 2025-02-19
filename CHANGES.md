@@ -1,5 +1,9 @@
 # Release History
 
+## 1.45.3 (2025-mm-dd)
+
+- FIX: Don't take nodata value into account in `ci.assert_raster_almost_equal_magnitude`
+
 ## 1.45.2 (2025-02-17)
 
 - FIX: Fix regression in `geometry.simplify_footprint`
