@@ -29,8 +29,6 @@ import numpy as np
 import xarray as xr
 from shapely.geometry import Polygon
 
-from sertit.rasters_rio import DEG_2_RAD
-
 try:
     import rasterio
     import rioxarray
@@ -62,6 +60,11 @@ UINT16_NODATA = rasters_rio.UINT16_NODATA
 
 FLOAT_NODATA = rasters_rio.FLOAT_NODATA
 """ :code:`float` nodata """
+
+DEG_LAT_TO_M = 111_120.0
+DEG_2_RAD = rasters_rio.DEG_2_RAD
+
+# https://wiki.openstreetmap.org/wiki/Precision_of_coordinates#Precision_of_latitudes
 
 
 def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
@@ -2033,3 +2036,61 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
 
 
 # TODO: add other DEM-related functions like 'curvature', etc if needed. Create a dedicated module?
+
+
+def from_deg_to_meters(
+    deg: float, lat: float = None, decimals: float = 2, average_lat_lon: bool = False
+) -> float:
+    """
+    Approximately convert a distance in degrees to a distance in meters.
+
+    Only true at the Equator if lat is not given.
+    Very false for longitude distance elsewhere.
+
+    If lat is given
+
+    See https://wiki.openstreetmap.org/wiki/Precision_of_coordinates
+
+    Args:
+        deg (float): Distance in degrees
+        lat (float): Latitude (useful if the distance is longitudinal)
+        decimals (float): To round the distance, as the precision can be poor here
+        average_lat_lon (bool): Average between lat distance and lon distance
+
+    Returns:
+        float: Distance in meters
+    """
+    dist = float(deg) * DEG_LAT_TO_M
+
+    if lat is not None:
+        dist_lon = dist * np.cos(lat * DEG_2_RAD)
+        dist = (dist + dist_lon) / 2 if average_lat_lon else dist_lon
+
+    return np.round(dist, decimals)
+
+
+def from_meters_to_deg(
+    meters: float, lat: float = None, decimals: float = 7, average_lat_lon: bool = False
+) -> float:
+    """
+    Approximately convert a distance in meters to a distance in degrees. Only true at the Equator.
+    Very false for longitude distance elsewhere.
+
+    See https://wiki.openstreetmap.org/wiki/Precision_of_coordinates
+
+    Args:
+        meters (float): Distance in meters
+        lat (float): Latitude (useful if the distance is longitudinal)
+        decimals (float): To round the distance, as the precision can be poor here. 7 decimals is equivalent to a centimetric precision
+        average_lat_lon (bool): Average between lat distance and lon distance
+
+    Returns:
+        float: Distance in degrees
+    """
+    dist = float(meters) / DEG_LAT_TO_M
+
+    if lat is not None:
+        dist_lon = dist / np.cos(lat * DEG_2_RAD)
+        dist = (dist + dist_lon) / 2 if average_lat_lon else dist_lon
+
+    return np.round(dist, decimals)

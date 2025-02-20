@@ -28,6 +28,7 @@ import xarray as xr
 from ci.script_utils import KAPUT_KWARGS, dask_env, get_output, rasters_path, s3_env
 from sertit import ci, geometry, path, rasters, unistra, vectors
 from sertit.rasters import (
+    DEG_LAT_TO_M,
     FLOAT_NODATA,
     INT8_NODATA,
     UINT8_NODATA,
@@ -991,3 +992,49 @@ def test_get_notata_from_xr(raster_path):
 
     raster_path = rasters_path().joinpath("dem.tif")
     ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), -9999, "nodata")
+
+
+def test_deg_meters_conversion():
+    """
+    Test conversions between deg and meters
+    https://wiki.openstreetmap.org/wiki/Precision_of_coordinates#Precision_of_latitudes
+    """
+    # from_deg_to_meters
+    ci.assert_val(
+        rasters.from_deg_to_meters(1), DEG_LAT_TO_M, "1 degree of latitude in meters"
+    )
+    ci.assert_val(
+        rasters.from_deg_to_meters(1, lat=45),
+        78573.71,
+        "1 degree of longitude at 45 degrees of latitude in meters",
+    )
+    ci.assert_val(
+        rasters.from_deg_to_meters(1, lat=45, decimals=0),
+        78574,
+        "1 degree of longitude at 45 degrees of latitude in meters with 0 decimal",
+    )
+    ci.assert_val(
+        rasters.from_deg_to_meters(1, lat=45, decimals=0, average_lat_lon=True),
+        round((DEG_LAT_TO_M + 78574) / 2),
+        "1 degree of longitude at 45 degrees of latitude in meters (averaged) with 0 decimal",
+    )
+
+    # from_deg_to_meters
+    ci.assert_val(
+        rasters.from_meters_to_deg(0.5), 4.5e-06, "0.5 meter in degrees of latitude"
+    )
+    ci.assert_val(
+        rasters.from_meters_to_deg(0.5, lat=45),
+        6.4e-06,
+        "0.5 meter in degree of longitude at 45 degrees of latitude",
+    )
+    ci.assert_val(
+        rasters.from_meters_to_deg(0.5, lat=45, decimals=9),
+        6.363e-06,
+        "0.5 meter in degree of longitude at 45 degrees of latitude with 9 decimal",
+    )
+    ci.assert_val(
+        rasters.from_meters_to_deg(0.5, lat=45, decimals=9, average_lat_lon=True),
+        5.432e-06,
+        "0.5 meter in degree of longitude at 45 degrees of latitude (averaged) with 9 decimal",
+    )

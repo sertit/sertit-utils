@@ -1,7 +1,8 @@
 # Release History
 
-## 1.45.3 (2025-mm-dd)
+## 1.46.0 (2025-mm-dd)
 
+- **ENH: Add two functions for converting degrees to and from meters: `rasters.from_deg_to_meters` and `rasters.from_meters_to_deg`** 
 - FIX: Don't take nodata value into account in `ci.assert_raster_almost_equal_magnitude`
 
 ## 1.45.2 (2025-02-17)
