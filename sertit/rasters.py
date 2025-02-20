@@ -1060,8 +1060,9 @@ def read(
     return xda
 
 
-def __save_cog_with_dask(xds: AnyXrDataStructure, nodata, dtype, output_path, kwargs):
-    from dask import optimize
+def __save_cog_with_dask(
+    xds: AnyXrDataStructure, nodata, dtype, output_path, compute, kwargs
+):
     from odc.geo import cog, xr  # noqa
 
     delayed = cog.save_cog_with_dask(
@@ -1070,8 +1071,10 @@ def __save_cog_with_dask(xds: AnyXrDataStructure, nodata, dtype, output_path, kw
         **kwargs,
     )
 
-    (delayed,) = optimize(delayed)
-    delayed.compute(optimize_graph=True)
+    if compute:
+        delayed.compute(optimize_graph=True)
+
+    return delayed
 
 
 @any_raster_to_xr_ds
@@ -1080,6 +1083,7 @@ def write(
     output_path: AnyPathStrType = None,
     tags: dict = None,
     write_cogs_with_dask: bool = True,
+    compute: bool = True,
     **kwargs,
 ) -> None:
     """
@@ -1110,6 +1114,9 @@ def write(
         tags (dict): Tags that will be written in your file
         write_cogs_with_dask (bool): If odc-geo and imagecodecs are installed, write your COGs with Dask.
             Otherwise, the array will be loaded into memory before writing it on disk (and can cause MemoryErrors).
+        compute (bool): If True (default) and data is a dask array, then compute and save the data immediately.
+            If False, return a dask Delayed object. Call ".compute()" on the Delayed object to compute the result later.
+            Call ``dask.compute(delayed1, delayed2)`` to save multiple delayed files at once.
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
 
     Examples:
@@ -1122,6 +1129,7 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
+    delayed = None
     if output_path is None:
         logs.deprecation_warning(
             "'path' is deprecated in 'rasters.write'. Use 'output_path' instead."
@@ -1221,10 +1229,14 @@ def write(
 
                 # Write cog on disk
                 try:
-                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+                    delayed = __save_cog_with_dask(
+                        xds, nodata, dtype, output_path, compute, da_kwargs
+                    )
                 except Exception:
                     da_kwargs["stats"] = False
-                    __save_cog_with_dask(xds, nodata, dtype, output_path, da_kwargs)
+                    delayed = __save_cog_with_dask(
+                        xds, nodata, dtype, output_path, compute, da_kwargs
+                    )
 
                 is_written = True
 
@@ -1259,13 +1271,15 @@ def write(
         if "_FillValue" in xds.attrs:
             xds.attrs.pop("_FillValue")
 
-        xds.rio.to_raster(
+        delayed = xds.rio.to_raster(
             str(output_path),
             BIGTIFF=bigtiff,
             NUM_THREADS=MAX_CORES,
             tags=tags,
+            compute=compute,
             **misc.remove_empty_values(kwargs),
         )
+    return delayed
 
 
 def _collocate_dataarray(

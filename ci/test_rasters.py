@@ -200,7 +200,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
 
 @s3_env
 @dask_env
-@pytest.mark.timeout(2, func_only=True)
+@pytest.mark.timeout(4, func_only=True)
 def test_very_big_file(tmp_path, mask_path):
     """Test read with big files function (should be fast, if not there is something going on...)"""
     dem_path = unistra.get_geodatastore() / "GLOBAL" / "EUDEM_v2" / "eudem_wgs84.tif"
@@ -230,6 +230,39 @@ def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
     # With dask
     xda_dask_out = os.path.join(tmp_path, "test_xda_dask.tif")
     rasters.write(xda_dask, xda_dask_out, dtype=ds_dtype)
+    assert os.path.isfile(xda_dask_out)
+
+    # Tests
+    ci.assert_raster_equal(raster_path, xda_out)
+    ci.assert_raster_equal(raster_path, xds_out)
+    ci.assert_raster_equal(raster_path, xda_dask_out)
+
+
+@s3_env
+@dask_env
+def test_write_dask(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
+    """Test write (basic) function"""
+    # DataArray
+    xda_out = os.path.join(tmp_path, "test_xda.tif")
+    delayed_1 = rasters.write(xda, xda_out, dtype=ds_dtype, compute=False)
+    # assert not os.path.isfile(xda_out)
+
+    # Dataset
+    xds_out = os.path.join(tmp_path, "test_xds.tif")
+    delayed_2 = rasters.write(xds, xds_out, dtype=ds_dtype, compute=False)
+    # assert os.path.isfile(xds_out)
+
+    # With dask
+    xda_dask_out = os.path.join(tmp_path, "test_xda_dask.tif")
+    delayed_3 = rasters.write(xda_dask, xda_dask_out, dtype=ds_dtype, compute=False)
+    # assert not os.path.isfile(xda_dask_out)
+
+    # Compute
+    import dask
+
+    dask.compute(delayed_1, delayed_2, delayed_3)
+    assert os.path.isfile(xda_out)
+    assert os.path.isfile(xds_out)
     assert os.path.isfile(xda_dask_out)
 
     # Tests

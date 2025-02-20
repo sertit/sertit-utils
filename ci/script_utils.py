@@ -66,7 +66,7 @@ def dask_env(function):
                 print("Using DASK multithreaded.")
                 function(*_args, **_kwargs)
 
-            with dask.get_or_create_dask_client():
+            with dask.get_or_create_dask_client(processes=True):
                 print("Using DASK with local cluster")
                 function(*_args, **_kwargs)
         except ImportError:
