@@ -2063,7 +2063,7 @@ def from_deg_to_meters(
     dist = float(deg) * DEG_LAT_TO_M
 
     if lat is not None:
-        dist_lon = dist * np.cos(lat * DEG_2_RAD)
+        dist_lon = abs(dist * np.cos(lat * DEG_2_RAD))
         dist = (dist + dist_lon) / 2 if average_lat_lon else dist_lon
 
     return np.round(dist, decimals)
@@ -2090,7 +2090,7 @@ def from_meters_to_deg(
     dist = float(meters) / DEG_LAT_TO_M
 
     if lat is not None:
-        dist_lon = dist / np.cos(lat * DEG_2_RAD)
+        dist_lon = abs(dist / np.cos(lat * DEG_2_RAD))
         dist = (dist + dist_lon) / 2 if average_lat_lon else dist_lon
 
     return np.round(dist, decimals)
