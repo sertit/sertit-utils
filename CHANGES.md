@@ -5,6 +5,7 @@
 - **ENH: Add two functions for converting degrees to and from meters: `rasters.from_deg_to_meters` and `rasters.from_meters_to_deg`** 
 - **ENH: Add the ability to return a `dask.delayed` object in `rasters.write`** 
 - **ENH: Save the path of the opened files in attributes in `rasters.read`** 
+- FIX: Better manage default options in `rasters.write`, allowing to write easily with other drivers than `GTiff` or `COG` (such as `Zarr`)
 - FIX: Don't take nodata value into account in `ci.assert_raster_almost_equal_magnitude`
 
 ## 1.45.2 (2025-02-17)

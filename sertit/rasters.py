@@ -1162,11 +1162,14 @@ def write(
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
 
-    # Force GTiff
+    # Force GTiff by default
     kwargs["driver"] = kwargs.get("driver", "GTiff")
 
     # Manage COGs or other drivers attributes
     is_cog = kwargs["driver"] == "COG"
+    is_gtiff = kwargs["driver"] == "GTiff"
+    is_zarr = kwargs["driver"] == "Zarr"
+
     if is_cog:
         kwargs.pop("tiled", None)
 
@@ -1179,7 +1182,10 @@ def write(
                 "Your data will be converted to uint8. "
                 "In case of casting issues (i.e. negative values), please save it to int16."
             )
-
+    elif is_zarr:
+        # Get default client's lock
+        kwargs["lock"] = kwargs.get("lock", dask.get_dask_lock("rio"))
+        kwargs["compress"] = kwargs.get("compress", "zstd")
     else:
         # Get default client's lock
         kwargs["lock"] = kwargs.get("lock", dask.get_dask_lock("rio"))
@@ -1188,11 +1194,14 @@ def write(
         kwargs["tiled"] = kwargs.get("tiled", True)
 
         # Default compression to LZW
-        kwargs["compress"] = kwargs.get("compress", "lzw")
+        if is_gtiff:
+            kwargs["compress"] = kwargs.get("compress", "lzw")
+        # Else, don't set any default compression
 
     # Manage predictors according to dtype and compression
     if (
-        kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
+        not is_zarr
+        and kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs  # noqa: W503
     ):
         if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
@@ -1208,7 +1217,7 @@ def write(
 
         if write_cogs_with_dask:
             try:
-                LOGGER.debug("Writing your COG with Dask!")
+                LOGGER.debug("Writing your COG with Dask.")
 
                 # Filter out and convert kwargs to avoid any error
                 da_kwargs = {
@@ -1269,16 +1278,18 @@ def write(
 
     # Default write on disk
     if not is_written:
-        LOGGER.debug(f"Writing your file '{path.get_filename(output_path)}' to disk.")
+        LOGGER.debug(f"Writing '{path.get_filename(output_path)}' to disk.")
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
         if "_FillValue" in xds.attrs:
             xds.attrs.pop("_FillValue")
 
+        if not is_zarr:
+            kwargs["BIGTIFF"] = bigtiff
+            kwargs["NUM_THREADS"] = MAX_CORES
+
         delayed = xds.rio.to_raster(
             str(output_path),
-            BIGTIFF=bigtiff,
-            NUM_THREADS=MAX_CORES,
             tags=tags,
             compute=compute,
             **misc.remove_empty_values(kwargs),

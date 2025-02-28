@@ -744,6 +744,14 @@ def test_write(dtype, nodata_val, tmp_path, xda):
         rasters.write(xda, path=test_deprecated_path, dtype=dtype)
 
 
+def test_write_zarr(tmp_path, xda):
+    # test zarr
+    zarr_path = os.path.join(tmp_path, "z.zarr")
+    rasters.write(xda, path=zarr_path, driver="Zarr")
+    # Just test to read the zarr array
+    np.testing.assert_array_equal(xda.data, rasters.read(zarr_path).data)
+
+
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = rasters_path().joinpath("DIM.dim")
