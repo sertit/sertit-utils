@@ -41,7 +41,7 @@ except ModuleNotFoundError as ex:
     ) from ex
 
 
-from sertit import dask, geometry, logs, misc, path, rasters_rio, vectors
+from sertit import AnyPath, dask, geometry, logs, misc, path, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
 
 MAX_CORES = rasters_rio.MAX_CORES
@@ -1056,6 +1056,10 @@ def read(
 
         # Set original dtype
         xda.encoding["dtype"] = orig_dtype
+
+        # Save path in attrs
+        if AnyPath(ds.name).exists():
+            xda.attrs["path"] = str(ds.name)
 
     return xda
 

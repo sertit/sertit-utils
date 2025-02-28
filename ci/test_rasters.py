@@ -167,6 +167,7 @@ def test_read(tmp_path, raster_path, xda, xds, xda_dask, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(xda, xda_4)
         ci.assert_xr_encoding_attrs(xda, xda_5)
         ci.assert_xr_encoding_attrs(xda, xda_dask, unchecked_attr="preferred_chunks")
+        ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
 
 
 @s3_env
