@@ -1,6 +1,6 @@
 # Release History
 
-## 1.46.0 (2025-mm-dd)
+## 1.46.0 (2025-03-03)
 
 - **ENH: Add two functions for converting degrees to and from meters: `rasters.from_deg_to_meters` and `rasters.from_meters_to_deg`** 
 - **ENH: Add the ability to return a `dask.delayed` object in `rasters.write`** 
