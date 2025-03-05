@@ -1,5 +1,9 @@
 # Release History
 
+## 1.46.1 (2025-mm-dd)
+
+- FIX: Set 512 as default blocksize for `rasters.write` when using `odc.geo.save_cog_with_dask`
+
 ## 1.46.0 (2025-03-03)
 
 - **ENH: Add two functions for converting degrees to and from meters: `rasters.from_deg_to_meters` and `rasters.from_meters_to_deg`** 

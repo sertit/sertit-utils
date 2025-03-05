@@ -1213,7 +1213,7 @@ def write(
     is_written = False
     blocksize = None
     if is_cog:
-        blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else None
+        blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else 512
 
         if write_cogs_with_dask:
             try:
