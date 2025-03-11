@@ -1325,6 +1325,11 @@ def _collocate_dataarray(
             from odc.geo import xr
 
             LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
+
+            # Manage nodata
+            # nodata = get_nodata_value_from_xr(other)
+            nodata = other.rio.nodata
+
             from odc.geo.geobox import GeoBox
 
             collocated_xda = xr.xr_reproject(
@@ -1334,15 +1339,12 @@ def _collocate_dataarray(
                 ),
                 resampling=resampling,
                 num_threads=MAX_CORES,
-                dst_nodata=other.rio.nodata,
+                dst_nodata=nodata,
             ).rename(other.name)
 
             # Set nodata in rioxr's way and remove odc.geo nodata in attributes
             collocated_xda.attrs.pop("nodata", None)
-            collocated_xda.rio.write_nodata(
-                other.rio.nodata, encoded=True, inplace=True
-            )
-            collocated_xda.rio.set_nodata(other.rio.nodata, inplace=True)
+            collocated_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
 
         except ImportError:
             LOGGER.debug("Collocating with 'rioxarray.reproject_match'")

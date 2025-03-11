@@ -460,12 +460,16 @@ def test_collocate(tmp_path, xda, xds, xda_dask):
 
     # Inputs
     other_float = rasters.read(
-        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m.tif")
+        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m.tif"),
+        masked=True,
+        as_type=np.float32,
     )
     other_uint8 = rasters.read(
         rasters_path().joinpath(
             "20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m_uint8.tif"
-        )
+        ),
+        masked=False,
+        as_type=np.uint8,
     )
     ref = rasters.read(
         rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_HILLSHADE_MERIT_DEM.tif")
