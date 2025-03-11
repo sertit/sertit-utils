@@ -1,5 +1,9 @@
 # Release History
 
+## 1.46.2 (2025-03-11)
+
+- FIX: Fix typo in nodata management in `rasters.collocate`
+
 ## 1.46.1 (2025-03-11)
 
 - FIX: Set 512 as default blocksize for `rasters.write` when using `odc.geo.save_cog_with_dask`

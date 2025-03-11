@@ -1327,8 +1327,7 @@ def _collocate_dataarray(
             LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
 
             # Manage nodata
-            # nodata = get_nodata_value_from_xr(other)
-            nodata = other.rio.nodata
+            nodata = get_nodata_value_from_xr(other)
 
             from odc.geo.geobox import GeoBox
 
