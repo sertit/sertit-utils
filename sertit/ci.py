@@ -647,7 +647,7 @@ def assert_xr_encoding_attrs(
                     )
         except KeyError as exc:
             raise AssertionError(
-                f"Missing key {exc} in attributes of one DataArray/Dataset"
+                f"Missing '{exc}' in attributes of one DataArray/Dataset"
             ) from exc
 
     # Encoding
@@ -668,7 +668,7 @@ def assert_xr_encoding_attrs(
                     )
         except KeyError as exc:
             raise AssertionError(
-                f"Missing key {exc} in attributes of one DataArray/Dataset"
+                f"Missing '{exc}' in encoding of one DataArray/Dataset"
             ) from exc
 
 

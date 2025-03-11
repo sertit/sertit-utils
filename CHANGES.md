@@ -3,6 +3,7 @@
 ## 1.46.1 (2025-mm-dd)
 
 - FIX: Set 512 as default blocksize for `rasters.write` when using `odc.geo.save_cog_with_dask`
+- FIX: Fix error message in `ci.assert_xr_encoding_attrs` for missing encoding key
 
 ## 1.46.0 (2025-03-03)
 
