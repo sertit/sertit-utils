@@ -279,7 +279,7 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
                [0, 0, 1]], dtype=uint8)
 
     """
-
+    # Get the nodata (as encoded in pixel value)
     nodata = xds.rio.nodata
 
     try:
@@ -992,8 +992,9 @@ def read(
             **kwargs,
         ) as xda,
     ):
-        orig_dtype = xda.encoding.get(
-            "rasterio_dtype", xda.encoding.get("dtype", xda.dtype)
+        orig_encoding = xda.encoding
+        orig_dtype = orig_encoding.get(
+            "rasterio_dtype", orig_encoding.get("dtype", xda.dtype)
         )
 
         if isinstance(orig_dtype, str):
@@ -1053,6 +1054,9 @@ def read(
         if masked:
             # Set nodata not in opening due to some performance issues
             xda = set_nodata(xda, ds.meta["nodata"])
+
+        # Set back attributes and encoding
+        xda.rio.update_encoding(orig_encoding, inplace=True)
 
         # Set original dtype
         xda.encoding["dtype"] = orig_dtype
