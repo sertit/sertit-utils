@@ -1695,10 +1695,10 @@ def read_bit_array(
                [1, 0, 0],
                [1, 0, 0]], dtype=uint8)
     """
+    # TODO: daskify this, should be straightforward if unpackbits is daskified
     if isinstance(bit_mask, xr.DataArray):
         bit_mask = bit_mask.data
 
-    # TODO: daskify this, should be straightforward if unpackbits is daskified
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
@@ -1720,7 +1720,7 @@ def read_uint8_array(
     Returns:
         Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
     """
-    return read_bit_array(bit_mask.astype(np.uint8), bit_id)
+    return read_bit_array(bit_mask.fillna(0).astype(np.uint8), bit_id)
 
 
 def set_metadata(
