@@ -3,7 +3,7 @@
 ## 1.46.2 (2025-03-11)
 
 - FIX: Fix typo in nodata management in `rasters.collocate`
-- FIX: Fill nan values with 0 in `rasters.read_uint8_array` before converting it to uint8
+- FIX: Fill nan values with 0 in `rasters.read_uint8_array` and `rasters.read_bit_array` before converting it to uint8
 
 ## 1.46.1 (2025-03-11)
 
