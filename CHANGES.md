@@ -1,6 +1,6 @@
 # Release History
 
-## 1.46.2 (2025-03-dd)
+## 1.46.2 (2025-03-15)
 
 - ENH: Add some BigTiff optimizations in `snap.get_gpt_cli`
 - FIX: Fix typo in nodata management in `rasters.collocate`
