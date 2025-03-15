@@ -278,6 +278,8 @@ def get_new_shape(
     """
     Get the new shape (height, width) of a resampled raster.
 
+    Size overrides resolution
+
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -315,7 +317,18 @@ def get_new_shape(
         new_width = window.width
 
     # Compute new shape
-    if resolution is not None:
+    if size is not None:
+        try:
+            if new_height == size[1] and new_width == size[0]:
+                do_resampling = False
+            else:
+                new_height = size[1]
+                new_width = size[0]
+        except (TypeError, KeyError) as exc:
+            raise ValueError(
+                f"Size should be None or a castable to a list: {size}"
+            ) from exc
+    elif resolution is not None:
         if isinstance(resolution, (int, float)):
             new_height, do_resampling = _get_new_dim(new_height, ds.res[1], resolution)
             new_width, do_resampling = _get_new_dim(new_width, ds.res[0], resolution)
@@ -339,17 +352,6 @@ def get_new_shape(
                 raise ValueError(
                     f"Resolution should be None, 2 floats or a castable to a list: {resolution}"
                 ) from exc
-    elif size is not None:
-        try:
-            if new_height == size[1] and new_width == size[0]:
-                do_resampling = False
-            else:
-                new_height = size[1]
-                new_width = size[0]
-        except (TypeError, KeyError) as exc:
-            raise ValueError(
-                f"Size should be None or a castable to a list: {size}"
-            ) from exc
     else:
         do_resampling = False
 

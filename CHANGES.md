@@ -1,5 +1,9 @@
 # Release History
 
+## 1.46.3 (2025-03-15)
+
+- FIX: Size overrides resolution argument in `rasters(rio).read` (which makes way more sense)
+
 ## 1.46.2 (2025-03-15)
 
 - ENH: Add some BigTiff optimizations in `snap.get_gpt_cli`
