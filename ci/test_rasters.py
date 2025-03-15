@@ -241,6 +241,15 @@ def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
 
 @s3_env
 @dask_env
+def test_write_png(tmp_path, xda):
+    """Test write (PNG) function"""
+    # Just test if this doesn't fail
+    xda_out = os.path.join(tmp_path, "test_xda.png")
+    rasters.write(xda, xda_out, dtype="uint8", driver="PNG")
+
+
+@s3_env
+@dask_env
 def test_write_dask(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
     """Test write (basic) function"""
     # DataArray

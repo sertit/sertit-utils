@@ -4,6 +4,7 @@
 
 - FIX: Fix typo in nodata management in `rasters.collocate`
 - FIX: Fill nan values with 0 in `rasters.read_uint8_array` and `rasters.read_bit_array` before converting it to uint8
+- FIX: Fix `rasters.write` with other drivers than the classic rasters ones (such as `PNG`)
 
 ## 1.46.1 (2025-03-11)
 

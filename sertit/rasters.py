@@ -1205,7 +1205,7 @@ def write(
     # Manage predictors according to dtype and compression
     if (
         not is_zarr
-        and kwargs["compress"].lower() in ["lzw", "deflate", "zstd"]
+        and kwargs.get("compress", "").lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs  # noqa: W503
     ):
         if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
@@ -1221,7 +1221,9 @@ def write(
 
         if write_cogs_with_dask:
             try:
-                LOGGER.debug("Writing your COG with Dask.")
+                LOGGER.debug(
+                    f"Writing your COG '{path.get_filename(output_path)}' with Dask."
+                )
 
                 # Filter out and convert kwargs to avoid any error
                 da_kwargs = {
