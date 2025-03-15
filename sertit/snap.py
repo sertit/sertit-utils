@@ -135,6 +135,9 @@ def get_gpt_cli(
         f"-J-Dsnap.jai.defaultTileSize={tile_size}",
         f"-J-Dsnap.dataio.reader.tileWidth={tile_size}",
         f"-J-Dsnap.dataio.reader.tileHeight={tile_size}",
+        "-J-Dsnap.dataio.bigtiff.compression.type=LZW",
+        "-J-Dsnap.dataio.bigtiff.tiling.width=512",
+        "-J-Dsnap.dataio.bigtiff.tiling.height=512",
         "-J-Dsnap.jai.prefetchTiles=true",
         f"-c {bytes2snap(int(0.5 * max_mem))}",  # Tile cache set to 50% of max memory (up to 75%)
         # '-x',

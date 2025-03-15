@@ -1,7 +1,8 @@
 # Release History
 
-## 1.46.2 (2025-03-11)
+## 1.46.2 (2025-03-dd)
 
+- ENH: Add some BigTiff optimizations in `snap.get_gpt_cli`
 - FIX: Fix typo in nodata management in `rasters.collocate`
 - FIX: Fill nan values with 0 in `rasters.read_uint8_array` and `rasters.read_bit_array` before converting it to uint8
 - FIX: Fix `rasters.write` with other drivers than the classic rasters ones (such as `PNG`)
