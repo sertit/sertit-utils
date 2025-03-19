@@ -1080,6 +1080,7 @@ def __save_cog_with_dask(
     )
 
     if compute:
+        LOGGER.debug(f"Writing your COG '{path.get_filename(output_path)}' with Dask.")
         delayed.compute(optimize_graph=True)
 
     return delayed
@@ -1221,10 +1222,6 @@ def write(
 
         if write_cogs_with_dask:
             try:
-                LOGGER.debug(
-                    f"Writing your COG '{path.get_filename(output_path)}' with Dask."
-                )
-
                 # Filter out and convert kwargs to avoid any error
                 da_kwargs = {
                     # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)

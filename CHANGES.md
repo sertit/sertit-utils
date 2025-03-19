@@ -1,6 +1,6 @@
 # Release History
 
-## 1.46.3 (2025-03-15)
+## 1.46.3 (2025-mm-dd)
 
 - FIX: Size overrides resolution argument in `rasters(rio).read` (which makes way more sense)
 
