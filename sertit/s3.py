@@ -90,13 +90,20 @@ def s3_env(*args, **kwargs):
         def s3_env_wrapper(*_args, **_kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)):
-                args_rasterio = {
-                    "profile_name": profile_name,
-                    "CPL_CURL_VERBOSE": False,
-                    "GDAL_DISABLE_READDIR_ON_OPEN": False,
-                    "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
-                    "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
-                }
+                args_rasterio = rasterio.env.getenv() if rasterio.env.hasenv() else {}
+                args_rasterio.update(
+                    {
+                        "profile_name": profile_name,
+                        "CPL_CURL_VERBOSE": args_rasterio.get(
+                            "CPL_CURL_VERBOSE", False
+                        ),
+                        "GDAL_DISABLE_READDIR_ON_OPEN": args_rasterio.get(
+                            "GDAL_DISABLE_READDIR_ON_OPEN", False
+                        ),
+                        "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
+                        "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
+                    }
+                )
                 args_s3_client = {
                     "profile_name": profile_name,
                     "requester_pays": requester_pays,
@@ -169,13 +176,16 @@ def temp_s3(
 
     # Define S3 client for S3 paths
     try:
-        args_rasterio = {
-            "profile_name": profile_name,
-            "CPL_CURL_VERBOSE": False,
-            "GDAL_DISABLE_READDIR_ON_OPEN": False,
-            "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
-            "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
-        }
+        args_rasterio = rasterio.env.getenv() if rasterio.env.hasenv() else {}
+        args_rasterio.update(
+            {
+                "profile_name": profile_name,
+                "CPL_CURL_VERBOSE": False,
+                "GDAL_DISABLE_READDIR_ON_OPEN": False,
+                "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
+                "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
+            }
+        )
         args_s3_client = {
             "profile_name": profile_name,
             "requester_pays": requester_pays,
