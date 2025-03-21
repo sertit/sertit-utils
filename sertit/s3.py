@@ -180,8 +180,10 @@ def temp_s3(
         args_rasterio.update(
             {
                 "profile_name": profile_name,
-                "CPL_CURL_VERBOSE": False,
-                "GDAL_DISABLE_READDIR_ON_OPEN": False,
+                "CPL_CURL_VERBOSE": args_rasterio.get("CPL_CURL_VERBOSE", False),
+                "GDAL_DISABLE_READDIR_ON_OPEN": args_rasterio.get(
+                    "GDAL_DISABLE_READDIR_ON_OPEN", False
+                ),
                 "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
                 "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
             }
