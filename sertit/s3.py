@@ -236,8 +236,8 @@ def define_s3_client(
         no_sign_request (bool): True if the endpoint is open access
     """
 
-    endpoint_url = os.environ.get(AWS_S3_ENDPOINT)
-    if endpoint_url is not None and endpoint_url != "":
+    endpoint_url_from_env = os.environ.get(AWS_S3_ENDPOINT)
+    if endpoint_url_from_env is not None and endpoint_url_from_env != "":
         endpoint_url = kwargs.pop(
             "endpoint_url", f"https://{os.environ.get(AWS_S3_ENDPOINT)}"
         )

@@ -49,6 +49,9 @@ def s3_env(*args, **kwargs):
     #. AWS profile
     #. AWS environment variable
 
+    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
+    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
+
     You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
     Args:
@@ -67,6 +70,12 @@ def s3_env(*args, **kwargs):
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
+    config_file = AnyPath("X") / "SI" / "Secrets" / "config"
+    credentials_file = AnyPath("X") / "SI" / "Secrets" / "credentials"
+    if config_file.exists():
+        os.environ["AWS_CONFIG_FILE"] = str(config_file)
+    if credentials_file.exists():
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
     use_s3 = kwargs.pop("use_s3_env_var", USE_S3_STORAGE)
     return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3)(
         *args, **kwargs
@@ -83,8 +92,11 @@ def unistra_s3() -> None:
     Here is the order of precedence from least to greatest
     (the last listed configuration variables override all other variables):
 
-    #. AWS profile
+    #. AWS profile "unistra"
     #. AWS environment variable
+
+    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
+    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
 
     You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
@@ -101,8 +113,14 @@ def unistra_s3() -> None:
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
+    config_file = AnyPath("X:") / "SI" / "Secrets" / "config"
+    credentials_file = AnyPath("X:") / "SI" / "Secrets" / "credentials"
+    if config_file.exists():
+        os.environ["AWS_CONFIG_FILE"] = str(config_file)
+    if credentials_file.exists():
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
     try:
-        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT):
+        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT, profile_name="unistra"):
             yield
     finally:
         pass

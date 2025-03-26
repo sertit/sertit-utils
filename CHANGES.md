@@ -2,8 +2,10 @@
 
 ## 1.46.3 (2025-mm-dd)
 
+- **ENH: Read config and credentials from network drive X if existing**
 - FIX: Size overrides resolution argument in `rasters(rio).read` (which makes way more sense)
 - FIX: Don't overwrite rasterio's env in `s3.temp_s3` and `s3.s3_env` (apart from s3 options of course)
+- Fix: define_s3_client not reading endpoint_url from arguments fixed
 
 ## 1.46.2 (2025-03-15)
 
