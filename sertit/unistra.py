@@ -70,12 +70,7 @@ def s3_env(*args, **kwargs):
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
-    config_file = AnyPath("X") / "SI" / "Secrets" / "config"
-    credentials_file = AnyPath("X") / "SI" / "Secrets" / "credentials"
-    if config_file.exists():
-        os.environ["AWS_CONFIG_FILE"] = str(config_file)
-    if credentials_file.exists():
-        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
+    _set_aws_file_path()
     use_s3 = kwargs.pop("use_s3_env_var", USE_S3_STORAGE)
     return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3)(
         *args, **kwargs
@@ -113,12 +108,7 @@ def unistra_s3() -> None:
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
-    config_file = AnyPath("X:") / "SI" / "Secrets" / "config"
-    credentials_file = AnyPath("X:") / "SI" / "Secrets" / "credentials"
-    if config_file.exists():
-        os.environ["AWS_CONFIG_FILE"] = str(config_file)
-    if credentials_file.exists():
-        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
+    _set_aws_file_path()
     try:
         with temp_s3(endpoint=UNISTRA_S3_ENDPOINT, profile_name="unistra"):
             yield
@@ -144,12 +134,7 @@ def define_s3_client():
     You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
     """
-    config_file = AnyPath("X:") / "SI" / "Secrets" / "config"
-    credentials_file = AnyPath("X:") / "SI" / "Secrets" / "credentials"
-    if config_file.exists():
-        os.environ["AWS_CONFIG_FILE"] = str(config_file)
-    if credentials_file.exists():
-        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
+    _set_aws_file_path()
 
     return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT)
 
@@ -197,6 +182,20 @@ def get_geodatastore() -> AnyPathType:
             raise NotADirectoryError("Impossible to open database directory !")
 
     return AnyPath(db_dir)
+
+
+def _set_aws_file_path():
+    """
+    This function set AWS filepath config and credentials inside X network drive "X:/SI/Secrets/AWS"
+    Returns:
+
+    """
+    config_file = AnyPath("X") / "SI" / "Secrets" / "AWS" / "config"
+    credentials_file = AnyPath("X") / "SI" / "Secrets" / "AWS" / "credentials"
+    if config_file.exists():
+        os.environ["AWS_CONFIG_FILE"] = str(config_file)
+    if credentials_file.exists():
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
 
 
 def get_mnt_path() -> str:
