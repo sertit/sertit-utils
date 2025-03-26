@@ -138,9 +138,19 @@ def define_s3_client():
     #. AWS profile
     #. AWS environment variable
 
+    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
+    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
+
     You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
 
     """
+    config_file = AnyPath("X:") / "SI" / "Secrets" / "config"
+    credentials_file = AnyPath("X:") / "SI" / "Secrets" / "credentials"
+    if config_file.exists():
+        os.environ["AWS_CONFIG_FILE"] = str(config_file)
+    if credentials_file.exists():
+        os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(credentials_file)
+
     return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT)
 
 
@@ -175,7 +185,7 @@ def get_geodatastore() -> AnyPathType:
     """
     if int(os.getenv(s3.USE_S3_STORAGE, 0)):
         # Define S3 client for S3 paths
-        s3.define_s3_client()
+        define_s3_client()
         return AnyPath("s3://sertit-geodatastore")
     else:
         try:
