@@ -24,7 +24,7 @@ from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
 from sertit import ci, misc, rasters, s3
-from sertit.ci import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from sertit.ci import AWS_ACCESS_KEY_ID, AWS_S3_ENDPOINT, AWS_SECRET_ACCESS_KEY
 from sertit.unistra import (
     _get_db_path,
     get_db2_path,
@@ -60,7 +60,9 @@ def without_s3():
 
 def test_unistra_s3():
     with (
-        tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}),
+        tempenv.TemporaryEnvironment(
+            {s3.USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: None, CI_SERTIT_S3: "1"}
+        ),
         unistra_s3(),
     ):
         # Test s3_env and define_s3_client (called inside)
@@ -86,6 +88,7 @@ def test_unistra_s3():
                 s3.USE_S3_STORAGE: "1",
                 AWS_ACCESS_KEY_ID: None,
                 AWS_SECRET_ACCESS_KEY: None,
+                AWS_S3_ENDPOINT: None,
                 "AWS_SHARED_CREDENTIALS_FILE": filename,
                 CI_SERTIT_S3: "1",
             }
