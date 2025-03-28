@@ -1,6 +1,6 @@
 # Release History
 
-## 1.46.3 (2025-mm-dd)
+## 1.46.3 (2025-03-28)
 
 - **ENH: Read config and credentials from network drive X if existing**
 - FIX: Size overrides resolution argument in `rasters(rio).read` (which makes way more sense)
