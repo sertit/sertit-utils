@@ -24,7 +24,7 @@ include:
         - pytest.ini
 
 pytest:
-  image: $EO_CONTAINERS:geo_latest
+  image: $EO_CONTAINERS:geo_sertit_latest
   extends:
     - .pytest
     - .rules_pytest
@@ -41,7 +41,7 @@ pytest_s3:
   extends:
     - .pytest
     - .rules_pytest
-  image: $EO_CONTAINERS:geo_latest
+  image: $EO_CONTAINERS:geo_sertit_latest
   variables:
     COV: sertit
     EXTRA_DEPENDENCIES: full

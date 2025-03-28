@@ -25,6 +25,7 @@ from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
 from sertit import ci, rasters
+from sertit.ci import AWS_S3_ENDPOINT
 from sertit.logs import SU_NAME
 from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
 
@@ -52,10 +53,11 @@ def without_s3():
 
 
 def test_s3():
-    with tempenv.TemporaryEnvironment({USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}):
-        # Test s3_env and define_s3_client (called inside)
-
-        with temp_s3():
+    with tempenv.TemporaryEnvironment(
+        {USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: "s3.unistra.fr", CI_SERTIT_S3: "1"}
+    ):
+        # There is a mistake in endpoint but AWS_S3_ENDPOINT should override it
+        with temp_s3(endpoint="mistake.s3.unistra.fr"):
             raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
                 "DATA", "rasters", "raster.tif"
             )

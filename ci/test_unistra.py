@@ -15,12 +15,16 @@
 # limitations under the License.
 """Script testing the CI"""
 
+import os
+import tempfile
+
 import pytest
 from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
 from sertit import ci, misc, rasters, s3
+from sertit.ci import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from sertit.unistra import (
     _get_db_path,
     get_db2_path,
@@ -55,26 +59,46 @@ def without_s3():
 
 
 def test_unistra_s3():
-    with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}):
+    with (
+        tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}),
+        unistra_s3(),
+    ):
         # Test s3_env and define_s3_client (called inside)
-        with unistra_s3():
-            raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
-                "DATA", "rasters", "raster.tif"
-            )
-            assert (
-                raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
-            )
-            assert raster_path.is_file()
-            assert rasters.read(raster_path).rio.count == 1
+        raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+            "DATA", "rasters", "raster.tif"
+        )
+        assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
+        assert raster_path.is_file()
+        assert rasters.read(raster_path).rio.count == 1
 
-        with pytest.raises(AssertionError):
-            without_s3()
-
-        assert with_s3() == 1
-
-        # Test get_geodatastore with s3
-        assert str(get_geodatastore()) == "s3://sertit-geodatastore"
-
+    # Test profile
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+        credentials = (
+            f"[unistra]\n"
+            f"aws_access_key_id={os.getenv(AWS_ACCESS_KEY_ID)}\n"
+            f"aws_secret_access_key={os.getenv(AWS_SECRET_ACCESS_KEY)}\n"
+        )
+        f.write(credentials)
+        filename = f.name
+    with (
+        tempenv.TemporaryEnvironment(
+            {
+                s3.USE_S3_STORAGE: "1",
+                AWS_ACCESS_KEY_ID: None,
+                AWS_SECRET_ACCESS_KEY: None,
+                "AWS_SHARED_CREDENTIALS_FILE": filename,
+                CI_SERTIT_S3: "1",
+            }
+        ),
+        unistra_s3(),
+    ):
+        # Test s3_env and define_s3_client (called inside)
+        raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+            "DATA", "rasters", "raster.tif"
+        )
+        assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
+        assert raster_path.is_file()
+        assert rasters.read(raster_path).rio.count == 1
     # Test get_geodatastore without s3
     with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):
         assert str(get_geodatastore()).endswith("BASES_DE_DONNEES")

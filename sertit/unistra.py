@@ -17,9 +17,11 @@
 Unistra tools
 """
 
+import configparser
 import logging
 import os
 from contextlib import contextmanager
+from pathlib import Path
 
 from sertit import AnyPath, s3
 from sertit.logs import SU_NAME
@@ -72,9 +74,10 @@ def s3_env(*args, **kwargs):
     """
     _set_aws_file_path()
     use_s3 = kwargs.pop("use_s3_env_var", USE_S3_STORAGE)
-    return s3.s3_env(endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3)(
-        *args, **kwargs
-    )
+    profile_arg = {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
+    return s3.s3_env(
+        endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3, **profile_arg
+    )(*args, **kwargs)
 
 
 @contextmanager
@@ -110,7 +113,10 @@ def unistra_s3() -> None:
     """
     _set_aws_file_path()
     try:
-        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT, profile_name="unistra"):
+        profile_arg = (
+            {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
+        )
+        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT, **profile_arg):
             yield
     finally:
         pass
@@ -135,8 +141,8 @@ def define_s3_client():
 
     """
     _set_aws_file_path()
-
-    return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT)
+    profile_arg = {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
+    return s3.define_s3_client(endpoint=UNISTRA_S3_ENDPOINT, **profile_arg)
 
 
 def get_geodatastore() -> AnyPathType:
@@ -184,9 +190,28 @@ def get_geodatastore() -> AnyPathType:
     return AnyPath(db_dir)
 
 
-def _set_aws_file_path():
+def does_unistra_profile_exist() -> bool:
     """
-    This function set AWS filepath config and credentials inside X network drive "X:/SI/Secrets/AWS"
+    This function checks if "unistra" AWS profile exists.
+
+    Returns: True if "unistra" AWS profile is present on the machine, False otherwise
+
+    """
+    config = configparser.ConfigParser()
+    default_credentials_path = Path.home() / ".aws" / "credentials"
+    credentials_path = os.getenv(
+        "AWS_SHARED_CREDENTIALS_FILE", str(default_credentials_path)
+    )
+    credentials_path = AnyPath(credentials_path)
+    if not credentials_path.exists():
+        return False
+    config.read(credentials_path)
+    return "unistra" in config.sections()
+
+
+def _set_aws_file_path() -> None:
+    """
+    This function sets AWS filepath config and credentials inside X network drive "X:/SI/Secrets/AWS"
     Returns:
 
     """
