@@ -1036,8 +1036,13 @@ def read(
             # Manage 2 ways of resampling, coarsen being faster than reprojection
             # TODO: find a way to match rasterio's speed
             if factor_h.is_integer() and factor_w.is_integer():
+                LOGGER.debug("Downsampling with coarsen method (faster)")
                 xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+
+                # Force-update the transform, otherwise everything will break after that
+                xda.rio.write_transform(inplace=True)
             else:
+                LOGGER.debug("Downsampling by reprojection")
                 xda = xda.rio.reproject(
                     xda.rio.crs,
                     shape=(new_height, new_width),
