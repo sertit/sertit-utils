@@ -49,6 +49,70 @@ Environment variable created to use Unistra's S3 bucket.
 """
 
 
+def in_house_s3_configs():
+    """
+    This function declares in-house S3 configurations for rasterio, pyogrio and cloudpathlib.
+
+    You can control how rasterio, pyogrio and cloudpathlib connects to S3 server by changing the input configurations bellow.
+    Then, configuration files are translated for each library into their own configuration system.
+
+    To get more information read the docstring of the function args_dict.
+
+    Returns:
+
+    """
+    import rasterio
+
+    args_rasterio_env = rasterio.env.getenv() if rasterio.env.hasenv() else {}
+    args_rasterio_l = [
+        {"kwargs": "profile_name"},
+        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT"},
+        {"name": "CPL_AWS_CREDENTIALS_FILE", "env": "AWS_SHARED_CREDENTIALS_FILE"},
+        {"name": "AWS_CONFIG_FILE", "env": "AWS_CONFIG_FILE"},
+        {
+            "name": "CPL_CURL_VERBOSE",
+            "default": args_rasterio_env.get("CPL_CURL_VERBOSE", False),
+        },
+        {
+            "name": "GDAL_DISABLE_READDIR_ON_OPEN",
+            "default": args_rasterio_env.get("GDAL_DISABLE_READDIR_ON_OPEN", False),
+        },
+        {"name": "AWS_NO_SIGN_REQUEST", "kwargs": "no_sign_request"},
+        {"name": "AWS_REQUEST_PAYER", "kwargs": "requester_pays"},
+    ]
+
+    args_pyogrio_l = [
+        {"name": "AWS_PROFILE", "kwargs": "profile_name", "env": "AWS_PROFILE"},
+        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT"},
+        {"name": "CPL_AWS_CREDENTIALS_FILE", "env": "AWS_SHARED_CREDENTIALS_FILE"},
+        {"name": "AWS_CONFIG_FILE", "env": "AWS_CONFIG_FILE"},
+        {"name": "AWS_NO_SIGN_REQUEST", "kwargs": "no_sign_request"},
+        {"name": "AWS_REQUEST_PAYER", "kwargs": "requester_pays"},
+    ]
+
+    s3_client_args_l = [
+        {"kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT", "prefix": "https://"},
+        {"kwargs": "aws_access_key_id", "env": "AWS_ACCESS_KEY_ID"},
+        {"kwargs": "aws_secret_access_key", "env": "AWS_SECRET_ACCESS_KEY"},
+        {"kwargs": "requester_pays"},
+        {"kwargs": "no_sign_request", "default": False},
+        {"kwargs": "profile_name", "env": "AWS_S3_PROFILE"},
+        {"kwargs": "aws_session_token"},
+        {"kwargs": "botocore_session"},
+        {"kwargs": "boto3_session"},
+        {"kwargs": "file_cache_mode"},
+        {"kwargs": "local_cache_dir"},
+        {"kwargs": "boto3_transfer_config"},
+        {"kwargs": "content_type_method"},
+        {"kwargs": "extra_args"},
+    ]
+    return {
+        "cloudpathlib": s3_client_args_l,
+        "pyogrio": args_pyogrio_l,
+        "rasterio": args_rasterio_l,
+    }
+
+
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
@@ -61,7 +125,7 @@ def s3_env(*args, **kwargs):
     (the last listed configuration variables override all other variables):
 
     1. AWS profile
-    2. Given endpoint_url as function argument
+    2. Given arguments
     3. AWS environment variable
 
     Returns:
@@ -78,49 +142,24 @@ def s3_env(*args, **kwargs):
         True
     """
     import rasterio
+    from pyogrio import set_gdal_config_options
 
     use_s3 = kwargs.get("use_s3_env_var", USE_S3_STORAGE)
-    requester_pays = kwargs.get("requester_pays")
-    no_sign_request = kwargs.get("no_sign_request")
-    endpoint = os.getenv(AWS_S3_ENDPOINT, kwargs.get("endpoint"))
-    profile_name = kwargs.get("profile_name")
+    args = s3_args(*args, **kwargs)
+    args_rasterio = args["rasterio"]
+    args_pyogrio = args["pyogrio"]
 
     def decorator(function):
         @wraps(function)
         def s3_env_wrapper(*_args, **_kwargs):
             """S3 environment wrapper"""
             if int(os.getenv(use_s3, 1)):
-                args_rasterio = rasterio.env.getenv() if rasterio.env.hasenv() else {}
-                args_rasterio.update(
-                    {
-                        "profile_name": profile_name,
-                        "CPL_CURL_VERBOSE": args_rasterio.get(
-                            "CPL_CURL_VERBOSE", False
-                        ),
-                        "GDAL_DISABLE_READDIR_ON_OPEN": args_rasterio.get(
-                            "GDAL_DISABLE_READDIR_ON_OPEN", False
-                        ),
-                        "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
-                        "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
-                    }
-                )
-                args_s3_client = {
-                    "profile_name": profile_name,
-                    "requester_pays": requester_pays,
-                    "no_sign_request": no_sign_request,
-                }
-                args_s3_client.update(kwargs)
-
-                if endpoint is not None and endpoint != "":
-                    args_rasterio["AWS_S3_ENDPOINT"] = endpoint
-                    args_s3_client["endpoint_url"] = (
-                        f"https://{endpoint}"  # cloudpathlib can read endpoint from config file
-                    )
-
                 # Define S3 client for S3 paths
-                define_s3_client(**args_s3_client)
+                define_s3_client(**kwargs)
                 os.environ[use_s3] = "1"
                 LOGGER.info("Using S3 files")
+                set_gdal_config_options(args_pyogrio)
+
                 with rasterio.Env(**args_rasterio):
                     return function(*_args, **_kwargs)
 
@@ -153,7 +192,7 @@ def temp_s3(
     (the last listed configuration variables override all other variables):
 
     1. AWS profile
-    2. Given endpoint_url as function argument
+    2. Given arguments
     3. AWS environment variable
 
     Args:
@@ -173,39 +212,21 @@ def temp_s3(
         True
     """
     import rasterio
+    from pyogrio import set_gdal_config_options
+
+    kwargs["endpoint_url"] = endpoint
+    kwargs["profile_name"] = profile_name
+    kwargs["requester_pays"] = requester_pays
+    kwargs["no_sign_request"] = no_sign_request
+    args = s3_args(**kwargs)
+    args_rasterio = args["rasterio"]
+    args_pyogrio = args["pyogrio"]
 
     # Define S3 client for S3 paths
     try:
-        args_rasterio = rasterio.env.getenv() if rasterio.env.hasenv() else {}
-        args_rasterio.update(
-            {
-                "profile_name": profile_name,
-                "CPL_CURL_VERBOSE": args_rasterio.get("CPL_CURL_VERBOSE", False),
-                "GDAL_DISABLE_READDIR_ON_OPEN": args_rasterio.get(
-                    "GDAL_DISABLE_READDIR_ON_OPEN", False
-                ),
-                "AWS_NO_SIGN_REQUEST": "YES" if no_sign_request else "NO",
-                "AWS_REQUEST_PAYER": "requester" if requester_pays else None,
-            }
-        )
-        args_s3_client = {
-            "profile_name": profile_name,
-            "requester_pays": requester_pays,
-            "no_sign_request": no_sign_request,
-        }
-        args_s3_client.update(kwargs)
-
-        endpoint = os.getenv(
-            AWS_S3_ENDPOINT, endpoint
-        )  # Give the precedence to AWS_S3_ENDPOINT
-        if endpoint is not None and endpoint != "":
-            args_rasterio["AWS_S3_ENDPOINT"] = endpoint
-            args_s3_client["endpoint_url"] = (
-                f"https://{endpoint}"  # cloudpathlib can read endpoint from config file
-            )
-
+        set_gdal_config_options(args_pyogrio)
         with rasterio.Env(**args_rasterio):
-            yield define_s3_client(**args_s3_client)
+            yield define_s3_client(**kwargs)
     finally:
         # Clean env
         S3Client().set_as_default_client()
@@ -226,7 +247,7 @@ def define_s3_client(
     (the last listed configuration variables override all other variables):
 
     1. AWS profile
-    2. Given endpoint_url as function argument
+    2. Given arguments
     3. AWS environment variable
 
     Args:
@@ -235,50 +256,114 @@ def define_s3_client(
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
     """
+    kwargs["endpoint_url"] = endpoint_url
+    kwargs["profile_name"] = profile_name
+    kwargs["requester_pays"] = requester_pays
+    kwargs["no_sign_request"] = no_sign_request
 
-    endpoint_url_from_env = os.environ.get(AWS_S3_ENDPOINT)
-    if endpoint_url_from_env is not None and endpoint_url_from_env != "":
-        endpoint_url = kwargs.pop(
-            "endpoint_url", f"https://{os.environ.get(AWS_S3_ENDPOINT)}"
-        )
-    aws_access_key_id = kwargs.pop("aws_access_key_id", os.getenv(AWS_ACCESS_KEY_ID))
-    aws_secret_access_key = kwargs.pop(
-        "aws_secret_access_key", os.getenv(AWS_SECRET_ACCESS_KEY)
-    )
-    if not no_sign_request:
-        no_sign_request = kwargs.pop("no_sign_request", False)
-
-    s3_client_args = [
-        "aws_session_token",
-        "botocore_session",
-        "profile_name",
-        "boto3_session",
-        "file_cache_mode",
-        "local_cache_dir",
-        "boto3_transfer_config",
-        "content_type_method",
-        "extra_args",
-    ]
-    s3_client_kwargs = {key: kwargs.get(key) for key in s3_client_args if key in kwargs}
-
-    if requester_pays:
-        if "extra_args" in s3_client_kwargs:
-            s3_client_kwargs["extra_args"].update({"RequestPayer": "requester"})
-        else:
-            s3_client_kwargs["extra_args"] = {"RequestPayer": "requester"}
-
-    # ON S3
-    args_s3_client = {
-        "aws_access_key_id": aws_access_key_id,
-        "aws_secret_access_key": aws_secret_access_key,
-        "profile_name": profile_name,
-        "no_sign_request": no_sign_request,
-    }
-    args_s3_client.update(s3_client_kwargs)
-
-    if endpoint_url is not None and endpoint_url != "":
-        args_s3_client["endpoint_url"] = endpoint_url
-
+    args = s3_args(**kwargs)
+    args_s3_client = args["cloudpathlib"]
     client = S3Client(**args_s3_client)
 
     client.set_as_default_client()
+
+
+def s3_args(*args, **kwargs) -> dict:
+    """
+    This function returns ready to use configurations for rasterio, pyogrio and cloudpathlib.
+    For each in-house input configurations, it applies the function args_dict.
+
+    Args:
+        *args:
+        **kwargs:
+
+    Returns:
+
+    """
+    import rasterio
+
+    in_house_configs = in_house_s3_configs()
+
+    s3_client_args_l = in_house_configs["cloudpathlib"]
+    args_pyogrio_l = in_house_configs["pyogrio"]
+    args_rasterio_l = in_house_configs["rasterio"]
+
+    s3_client_args = args_dict(s3_client_args_l, kwargs)
+    args_pyogrio = args_dict(args_pyogrio_l, kwargs)
+
+    args_rasterio = args_dict(args_rasterio_l, kwargs)
+    args_rasterio_env = rasterio.env.getenv() if rasterio.env.hasenv() else {}
+    args_rasterio_env.update(args_rasterio)
+
+    return {
+        "cloudpathlib": s3_client_args,
+        "pyogrio": args_pyogrio,
+        "rasterio": args_rasterio,
+    }
+
+
+def args_dict(args_l: list[dict], kwargs) -> dict:
+    """
+    This function converts a single in-house S3 configuration to a dictionary containing ready to use key/value parameters.
+
+    The input is a list of dict to process. Each dictionary can contain the following key:
+    - name: The name of the key in the output dict. If not given, the name of the key is the value of kwargs.
+    - kwargs: The name of the kwargs argument whose value is taken to set the value in output dict.
+    - env: The name of the envrionment variable whose value is taken to set the value in output dict.
+    - prefix: A prefix prefixed to the value in the ouput dict.
+
+    For example, if the environment variable "AWS_PROFILE" is unset, the following input:
+    args_l = [{"name": "AWS_PROFILE", "kwargs": "profile_name", "env": "AWS_PROFILE"}], kwargs={"profile_name": "unistra"}
+    will output:
+    {"AWS_PROFILE": "unistra"}
+
+    Here is the order of precedence from least to greatest
+    (the last listed configuration variables override all other variables):
+
+    1. Value from kwargs.
+    2. Default value from key "default".
+    3. Value from environment variable.
+
+    If no value is found, the output dict will not contain the wanted parameter.
+
+    Args:
+        args_l: A list of parameters to extract. Each element will give a single key/value parameter.
+        kwargs: Considered kwargs input to set parameters.
+
+    Returns:
+
+    """
+    ret = {}
+    for arg in args_l:
+        arg_name = arg["name"] if "name" in arg else arg["kwargs"]
+
+        # Some exceptions
+        if arg_name == "AWS_NO_SIGN_REQUEST":
+            arg["kwargs"] = "YES" if arg["kwargs"] else "NO"
+        if arg_name == "AWS_REQUEST_PAYER":
+            arg["kwargs"] = "requester" if arg["kwargs"] else None
+
+        # First take from kwargs
+        arg_value = kwargs.get(arg["kwargs"]) if arg.get("kwargs") is not None else None
+        if arg_value is not None:
+            ret[arg_name] = arg_value
+        # Override with default value
+        arg_value = arg.get("default")
+        if arg_value is not None:
+            ret[arg_name] = arg_value
+        # Override with environment variable
+        arg_value = os.getenv(arg.get("env")) if arg.get("env") is not None else None
+        if arg_value is not None and arg_value != "":
+            ret[arg_name] = arg_value
+
+        if arg.get("prefix") is not None and ret.get(arg_name) is not None:
+            ret[arg_name] = arg.get("prefix") + ret[arg_name]
+
+    # Exceptions again
+    if ret.get("requester_pays") is not None:
+        if ret.get("extra_args") is not None:
+            ret["extra_args"].update({"RequestPayer": "requester"})
+        else:
+            ret["extra_args"] = {"RequestPayer": "requester"}
+        ret.pop("requester_pays")
+    return ret

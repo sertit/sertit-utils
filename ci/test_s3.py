@@ -18,13 +18,14 @@
 import logging
 import os
 
+import geopandas
 import pytest
 import rasterio
 from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
-from sertit import ci, rasters
+from sertit import ci, rasters, vectors
 from sertit.ci import AWS_S3_ENDPOINT
 from sertit.logs import SU_NAME
 from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
@@ -52,7 +53,7 @@ def without_s3():
     return base_fct(None)
 
 
-def test_s3():
+def test_s3_raster():
     with tempenv.TemporaryEnvironment(
         {USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: "s3.unistra.fr", CI_SERTIT_S3: "1"}
     ):
@@ -65,11 +66,30 @@ def test_s3():
                 raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
             )
             assert raster_path.is_file()
+
+            # Test only rasterio since rasters module may interfere
+            assert rasterio.open(str(raster_path)).count == 1
             assert rasters.read(raster_path).rio.count == 1
 
         with pytest.raises(AssertionError):
             without_s3()
         assert with_s3(1, 2) == 1
+
+
+def test_s3_vector():
+    # There is a mistake in endpoint but AWS_S3_ENDPOINT should override it
+    with (
+        tempenv.TemporaryEnvironment({USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}),
+        temp_s3(endpoint="s3.unistra.fr"),
+    ):
+        vector_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+            "DATA", "vectors", "aoi.shp"
+        )
+        assert vector_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
+        assert vector_path.is_file()
+        # Test geopandas since vectors module could interfere with s3 configuration
+        assert geopandas.read_file(str(vector_path)).shape[0] == 1
+        assert vectors.read(vector_path).shape[0] == 1
 
 
 def test_no_sign_request():

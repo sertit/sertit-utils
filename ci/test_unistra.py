@@ -19,6 +19,7 @@ import os
 import tempfile
 
 import pytest
+import rasterio
 from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
@@ -71,6 +72,7 @@ def test_unistra_s3():
         )
         assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
         assert raster_path.is_file()
+        assert rasterio.open(str(raster_path)).count == 1
         assert rasters.read(raster_path).rio.count == 1
 
     # Test profile
@@ -101,6 +103,7 @@ def test_unistra_s3():
         )
         assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
         assert raster_path.is_file()
+        assert rasterio.open(str(raster_path)).count == 1
         assert rasters.read(raster_path).rio.count == 1
     # Test get_geodatastore without s3
     with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):
