@@ -74,10 +74,9 @@ def s3_env(*args, **kwargs):
     """
     _set_aws_file_path()
     use_s3 = kwargs.pop("use_s3_env_var", USE_S3_STORAGE)
-    profile_arg = {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
-    return s3.s3_env(
-        endpoint=UNISTRA_S3_ENDPOINT, use_s3_env_var=use_s3, **profile_arg
-    )(*args, **kwargs)
+    extra_args = {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
+    extra_args["endpoint_url"] = UNISTRA_S3_ENDPOINT
+    return s3.s3_env(use_s3_env_var=use_s3, **extra_args)(*args, **kwargs)
 
 
 @contextmanager
@@ -113,10 +112,9 @@ def unistra_s3() -> None:
     """
     _set_aws_file_path()
     try:
-        profile_arg = (
-            {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
-        )
-        with temp_s3(endpoint=UNISTRA_S3_ENDPOINT, **profile_arg):
+        extra_args = {"profile_name": "unistra"} if does_unistra_profile_exist() else {}
+        extra_args["endpoint_url"] = UNISTRA_S3_ENDPOINT
+        with temp_s3(**extra_args):
             yield
     finally:
         pass
@@ -215,8 +213,8 @@ def _set_aws_file_path() -> None:
     Returns:
 
     """
-    config_file = AnyPath("X") / "SI" / "Secrets" / "AWS" / "config"
-    credentials_file = AnyPath("X") / "SI" / "Secrets" / "AWS" / "credentials"
+    config_file = AnyPath("X:") / "SI" / "Secrets" / "AWS" / "config"
+    credentials_file = AnyPath("X:") / "SI" / "Secrets" / "AWS" / "credentials"
     if config_file.exists():
         os.environ["AWS_CONFIG_FILE"] = str(config_file)
     if credentials_file.exists():

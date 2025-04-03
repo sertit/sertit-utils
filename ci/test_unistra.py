@@ -33,7 +33,6 @@ from sertit.unistra import (
     get_db4_path,
     get_geodatastore,
     s3_env,
-    unistra_s3,
 )
 
 ci.reduce_verbosity()
@@ -59,12 +58,10 @@ def without_s3():
     base_fct(None)
 
 
+@s3_env
 def test_unistra_s3():
-    with (
-        tempenv.TemporaryEnvironment(
-            {s3.USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: None, CI_SERTIT_S3: "1"}
-        ),
-        unistra_s3(),
+    with tempenv.TemporaryEnvironment(
+        {s3.USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: None, CI_SERTIT_S3: "1"}
     ):
         # Test s3_env and define_s3_client (called inside)
         raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
@@ -84,18 +81,15 @@ def test_unistra_s3():
         )
         f.write(credentials)
         filename = f.name
-    with (
-        tempenv.TemporaryEnvironment(
-            {
-                s3.USE_S3_STORAGE: "1",
-                AWS_ACCESS_KEY_ID: None,
-                AWS_SECRET_ACCESS_KEY: None,
-                AWS_S3_ENDPOINT: None,
-                "AWS_SHARED_CREDENTIALS_FILE": filename,
-                CI_SERTIT_S3: "1",
-            }
-        ),
-        unistra_s3(),
+    with tempenv.TemporaryEnvironment(
+        {
+            s3.USE_S3_STORAGE: "1",
+            AWS_ACCESS_KEY_ID: None,
+            AWS_SECRET_ACCESS_KEY: None,
+            AWS_S3_ENDPOINT: None,
+            "AWS_SHARED_CREDENTIALS_FILE": filename,
+            CI_SERTIT_S3: "1",
+        }
     ):
         # Test s3_env and define_s3_client (called inside)
         raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
