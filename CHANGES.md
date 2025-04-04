@@ -1,7 +1,8 @@
 # Release History
 
-## 1.46.4 (2025-mm-dd)
+## 1.46.4 (2025-04-04)
 
+- ENH: Rewrite entirely the s3 module 
 - FIX: Fix transform recomputation when downsampling a raster with coarsen method in `rasters.read`
 
 ## 1.46.3 (2025-03-28)
