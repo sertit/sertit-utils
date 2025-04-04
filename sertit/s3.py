@@ -66,7 +66,7 @@ def in_house_s3_configs():
     args_rasterio_env = rasterio.env.getenv() if rasterio.env.hasenv() else {}
     args_rasterio_l = [
         {"kwargs": "profile_name"},
-        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT"},
+        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint", "env": "AWS_S3_ENDPOINT"},
         {"name": "CPL_AWS_CREDENTIALS_FILE", "env": "AWS_SHARED_CREDENTIALS_FILE"},
         {"name": "AWS_CONFIG_FILE", "env": "AWS_CONFIG_FILE"},
         {
@@ -83,7 +83,7 @@ def in_house_s3_configs():
 
     args_pyogrio_l = [
         {"name": "AWS_PROFILE", "kwargs": "profile_name", "env": "AWS_PROFILE"},
-        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT"},
+        {"name": "AWS_S3_ENDPOINT", "kwargs": "endpoint", "env": "AWS_S3_ENDPOINT"},
         {"name": "CPL_AWS_CREDENTIALS_FILE", "env": "AWS_SHARED_CREDENTIALS_FILE"},
         {"name": "AWS_CONFIG_FILE", "env": "AWS_CONFIG_FILE"},
         {"name": "AWS_NO_SIGN_REQUEST", "kwargs": "no_sign_request"},
@@ -91,7 +91,12 @@ def in_house_s3_configs():
     ]
 
     s3_client_args_l = [
-        {"kwargs": "endpoint_url", "env": "AWS_S3_ENDPOINT", "prefix": "https://"},
+        {
+            "name": "endpoint_url",
+            "kwargs": "endpoint",
+            "env": "AWS_S3_ENDPOINT",
+            "prefix": "https://",
+        },
         {"kwargs": "aws_access_key_id", "env": "AWS_ACCESS_KEY_ID"},
         {"kwargs": "aws_secret_access_key", "env": "AWS_SECRET_ACCESS_KEY"},
         {"kwargs": "requester_pays"},
@@ -214,11 +219,12 @@ def temp_s3(
     import rasterio
     from pyogrio import set_gdal_config_options
 
-    kwargs["endpoint_url"] = endpoint
-    kwargs["profile_name"] = profile_name
-    kwargs["requester_pays"] = requester_pays
-    kwargs["no_sign_request"] = no_sign_request
-    args = s3_args(**kwargs)
+    kwargs_cp = kwargs.copy()
+    kwargs_cp["endpoint"] = endpoint
+    kwargs_cp["profile_name"] = profile_name
+    kwargs_cp["requester_pays"] = requester_pays
+    kwargs_cp["no_sign_request"] = no_sign_request
+    args = s3_args(**kwargs_cp)
     args_rasterio = args["rasterio"]
     args_pyogrio = args["pyogrio"]
 
@@ -226,14 +232,20 @@ def temp_s3(
     try:
         set_gdal_config_options(args_pyogrio)
         with rasterio.Env(**args_rasterio):
-            yield define_s3_client(**kwargs)
+            yield define_s3_client(
+                endpoint=endpoint,
+                profile_name=profile_name,
+                requester_pays=requester_pays,
+                no_sign_request=no_sign_request,
+                **kwargs,
+            )
     finally:
         # Clean env
         S3Client().set_as_default_client()
 
 
 def define_s3_client(
-    endpoint_url=None,
+    endpoint=None,
     profile_name=None,
     requester_pays: bool = False,
     no_sign_request: bool = False,
@@ -251,17 +263,18 @@ def define_s3_client(
     3. AWS environment variable
 
     Args:
-        endpoint_url: The endpoint url in the form https://s3.yourdomain.com
+        endpoint: The s3 endpoint (s3.yourdomain.com)
         profile_name: The name of the aws profile. Default to default profile in AWS configuration file.
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
     """
-    kwargs["endpoint_url"] = endpoint_url
-    kwargs["profile_name"] = profile_name
-    kwargs["requester_pays"] = requester_pays
-    kwargs["no_sign_request"] = no_sign_request
+    kwargs_cp = kwargs.copy()
+    kwargs_cp["endpoint"] = endpoint
+    kwargs_cp["profile_name"] = profile_name
+    kwargs_cp["requester_pays"] = requester_pays
+    kwargs_cp["no_sign_request"] = no_sign_request
 
-    args = s3_args(**kwargs)
+    args = s3_args(**kwargs_cp)
     args_s3_client = args["cloudpathlib"]
     client = S3Client(**args_s3_client)
 
@@ -337,18 +350,12 @@ def args_dict(args_l: list[dict], kwargs) -> dict:
     for arg in args_l:
         arg_name = arg["name"] if "name" in arg else arg["kwargs"]
 
-        # Some exceptions
-        if arg_name == "AWS_NO_SIGN_REQUEST":
-            arg["kwargs"] = "YES" if arg["kwargs"] else "NO"
-        if arg_name == "AWS_REQUEST_PAYER":
-            arg["kwargs"] = "requester" if arg["kwargs"] else None
-
-        # First take from kwargs
-        arg_value = kwargs.get(arg["kwargs"]) if arg.get("kwargs") is not None else None
+        # First, set with default value
+        arg_value = arg.get("default")
         if arg_value is not None:
             ret[arg_name] = arg_value
-        # Override with default value
-        arg_value = arg.get("default")
+        # Override with kwargs
+        arg_value = kwargs.get(arg["kwargs"]) if arg.get("kwargs") is not None else None
         if arg_value is not None:
             ret[arg_name] = arg_value
         # Override with environment variable
@@ -359,7 +366,12 @@ def args_dict(args_l: list[dict], kwargs) -> dict:
         if arg.get("prefix") is not None and ret.get(arg_name) is not None:
             ret[arg_name] = arg.get("prefix") + ret[arg_name]
 
-    # Exceptions again
+    # Some exceptions
+    if ret.get("AWS_NO_SIGN_REQUEST") is not None:
+        ret["AWS_NO_SIGN_REQUEST"] = "YES" if ret["AWS_NO_SIGN_REQUEST"] else "NO"
+    if ret.get("AWS_REQUEST_PAYER") is not None:
+        ret["AWS_REQUEST_PAYER"] = "requester" if ret["AWS_REQUEST_PAYER"] else None
+
     if ret.get("requester_pays") is not None:
         if ret.get("extra_args") is not None:
             ret["extra_args"].update({"RequestPayer": "requester"})
