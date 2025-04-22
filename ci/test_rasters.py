@@ -456,7 +456,6 @@ def test_collocate(tmp_path, xda, xds, xda_dask):
 
     def __test_collocate_output(ref, other, coll, dtype):
         """Test collocated outputs"""
-
         # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
         ci.assert_xr_encoding_attrs(other, coll)
         ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")

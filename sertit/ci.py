@@ -117,7 +117,11 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
         try:
             assert val_1 == val_2, desc
         except ValueError:
-            assert all(val_1 == val_2), desc
+            try:
+                assert all(val_1 == val_2), desc
+            except ValueError:
+                # xarray.DataArrayCoordinates are failing
+                assert val_1.equals(val_2), desc
 
 
 def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
