@@ -307,7 +307,7 @@ def rasterize(
 
     See: https://pygis.io/docs/e_raster_rasterize.html
 
-    Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the rtaster will be binary.
+    Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the raster will be binary.
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray, used as base for the vector's rasterization data (shape, etc.)
@@ -2143,3 +2143,51 @@ def from_meters_to_deg(
         dist = (dist + dist_lon) / 2 if average_lat_lon else dist_lon
 
     return np.round(dist, decimals)
+
+
+def classify(
+    raster: xr.DataArray,
+    bins: list,
+    values: list,
+    right: bool = False,
+    new_name: str = None,
+) -> xr.DataArray:
+    """
+    Classify a raster according to the given bin edges and its corresponding values.
+
+    Example of a usecase: classifying a fire severity.
+
+    Args:
+        raster (xr.DataArray): Raster to classify
+        bins (list): Bin edges. Should be monotonic.
+        values (list): Values to set for each bin. There should be one value more than the number of bins.
+        right (bool): Indicating whether the intervals include the right or the left bin edge. Default behavior is (right==False) indicating that the interval does not include the right edge. The left bin end is open in this case, i.e., bins[i-1] <= x < bins[i] is the default behavior for monotonically increasing bins.
+        new_name (str): New name to be set
+
+    Returns:
+        xr.DataArray: Classified raster
+
+    Examples:
+        >>> dnbr = rasters.read(r"dNBR.tif")
+        >>> fire_severity = classify(dnbr, [0.27, 0.66], [2, 3, 4])
+    """
+    import dask.array as da
+
+    assert len(values) == len(bins) + 1, (
+        "The number of values should equal the number of bins plus one."
+    )
+
+    # Get the classes values
+    if not isinstance(raster, da.Array):
+        values = da.from_array(values, chunks="auto")
+    arr = values.vindex[
+        xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed").data
+    ]
+
+    # Create DataArray
+    classified_raster = raster.copy(data=arr).where(~np.isnan(raster))
+
+    if new_name is not None:
+        classified_raster = classified_raster.rename(new_name)
+        classified_raster.attrs["long_name"] = new_name
+    return classified_raster

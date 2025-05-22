@@ -2,6 +2,7 @@
 
 ## 1.47.0 (2025-mm-dd)
 
+- **ENH: Add a classify function to classify a raster according to bins and values** ([#40](https://github.com/sertit/sertit-utils/issues/40))
 - FIX: Fix `ci.assert_val` for xr.DataArrayCoordinates
 
 ## 1.46.4 (2025-04-04)
