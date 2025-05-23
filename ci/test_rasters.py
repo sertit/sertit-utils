@@ -851,6 +851,8 @@ def test_xarray_fct(xda):
     ci.assert_val(
         get_nodata_value_from_xr(xda_sum), get_nodata_value_from_xr(xda), "nodata"
     )
+
+    ci.assert_val(xda_sum.attrs.pop("long_name"), "sum", "long name")
     ci.assert_val(xda_sum.attrs, xda.attrs, "attributes")
     ci.assert_val(xda_sum.encoding, xda.encoding, "encoding")
     ci.assert_val(xda_sum.rio.transform(), xda.rio.transform(), "transform")
