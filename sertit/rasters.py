@@ -1752,7 +1752,7 @@ def read_uint8_array(
 
 
 def set_metadata(
-    naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name=None
+    naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
 ) -> AnyXrDataStructure:
     """
     Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
@@ -1817,7 +1817,7 @@ def set_metadata(
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
-        naked_xda = naked_xda.attrs["long_name"] = new_name
+        naked_xda.attrs["long_name"] = new_name
 
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.update_encoding(mtd_xda.encoding, inplace=True)

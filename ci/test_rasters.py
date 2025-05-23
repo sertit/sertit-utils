@@ -863,10 +863,13 @@ def test_xarray_fct(xda):
 @dask_env
 def test_where():
     """Test overloading of xr.where function"""
+    new_name = "mask_A"
     A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
-    mask_A = rasters.where(A > 3, 0, 1, A, new_name="mask_A")
+    mask_A = rasters.where(A > 3, 0, 1, A, new_name=new_name)
 
     np.testing.assert_equal(np.isnan(A.data), np.isnan(mask_A.data))
+
+    assert mask_A.attrs.pop("long_name") == new_name
     assert A.attrs == mask_A.attrs
     np.testing.assert_equal(
         mask_A.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
