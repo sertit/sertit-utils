@@ -1092,3 +1092,15 @@ def test_deg_meters_conversion():
         5.432e-06,
         "0.5 meter in degree of longitude at 45 degrees of latitude (averaged) with 9 decimal",
     )
+
+
+def test_classify(tmp_path):
+    """Test classify"""
+    d_ndvi_path = rasters_path() / "20200824_S2_20200908_S2_dNDVI.tif"
+    sev_truth = rasters_path() / "fire_sev_ndvi_truth.tif"
+    sev_out = get_output(tmp_path, "fire_sev_ndvi.tif", DEBUG)
+    sev = rasters.classify(
+        rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4]
+    )
+    rasters.write(sev, sev_out, dtype=np.uint8)
+    ci.assert_raster_equal(sev_truth, sev_out)

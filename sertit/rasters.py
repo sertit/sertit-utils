@@ -2185,9 +2185,10 @@ def classify(
         xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed").data
     ]
 
-    # Create DataArray
+    # Create DataArray and set nodata
     classified_raster = raster.copy(data=arr).where(~np.isnan(raster))
 
+    # Assign new name (if existing)
     if new_name is not None:
         classified_raster = classified_raster.rename(new_name)
         classified_raster.attrs["long_name"] = new_name
