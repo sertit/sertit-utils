@@ -1804,6 +1804,7 @@ def set_metadata(
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
+        naked_xda = naked_xda.attrs["long_name"] = new_name
 
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.update_encoding(mtd_xda.encoding, inplace=True)
