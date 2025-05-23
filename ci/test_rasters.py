@@ -946,7 +946,7 @@ def test_slope_pct(tmp_path, dem_path):
 
 @s3_env
 @dask_env
-def test_rasterize(tmp_path, raster_path):
+def test_rasterize(tmp_path, raster_path, xda):
     """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
@@ -981,6 +981,16 @@ def test_rasterize(tmp_path, raster_path):
     rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
+
+    # Multiband raster
+    out_bin_mb_path = os.path.join(tmp_path, "out_bin_mb.tif")
+
+    rast_bin = rasters.rasterize(
+        xr.concat([xda, xda], dim="band"), vec_path, **KAPUT_KWARGS
+    )
+    rasters.write(rast_bin, out_bin_mb_path, dtype=np.uint8, nodata=255)
+
+    ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_mb_path, decimal=4)
 
 
 @s3_env

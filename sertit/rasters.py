@@ -298,6 +298,7 @@ def rasterize(
     vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
+    name: str = None,
     **kwargs,
 ) -> AnyXrDataStructure:
     """
@@ -314,7 +315,7 @@ def rasterize(
         vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
-
+        name (str): Name to give to the raster
     Returns:
         AnyXrDataStructure: Rasterized vector
 
@@ -330,9 +331,21 @@ def rasterize(
     if len(arr.shape) != 3:
         arr = np.expand_dims(arr, axis=0)
 
+    # Set result back in xarray (ensure copying in a one band xarray)
+    rasterized_xds = xds[0:1].copy(data=arr)
+
     # Change nodata
-    rasterized_xds = xds.copy(data=arr)
     rasterized_xds = set_nodata(rasterized_xds, nodata_val=meta["nodata"])
+
+    if not name:
+        try:
+            name = f"Rasterized {vector.name}"
+        except AttributeError:
+            name = "Rasterized vector"
+
+    rasterized_xds = rasterized_xds.rename(name)
+    rasterized_xds.attrs["long_name"] = name
+
     return rasterized_xds
 
 
