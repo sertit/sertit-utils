@@ -24,6 +24,7 @@ dist
 dask-worker-space/*
 
 # Data in CI
+ci/ci_output
 ci/*.tif
 ci/*.zip
 ci/*.vrt
