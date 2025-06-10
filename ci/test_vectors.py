@@ -15,6 +15,7 @@
 # limitations under the License.
 """Script testing vector functions"""
 
+import logging
 import os
 import tempfile
 import warnings
@@ -26,7 +27,10 @@ from shapely import wkt
 
 from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
 from sertit import ci, files, path, vectors
+from sertit.logs import SU_NAME
 from sertit.vectors import EPSG_4326, DataSourceError
+
+LOGGER = logging.getLogger(SU_NAME)
 
 ci.reduce_verbosity()
 
@@ -114,6 +118,8 @@ def test_vectors():
 
 @s3_env
 def test_kml():
+    """Test KML files"""
+    LOGGER.debug("Open GEARTH_POLY.kml")
     # Just check there is no issue when opening this file
     kml_path = vectors_path().joinpath("GEARTH_POLY.kml")
     kml = vectors.read(kml_path)
@@ -121,6 +127,7 @@ def test_kml():
     assert not kml.empty
 
     # Check equivalence between two vector types (complex vector)
+    LOGGER.debug("Open EMSR680_AOI03_DEL_PRODUCT_observedEventA_v1.kml")
     kml_path = vectors_path().joinpath(
         "EMSR680_AOI03_DEL_PRODUCT_observedEventA_v1.kml"
     )
@@ -133,6 +140,7 @@ def test_kml():
     json = vectors.read(json_path).explode(ignore_index=True)
 
     # Check attributes
+    assert not kml.empty
     _assert_attributes(kml, kml_path)
     _assert_attributes(json, json_path)
 
@@ -140,6 +148,7 @@ def test_kml():
     ci.assert_geom_almost_equal(json, kml, decimal=6)
 
     # Just check there is no issue when opening this file
+    LOGGER.debug("Open ICEYE_X2_QUICKLOOK_SC_124020_20210827T162211.kml")
     kml_path = vectors_path().joinpath(
         "ICEYE_X2_QUICKLOOK_SC_124020_20210827T162211.kml"
     )

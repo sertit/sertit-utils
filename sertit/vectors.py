@@ -624,11 +624,13 @@ def _read_kml(
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
     engine = None
 
-    # WORKAROUND: https://github.com/geopandas/pyogrio/issues/444
+    # Errors reading KML and KMZ with pyogrio for now (v0.11.0 still buggy)
+    # https://github.com/geopandas/pyogrio/issues/543
+    # https://github.com/geopandas/pyogrio/issues/444
     use_pyogrio = is_geopandas_1_0()
     from importlib.metadata import version
 
-    if misc.compare_version("pyogrio", "0.10.0", "<="):
+    if misc.compare_version("pyogrio", "0.11.0", "<="):
         engine = "fiona"
         use_pyogrio = False
 
@@ -665,6 +667,9 @@ def _read_kml(
     # Needs ogr2ogr here
     if vect.empty:
         if shutil.which("ogr2ogr"):
+            LOGGER.debug(
+                "Impossible to open your KML file with Python. Using 'ogr2ogr' to convert it into a more readable format."
+            )
             # Open the geojson
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
