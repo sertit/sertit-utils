@@ -2185,18 +2185,23 @@ def classify(
         >>> dnbr = rasters.read(r"dNBR.tif")
         >>> fire_severity = classify(dnbr, [0.27, 0.66], [2, 3, 4])
     """
-    import dask.array as da
+    # Impossible to use dask arrays as index (for now) -> compute
+    # https://github.com/dask/dask/issues/8958
 
     assert len(values) == len(bins) + 1, (
         "The number of values should equal the number of bins plus one."
     )
 
     # Get the classes values
-    if not isinstance(raster, da.Array):
-        values = da.from_array(values, chunks="auto")
-    arr = values.vindex[
-        xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed").data
-    ]
+    # TODO: daskify this
+    if not isinstance(values, np.ndarray):
+        values = np.array(values)
+
+    # Get the digitized indexes according to input bins
+    vindex = xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed")
+
+    # TODO: daskify this
+    arr = values[vindex]
 
     # Create DataArray and set nodata
     classified_raster = raster.copy(data=arr).where(~np.isnan(raster))
