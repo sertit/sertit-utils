@@ -1512,7 +1512,7 @@ def sieve(
 
 def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathType:
     """
-    Get the image path from a :code:`BEAM-DIMAP` data.
+    Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
     A :code:`BEAM-DIMAP` file cannot be opened by rasterio, although its :code:`.img` file can.
 
@@ -1526,6 +1526,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
     Example:
         >>> dim_path = "path/to/dimap.dim"  # BEAM-DIMAP image
         >>> img_path = get_dim_img_path(dim_path)
+        img_path = "path/to/dimap.dim/dimap.img"
         >>>
         >>> # Read raster
         >>> raster, meta = read(img_path)
