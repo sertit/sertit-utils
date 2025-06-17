@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import os
 from contextlib import contextmanager
 
 import psutil
@@ -9,16 +10,39 @@ from sertit import logs
 
 LOGGER = logging.getLogger(logs.SU_NAME)
 
+DEFAULT_CHUNKS = "auto"
+""" Default chunks used in Sertit library (if dask is installed) """
+
+SERTIT_DEFAULT_CHUNKS = "SERTIT_DEFAULT_CHUNKS"
+"""
+Environment variable to override default chunks.
+
+Available keywords (case agnostic): 
+- Give :code:`NONE` to set :code:`None`
+- Give :code:`TRUE` to set :code:`True`
+- Give :code:`AUTO` to set :code:`"auto"`
+"""
+
+
+def is_dask_installed():
+    try:
+        from dask import optimize  # noqa: F401
+        from dask.distributed import get_client  # noqa: F401
+
+        return True
+    except ModuleNotFoundError:
+        return False
+
 
 def get_client():
     client = None
-    try:
+    if is_dask_installed():
         from dask.distributed import get_client
 
         with contextlib.suppress(ValueError):
             # Return default client
             client = get_client()
-    except ModuleNotFoundError:
+    else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
@@ -33,7 +57,7 @@ def get_or_create_dask_client(processes=False):
     Returns:
     """
     client = None
-    try:
+    if is_dask_installed():
         from dask.distributed import Client, get_client
 
         try:
@@ -70,16 +94,16 @@ def get_or_create_dask_client(processes=False):
 
         yield client
 
-    except ModuleNotFoundError:
+    else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
-    finally:
-        try:
-            if client is not None:
-                client.close()
-        except Exception as ex:
-            LOGGER.warning(ex)
+
+    try:
+        if client is not None:
+            client.close()
+    except Exception as ex:
+        LOGGER.warning(ex)
 
 
 def get_dask_lock(name):
@@ -91,12 +115,12 @@ def get_dask_lock(name):
     Returns:
     """
     lock = None
-    try:
+    if is_dask_installed():
         from dask.distributed import Lock
 
         if get_client():
             lock = Lock(name)
-    except ModuleNotFoundError:
+    else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
@@ -118,3 +142,24 @@ def is_computed(array: xr.DataArray) -> bool:
     else:
         has_chunks = len(array.chunks) > 1
     return not has_chunks
+
+
+def get_default_chunks():
+    """
+    Get the default chunks:
+
+    - check if dask is available
+    - check :code:`SERTIT_DEFAULT_CHUNKS` env variable
+    - defaults on DEFAULT_CHUNKS
+    """
+    chunks = None
+    if is_dask_installed():
+        chunks = os.getenv(SERTIT_DEFAULT_CHUNKS, DEFAULT_CHUNKS)
+        if chunks.lower() == "none":
+            chunks = None
+        elif chunks.lower() == "auto":
+            chunks = "auto"
+        elif chunks.lower() == "true":
+            chunks = True
+
+    return chunks

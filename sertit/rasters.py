@@ -194,13 +194,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
         if any_raster_type is None:
             raise ValueError("'any_raster_type' shouldn't be None!")
 
-        default_chunks = "auto" if dask.get_client() is not None else None
         masked = kwargs.get("masked", True)
 
         # By default, try with the read fct: this fct returns the xr data structure as is and manages other input types such as tuple, rasterio datasets, paths...
         try:
             out = function(
-                read(any_raster_type, chunks=default_chunks, masked=masked),
+                read(any_raster_type, chunks=dask.get_default_chunks(), masked=masked),
                 *args,
                 **kwargs,
             )
@@ -932,7 +931,6 @@ def read(
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
     indexes: Union[int, list] = None,
-    chunks: Union[int, tuple, dict] = "auto",
     as_type: Any = None,
     **kwargs,
 ) -> AnyXrDataStructure:
@@ -962,10 +960,6 @@ def read(
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
         indexes (Union[int, list]): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
-        chunks (int, tuple or dict): Chunk sizes along each dimension, e.g., 5, (5, 5) or {'x': 5, 'y': 5}.
-            If chunks is provided, it used to load the new DataArray into a dask array.
-            Chunks can also be set to True or "auto" to choose sensible chunk sizes
-            according to dask.config.get("array.chunk-size").
         as_type (Any): Type in which to load the array
         **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
 
@@ -984,7 +978,10 @@ def read(
         >>> xds1 == xds2
         True
     """
+    # Manage chunks
+    chunks = kwargs.pop("chunks", dask.get_default_chunks())
 
+    # Manage window
     if window is not None:
         window = rasters_rio.get_window(ds, window)
 
