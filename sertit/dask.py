@@ -3,6 +3,7 @@ import logging
 from contextlib import contextmanager
 
 import psutil
+import xarray as xr
 
 from sertit import logs
 
@@ -100,3 +101,20 @@ def get_dask_lock(name):
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
     return lock
+
+
+def is_computed(array: xr.DataArray) -> bool:
+    """
+    Returns true if the array has been computed.
+    (i.e. its data is loaded into memory as a numpy array and therefore array is not chunked anymore)
+
+    Args:
+        array (xr.DataArray): Array to check
+
+    Returns: True if array has been loaded into memory
+    """
+    if isinstance(array, xr.DataArray):
+        has_chunks = array.chunks is not None
+    else:
+        has_chunks = len(array.chunks) > 1
+    return not has_chunks

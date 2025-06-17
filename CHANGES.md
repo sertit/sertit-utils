@@ -2,6 +2,7 @@
 
 ## 1.47.0 (2025-mm-dd)
 
+- **ENH: Add a function checking if an array is computed or lazy (`dask.is_computed`) and its equivalents to assert whether arrays have been computed or not (`ci.assert_lazy` and `ci.assert_computed`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - **ENH: Add a classify function to classify a raster according to bins and values** ([#40](https://github.com/sertit/sertit-utils/issues/40))
 - FIX: Fix `ci.assert_val` for xr.DataArrayCoordinates
 - FIX: Update also `long_name` with `new_name` in `rasters.set_metadata`

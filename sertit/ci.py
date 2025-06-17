@@ -30,7 +30,7 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, files, s3, unistra
+from sertit import AnyPath, dask, files, s3, unistra
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
@@ -714,3 +714,23 @@ def reduce_verbosity(other_loggers: list = None) -> None:
     # Unique logger names
     for logger in list(set(loggers)):
         logging.getLogger(logger).setLevel(logging.WARNING)
+
+
+def assert_lazy(result: AnyXrDataStructure) -> None:
+    """
+    Assert the result is still lazy (i.e. the xarray structure is chunked)
+
+    Args:
+        result (AnyXrDataStructure): Result to check
+    """
+    assert not dask.is_computed(result)
+
+
+def assert_computed(result: AnyXrDataStructure) -> None:
+    """
+    Assert the result has been computed (i.e. the xarray structure is not chunked)
+
+    Args:
+        result (AnyXrDataStructure): Result to check
+    """
+    assert dask.is_computed(result)
