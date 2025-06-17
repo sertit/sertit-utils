@@ -165,6 +165,4 @@ def get_default_chunks():
         elif chunks.lower() == "true":
             chunks = True
 
-    LOGGER.debug(f"Default chunks: {chunks}")
-
     return chunks

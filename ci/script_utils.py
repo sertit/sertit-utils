@@ -85,15 +85,15 @@ def dask_env(function):
         os.environ[CI_SERTIT_USE_DASK] = "1"
         set_dask_env_var()
         with dask.get_or_create_dask_client():
-            print("Using DASK multithreaded.")
+            LOGGER.info("Using DASK multithreaded.")
             function(*_args, **_kwargs)
 
         with dask.get_or_create_dask_client(processes=True):
-            print("Using DASK with local cluster")
+            LOGGER.info("Using DASK with local cluster")
             function(*_args, **_kwargs)
 
         # Not dask
-        print("Using NUMPY")
+        LOGGER.info("Using NUMPY")
         os.environ[CI_SERTIT_USE_DASK] = "0"
         set_dask_env_var()
         function(*_args, **_kwargs)
@@ -139,19 +139,20 @@ def get_output(tmp, file, debug=False):
         return AnyPath(tmp, file)
 
 
-def assert_lazy_computed(result):
+def assert_lazy_computed(result, text):
     """ """
+
     if os.environ[CI_SERTIT_TEST_LAZY] == "1":
         if os.environ[CI_SERTIT_USE_DASK] == "1":
-            ci.assert_lazy(result)
+            ci.assert_lazy(result), f"{text}: Your data should be lazy!"
         else:
-            ci.assert_computed(result)
+            ci.assert_computed(result), f"{text}: Your data should be computed!"
     else:
         if os.environ[CI_SERTIT_USE_DASK] == "1" and dask.is_computed(result):
-            LOGGER.warning(
-                "You are currently using dask and therefore your function should be lazy. However, your output has been computed."
+            LOGGER.error(
+                f"{text}: You are currently using dask and therefore your function should be lazy. However, your output has been computed."
             )
         elif os.environ[CI_SERTIT_USE_DASK] == "0" and not dask.is_computed(result):
-            LOGGER.warning(
-                "You are currently using numpy and therefore your function should load data into memory. However, your output is lazy."
+            LOGGER.error(
+                f"{text}: You are currently using numpy and therefore your function should load data into memory. However, your output is lazy."
             )
