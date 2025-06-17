@@ -21,7 +21,6 @@ include:
         - $SU_CHANGES
         - ci/**/*.{py,xml}
         - .gitlab-ci.yml
-        - pytest.ini
 
 pytest:
   image: $EO_CONTAINERS:geo_sertit_latest
