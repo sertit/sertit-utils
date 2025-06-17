@@ -13,15 +13,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 import os
 import sys
 from enum import unique
 from functools import wraps
 
-from sertit import AnyPath, dask, unistra
+from sertit import AnyPath, ci, dask, unistra
+from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 
+LOGGER = logging.getLogger(SU_NAME)
+
 CI_SERTIT_S3 = "CI_SERTIT_USE_S3"
+""" Use files stored in S3 in CI. Else uses on disk files. """
+
+CI_SERTIT_USE_DASK = "CI_SERTIT_USE_DASK"
+""" Use Dask in CI (rasters only, chunks set to auto). If not, set chunks to None. """
+
+CI_SERTIT_TEST_LAZY = "CI_SERTIT_TEST_LAZY"
+""" Test laziness if set to 1. This exists because of the difficulty of creating lazy ratser functions. """
 
 KAPUT_KWARGS = {"fdezf": 0}
 
@@ -50,6 +61,13 @@ def get_ci_data_path():
         return AnyPath(unistra.get_db3_path()) / "CI" / "sertit_utils" / "DATA"
 
 
+def set_dask_env_var():
+    if os.getenv(CI_SERTIT_USE_DASK, "1") == "1":
+        os.environ[dask.SERTIT_DEFAULT_CHUNKS] = "auto"
+    else:
+        os.environ[dask.SERTIT_DEFAULT_CHUNKS] = "none"
+
+
 def dask_env(function):
     """
     Create dask-using environment
@@ -57,24 +75,30 @@ def dask_env(function):
     Returns:
         Callable: decorated function
     """
+    # Test laziness
+    os.environ[CI_SERTIT_TEST_LAZY] = "0"
 
     @wraps(function)
     def dask_env_wrapper(*_args, **_kwargs):
         """S3 environment wrapper"""
-        try:
-            with dask.get_or_create_dask_client():
-                print("Using DASK multithreaded.")
-                function(*_args, **_kwargs)
+        # Dask
+        os.environ[CI_SERTIT_USE_DASK] = "1"
+        set_dask_env_var()
+        with dask.get_or_create_dask_client():
+            print("Using DASK multithreaded.")
+            function(*_args, **_kwargs)
 
-            with dask.get_or_create_dask_client(processes=True):
-                print("Using DASK with local cluster")
-                function(*_args, **_kwargs)
-        except ImportError:
-            pass
+        with dask.get_or_create_dask_client(processes=True):
+            print("Using DASK with local cluster")
+            function(*_args, **_kwargs)
 
+        # Not dask
         print("Using NUMPY")
+        os.environ[CI_SERTIT_USE_DASK] = "0"
+        set_dask_env_var()
         function(*_args, **_kwargs)
 
+    os.environ.pop(CI_SERTIT_USE_DASK, None)
     return dask_env_wrapper
 
 
@@ -113,3 +137,21 @@ def get_output(tmp, file, debug=False):
         return out_path / file
     else:
         return AnyPath(tmp, file)
+
+
+def assert_lazy_computed(result):
+    """ """
+    if os.environ[CI_SERTIT_TEST_LAZY] == "1":
+        if os.environ[CI_SERTIT_USE_DASK] == "1":
+            ci.assert_lazy(result)
+        else:
+            ci.assert_computed(result)
+    else:
+        if os.environ[CI_SERTIT_USE_DASK] == "1" and dask.is_computed(result):
+            LOGGER.warning(
+                "You are currently using dask and therefore your function should be lazy. However, your output has been computed."
+            )
+        elif os.environ[CI_SERTIT_USE_DASK] == "0" and not dask.is_computed(result):
+            LOGGER.warning(
+                "You are currently using numpy and therefore your function should load data into memory. However, your output is lazy."
+            )

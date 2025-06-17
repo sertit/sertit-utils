@@ -137,11 +137,14 @@ def is_computed(array: xr.DataArray) -> bool:
 
     Returns: True if array has been loaded into memory
     """
-    if isinstance(array, xr.DataArray):
-        has_chunks = array.chunks is not None
-    else:
-        has_chunks = len(array.chunks) > 1
-    return not has_chunks
+    try:
+        if isinstance(array, xr.DataArray):
+            is_computed = array.chunks is None
+        else:
+            is_computed = len(array.chunks) == 0
+    except AttributeError:
+        is_computed = True
+    return is_computed
 
 
 def get_default_chunks():
@@ -161,5 +164,7 @@ def get_default_chunks():
             chunks = "auto"
         elif chunks.lower() == "true":
             chunks = True
+
+    LOGGER.debug(f"Default chunks: {chunks}")
 
     return chunks

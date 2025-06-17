@@ -723,7 +723,7 @@ def assert_lazy(result: AnyXrDataStructure) -> None:
     Args:
         result (AnyXrDataStructure): Result to check
     """
-    assert not dask.is_computed(result)
+    assert not dask.is_computed(result), "Your data is not lazy!"
 
 
 def assert_computed(result: AnyXrDataStructure) -> None:
@@ -733,4 +733,4 @@ def assert_computed(result: AnyXrDataStructure) -> None:
     Args:
         result (AnyXrDataStructure): Result to check
     """
-    assert dask.is_computed(result)
+    assert dask.is_computed(result), "Your data is not computed!"

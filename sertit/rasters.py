@@ -421,7 +421,7 @@ def _vectorize(
         if data.dtype != np.uint8:
             raise TypeError("Your data should be classified (np.uint8).")
 
-    # WARNING: features.shapes do NOT accept dask arrays !
+    # WARNING: features.shapes do NOT accept dask arrays!
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
         # TODO: daskify this (geoutils ?)
         from dask import optimize
@@ -1490,14 +1490,17 @@ def sieve(
             features.sieve,
             data,
             kwargs={"size": sieve_thresh, "connectivity": connectivity, "mask": mask},
+            dask="allowed",
         )
     except ValueError:
+        LOGGER.debug("Impossible to use 'xr.apply_ufunc' when sieving.")
         sieved_arr = features.sieve(
             data, size=sieve_thresh, connectivity=connectivity, mask=mask
         )
 
     # Set back nodata and expand back dim
     sieved_arr = sieved_arr.astype(xds.dtype)
+
     # Manage integer files
     with contextlib.suppress(ValueError):
         sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan

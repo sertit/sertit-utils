@@ -25,7 +25,14 @@ import rasterio
 import shapely
 import xarray as xr
 
-from ci.script_utils import KAPUT_KWARGS, dask_env, get_output, rasters_path, s3_env
+from ci.script_utils import (
+    KAPUT_KWARGS,
+    assert_lazy_computed,
+    dask_env,
+    get_output,
+    rasters_path,
+    s3_env,
+)
 from sertit import ci, geometry, path, rasters, unistra, vectors
 from sertit.rasters import (
     DEG_LAT_TO_M,
@@ -65,6 +72,12 @@ def test_indexes(caplog):
             rasters.read(l1_path, indexes=idx)
             assert f"Non available index: {idx}" in caplog.text
 
+        # Test laziness
+        assert_lazy_computed(xda_raw)
+        assert_lazy_computed(xda_idx)
+        assert_lazy_computed(xda_idx2)
+        assert_lazy_computed(xda_raw2)
+
     test_core()
 
 
@@ -76,16 +89,6 @@ def raster_path():
 @pytest.fixture
 def dem_path():
     return rasters_path().joinpath("dem.tif")
-
-
-@pytest.fixture
-def xda(raster_path):
-    return rasters.read(raster_path)
-
-
-@pytest.fixture
-def xda_dask(raster_path):
-    return rasters.read(raster_path, chunks=True)
 
 
 @pytest.fixture
@@ -110,17 +113,27 @@ def ds_dtype(raster_path):
         return getattr(np, ds.meta["dtype"])
 
 
-@pytest.fixture
-def xds(raster_path, xda, ds_name):
-    return xr.Dataset({ds_name: xda})
+def get_xda(raster_path):
+    print(f"Reading {raster_path}")
+    return rasters.read(raster_path)
+
+
+def get_xds(raster_path):
+    with rasterio.open(str(raster_path)) as ds:
+        ds_name = path.get_filename(ds.name)
+    return xr.Dataset({ds_name: get_xda(raster_path)})
 
 
 @s3_env
 @dask_env
-def test_read(tmp_path, raster_path, xda, xds, xda_dask, ds_name, ds_dtype):
+def test_read(tmp_path, raster_path, ds_name, ds_dtype):
     """Test read function"""
     extent_path = rasters_path().joinpath("extent.geojson")
     footprint_path = rasters_path().joinpath("footprint.geojson")
+
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
 
     # Get Extent
     extent = rasters.get_extent(raster_path)
@@ -133,16 +146,32 @@ def test_read(tmp_path, raster_path, xda, xds, xda_dask, ds_name, ds_dtype):
     ci.assert_geom_equal(footprint, truth_footprint)
 
     with rasterio.open(str(raster_path)) as ds:
-        # ----------------------------------------------------------------------------------------------
-        # -- Read
-        xda_1 = rasters.read(raster_path, resolution=ds.res[0])
-        xda_2 = rasters.read(raster_path, resolution=[ds.res[0], ds.res[1]])
-        xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
-        xda_4 = rasters.read(raster_path, resolution=ds.res[0] / 2)
-        xda_5 = rasters.read(xda)
-        assert xda.chunks is not None
+        # -- Read and test laziness
+        assert_lazy_computed(xda)
 
-        assert xda_dask.chunks is not None
+        # Should be always lazy
+        xda_dask = rasters.read(raster_path, chunks=True)
+        ci.assert_lazy(xda_dask)
+
+        # Native resolution
+        xda_1 = rasters.read(ds, resolution=ds.res[0])
+        assert_lazy_computed(xda_1)
+
+        # Native resolution
+        xda_2 = rasters.read(raster_path, resolution=[ds.res[0], ds.res[1]])
+        assert_lazy_computed(xda_2)
+
+        # Native size
+        xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
+        assert_lazy_computed(xda_3)
+
+        # Downsampling
+        xda_4 = rasters.read(raster_path, resolution=ds.res[0] / 2)
+        assert_lazy_computed(xda_4)
+
+        # Read a xarray
+        xda_5 = rasters.read(xda)
+        assert_lazy_computed(xda_5)
 
         # Test shape (link between resolution and size)
         assert xda_4.shape[-2] == xda.shape[-2] * 2
@@ -177,21 +206,27 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     raster_window_path = rasters_path().joinpath("window.tif")
     raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
+    # Window with native resolution
     xda_window_out = os.path.join(tmp_path, "test_xda_window.tif")
     xda_window = rasters.read(
         raster_path,
         window=mask_path,
     )
-    assert xda_window.chunks is not None
+    assert_lazy_computed(xda_window)
     rasters.write(xda_window, xda_window_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_out, raster_window_path)
 
+    # Window with updated resolution
     xda_window_20_out = os.path.join(tmp_path, "test_xda_20_window.tif")
     gdf = mask.to_crs(EPSG_4326)
     xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
+    ci.assert_val(int(xda_window_20.rio.resolution()[0]), 20, "resolution")
+    assert_lazy_computed(xda_window_20)
+
     rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
+    # Non existing window
     with pytest.raises(FileNotFoundError):
         rasters.read(
             raster_path,
@@ -211,13 +246,19 @@ def test_very_big_file(tmp_path, mask_path):
         dem_crs = ds.crs  # noqa
 
     aoi = vectors.read(aoi_path)
-    rasters.crop(rasters.read(dem_path, window=aoi), aoi, nodata=0)
+    copped = rasters.crop(rasters.read(dem_path, window=aoi), aoi, nodata=0)
+    assert_lazy_computed(copped)
 
 
 @s3_env
 @dask_env
-def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
+def test_write_basic(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
+
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     xda_out = os.path.join(tmp_path, "test_xda.tif")
     rasters.write(xda, xda_out, dtype=ds_dtype)
@@ -228,30 +269,29 @@ def test_write_basic(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
     rasters.write(xds, xds_out, dtype=ds_dtype)
     assert os.path.isfile(xds_out)
 
-    # With dask
-    xda_dask_out = os.path.join(tmp_path, "test_xda_dask.tif")
-    rasters.write(xda_dask, xda_dask_out, dtype=ds_dtype)
-    assert os.path.isfile(xda_dask_out)
-
     # Tests
     ci.assert_raster_equal(raster_path, xda_out)
     ci.assert_raster_equal(raster_path, xds_out)
-    ci.assert_raster_equal(raster_path, xda_dask_out)
 
 
 @s3_env
 @dask_env
-def test_write_png(tmp_path, xda):
+def test_write_png(tmp_path, raster_path):
     """Test write (PNG) function"""
+
     # Just test if this doesn't fail
     xda_out = os.path.join(tmp_path, "test_xda.png")
-    rasters.write(xda, xda_out, dtype="uint8", driver="PNG")
+    rasters.write(get_xda(raster_path), xda_out, dtype="uint8", driver="PNG")
 
 
 @s3_env
 @dask_env
-def test_write_dask(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
+def test_write_dask(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     xda_out = os.path.join(tmp_path, "test_xda.tif")
     delayed_1 = rasters.write(xda, xda_out, dtype=ds_dtype, compute=False)
@@ -262,46 +302,39 @@ def test_write_dask(tmp_path, raster_path, xda, xds, xda_dask, ds_dtype):
     delayed_2 = rasters.write(xds, xds_out, dtype=ds_dtype, compute=False)
     # assert os.path.isfile(xds_out)
 
-    # With dask
-    xda_dask_out = os.path.join(tmp_path, "test_xda_dask.tif")
-    delayed_3 = rasters.write(xda_dask, xda_dask_out, dtype=ds_dtype, compute=False)
-    # assert not os.path.isfile(xda_dask_out)
-
     # Compute
     import dask
 
-    dask.compute(delayed_1, delayed_2, delayed_3)
+    dask.compute(delayed_1, delayed_2)
     assert os.path.isfile(xda_out)
     assert os.path.isfile(xds_out)
-    assert os.path.isfile(xda_dask_out)
 
     # Tests
     ci.assert_raster_equal(raster_path, xda_out)
     ci.assert_raster_equal(raster_path, xds_out)
-    ci.assert_raster_equal(raster_path, xda_dask_out)
 
 
 @s3_env
 @dask_env
-def test_mask(tmp_path, xda, xds, xda_dask, mask):
+def test_mask(tmp_path, raster_path, mask):
     """Test mask function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     xda_masked = os.path.join(tmp_path, "test_mask_xda.tif")
     mask_xda = rasters.mask(xda, mask.geometry, **KAPUT_KWARGS)
+    assert_lazy_computed(mask_xda)
     rasters.write(mask_xda, xda_masked, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, mask_xda)
 
     # Dataset
     xds_masked = os.path.join(tmp_path, "test_mask_xds.tif")
     mask_xds = rasters.mask(xds, mask)
+    assert_lazy_computed(mask_xds)
     rasters.write(mask_xds, xds_masked, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, mask_xds)
-
-    # With dask
-    mask_xda_dask = rasters.mask(xda_dask, mask)
-    assert mask_xda_dask.chunks is not None
-    np.testing.assert_array_equal(mask_xda, mask_xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, mask_xda_dask)
 
     raster_masked_path = rasters_path().joinpath("raster_masked.tif")
     ci.assert_raster_equal(xda_masked, raster_masked_path)
@@ -310,65 +343,66 @@ def test_mask(tmp_path, xda, xds, xda_dask, mask):
 
 @s3_env
 @dask_env
-def test_paint(tmp_path, xda, xds, xda_dask, mask):
+def test_paint(tmp_path, raster_path, mask):
     """Test paint function"""
-    # DataArray
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
+    # -- DataArray --
+    # Invert = True
     xda_paint_true = os.path.join(tmp_path, "test_paint_true_xda.tif")
-    xda_paint_false = os.path.join(tmp_path, "test_paint_false_xda.tif")
     paint_true_xda = rasters.paint(
         xda, mask.geometry, value=600, invert=True, **KAPUT_KWARGS
     )
-    paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
+    assert_lazy_computed(paint_true_xda)
     rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
-    rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, paint_true_xda)
+
+    # Invert = False
+    xda_paint_false = os.path.join(tmp_path, "test_paint_false_xda.tif")
+    paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
+    assert_lazy_computed(paint_false_xda)
+    rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, paint_false_xda)
 
-    # Dataset
+    # -- Dataset --
+    # Invert = True
     xds_paint_true = os.path.join(tmp_path, "test_paint_true_xds.tif")
-    xds_paint_false = os.path.join(tmp_path, "test_paint_false_xds.tif")
     paint_true_xds = rasters.paint(xds, mask, value=600, invert=True)
-    paint_false_xds = rasters.paint(xds, mask, value=600, invert=False)
+    assert_lazy_computed(paint_true_xds)
     rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
-    rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_true_xds)
+
+    # Invert = False
+    xds_paint_false = os.path.join(tmp_path, "test_paint_false_xds.tif")
+    paint_false_xds = rasters.paint(xds, mask, value=600, invert=False)
+    assert_lazy_computed(paint_false_xds)
+    rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_false_xds)
-
-    # With dask
-    paint_true_xda_dask = rasters.paint(xda_dask, mask.geometry, value=600, invert=True)
-    paint_false_xda_dask = rasters.paint(
-        xda_dask, mask.geometry, value=600, invert=False
-    )
-    assert paint_true_xda_dask.chunks is not None
-    assert paint_false_xda_dask.chunks is not None
-
-    np.testing.assert_array_equal(paint_true_xda, paint_true_xda_dask)
-    np.testing.assert_array_equal(paint_false_xda, paint_false_xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, paint_true_xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, paint_false_xda_dask)
 
 
 @s3_env
 @dask_env
-def test_crop(tmp_path, xda, xds, xda_dask, mask):
+def test_crop(tmp_path, raster_path, mask):
     """Test crop function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     xda_cropped = get_output(tmp_path, "test_crop_xda.tif", DEBUG)
     crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
+    assert_lazy_computed(crop_xda)
     rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, crop_xda)
 
     # Dataset
     xds_cropped = get_output(tmp_path, "test_crop_xds.tif", DEBUG)
     crop_xds = rasters.crop(xds, mask, nodata=get_nodata_value_from_xr(xds))
+    assert_lazy_computed(crop_xds)
     rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, crop_xds)
-
-    # With dask
-    crop_xda_dask = rasters.crop(xda_dask, mask)
-    assert crop_xda_dask.chunks is not None
-    np.testing.assert_array_equal(crop_xda, crop_xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, crop_xda_dask)
 
     raster_cropped_xarray_path = rasters_path().joinpath("raster_cropped_xarray.tif")
     ci.assert_raster_equal(xda_cropped, raster_cropped_xarray_path)
@@ -377,18 +411,23 @@ def test_crop(tmp_path, xda, xds, xda_dask, mask):
     # Test with mask with Z
     mask_z = geometry.force_3d(mask)
     crop_z = rasters.crop(xda, mask_z)
-    assert crop_z.chunks is not None
+    assert_lazy_computed(crop_z)
     np.testing.assert_array_equal(crop_xda, crop_z)
     ci.assert_xr_encoding_attrs(crop_xda, crop_z)
 
 
 @s3_env
 @dask_env
-def test_sieve(tmp_path, raster_path, xda, xds, xda_dask):
+def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
     sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
+    assert_lazy_computed(sieve_xda)
     rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, sieve_xda)
 
@@ -396,22 +435,19 @@ def test_sieve(tmp_path, raster_path, xda, xds, xda_dask):
     sieve_xda_float = rasters.sieve(
         xda.astype(np.uint8).astype(np.float32), sieve_thresh=20, connectivity=4
     )
+    assert_lazy_computed(sieve_xda_float)
     sieve_xda_uint = rasters.sieve(
         xda.astype(np.uint8), sieve_thresh=20, connectivity=4
     )
+    assert_lazy_computed(sieve_xda_uint)
     np.testing.assert_array_equal(sieve_xda_uint, sieve_xda_float)
 
     # Dataset
     xds_sieved = os.path.join(tmp_path, "test_sieved_xds.tif")
     sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
+    assert_lazy_computed(sieve_xds)
     rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, sieve_xds)
-
-    # With dask
-    sieve_xda_dask = rasters.sieve(xda_dask, sieve_thresh=20, connectivity=4)
-    # assert sieve_xda_dask.chunks is not None
-    np.testing.assert_array_equal(sieve_xda, sieve_xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, sieve_xda_dask)
 
     # Tests
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
@@ -420,42 +456,46 @@ def test_sieve(tmp_path, raster_path, xda, xds, xda_dask):
 
     # From path
     sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
+    assert_lazy_computed(sieve_xda_path)
     np.testing.assert_array_equal(sieve_xda, sieve_xda_path)
 
 
 @s3_env
 @dask_env
-def test_collocate_self(tmp_path, xda, xds, xda_dask):
+def test_collocate_self(tmp_path, raster_path):
     """Test collocate (with itself) functions"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # DataArray
     coll_xda = rasters.collocate(xda, xda, **KAPUT_KWARGS)
+    assert_lazy_computed(coll_xda)
     xr.testing.assert_equal(coll_xda, xda)
     ci.assert_xr_encoding_attrs(xda, coll_xda)
 
     # Dataset
     coll_xds = rasters.collocate(xds, xds)
+    assert_lazy_computed(coll_xds)
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
     # Dataset with dataarray
     coll_xds = rasters.collocate(reference=xda, other=xds)
+    assert_lazy_computed(coll_xds)
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
-
-    # With dask
-    coll_xda_dask = rasters.collocate(xda_dask, xda_dask)
-    assert coll_xda_dask.chunks is not None
-    xr.testing.assert_equal(coll_xda_dask, xda_dask)
-    ci.assert_xr_encoding_attrs(xda_dask, coll_xda_dask)
 
 
 @s3_env
 @dask_env
-def test_collocate(tmp_path, xda, xds, xda_dask):
+def test_collocate(tmp_path):
     """Test collocate functions"""
 
     def __test_collocate_output(ref, other, coll, dtype):
         """Test collocated outputs"""
+        assert_lazy_computed(coll)
+
         # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
         ci.assert_xr_encoding_attrs(other, coll)
         ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")
@@ -496,6 +536,7 @@ def test_collocate(tmp_path, xda, xds, xda_dask):
 @dask_env
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
+    # TODO: daskify this !
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
     rasters.merge_gtiff(
@@ -510,8 +551,12 @@ def test_merge_gtiff(tmp_path, raster_path):
 
 @s3_env
 @dask_env
-def test_vectorize(tmp_path, raster_path, ds_name, xda, xds, xda_dask):
+def test_vectorize(tmp_path, raster_path, ds_name):
     """Test vectorize function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     if shapely.__version__ >= "1.8a1":
         vect_truth_path = rasters_path().joinpath("vector.geojson")
         diss_truth_path = rasters_path().joinpath("dissolved.geojson")
@@ -537,18 +582,17 @@ def test_vectorize(tmp_path, raster_path, ds_name, xda, xds, xda_dask):
     vect_xds = rasters.vectorize(xds)
     ci.assert_geom_equal(vect_xds[ds_name], vect_truth)
 
-    # With dask
-    vect_xda_dask = rasters.vectorize(xda_dask)
-    ci.assert_geom_equal(vect_xda_dask, vect_truth)
-
 
 @s3_env
 @dask_env
-def test_get_valid_vec(tmp_path, xda, xds, xda_dask, ds_name):
+def test_get_valid_vec(tmp_path, raster_path, ds_name):
     """Test get_valid_vector function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     valid_truth_path = rasters_path().joinpath("valid.geojson")
 
-    # ----------------------------------------------------------------------------------------------
     # -- Get valid vec
     valid_truth = vectors.read(valid_truth_path)
 
@@ -560,18 +604,17 @@ def test_get_valid_vec(tmp_path, xda, xds, xda_dask, ds_name):
     valid_vec_xds = rasters.get_valid_vector(xds)
     ci.assert_geom_equal(valid_vec_xds[ds_name], valid_truth)
 
-    # With dask
-    valid_vec_xda_dask = rasters.get_valid_vector(xda_dask)
-    ci.assert_geom_equal(valid_vec_xda_dask, valid_truth)
-
 
 @s3_env
 @dask_env
-def test_nodata_vec(tmp_path, xda, xds, xda_dask, ds_name):
+def test_nodata_vec(tmp_path, raster_path, ds_name):
     """Test get_nodata_vector function"""
     nodata_truth_path = rasters_path().joinpath("nodata.geojson")
 
-    # ----------------------------------------------------------------------------------------------
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
+
     # -- Get nodata vec
     nodata_truth = vectors.read(nodata_truth_path)
 
@@ -582,10 +625,6 @@ def test_nodata_vec(tmp_path, xda, xds, xda_dask, ds_name):
     # Dataset
     nodata_vec_xds = rasters.get_nodata_vector(xds)
     ci.assert_geom_equal(nodata_vec_xds[ds_name], nodata_truth)
-
-    # With dask
-    nodata_vec_dask = rasters.get_nodata_vector(xda_dask)
-    ci.assert_geom_equal(nodata_vec_dask, nodata_truth)
 
 
 @s3_env
@@ -708,8 +747,9 @@ def _test_raster_after_write(test_path, dtype, nodata_val):
         pytest.param(np.float64, FLOAT_NODATA),
     ],
 )
-def test_write(dtype, nodata_val, tmp_path, xda):
+def test_write(dtype, nodata_val, tmp_path, raster_path):
     """Test write (global check + cogs) function"""
+    xda = get_xda(raster_path)
     dtype_str = dtype.__name__
 
     test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
@@ -756,8 +796,9 @@ def test_write(dtype, nodata_val, tmp_path, xda):
         rasters.write(xda, path=test_deprecated_path, dtype=dtype)
 
 
-def test_write_zarr(tmp_path, xda):
+def test_write_zarr(tmp_path, raster_path):
     # test zarr
+    xda = get_xda(raster_path)
     zarr_path = os.path.join(tmp_path, "z.zarr")
     rasters.write(xda, path=zarr_path, driver="Zarr")
     # Just test to read the zarr array
@@ -832,6 +873,7 @@ def test_set_nodata():
         dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
     )
     xda_nodata = rasters.set_nodata(xda, nodata_val)
+    assert_lazy_computed(xda_nodata)
 
     xr.testing.assert_equal(xda_nodata, nodata)
     ci.assert_val(xda_nodata.rio.encoded_nodata, nodata_val, "Encoded nodata")
@@ -840,11 +882,15 @@ def test_set_nodata():
 
 @s3_env
 @dask_env
-def test_xarray_fct(xda):
+def test_xarray_fct(raster_path):
     """Test xarray functions"""
-    # Mtd
+    xda = get_xda(raster_path)
     xda_sum = xda + xda
+    assert_lazy_computed(xda_sum)
+
+    # Mtd
     xda_sum = rasters.set_metadata(xda_sum, xda, "sum")
+    assert_lazy_computed(xda_sum)
 
     ci.assert_val(xda_sum.rio.crs, xda.rio.crs, "CRS")
     assert np.isnan(xda_sum.rio.nodata)
@@ -866,15 +912,16 @@ def test_xarray_fct(xda):
 def test_where():
     """Test overloading of xr.where function"""
     new_name = "mask_A"
-    A = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
-    mask_A = rasters.where(A > 3, 0, 1, A, new_name=new_name)
+    xarr = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
+    mask_xarr = rasters.where(xarr > 3, 0, 1, xarr, new_name=new_name)
+    assert_lazy_computed(mask_xarr)
 
-    np.testing.assert_equal(np.isnan(A.data), np.isnan(mask_A.data))
+    np.testing.assert_equal(np.isnan(xarr.data), np.isnan(mask_xarr.data))
 
-    assert mask_A.attrs.pop("long_name") == new_name
-    assert A.attrs == mask_A.attrs
+    assert mask_xarr.attrs.pop("long_name") == new_name
+    assert xarr.attrs == mask_xarr.attrs
     np.testing.assert_equal(
-        mask_A.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
+        mask_xarr.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
     )
 
 
@@ -889,7 +936,7 @@ def test_aspect(tmp_path, dem_path):
 
     # Aspect
     aspect = rasters.aspect(dem_path)
-    # assert aspect.chunks is not None
+    assert_lazy_computed(aspect)
     rasters.write(aspect, aspect_path_out, dtype="float32")
     ci.assert_raster_almost_equal(aspect_path, aspect_path_out, decimal=4)
 
@@ -903,7 +950,7 @@ def test_hillshade(tmp_path, dem_path):
 
     # Hillshade
     hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
-    # assert hlsd.chunks is not None
+    assert_lazy_computed(hlsd)
     rasters.write(hlsd, hlsd_path_out, dtype="float32")
     ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
 
@@ -916,7 +963,7 @@ def test_slope(tmp_path, dem_path):
     slope_path_out = os.path.join(tmp_path, "slope_out.tif")
     # Slope
     slp = rasters.slope(dem_path)
-    # assert slp.chunks is not None
+    assert_lazy_computed(slp)
     rasters.write(slp, slope_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
 
@@ -930,7 +977,7 @@ def test_slope_rad(tmp_path, dem_path):
 
     # Slope rad
     slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
-    # assert slp_r.chunks is not None
+    assert_lazy_computed(slp_r)
     rasters.write(slp_r, slope_r_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
 
@@ -944,19 +991,20 @@ def test_slope_pct(tmp_path, dem_path):
 
     # Slope pct
     slp_p = rasters.slope(dem_path, in_pct=True)
-    # assert slp_p.chunks is not None
+    assert_lazy_computed(slp_p)
     rasters.write(slp_p, slope_p_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
 
 
 @s3_env
 @dask_env
-def test_rasterize(tmp_path, raster_path, xda):
+def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
     raster_true_path = rasters_path().joinpath("rasterized.tif")
+    xda = get_xda(raster_path)
 
     chunks = {"band": 1, "x": 2048, "y": 2084}
 
@@ -965,6 +1013,7 @@ def test_rasterize(tmp_path, raster_path, xda):
     rast_bin = rasters.rasterize(
         rasters.read(raster_path, chunks=chunks), vec_path, **KAPUT_KWARGS
     )
+    assert_lazy_computed(rast_bin)
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
@@ -974,6 +1023,7 @@ def test_rasterize(tmp_path, raster_path, xda):
     rast_bin = rasters.rasterize(
         rasters.read(raster_float_path, chunks=chunks), vec_path
     )
+    assert_lazy_computed(rast_bin)
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
@@ -983,6 +1033,7 @@ def test_rasterize(tmp_path, raster_path, xda):
     rast = rasters.rasterize(
         raster_path, vec_path, value_field="raster_val", dtype=np.uint8
     )
+    assert_lazy_computed(rast)
     rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
@@ -993,6 +1044,7 @@ def test_rasterize(tmp_path, raster_path, xda):
     rast_bin = rasters.rasterize(
         xr.concat([xda, xda], dim="band"), vec_path, **KAPUT_KWARGS
     )
+    assert_lazy_computed(rast_bin)
     rasters.write(rast_bin, out_bin_mb_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_mb_path, decimal=4)
@@ -1117,5 +1169,6 @@ def test_classify(tmp_path):
     sev = rasters.classify(
         rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4]
     )
+    assert_lazy_computed(sev)
     rasters.write(sev, sev_out, dtype=np.uint8)
     ci.assert_raster_equal(sev_truth, sev_out)
