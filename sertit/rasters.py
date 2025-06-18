@@ -41,10 +41,10 @@ except ModuleNotFoundError as ex:
     ) from ex
 
 
-from sertit import AnyPath, dask, geometry, logs, misc, path, rasters_rio, vectors
+from sertit import AnyPath, dask, geometry, logs, misc, path, perf, rasters_rio, vectors
 from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
 
-MAX_CORES = rasters_rio.MAX_CORES
+MAX_CORES = perf.MAX_CORES
 PATH_XARR_DS = AnyRasterType
 LOGGER = logging.getLogger(logs.SU_NAME)
 
@@ -1304,7 +1304,7 @@ def write(
 
         if not is_zarr:
             kwargs["BIGTIFF"] = bigtiff
-            kwargs["NUM_THREADS"] = MAX_CORES
+            kwargs["NUM_THREADS"] = perf.get_max_cores()
 
         delayed = xds.rio.to_raster(
             str(output_path),
@@ -1351,7 +1351,7 @@ def _collocate_dataarray(
                     reference.rio.shape, reference.rio.transform(), reference.rio.crs
                 ),
                 resampling=resampling,
-                num_threads=MAX_CORES,
+                num_threads=perf.get_max_cores(),
                 dst_nodata=nodata,
             ).rename(other.name)
 
@@ -2170,7 +2170,7 @@ def classify(
     """
     Classify a raster according to the given bin edges and its corresponding values.
 
-    Example of a usecase: classifying a fire severity.
+    Example of usecase: classifying a fire severity.
 
     Args:
         raster (xr.DataArray): Raster to classify

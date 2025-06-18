@@ -44,7 +44,7 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, geometry, logs, misc, path, strings, vectors, xml
+from sertit import AnyPath, geometry, logs, misc, path, perf, strings, vectors, xml
 from sertit.logs import SU_NAME
 from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
 
@@ -1159,7 +1159,7 @@ def write(
     out_meta["BIGTIFF"] = bigtiff_value(raster_out)
 
     # Set more threads
-    out_meta["NUM_THREADS"] = MAX_CORES
+    out_meta["NUM_THREADS"] = perf.get_max_cores()
 
     # Update metadata with array data
     out_meta = update_meta(raster_out, out_meta)
@@ -1232,7 +1232,7 @@ def collocate(
         src_nodata=other_meta["nodata"],
         dst_nodata=other_meta["nodata"],
         resampling=resampling,
-        num_threads=MAX_CORES,
+        num_threads=perf.get_max_cores(),
     )
 
     meta = reference_meta.copy()
@@ -1870,7 +1870,7 @@ def reproject_match(
         dst_transform=dst_meta["transform"],
         src_nodata=src_nodata,
         dst_nodata=dst_meta["nodata"],  # input data should be in integer
-        num_threads=MAX_CORES,
+        num_threads=perf.get_max_cores(),
         resampling=resampling,
         **kwargs,
     )

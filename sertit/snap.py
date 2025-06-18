@@ -24,16 +24,12 @@ import subprocess
 import psutil
 from packaging.version import Version
 
-from sertit import misc, rasters, strings
+from sertit import misc, perf, strings
 from sertit.logs import SU_NAME
 
-MAX_CORES = rasters.MAX_CORES
+MAX_CORES = perf.MAX_CORES
+SU_MAX_CORE = perf.SU_MAX_CORE
 
-SU_MAX_CORE = "SERTIT_UTILS_MAX_CORES"
-"""
-Maximum core to use, default is total of your CPU minus 2.
- You can update it with the environment variable :code:`SERTIT_UTILS_MAX_CORES`.
-"""
 
 JAVA_OPTS_XMX = "JAVA_OPTS_XMX"
 """
@@ -120,7 +116,7 @@ def get_gpt_cli(
         list: GPT command line as a list
     """
     # Overload with env variables
-    max_cores = int(os.getenv(SU_MAX_CORE, MAX_CORES))
+    max_cores = perf.get_max_cores()
     tile_size = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
     snap_log_level = os.getenv(SU_SNAP_LOG_LEVEL, "WARNING")
     max_mem = int(os.environ.get(JAVA_OPTS_XMX, 0.95 * psutil.virtual_memory().total))
