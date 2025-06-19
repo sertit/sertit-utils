@@ -18,6 +18,7 @@
 import os
 import tempfile
 
+import numpy as np
 import pytest
 from lxml import etree
 
@@ -33,6 +34,8 @@ def test_assert_base():
     # assert_val
     ci.assert_val("a", "a", "same string")
     ci.assert_val(None, None, "both None")
+    ci.assert_val(np.nan, np.nan, "Nans")
+    ci.assert_val([np.nan, np.nan], [np.nan, np.nan], "different vals (list of nans)")
     with pytest.raises(AssertionError):
         ci.assert_val("a", "b", "different string")
 
@@ -53,6 +56,15 @@ def test_assert_base():
     ci.assert_val([1, 2], [1, 2], "same list")
     with pytest.raises(AssertionError):
         ci.assert_val([1, 2], [3, 2], "different list")
+
+    with pytest.raises(AssertionError):
+        ci.assert_val(None, 3, "different vals (None)")
+
+    with pytest.raises(AssertionError):
+        ci.assert_val(np.nan, 3, "different vals (nans)")
+
+    with pytest.raises(AssertionError):
+        ci.assert_val(np.nan, None, "different vals (nans + None)")
 
 
 @s3_env

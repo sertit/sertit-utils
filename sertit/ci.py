@@ -17,6 +17,7 @@
 CI tools
 """
 
+import contextlib
 import filecmp
 import logging
 import pprint
@@ -108,20 +109,37 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
     """
     desc = f"{field} incoherent:\n{val_1} != {val_2}"
 
+    test_done = False
+
     # Manage None as value
     if val_2 is None or val_1 is None:
         assert val_1 is val_2, desc
-    elif val_2 is np.nan or val_1 is np.nan:
-        assert np.isnan(val_1) and np.isnan(val_2), desc
+        test_done = True
     else:
-        try:
-            assert val_1 == val_2, desc
-        except ValueError:
-            try:
+        with contextlib.suppress(TypeError):
+            if np.isnan(val_1).all() or np.isnan(val_2).all():
+                assert np.isnan(val_1).all() and np.isnan(val_2).all(), desc
+                test_done = True
+
+        if not test_done:
+            with contextlib.suppress(ValueError):
+                assert val_1 == val_2, desc
+                test_done = True
+
+        if not test_done:
+            with contextlib.suppress(ValueError):
                 assert all(val_1 == val_2), desc
-            except ValueError:
-                # xarray.DataArrayCoordinates are failing
-                assert val_1.equals(val_2), desc
+                test_done = True
+
+        if not test_done:
+            # xarray.DataArrayCoordinates are failing
+            assert val_1.equals(val_2), desc
+            test_done = True
+
+    if not test_done:
+        raise AssertionError(
+            f"{desc} - Test hasn't been done. Please write an issue about that."
+        )
 
 
 def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:

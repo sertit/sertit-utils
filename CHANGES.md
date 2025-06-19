@@ -11,6 +11,7 @@
 - FIX: Update also `long_name` with `new_name` in `rasters.set_metadata`
 - FIX: Fix rasterizing vectors with multiband rasters ([#43](https://github.com/sertit/sertit-utils/issues/43))
 - FIX: Don't try to read KML with `pyogrio <= 0.11.0 `
+- FIX: Fix `ci.assert_val` with nans
 - CI: Correctly compute numpy case with dask_env decorator
 
 ## 1.46.4 (2025-04-04)
