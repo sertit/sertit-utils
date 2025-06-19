@@ -12,6 +12,7 @@
 - FIX: Fix rasterizing vectors with multiband rasters ([#43](https://github.com/sertit/sertit-utils/issues/43))
 - FIX: Don't try to read KML with `pyogrio <= 0.11.0 `
 - FIX: Fix `ci.assert_val` with nans
+- FIX: Better nan management in `ci.assert_raster_almost_equal_magnitude`
 - CI: Correctly compute numpy case with dask_env decorator
 
 ## 1.46.4 (2025-04-04)

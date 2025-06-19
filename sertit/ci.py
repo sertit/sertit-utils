@@ -326,16 +326,52 @@ def assert_raster_almost_equal_magnitude(
                 marr_1 = np.where(marr_1.mask, np.nan, marr_1)
                 marr_2 = np.where(marr_2.mask, np.nan, marr_2)
 
-                # Manage better the number of (decimals are for a magnitude of 0)
-                magnitude = np.floor(np.log10(abs(np.nanmedian(marr_1))))
-                if np.isinf(magnitude):
+                # Check if arrays are identical (including NaN positions)
+                if np.array_equal(marr_1, marr_2, equal_nan=True):
+                    continue
+
+                # Get non-NaN values for magnitude calculation
+                valid_mask_1 = ~np.isnan(marr_1)
+                valid_mask_2 = ~np.isnan(marr_2)
+
+                # Check if both arrays have the same NaN pattern
+                if not np.array_equal(valid_mask_1, valid_mask_2):
+                    raise AssertionError("Arrays have different NaN patterns")
+
+                # If all values are NaN, arrays should be identical
+                if not np.any(valid_mask_1):
+                    if not np.array_equal(marr_1, marr_2, equal_nan=True):
+                        raise AssertionError("All-NaN arrays are not identical")
+                    continue
+
+                # Calculate magnitude using valid (non-NaN) values only
+                valid_values_1 = marr_1[valid_mask_1]
+                valid_values_2 = marr_2[valid_mask_2]
+
+                # Use the median of valid values for magnitude calculation
+                median_val = np.median(np.abs(valid_values_1))
+
+                if median_val == 0:
                     magnitude = 0
+                else:
+                    magnitude = np.floor(np.log10(median_val))
+                    if np.isinf(magnitude) or np.isnan(magnitude):
+                        magnitude = 0
+
+                # Create arrays for comparison (preserve NaN values)
+                comparison_arr_1 = np.full_like(marr_1, np.nan)
+                comparison_arr_2 = np.full_like(marr_2, np.nan)
+
+                # Only compare valid values with magnitude adjustment
+                comparison_arr_1[valid_mask_1] = valid_values_1 / (10**magnitude)
+                comparison_arr_2[valid_mask_2] = valid_values_2 / (10**magnitude)
 
                 np.testing.assert_array_almost_equal(
-                    marr_1 / 10**magnitude,
-                    marr_2 / 10**magnitude,
+                    comparison_arr_1,
+                    comparison_arr_2,
                     decimal=decimal,
                 )
+
             except AssertionError:
                 text = f"Band {i + 1}{desc} failed"
                 errors.append(text)
