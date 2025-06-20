@@ -32,7 +32,14 @@ CI_SERTIT_USE_DASK = "CI_SERTIT_USE_DASK"
 """ Use Dask in CI (rasters only, chunks set to auto). If not, set chunks to None. """
 
 CI_SERTIT_TEST_LAZY = "CI_SERTIT_TEST_LAZY"
-""" Test laziness if set to 1. This exists because of the difficulty of creating lazy ratser functions. """
+"""
+Test laziness if set to 1. 
+This exists because of the difficulty of creating lazy raster functions. 
+
+WARNING: For now we assume is lazy == is still chunked.
+However, this IS abusive as soime function may compute internally and rechunk the data in the output. 
+How to check this behavior is not clear yet.
+"""
 
 KAPUT_KWARGS = {"fdezf": 0}
 
@@ -141,20 +148,20 @@ def get_output(tmp, file, debug=False):
         return AnyPath(tmp, file)
 
 
-def assert_lazy_computed(result, text):
+def assert_chunked_computed(result, text):
     """ """
 
     if os.environ[CI_SERTIT_TEST_LAZY] == "1":
         if os.environ[CI_SERTIT_USE_DASK] == "1":
-            ci.assert_lazy(result), f"{text}: Your data should be lazy!"
+            ci.assert_chunked(result), f"{text}: Your data should be chunked!"
         else:
             ci.assert_computed(result), f"{text}: Your data should be computed!"
     else:
-        if os.environ[CI_SERTIT_USE_DASK] == "1" and dask.is_computed(result):
+        if os.environ[CI_SERTIT_USE_DASK] == "1" and not dask.is_chunked(result):
             LOGGER.error(
-                f"{text}: You are currently using dask and therefore your function should be lazy. However, your output has been computed."
+                f"{text}: You are currently using dask and therefore your function should be chunked. However, your output has been computed."
             )
-        elif os.environ[CI_SERTIT_USE_DASK] == "0" and not dask.is_computed(result):
+        elif os.environ[CI_SERTIT_USE_DASK] == "0" and dask.is_chunked(result):
             LOGGER.error(
                 f"{text}: You are currently using numpy and therefore your function should load data into memory. However, your output is lazy."
             )

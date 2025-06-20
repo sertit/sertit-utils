@@ -127,24 +127,24 @@ def get_dask_lock(name):
     return lock
 
 
-def is_computed(array: xr.DataArray) -> bool:
+def is_chunked(array: xr.DataArray) -> bool:
     """
-    Returns true if the array has been computed.
-    (i.e. its data is loaded into memory as a numpy array and therefore array is not chunked anymore)
+    Returns true if the array is still chunked.
+    (i.e. its data is not computed, bnot loaded into memory as a numpy array)
 
     Args:
         array (xr.DataArray): Array to check
 
-    Returns: True if array has been loaded into memory
+    Returns: True if array is still chunked
     """
     try:
         if isinstance(array, xr.DataArray):
-            is_computed = array.chunks is None
+            is_chunked = array.chunks is not None
         else:
-            is_computed = len(array.chunks) == 0
+            is_chunked = len(array.chunks) > 0
     except AttributeError:
-        is_computed = True
-    return is_computed
+        is_chunked = False
+    return is_chunked
 
 
 def get_default_chunks():

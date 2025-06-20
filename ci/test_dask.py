@@ -29,14 +29,14 @@ def test_computed_lazy():
     # Read already computed
     np_arr = rasters.read(raster_path, chunks=None)
     assert np_arr is not None
-    assert dask.is_computed(np_arr)
+    assert not dask.is_chunked(np_arr)
     ci.assert_computed(np_arr)
 
     # Read lazy
     da_arr = rasters.read(raster_path)
     assert da_arr is not None
-    assert not dask.is_computed(da_arr)
-    ci.assert_lazy(da_arr)
+    assert dask.is_chunked(da_arr)
+    ci.assert_chunked(da_arr)
 
     # Assert computed after compute
     ci.assert_computed(da_arr.compute())

@@ -776,14 +776,14 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         logging.getLogger(logger).setLevel(logging.WARNING)
 
 
-def assert_lazy(result: AnyXrDataStructure) -> None:
+def assert_chunked(result: AnyXrDataStructure) -> None:
     """
-    Assert the result is still lazy (i.e. the xarray structure is chunked)
+    Assert the result is still chunked.
 
     Args:
         result (AnyXrDataStructure): Result to check
     """
-    assert not dask.is_computed(result), "Your data is not lazy!"
+    assert dask.is_chunked(result), "Your data is not chunked!"
 
 
 def assert_computed(result: AnyXrDataStructure) -> None:
@@ -793,4 +793,4 @@ def assert_computed(result: AnyXrDataStructure) -> None:
     Args:
         result (AnyXrDataStructure): Result to check
     """
-    assert dask.is_computed(result), "Your data is not computed!"
+    assert not dask.is_chunked(result), "Your data is not computed!"

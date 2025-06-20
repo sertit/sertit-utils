@@ -28,7 +28,7 @@ import xarray as xr
 from ci.script_utils import (
     CI_SERTIT_USE_DASK,
     KAPUT_KWARGS,
-    assert_lazy_computed,
+    assert_chunked_computed,
     dask_env,
     get_output,
     rasters_path,
@@ -74,10 +74,10 @@ def test_indexes(caplog):
             assert f"Non available index: {idx}" in caplog.text
 
         # Test laziness
-        assert_lazy_computed(xda_raw, "Read without index")
-        assert_lazy_computed(xda_idx, "Read with one index")
-        assert_lazy_computed(xda_idx2, "Read with indices")
-        assert_lazy_computed(xda_raw2, "Concatenation")
+        assert_chunked_computed(xda_raw, "Read without index")
+        assert_chunked_computed(xda_idx, "Read with one index")
+        assert_chunked_computed(xda_idx2, "Read with indices")
+        assert_chunked_computed(xda_raw2, "Concatenation")
 
     test_core()
 
@@ -147,35 +147,35 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
 
     with rasterio.open(str(raster_path)) as ds:
         # -- Read and test laziness
-        assert_lazy_computed(xda, "Native xda")
+        assert_chunked_computed(xda, "Native xda")
 
         # Should be always lazy
         xda_dask = rasters.read(raster_path, chunks=True)
-        ci.assert_lazy(xda_dask), "Read with chunks = True"
+        ci.assert_chunked(xda_dask), "Read with chunks = True"
 
         # Native resolution
         xda_1 = rasters.read(ds, resolution=ds.res[0])
-        assert_lazy_computed(xda_1, "Read with native resolution (x)")
+        assert_chunked_computed(xda_1, "Read with native resolution (x)")
 
         # Native resolution
         xda_2 = rasters.read(raster_path, resolution=[ds.res[0], ds.res[1]])
-        assert_lazy_computed(xda_2, "Read with native resolution (x,y)")
+        assert_chunked_computed(xda_2, "Read with native resolution (x,y)")
 
         # Native size
         xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
-        assert_lazy_computed(xda_3, "Read with native size")
+        assert_chunked_computed(xda_3, "Read with native size")
 
         # Upsampling (reproject)
         xda_4 = rasters.read(raster_path, resolution=ds.res[0] / 2)
-        assert_lazy_computed(xda_4, "Read with downsampling")
+        assert_chunked_computed(xda_4, "Read with downsampling")
 
         # Read a xarray
         xda_5 = rasters.read(xda)
-        assert_lazy_computed(xda_5, "Read an already existing xr.DataArray")
+        assert_chunked_computed(xda_5, "Read an already existing xr.DataArray")
 
         # Downsampling (coarsen)
         xda_6 = rasters.read(raster_path, resolution=ds.res[0] * 2)
-        assert_lazy_computed(xda_6, "Read with upsampling")
+        assert_chunked_computed(xda_6, "Read with upsampling")
 
         # Test shape (link between resolution and size)
         assert xda_4.shape[-2] == xda.shape[-2] * 2
@@ -219,7 +219,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
         raster_path,
         window=mask_path,
     )
-    assert_lazy_computed(xda_window, "Read with a window with native resolution")
+    assert_chunked_computed(xda_window, "Read with a window with native resolution")
     rasters.write(xda_window, xda_window_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_out, raster_window_path)
 
@@ -228,7 +228,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     gdf = mask.to_crs(EPSG_4326)
     xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
     ci.assert_val(round(xda_window_20.rio.resolution()[0]), 20, "resolution")
-    assert_lazy_computed(xda_window_20, "Read with a window with updated resolution")
+    assert_chunked_computed(xda_window_20, "Read with a window with updated resolution")
 
     rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
@@ -254,7 +254,7 @@ def test_very_big_file(tmp_path, mask_path):
 
     aoi = vectors.read(aoi_path)
     cropped = rasters.crop(rasters.read(dem_path, window=aoi), aoi, nodata=0)
-    assert_lazy_computed(cropped, "Crop (big file)")
+    assert_chunked_computed(cropped, "Crop (big file)")
 
 
 @s3_env
@@ -332,14 +332,14 @@ def test_mask(tmp_path, raster_path, mask):
     # DataArray
     xda_masked = os.path.join(tmp_path, "test_mask_xda.tif")
     mask_xda = rasters.mask(xda, mask.geometry, **KAPUT_KWARGS)
-    assert_lazy_computed(mask_xda, "Mask DataArray")
+    assert_chunked_computed(mask_xda, "Mask DataArray")
     rasters.write(mask_xda, xda_masked, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, mask_xda)
 
     # Dataset
     xds_masked = os.path.join(tmp_path, "test_mask_xds.tif")
     mask_xds = rasters.mask(xds, mask)
-    assert_lazy_computed(mask_xds, "Mask Dataset")
+    assert_chunked_computed(mask_xds, "Mask Dataset")
     rasters.write(mask_xds, xds_masked, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, mask_xds)
 
@@ -362,14 +362,14 @@ def test_paint(tmp_path, raster_path, mask):
     paint_true_xda = rasters.paint(
         xda, mask.geometry, value=600, invert=True, **KAPUT_KWARGS
     )
-    assert_lazy_computed(paint_true_xda, "Paint DataArray (invert = true)")
+    assert_chunked_computed(paint_true_xda, "Paint DataArray (invert = true)")
     rasters.write(paint_true_xda, xda_paint_true, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, paint_true_xda)
 
     # Invert = False
     xda_paint_false = os.path.join(tmp_path, "test_paint_false_xda.tif")
     paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
-    assert_lazy_computed(paint_false_xda, "Paint DataArray (invert = false)")
+    assert_chunked_computed(paint_false_xda, "Paint DataArray (invert = false)")
     rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, paint_false_xda)
 
@@ -377,14 +377,14 @@ def test_paint(tmp_path, raster_path, mask):
     # Invert = True
     xds_paint_true = os.path.join(tmp_path, "test_paint_true_xds.tif")
     paint_true_xds = rasters.paint(xds, mask, value=600, invert=True)
-    assert_lazy_computed(paint_true_xds, "Paint Dataset (invert = true)")
+    assert_chunked_computed(paint_true_xds, "Paint Dataset (invert = true)")
     rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_true_xds)
 
     # Invert = False
     xds_paint_false = os.path.join(tmp_path, "test_paint_false_xds.tif")
     paint_false_xds = rasters.paint(xds, mask, value=600, invert=False)
-    assert_lazy_computed(paint_false_xds, "Paint Dataset (invert = false)")
+    assert_chunked_computed(paint_false_xds, "Paint Dataset (invert = false)")
     rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_false_xds)
 
@@ -400,14 +400,14 @@ def test_crop(tmp_path, raster_path, mask):
     # DataArray
     xda_cropped = get_output(tmp_path, "test_crop_xda.tif", DEBUG)
     crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
-    assert_lazy_computed(crop_xda, "Crop DataArray")
+    assert_chunked_computed(crop_xda, "Crop DataArray")
     rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, crop_xda)
 
     # Dataset
     xds_cropped = get_output(tmp_path, "test_crop_xds.tif", DEBUG)
     crop_xds = rasters.crop(xds, mask, nodata=get_nodata_value_from_xr(xds))
-    assert_lazy_computed(crop_xds, "Crop Dataset")
+    assert_chunked_computed(crop_xds, "Crop Dataset")
     rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, crop_xds)
 
@@ -418,7 +418,7 @@ def test_crop(tmp_path, raster_path, mask):
     # Test with mask with Z
     mask_z = geometry.force_3d(mask)
     crop_z = rasters.crop(xda, mask_z)
-    assert_lazy_computed(crop_z, "Crop 3D")
+    assert_chunked_computed(crop_z, "Crop 3D")
     np.testing.assert_array_equal(crop_xda, crop_z)
     ci.assert_xr_encoding_attrs(crop_xda, crop_z)
 
@@ -436,7 +436,7 @@ def test_sieve(tmp_path, raster_path):
     # DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
     sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
-    assert_lazy_computed(sieve_xda, "Sieve DataArray")
+    assert_chunked_computed(sieve_xda, "Sieve DataArray")
     rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, sieve_xda)
 
@@ -444,17 +444,17 @@ def test_sieve(tmp_path, raster_path):
     sieve_xda_float = rasters.sieve(
         xda.astype(np.uint8).astype(np.float32), sieve_thresh=20, connectivity=4
     )
-    assert_lazy_computed(sieve_xda_float, "Sieve DataArray (float)")
+    assert_chunked_computed(sieve_xda_float, "Sieve DataArray (float)")
     sieve_xda_uint = rasters.sieve(
         xda.astype(np.uint8), sieve_thresh=20, connectivity=4
     )
-    assert_lazy_computed(sieve_xda_uint, "Sieve DataArray (uint)")
+    assert_chunked_computed(sieve_xda_uint, "Sieve DataArray (uint)")
     np.testing.assert_array_equal(sieve_xda_uint, sieve_xda_float)
 
     # Dataset
     xds_sieved = os.path.join(tmp_path, "test_sieved_xds.tif")
     sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
-    assert_lazy_computed(sieve_xds, "Sieve Dataset")
+    assert_chunked_computed(sieve_xds, "Sieve Dataset")
     rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, sieve_xds)
 
@@ -465,7 +465,7 @@ def test_sieve(tmp_path, raster_path):
 
     # From path
     sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
-    assert_lazy_computed(sieve_xda_path, "Sieve DataArray (directly from path)")
+    assert_chunked_computed(sieve_xda_path, "Sieve DataArray (directly from path)")
     np.testing.assert_array_equal(sieve_xda, sieve_xda_path)
 
 
@@ -479,19 +479,19 @@ def test_collocate_self(tmp_path, raster_path):
 
     # DataArray
     coll_xda = rasters.collocate(xda, xda, **KAPUT_KWARGS)
-    assert_lazy_computed(coll_xda, "Collocate DataArray (self)")
+    assert_chunked_computed(coll_xda, "Collocate DataArray (self)")
     xr.testing.assert_equal(coll_xda, xda)
     ci.assert_xr_encoding_attrs(xda, coll_xda)
 
     # Dataset
     coll_xds = rasters.collocate(xds, xds)
-    assert_lazy_computed(coll_xds, "Collocate Dataset (self)")
+    assert_chunked_computed(coll_xds, "Collocate Dataset (self)")
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
     # Dataset with dataarray
     coll_xds = rasters.collocate(reference=xda, other=xds)
-    assert_lazy_computed(coll_xds, "Collocate Dataset with DataArray")
+    assert_chunked_computed(coll_xds, "Collocate Dataset with DataArray")
     xr.testing.assert_equal(coll_xds, xds)
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
@@ -503,7 +503,7 @@ def test_collocate(tmp_path):
 
     def __test_collocate_output(ref, other, coll, dtype):
         """Test collocated outputs"""
-        assert_lazy_computed(coll, f"Collocate DataArray ({dtype})")
+        assert_chunked_computed(coll, f"Collocate DataArray ({dtype})")
 
         # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
         ci.assert_xr_encoding_attrs(other, coll)
@@ -884,10 +884,10 @@ def test_set_nodata():
         data=data,
     )
     xda.rio.write_nodata(-9999, inplace=True, encoded=True)
-    assert_lazy_computed(xda, "Write nodata (rioxarray)")
+    assert_chunked_computed(xda, "Write nodata (rioxarray)")
 
     xda_nodata = rasters.set_nodata(xda, nodata_val)
-    assert_lazy_computed(xda_nodata, "Set nodata")
+    assert_chunked_computed(xda_nodata, "Set nodata")
 
     nodata = xr.DataArray(
         dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
@@ -903,11 +903,11 @@ def test_xarray_fct(raster_path):
     """Test xarray functions"""
     xda = get_xda(raster_path)
     xda_sum = xda + xda
-    assert_lazy_computed(xda_sum, "Sum between two DataArrays")
+    assert_chunked_computed(xda_sum, "Sum between two DataArrays")
 
     # Mtd
     xda_sum = rasters.set_metadata(xda_sum, xda, "sum")
-    assert_lazy_computed(xda_sum, "Set metadata")
+    assert_chunked_computed(xda_sum, "Set metadata")
 
     ci.assert_val(xda_sum.rio.crs, xda.rio.crs, "CRS")
     assert np.isnan(xda_sum.rio.nodata)
@@ -939,7 +939,7 @@ def test_where():
 
     xarr = xr.DataArray(dims=("x", "y"), data=data)
     mask_xarr = rasters.where(xarr > 3, 0, 1, xarr, new_name=new_name)
-    assert_lazy_computed(mask_xarr, "Where")
+    assert_chunked_computed(mask_xarr, "Where")
 
     xr.testing.assert_equal(np.isnan(xarr), np.isnan(mask_xarr))
 
@@ -964,7 +964,7 @@ def test_aspect(tmp_path, dem_path):
 
     # Aspect
     aspect = rasters.aspect(dem_path)
-    assert_lazy_computed(aspect, "Aspect")
+    assert_chunked_computed(aspect, "Aspect")
     rasters.write(aspect, aspect_path_out, dtype="float32")
     ci.assert_raster_almost_equal(aspect_path, aspect_path_out, decimal=4)
 
@@ -978,7 +978,7 @@ def test_hillshade(tmp_path, dem_path):
 
     # Hillshade
     hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
-    assert_lazy_computed(hlsd, "Hillshade")
+    assert_chunked_computed(hlsd, "Hillshade")
     rasters.write(hlsd, hlsd_path_out, dtype="float32")
     ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
 
@@ -991,7 +991,7 @@ def test_slope(tmp_path, dem_path):
     slope_path_out = os.path.join(tmp_path, "slope_out.tif")
     # Slope
     slp = rasters.slope(dem_path)
-    assert_lazy_computed(slp, "Slope")
+    assert_chunked_computed(slp, "Slope")
     rasters.write(slp, slope_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
 
@@ -1005,7 +1005,7 @@ def test_slope_rad(tmp_path, dem_path):
 
     # Slope rad
     slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
-    assert_lazy_computed(slp_r, "Slope (radian)")
+    assert_chunked_computed(slp_r, "Slope (radian)")
     rasters.write(slp_r, slope_r_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
 
@@ -1019,7 +1019,7 @@ def test_slope_pct(tmp_path, dem_path):
 
     # Slope pct
     slp_p = rasters.slope(dem_path, in_pct=True)
-    assert_lazy_computed(slp_p, "Slope (%)")
+    assert_chunked_computed(slp_p, "Slope (%)")
     rasters.write(slp_p, slope_p_path_out, dtype="float32")
     ci.assert_raster_almost_equal(slope_p_path, slope_p_path_out, decimal=4)
 
@@ -1042,7 +1042,7 @@ def test_rasterize(tmp_path, raster_path):
     rast_bin = rasters.rasterize(
         rasters.read(raster_path, chunks=chunks), vec_path, **KAPUT_KWARGS
     )
-    assert_lazy_computed(rast_bin, "Rasterize DataArray (binary vector)")
+    assert_chunked_computed(rast_bin, "Rasterize DataArray (binary vector)")
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
@@ -1052,7 +1052,7 @@ def test_rasterize(tmp_path, raster_path):
     rast_bin = rasters.rasterize(
         rasters.read(raster_float_path, chunks=chunks), vec_path
     )
-    assert_lazy_computed(
+    assert_chunked_computed(
         rast_bin, "Rasterize DataArray (binary vector with floating point raster)"
     )
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
@@ -1064,7 +1064,7 @@ def test_rasterize(tmp_path, raster_path):
     rast = rasters.rasterize(
         raster_path, vec_path, value_field="raster_val", dtype=np.uint8
     )
-    assert_lazy_computed(rast, "Rasterize DataArray (vector)")
+    assert_chunked_computed(rast, "Rasterize DataArray (vector)")
     rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
@@ -1075,7 +1075,7 @@ def test_rasterize(tmp_path, raster_path):
     rast_bin = rasters.rasterize(
         xr.concat([xda, xda], dim="band"), vec_path, **KAPUT_KWARGS
     )
-    assert_lazy_computed(rast_bin, "Rasterize DataArray (multiband raster)")
+    assert_chunked_computed(rast_bin, "Rasterize DataArray (multiband raster)")
     rasters.write(rast_bin, out_bin_mb_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_mb_path, decimal=4)
@@ -1200,6 +1200,6 @@ def test_classify(tmp_path):
     sev = rasters.classify(
         rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4]
     )
-    assert_lazy_computed(sev, "Classify DataArray")
+    assert_chunked_computed(sev, "Classify DataArray")
     rasters.write(sev, sev_out, dtype=np.uint8)
     ci.assert_raster_equal(sev_truth, sev_out)
