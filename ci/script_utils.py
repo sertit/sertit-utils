@@ -33,11 +33,15 @@ CI_SERTIT_USE_DASK = "CI_SERTIT_USE_DASK"
 
 CI_SERTIT_TEST_LAZY = "CI_SERTIT_TEST_LAZY"
 """
-Test laziness if set to 1. 
+Test laziness if set to 1.  
 This exists because of the difficulty of creating lazy raster functions. 
 
-WARNING: For now we assume is lazy == is still chunked.
-However, this IS abusive as soime function may compute internally and rechunk the data in the output. 
+WARNING: 
+
+For now we assume is lazy == is still chunked.  
+However, this IS abusive as some functions may compute internally and rechunk the data in the output:  
+=> If a process is lazy, then its output is chunked, but the other way around is false.
+
 How to check this behavior is not clear yet.
 """
 
