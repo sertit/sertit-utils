@@ -19,6 +19,8 @@ import sys
 from enum import unique
 from functools import wraps
 
+import tempenv
+
 from sertit import AnyPath, ci, dask, unistra
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
@@ -38,7 +40,7 @@ This exists because of the difficulty of creating lazy raster functions.
 
 WARNING: 
 
-For now we assume is lazy == is still chunked.  
+For now we assume function is lazy == output is still chunked.  
 However, this IS abusive as some functions may compute internally and rechunk the data in the output:  
 => If a process is lazy, then its output is chunked, but the other way around is false.
 
@@ -47,7 +49,7 @@ How to check this behavior is not clear yet.
 
 KAPUT_KWARGS = {"fdezf": 0}
 
-TEST_LAZY = False
+TEST_LAZY = True
 
 
 @unique
@@ -113,6 +115,26 @@ def dask_env(function):
 
     os.environ.pop(CI_SERTIT_USE_DASK, None)
     return dask_env_wrapper
+
+
+def is_not_lazy_yet(function):
+    """
+    The tested fiunction is not lazy yet : don't evaluate it
+
+    Returns:
+        Callable: decorated function
+    """
+
+    @wraps(function)
+    def is_not_lazy_yet_wrapper(*_args, **_kwargs):
+        """S3 environment wrapper"""
+        with tempenv.TemporaryEnvironment({CI_SERTIT_TEST_LAZY: "0"}):
+            LOGGER.warning(
+                "This function is not lazy yet. Laziness won't be tested here."
+            )
+            function(*_args, **_kwargs)
+
+    return is_not_lazy_yet_wrapper
 
 
 def rasters_path():

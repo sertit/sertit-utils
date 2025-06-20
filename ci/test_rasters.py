@@ -31,6 +31,7 @@ from ci.script_utils import (
     assert_chunked_computed,
     dask_env,
     get_output,
+    is_not_lazy_yet,
     rasters_path,
     s3_env,
 )
@@ -424,6 +425,7 @@ def test_crop(tmp_path, raster_path, mask):
 
 
 @s3_env
+@is_not_lazy_yet
 @dask_env
 def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
@@ -545,7 +547,7 @@ def test_collocate(tmp_path):
 @dask_env
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
-    # TODO: daskify this !
+    # TODO: daskify this and test laziness
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
     rasters.merge_gtiff(
@@ -1025,6 +1027,7 @@ def test_slope_pct(tmp_path, dem_path):
 
 
 @s3_env
+@is_not_lazy_yet
 @dask_env
 def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
