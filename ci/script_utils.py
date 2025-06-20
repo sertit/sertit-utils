@@ -36,6 +36,8 @@ CI_SERTIT_TEST_LAZY = "CI_SERTIT_TEST_LAZY"
 
 KAPUT_KWARGS = {"fdezf": 0}
 
+TEST_LAZY = False
+
 
 @unique
 class Polarization(ListEnum):
@@ -76,7 +78,7 @@ def dask_env(function):
         Callable: decorated function
     """
     # Test laziness
-    os.environ[CI_SERTIT_TEST_LAZY] = "0"
+    os.environ[CI_SERTIT_TEST_LAZY] = "1" if TEST_LAZY else "0"
 
     @wraps(function)
     def dask_env_wrapper(*_args, **_kwargs):
