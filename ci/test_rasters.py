@@ -26,6 +26,7 @@ import shapely
 import xarray as xr
 
 from ci.script_utils import (
+    CI_SERTIT_USE_DASK,
     KAPUT_KWARGS,
     assert_lazy_computed,
     dask_env,
@@ -426,6 +427,8 @@ def test_crop(tmp_path, raster_path, mask):
 @dask_env
 def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
+    # TODO: not lazy
+
     # xda, xds
     xda = get_xda(raster_path)
     xds = get_xds(raster_path)
@@ -868,19 +871,27 @@ def test_bit():
 def test_set_nodata():
     """Test xarray functions"""
     nodata_val = 0
+    data = [[1, nodata_val, nodata_val], [nodata_val, nodata_val, nodata_val]]
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        # If we want to use dask, convert this array to a dask array
+        from dask.array import from_array
+
+        data = from_array(data)
 
     # Set nodata
     xda = xr.DataArray(
         dims=("x", "y"),
-        data=[[1, nodata_val, nodata_val], [nodata_val, nodata_val, nodata_val]],
+        data=data,
     )
     xda.rio.write_nodata(-9999, inplace=True, encoded=True)
-    nodata = xr.DataArray(
-        dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
-    )
+    assert_lazy_computed(xda, "Write nodata (rioxarray)")
+
     xda_nodata = rasters.set_nodata(xda, nodata_val)
     assert_lazy_computed(xda_nodata, "Set nodata")
 
+    nodata = xr.DataArray(
+        dims=("x", "y"), data=[[1, np.nan, np.nan], [np.nan, np.nan, np.nan]]
+    )
     xr.testing.assert_equal(xda_nodata, nodata)
     ci.assert_val(xda_nodata.rio.encoded_nodata, nodata_val, "Encoded nodata")
     ci.assert_val(xda_nodata.rio.nodata, np.nan, "Array nodata")
@@ -918,16 +929,27 @@ def test_xarray_fct(raster_path):
 def test_where():
     """Test overloading of xr.where function"""
     new_name = "mask_A"
-    xarr = xr.DataArray(dims=("x", "y"), data=[[1, 0, 5], [np.nan, 0, 0]])
+
+    data = [[1, 0, 5], [np.nan, 0, 0]]
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        # If we want to use dask, convert this array to a dask array
+        from dask.array import from_array
+
+        data = from_array(data)
+
+    xarr = xr.DataArray(dims=("x", "y"), data=data)
     mask_xarr = rasters.where(xarr > 3, 0, 1, xarr, new_name=new_name)
     assert_lazy_computed(mask_xarr, "Where")
 
-    np.testing.assert_equal(np.isnan(xarr.data), np.isnan(mask_xarr.data))
+    xr.testing.assert_equal(np.isnan(xarr), np.isnan(mask_xarr))
 
     assert mask_xarr.attrs.pop("long_name") == new_name
     assert xarr.attrs == mask_xarr.attrs
-    np.testing.assert_equal(
-        mask_xarr.data, np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
+    xr.testing.assert_equal(
+        mask_xarr,
+        xr.DataArray(
+            dims=("x", "y"), data=np.array([[1.0, 1.0, 0.0], [np.nan, 1.0, 1.0]])
+        ),
     )
 
 
@@ -1006,6 +1028,7 @@ def test_slope_pct(tmp_path, dem_path):
 @dask_env
 def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
+    # TODO: not lazy
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
