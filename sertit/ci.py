@@ -689,6 +689,9 @@ def assert_xr_encoding_attrs(
 
     # Attributes
     try:
+        LOGGER.debug(
+            f"Checking {len(set(xda_1.attrs.keys()) | set(xda_2.attrs.keys()))} attributes."
+        )
         assert xda_1.attrs == xda_2.attrs
     except AssertionError:
         try:
@@ -710,6 +713,9 @@ def assert_xr_encoding_attrs(
 
     # Encoding
     try:
+        LOGGER.debug(
+            f"Checking {len(set(xda_1.encoding.keys()) | set(xda_2.encoding.keys()))} encoding attributes."
+        )
         assert xda_1.encoding == xda_2.encoding
     except AssertionError:
         try:

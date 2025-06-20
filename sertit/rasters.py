@@ -1046,18 +1046,39 @@ def read(
             # Manage 2 ways of resampling, coarsen being faster than reprojection
             # TODO: find a way to match rasterio's speed
             if factor_h.is_integer() and factor_w.is_integer():
-                LOGGER.debug("Downsampling with coarsen method (faster)")
+                LOGGER.debug(
+                    f"Resampling with coarsen method (faster): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
+                )
                 xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
 
                 # Force-update the transform, otherwise everything will break after that
                 xda.rio.write_transform(inplace=True)
             else:
-                LOGGER.debug("Downsampling by reprojection")
-                xda = xda.rio.reproject(
-                    xda.rio.crs,
-                    shape=(new_height, new_width),
-                    resampling=resampling,
+                LOGGER.debug(
+                    f"Resampling by reprojection: size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
                 )
+                from affine import Affine
+                from odc.geo import xr as odc_geo_xr  # noqa: F401
+                from odc.geo.geobox import GeoBox
+
+                # Manage nodata
+                nodata = get_nodata_value_from_xr(xda)
+                src_affine: Affine = xda.rio.transform()  # For typing
+                xda = xda.odc.reproject(
+                    how=GeoBox(
+                        (new_height, new_width),
+                        src_affine * Affine.scale(factor_w, factor_h),
+                        xda.rio.crs,
+                    ),
+                    resampling=resampling,
+                    num_threads=perf.get_max_cores(),
+                    dst_nodata=nodata,
+                    **kwargs,
+                )
+
+                # Set nodata in rioxr's way and remove odc.geo nodata in attributes
+                xda.attrs.pop("nodata", None)
+                xda.rio.write_nodata(nodata, encoded=True, inplace=True)
 
         # Convert to wanted type
         if as_type:

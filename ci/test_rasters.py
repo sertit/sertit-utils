@@ -164,7 +164,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         xda_3 = rasters.read(raster_path, size=(xda_1.rio.width, xda_1.rio.height))
         assert_lazy_computed(xda_3, "Read with native size")
 
-        # Downsampling
+        # Upsampling (reproject)
         xda_4 = rasters.read(raster_path, resolution=ds.res[0] / 2)
         assert_lazy_computed(xda_4, "Read with downsampling")
 
@@ -172,9 +172,15 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         xda_5 = rasters.read(xda)
         assert_lazy_computed(xda_5, "Read an already existing xr.DataArray")
 
+        # Downsampling (coarsen)
+        xda_6 = rasters.read(raster_path, resolution=ds.res[0] * 2)
+        assert_lazy_computed(xda_6, "Read with upsampling")
+
         # Test shape (link between resolution and size)
         assert xda_4.shape[-2] == xda.shape[-2] * 2
         assert xda_4.shape[-1] == xda.shape[-1] * 2
+        assert xda_6.shape[-2] == xda.shape[-2] / 2
+        assert xda_6.shape[-1] == xda.shape[-1] / 2
         with pytest.raises(ValueError):
             rasters.read(ds, resolution=[20, 20, 20])
 
@@ -194,6 +200,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(xda, xda_3)
         ci.assert_xr_encoding_attrs(xda, xda_4)
         ci.assert_xr_encoding_attrs(xda, xda_5)
+        ci.assert_xr_encoding_attrs(xda, xda_6)
         ci.assert_xr_encoding_attrs(xda, xda_dask, unchecked_attr="preferred_chunks")
         ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
 
@@ -219,7 +226,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     xda_window_20_out = os.path.join(tmp_path, "test_xda_20_window.tif")
     gdf = mask.to_crs(EPSG_4326)
     xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
-    ci.assert_val(int(xda_window_20.rio.resolution()[0]), 20, "resolution")
+    ci.assert_val(round(xda_window_20.rio.resolution()[0]), 20, "resolution")
     assert_lazy_computed(xda_window_20, "Read with a window with updated resolution")
 
     rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
