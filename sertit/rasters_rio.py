@@ -1319,7 +1319,7 @@ def sieve(
     return result_array, meta
 
 
-def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathType:
+def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*", get_list : bool = False) -> AnyPathType:
     """
     Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
@@ -1346,7 +1346,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
 
     assert dim_path.suffix == ".data" and dim_path.is_dir()
 
-    return path.get_file_in_dir(dim_path, img_name, extension="img", exact_name=True)
+    return path.get_file_in_dir(dim_path, img_name, extension="img", exact_name=True, get_list=get_list)
 
 
 @any_raster_to_rio_ds

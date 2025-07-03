@@ -1531,7 +1531,7 @@ def sieve(
     return sieved_xds
 
 
-def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathType:
+def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*", get_list : bool = False) -> AnyPathType:
     """
     Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
@@ -1540,6 +1540,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
     Args:
         dim_path (AnyPathStrType): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (i.e. for S3 data)
+        get_list
 
     Returns:
         AnyPathType: .img file
@@ -1552,7 +1553,7 @@ def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*") -> AnyPathTy
         >>> # Read raster
         >>> raster, meta = read(img_path)
     """
-    return rasters_rio.get_dim_img_path(dim_path, img_name)
+    return rasters_rio.get_dim_img_path(dim_path, img_name, get_list)
 
 
 @any_raster_to_xr_ds
