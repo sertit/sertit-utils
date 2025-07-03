@@ -1531,7 +1531,9 @@ def sieve(
     return sieved_xds
 
 
-def get_dim_img_path(dim_path: AnyPathStrType, img_name: str = "*", get_list : bool = False) -> Union[list, AnyPathType]:
+def get_dim_img_path(
+    dim_path: AnyPathStrType, img_name: str = "*", get_list: bool = False
+) -> Union[list, AnyPathType]:
     """
     Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
