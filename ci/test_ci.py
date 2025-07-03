@@ -182,6 +182,30 @@ def test_assert_raster():
 
 
 @s3_env
+def test_dim():
+    """Test CI functions"""
+    # Dim file
+    dim_path = rasters_path().joinpath("dim_file.dim")
+    dim_path_only_coh = rasters_path().joinpath("dim_file_only_coh.dim")
+    dim_path_spk_only_coh = rasters_path().joinpath("dim_file_Spk_only_coh.dim")
+    dim_path_different_image = rasters_path().joinpath("dim_file_other.dim")
+
+    ci.assert_dim_file_equal(dim_path, dim_path)
+
+    # Test if error when different number of bands
+    with pytest.raises(AssertionError):
+        ci.assert_dim_file_equal(dim_path, dim_path_only_coh)
+
+    # Test if error when completely different
+    with pytest.raises(AssertionError):
+        ci.assert_dim_file_equal(dim_path, dim_path_different_image)
+
+    # Test if error with same name different bands
+    with pytest.raises(AssertionError):
+        ci.assert_dim_file_equal(dim_path_only_coh, dim_path_spk_only_coh)
+
+
+@s3_env
 def test_assert_xml():
     # XML
     xml_folder = files_path().joinpath("LM05_L1TP_200030_20121230_20200820_02_T2_CI")
