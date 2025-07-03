@@ -180,6 +180,7 @@ def test_assert_raster():
     with pytest.raises(AssertionError):
         ci.assert_xr_encoding_attrs(rast_1_xr, rast_2_xr)
 
+
 @s3_env
 def test_dim():
     """Test CI functions"""
