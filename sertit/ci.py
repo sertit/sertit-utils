@@ -31,7 +31,7 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, dask, files, s3, unistra, rasters
+from sertit import AnyPath, dask, files, rasters, s3, unistra
 from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
@@ -632,7 +632,8 @@ def assert_geom_almost_equal(
                     normalize=True,
                 )
 
-def assert_dim_file_equal(path_1 : AnyPathStrType, path_2 : AnyPathStrType) -> None:
+
+def assert_dim_file_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two .dim files are equal.
 
@@ -673,6 +674,7 @@ def assert_dim_file_equal(path_1 : AnyPathStrType, path_2 : AnyPathStrType) -> N
             out_raster = list_img_path_1[i]
             expected_raster = list_img_path_2[i]
             assert_raster_equal(expected_raster, out_raster)
+
 
 def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
     """
