@@ -1053,9 +1053,19 @@ def read(
 
                 # Force-update the transform, otherwise everything will break after that
                 xda.rio.write_transform(inplace=True)
+            elif factor_h < 1:
+                # Workaround: https://github.com/opendatacube/odc-geo/issues/236
+                LOGGER.debug(
+                    f"Resampling by reprojection (with rioxarray): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
+                )
+                xda = xda.rio.reproject(
+                    xda.rio.crs,
+                    shape=(new_height, new_width),
+                    resampling=resampling,
+                )
             else:
                 LOGGER.debug(
-                    f"Resampling by reprojection: size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
+                    f"Resampling by reprojection (with odc.geo): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
                 )
                 from affine import Affine
                 from odc.geo import xr as odc_geo_xr  # noqa: F401
