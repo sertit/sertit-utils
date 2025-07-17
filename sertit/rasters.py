@@ -348,7 +348,26 @@ def rasterize(
     return rasterized_xds
 
 
+def _work_on_xds(function):
+    """"""
+
+    @wraps(function)
+    def wrapper(xds: AnyRasterType, *_args, **_kwargs):
+        """S3 environment wrapper"""
+        if isinstance(xds, xr.Dataset):
+            vect = {}
+            for key, xda in xds.items():
+                vect[key] = function(xda, *_args, **_kwargs)
+
+            return vect
+        else:
+            return function(xds, *_args, **_kwargs)
+
+    return wrapper
+
+
 @any_raster_to_xr_ds
+@_work_on_xds
 def _vectorize(
     xds: AnyRasterType,
     values: Union[None, int, list] = None,
@@ -356,7 +375,7 @@ def _vectorize(
     dissolve: bool = False,
     get_nodata: bool = False,
     default_nodata: int = 0,
-) -> gpd.GeoDataFrame:
+) -> Union[gpd.GeoDataFrame, dict]:
     """
     Vectorize a xarray, both to get classes or nodata.
 
@@ -501,6 +520,7 @@ def vectorize(
 
 
 @any_raster_to_xr_ds
+@_work_on_xds
 def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster, returned as a vector.
@@ -536,8 +556,9 @@ def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
 
 
 @any_raster_to_xr_ds
+@_work_on_xds
 def get_nodata_vector(
-    ds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
+    xds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
 ) -> gpd.GeoDataFrame:
     """
     Get the nodata vector of a raster as a vector.
@@ -546,7 +567,7 @@ def get_nodata_vector(
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     Args:
-        ds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         default_nodata (int): Default values for nodata in case of non-existing in file
 
     Returns:
@@ -564,7 +585,9 @@ def get_nodata_vector(
         >>> nodata1 == nodata2
         True
     """
-    nodata = _vectorize(ds, values=None, get_nodata=True, default_nodata=default_nodata)
+    nodata = _vectorize(
+        xds, values=None, get_nodata=True, default_nodata=default_nodata
+    )
     return nodata[nodata.raster_val == 0]
 
 
