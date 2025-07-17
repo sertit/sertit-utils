@@ -1776,7 +1776,11 @@ def read_bit_array(
     elif isinstance(bit_mask, xr.DataArray):
         bit_mask = bit_mask.fillna(0).data
     else:
-        bit_mask = bit_mask.fillna(0)
+        try:
+            bit_mask = bit_mask.fillna(0)
+        except AttributeError:
+            # dask array
+            bit_mask = np.nan_to_num(bit_mask)
 
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
@@ -1804,7 +1808,11 @@ def read_uint8_array(
     elif isinstance(bit_mask, xr.DataArray):
         bit_mask = bit_mask.fillna(0).data
     else:
-        bit_mask = bit_mask.fillna(0)
+        try:
+            bit_mask = bit_mask.fillna(0)
+        except AttributeError:
+            # dask array
+            bit_mask = np.nan_to_num(bit_mask)
 
     return read_bit_array(bit_mask.astype(np.uint8), bit_id)
 

@@ -1639,26 +1639,15 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
                 [1, 1, 0, 0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
     """
-    dtype = array.dtype
-    if dtype == np.uint8:
-        unpacked = np.unpackbits(
-            np.expand_dims(array, axis=-1), axis=-1, count=nof_bits, bitorder="little"
-        )
-    else:
-        xshape = list(array.shape)
-        array = array.reshape([-1, 1])
-        msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
-        uint8_packed = (array & msk).astype(bool).astype(np.uint8)
-        try:
-            unpacked = uint8_packed.reshape(xshape + [nof_bits])
-        except IndexError:
-            # Workaround for weird bug in reshape with dask
-            import dask
-
-            (unpacked,) = dask.optimize(uint8_packed)
-            unpacked = unpacked.compute(optimize_graph=True).reshape(
-                xshape + [nof_bits]
-            )
+    xshape = list(array.shape)
+    array = array.reshape([-1, 1])
+    msk = 2 ** np.arange(nof_bits, dtype=array.dtype).reshape([1, nof_bits])
+    uint8_packed = (array & msk).astype(bool).astype(np.uint8)
+    try:
+        unpacked = uint8_packed.reshape(xshape + [nof_bits])
+    except IndexError:
+        # Workaround for weird bug in reshape with dask
+        unpacked = uint8_packed.compute().reshape(xshape + [nof_bits])
 
     return unpacked
 
