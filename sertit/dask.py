@@ -180,3 +180,101 @@ def get_default_chunks():
             chunks = True
 
     return chunks
+
+
+# From xarray: https://github.com/pydata/xarray/blob/30743945538ca2d276fc28eb221afa7bcb03978a/xarray/tests/__init__.py#L236-L259
+class _CountingScheduler:
+    """Simple dask scheduler counting the number of computes.
+
+    Reference: https://stackoverflow.com/questions/53289286/"""
+
+    def __init__(
+        self,
+        max_computes=0,
+        nof_computes=None,
+        dont_raise=False,
+        force_synchronous=False,
+    ):
+        self.total_computes = 0
+        self.nof_computes = nof_computes
+
+        if max_computes is None or (
+            nof_computes is not None and max_computes < nof_computes
+        ):
+            max_computes = nof_computes
+
+        self.max_computes = max_computes
+        self.dont_raise = dont_raise
+        self.debug = force_synchronous
+
+        # In case of debug, use the dask basic scheduler
+        if self.debug:
+            import dask
+
+            self.get = dask.get
+        else:
+            self.get = None
+
+    def __call__(self, dsk, keys, **kwargs):
+        self.total_computes += 1
+
+        # Log where the compute happens
+        import traceback
+
+        for tb in traceback.extract_stack()[::-1]:
+            if tb.filename.startswith("/home/data") and "test_" in tb.filename:
+                LOGGER.debug(
+                    f"Computation number {self.total_computes}: {tb.line} | {tb.name} in {tb.filename} at line {tb.lineno}"
+                )
+                break
+
+        # Raise or warn if too many computes have occurred
+        if self.total_computes > self.max_computes:
+            text = f"Too many computes. Total: {self.total_computes} > max: {self.max_computes}."
+            if self.dont_raise:
+                LOGGER.warning(text)
+            else:
+                raise RuntimeError(text)
+
+        # Use the wanted get
+        if self.get is None:
+            client = get_client()
+            if client:
+                self.get = client.get
+
+        if self.get is not None:
+            return self.get(dsk, keys, **kwargs)
+
+    def check_total_nof_computes(self):
+        if self.nof_computes is not None and self.total_computes != self.nof_computes:
+            text = f"Unexpected number of computes. Total: {self.total_computes} != {self.nof_computes}."
+
+            if self.dont_raise:
+                LOGGER.warning(text)
+            else:
+                raise RuntimeError(text)
+        return True
+
+
+@contextmanager
+def raise_if_dask_computes(
+    max_computes=0, nof_computes=None, dont_raise=False, force_synchronous=False
+):
+    # return a dummy context manager so that this can be used for non-dask objects
+    if not is_dask_installed():
+        yield contextlib.nullcontext()
+
+    import dask
+
+    scheduler = _CountingScheduler(
+        max_computes=max_computes,
+        nof_computes=nof_computes,
+        dont_raise=dont_raise,
+        force_synchronous=force_synchronous,
+    )
+    try:
+        yield dask.config.set(scheduler=scheduler)
+    finally:
+        scheduler.check_total_nof_computes()
+        # Make sure the counting scheduler is removed
+        dask.config.set(scheduler=None)

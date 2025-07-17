@@ -15,6 +15,8 @@
 # limitations under the License.
 """Script testing dask functions"""
 
+import pytest
+
 from ci.script_utils import rasters_path, s3_env
 from sertit import ci, dask, rasters
 
@@ -40,3 +42,84 @@ def test_computed_lazy():
 
     # Assert computed after compute
     ci.assert_computed(da_arr.compute())
+
+
+def test_raise_compute():
+    raster_path = rasters_path().joinpath("raster.tif")
+
+    # Read lazily
+    with dask.raise_if_dask_computes():
+        da = rasters.read(raster_path)
+
+    # Ensure computing raises
+    with (
+        pytest.raises(RuntimeError),
+        dask.raise_if_dask_computes(force_synchronous=True),
+    ):
+        da.compute()
+
+    # Ensure computing raises
+    with (
+        pytest.raises(RuntimeError),
+        dask.raise_if_dask_computes(force_synchronous=True, max_computes=1),
+    ):
+        da.compute()
+        da.compute()
+
+    # Ensure computing raises
+    with (
+        pytest.raises(RuntimeError),
+        dask.raise_if_dask_computes(force_synchronous=True, nof_computes=1),
+    ):
+        da.compute()
+        da.compute()
+
+    # Ensure computing raises
+    with (
+        pytest.raises(RuntimeError),
+        dask.raise_if_dask_computes(force_synchronous=True, nof_computes=3),
+    ):
+        da.compute()
+
+    # Ensure computing don't raise
+    with dask.raise_if_dask_computes(force_synchronous=True, nof_computes=1):
+        da.compute()
+
+    # Ensure computing don't raise
+    with dask.raise_if_dask_computes(force_synchronous=True, max_computes=1):
+        da.compute()
+
+    # Ensure computing don't raise id specified
+    with dask.raise_if_dask_computes(force_synchronous=True, dont_raise=True):
+        da.compute()
+
+    # Check if da is still chunked
+    ci.assert_chunked(da)
+
+    # First gotcha
+    with (
+        pytest.raises(RuntimeError),
+        dask.raise_if_dask_computes(force_synchronous=True),
+    ):
+        if da.max() > 5:
+            print("Gotcha!")
+
+    # Check if da is still chunked
+    ci.assert_chunked(da)
+
+    # Second gotchas
+    # with pytest.raises(RuntimeError), dask.raise_if_dask_computes():
+    #     pass
+
+    # Check if da is still chunked
+    # ci.assert_chunked(da)
+
+    # Other gotchas from digitize: TODO?
+    # import dask.array as da
+    # import xarray as xr
+    # import numpy as np
+    # with pytest.raises(RuntimeError), dask.raise_if_dask_computes():
+    #     values = da.from_array([1, 2, 3], chunks="auto")
+    #     arr = values.vindex[
+    #         xr.apply_ufunc(np.digitize, a, [0.1, 0.2], dask="allowed").data
+    #     ]
