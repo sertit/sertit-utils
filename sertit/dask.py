@@ -58,59 +58,66 @@ def get_or_create_dask_client(processes=False):
     Returns:
     """
     client = None
-    if is_dask_installed():
-        from dask.distributed import Client, get_client
-
-        try:
-            # Return default client
-            client = get_client()
-        except ValueError:
-            if processes:
-                # Gather information to create a client adapted to the computer
-                ram_info = psutil.virtual_memory()
-                available_ram = ram_info.available / 1024 / 1024 / 1024
-                available_ram = 0.9 * available_ram
-
-                n_workers = 1
-                memory_limit = f"{available_ram}Gb"
-                if available_ram >= 16:
-                    n_workers = available_ram // 16
-                    memory_limit = f"{16}Gb"
-
-                # Create a local cluster and return client
-                LOGGER.warning(
-                    f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
-                )
-                client = Client(
-                    n_workers=int(n_workers),
-                    threads_per_worker=4,
-                    memory_limit=memory_limit,
-                )
-            else:
-                # Create a local cluster (threaded)
-                LOGGER.warning("Init local cluster (threaded)")
-                client = Client(
-                    processes=processes,
-                )
-
-        yield client
-
-    else:
-        LOGGER.warning(
-            "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
-        )
-
     try:
-        if client is not None:
-            client.close()
-    except Exception as ex:
-        LOGGER.warning(ex)
+        if is_dask_installed():
+            from dask.distributed import Client, get_client
+
+            try:
+                # Return default client
+                client = get_client()
+            except ValueError:
+                if processes:
+                    # Gather information to create a client adapted to the computer
+                    ram_info = psutil.virtual_memory()
+                    available_ram = ram_info.available / 1024 / 1024 / 1024
+                    available_ram = 0.9 * available_ram
+
+                    n_workers = 1
+                    memory_limit = f"{available_ram}Gb"
+                    if available_ram >= 16:
+                        n_workers = available_ram // 16
+                        memory_limit = f"{16}Gb"
+
+                    # Create a local cluster and return client
+                    LOGGER.warning(
+                        f"Init local cluster with {n_workers} workers and {memory_limit} per worker"
+                    )
+                    client = Client(
+                        n_workers=int(n_workers),
+                        threads_per_worker=4,
+                        memory_limit=memory_limit,
+                    )
+                else:
+                    # Create a local cluster (threaded)
+                    LOGGER.warning("Init local cluster (threaded)")
+                    client = Client(
+                        processes=processes,
+                    )
+
+            yield client
+
+        else:
+            LOGGER.warning(
+                "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
+            )
+    finally:
+        try:
+            if client is not None:
+                client.close()
+        except Exception as ex:
+            LOGGER.warning(ex)
 
 
 def get_dask_lock(name):
     """
-    Get a dask lock with given name. This lock uses the default client if existing;
-    or create a local cluster (:py:func:`get_or_create_dask_client`) otherwise.
+    Get a dask lock with given name.
+    This lock is used in rioxarray.to_raster (see https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html)
+
+    If a Multiple worker client exists: returns a distributed.Lock()
+    Elif a Multithreaded client exists: returns a threading.Lock()
+    else: returns None
+
+
     Args:
         name: The name of the lock
     Returns:
@@ -119,8 +126,7 @@ def get_dask_lock(name):
     if is_dask_installed():
         from dask.distributed import Lock
 
-        if get_client():
-            lock = Lock(name)
+        lock = Lock(name, client=get_client())
     else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
