@@ -449,14 +449,17 @@ def _vectorize(
     # WARNING: features.shapes do NOT accept dask arrays!
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
         # TODO: daskify this (geoutils ?)
-        from dask import optimize
+        from dask import compute
 
-        (data,) = optimize(data)
-        data = data.compute(optimize_graph=True)
+        to_compute = {"data": data}
 
         if nodata_arr is not None:
-            (nodata_arr,) = optimize(nodata_arr)
-            nodata_arr = nodata_arr.compute(optimize_graph=True)
+            to_compute["nodata_arr"] = nodata_arr
+
+        computed = compute(to_compute)[0]
+        data = computed["data"]
+        if nodata_arr is not None:
+            nodata_arr = computed["nodata_arr"]
 
     # Get shapes (on array or on mask to get nodata vector)
     shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
