@@ -836,4 +836,4 @@ def assert_computed(result: AnyXrDataStructure) -> None:
     Args:
         result (AnyXrDataStructure): Result to check
     """
-    assert not dask.is_chunked(result), "Your data is not computed!"
+    assert dask.is_computed(result), "Your data is not computed!"

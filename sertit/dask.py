@@ -7,6 +7,7 @@ import psutil
 import xarray as xr
 
 from sertit import logs
+from sertit.types import AnyXrDataStructure
 
 LOGGER = logging.getLogger(logs.SU_NAME)
 
@@ -127,13 +128,13 @@ def get_dask_lock(name):
     return lock
 
 
-def is_chunked(array: xr.DataArray) -> bool:
+def is_chunked(array: AnyXrDataStructure) -> bool:
     """
     Returns true if the array is still chunked.
     (i.e. its data is not computed, bnot loaded into memory as a numpy array)
 
     Args:
-        array (xr.DataArray): Array to check
+        array (AnyXrDataStructure): Array to check
 
     Returns: True if array is still chunked
     """
@@ -145,6 +146,19 @@ def is_chunked(array: xr.DataArray) -> bool:
     except AttributeError:
         is_chunked = False
     return is_chunked
+
+
+def is_computed(array: AnyXrDataStructure) -> bool:
+    """
+    Returns true if the array is still chunked.
+    (i.e. its data is not computed, bnot loaded into memory as a numpy array)
+
+    Args:
+        array (AnyXrDataStructure): Array to check
+
+    Returns: True if array is still chunked
+    """
+    return not is_chunked(array)
 
 
 def get_default_chunks():

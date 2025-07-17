@@ -2,7 +2,7 @@
 
 ## 1.47.0 (2025-mm-dd)
 
-- **ENH: Add a function checking if an array is computed or lazy (`dask.is_computed`) and its equivalents to assert whether arrays have been computed or not (`ci.assert_lazy` and `ci.assert_computed`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
+- **ENH: Add a function checking if an array is computed or still chunked (`dask.is_computed`, `dask.is_chunked`) and its equivalents to assert whether arrays have been computed or not (`ci.assert_chunked` and `ci.assert_computed`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - **ENH: Add an environment variable (`SERTIT_DEFAULT_CHUNKS`) to control default chunks in xarray rasters and a function better managing default chunks (`dask.get_default_chunks`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - **ENH: Add a classify function to classify a raster according to bins and values** ([#40](https://github.com/sertit/sertit-utils/issues/40))
 - **ENH: Add a performance module (`sertit.perf`) featuring max core-related functions and environment variables**
