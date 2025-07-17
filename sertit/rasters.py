@@ -309,6 +309,9 @@ def rasterize(
 
     Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the raster will be binary.
 
+    .. WARNING::
+        With dask usage, this function is not lazy (yet)!
+
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray, used as base for the vector's rasterization data (shape, etc.)
         vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
@@ -387,8 +390,11 @@ def _vectorize(
             - Your data is casted by force into np.uint8, so be sure that your data is classified.
             - This could take a while as the computing time directly depends on the number of polygons to vectorize.
                 Please be careful.
-    Else:
-        - You will get a classified polygon with data (value=0)/nodata pixels. To
+        Else:
+            - You will get a classified polygon with data (value=0)/nodata pixels.
+
+    .. WARNING::
+        With dask usage, this function is not lazy (yet)
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -488,6 +494,9 @@ def vectorize(
 
         Please be careful.
 
+    .. WARNING::
+        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         values (Union[None, int, list]): Get only the polygons concerning this/these particular values
@@ -528,6 +537,9 @@ def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
     Pay attention that every nodata pixel will appear too.
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
+    .. WARNING::
+        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         default_nodata (int): Default values for nodata in case of non-existing in file
@@ -565,6 +577,9 @@ def get_nodata_vector(
 
     Pay attention that every nodata pixel will appear too.
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
+
+    .. WARNING::
+        With dask usage, this function is not lazy (yet) (depending on _vectorize)
 
     Args:
         xds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -973,6 +988,9 @@ def read(
 
     Uses `rioxarray.open_rasterio <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
 
+    .. WARNING::
+        With dask usage, this function is not lazy (yet) when downsampling! (becaise of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
+
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
@@ -1185,6 +1203,9 @@ def write(
     - :code:`predictor` set to `2` for float data, to `3` for interger data by default. To disable it, add the :code:`predictor=None` parameter.
     - :code:`tiled` set to `True` by default.
     - :code:`driver` is :code:`GTiff` by default. BigTiff option is set according to the estimated output weight
+
+    .. WARNING::
+        With dask usage, this function is not lazy by default. Use :code:`compute=False` with a delayed return.
 
     Args:
         xds (AnyXrDataStructure): Path to the raster or a rasterio dataset or a xarray
@@ -1430,6 +1451,9 @@ def collocate(
     Collocate two georeferenced arrays:
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
+    .. WARNING::
+        With dask usage, this function is only lazy if odc.geo is installed
+
     Args:
         reference (:any:`AnyXrDataStructure`): Reference xarray
         other (:any:`AnyXrDataStructure`): Other xarray
@@ -1512,6 +1536,9 @@ def sieve(
 
     .. WARNING::
         Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
+
+    .. WARNING::
+        With dask usage, this function is not lazy (yet)!
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -1623,6 +1650,9 @@ def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
     Get real footprint of the product (without nodata, *in french == emprise utile*)
 
+    .. WARNING::
+        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
     Returns:
@@ -1689,6 +1719,9 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
     .. WARNING::
         They should have the same CRS otherwise the mosaic will be false !
 
+    .. WARNING::
+        With dask usage, this function is not lazy
+
     Args:
         crs_paths (list): Path of the rasters to be merged with the same CRS
         crs_merged_path (AnyPathStrType): Path to the merged raster
@@ -1740,7 +1773,6 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
                 [1, 1, 0, 0, 0, 0, 0, 0],
                 [0, 1, 0, 0, 0, 0, 0, 0]]], dtype=uint8)
     """
-    # TODO: daskify this, but np.unpackbits don't exist in dask
     return rasters_rio.unpackbits(array, nof_bits)
 
 
@@ -1770,7 +1802,6 @@ def read_bit_array(
                [1, 0, 0],
                [1, 0, 0]], dtype=uint8)
     """
-    # TODO: daskify this, should be straightforward if unpackbits is daskified
     if isinstance(bit_mask, np.ndarray):
         bit_mask = np.nan_to_num(bit_mask)
     elif isinstance(bit_mask, xr.DataArray):
