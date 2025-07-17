@@ -1284,6 +1284,7 @@ def write(
         # Get default client's lock
         kwargs["lock"] = kwargs.get("lock", dask.get_dask_lock("rio"))
         kwargs["compress"] = kwargs.get("compress", "zstd")
+        kwargs["tiled"] = kwargs.get("tiled", True)
     else:
         # Get default client's lock
         kwargs["lock"] = kwargs.get("lock", dask.get_dask_lock("rio"))
@@ -1307,8 +1308,10 @@ def write(
         else:
             kwargs["predictor"] = "2"
 
-    # Write COGs
+    # -- Write --
     is_written = False
+
+    # Write COGs
     blocksize = None
     if is_cog:
         blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else 512
@@ -2285,23 +2288,28 @@ def classify(
         >>> dnbr = rasters.read(r"dNBR.tif")
         >>> fire_severity = classify(dnbr, [0.27, 0.66], [2, 3, 4])
     """
-    # Impossible to use dask arrays as index (for now) -> compute
-    # https://github.com/dask/dask/issues/8958
-
     assert len(values) == len(bins) + 1, (
         "The number of values should equal the number of bins plus one."
     )
 
-    # Get the classes values
-    # TODO: daskify this
-    if not isinstance(values, np.ndarray):
-        values = np.array(values)
+    if dask.is_chunked(raster):
+        import dask.array as da
 
-    # Get the digitized indexes according to input bins
-    vindex = xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed")
+        # Get the classes values
+        if not isinstance(raster, da.Array):
+            values = da.from_array(values, chunks="auto")
 
-    # TODO: daskify this
-    arr = values[vindex]
+        # Get the digitized indexes according to input bins
+        arr = values.vindex[
+            xr.apply_ufunc(np.digitize, raster, bins, right, dask="allowed").data
+        ]
+    else:
+        # Get the classes values
+        if not isinstance(values, np.ndarray):
+            values = np.array(values)
+
+        # Get the digitized indexes according to input bins
+        arr = values[xr.apply_ufunc(np.digitize, raster, bins, right)]
 
     # Create DataArray and set nodata
     classified_raster = raster.copy(data=arr).where(~np.isnan(raster))
