@@ -24,7 +24,7 @@ ci.reduce_verbosity()
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_display():
     """Testing Display functions"""
     path_2d = display_path().joinpath("2d.tif")

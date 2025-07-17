@@ -19,6 +19,7 @@
 - FIX: Make vectorize-based functions to work with `xarray.Dataset`
 - CI: Correctly compute numpy case with dask_env decorator
 - CI: Correctly manage dask in `test_rasters.test_set_nodata` and `test_rasters.test_where` (create a dask array to evaluate laziness)
+- CI: Check correctly the number of attended computations per raster tests ([#47](https://github.com/sertit/sertit-utils/issues/47))
 
 ## 1.46.4 (2025-04-04)
 

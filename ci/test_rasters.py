@@ -55,16 +55,16 @@ DEBUG = False
 
 def test_indexes(caplog):
     @s3_env
-    @dask_env
+    @dask_env(nof_computes=2)  # assert_equal x2
     def test_core():
         l1_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
         xda_raw = rasters.read(l1_path, **KAPUT_KWARGS)
         xda_idx = rasters.read(l1_path, indexes=1)
-        np.testing.assert_array_equal(xda_raw[[0], :], xda_idx)
+
+        xr.testing.assert_equal(xda_raw[[0], :], xda_idx)  # Compute #1
 
         xda_idx2 = rasters.read(l1_path, indexes=[3, 2])
         xda_raw2 = np.concatenate((xda_raw.data[[2], :], xda_raw.data[[1], :]))
-        np.testing.assert_array_equal(xda_raw2, xda_idx2)
 
         with pytest.raises(ValueError):
             rasters.read(l1_path, indexes=0)
@@ -79,6 +79,12 @@ def test_indexes(caplog):
         assert_chunked_computed(xda_idx, "Read with one index")
         assert_chunked_computed(xda_idx2, "Read with indices")
         assert_chunked_computed(xda_raw2, "Concatenation")
+
+        # Compute after checking the array is chunked (otherwise it fails!)
+        import dask
+
+        xda_raw2, xda_idx2 = dask.compute(xda_raw2, xda_idx2)  # Compute #2
+        np.testing.assert_equal(xda_raw2, xda_idx2)
 
     test_core()
 
@@ -115,8 +121,8 @@ def ds_dtype(raster_path):
         return getattr(np, ds.meta["dtype"])
 
 
-def get_xda(raster_path):
-    return rasters.read(raster_path)
+def get_xda(raster_path, **kwargs):
+    return rasters.read(raster_path, **kwargs)
 
 
 def get_xds(raster_path):
@@ -126,33 +132,39 @@ def get_xds(raster_path):
 
 
 @s3_env
-@dask_env
-def test_read(tmp_path, raster_path, ds_name, ds_dtype):
-    """Test read function"""
+@dask_env()
+def test_rasters_extent(tmp_path, raster_path, ds_name, ds_dtype):
+    """"""
     extent_path = rasters_path().joinpath("extent.geojson")
-    footprint_path = rasters_path().joinpath("footprint.geojson")
-
-    # xda, xds
-    xda = get_xda(raster_path)
-    xds = get_xds(raster_path)
-
     # Get Extent
     extent = rasters.get_extent(raster_path)
     truth_extent = vectors.read(extent_path)
     ci.assert_geom_equal(extent, truth_extent)
 
+
+@s3_env
+@dask_env(nof_computes=1)  # Vectorize is not lazy
+def test_rasters_footprint(tmp_path, raster_path, ds_name, ds_dtype):
     # Get Footprint
-    footprint = rasters.get_footprint(raster_path)
+    footprint_path = rasters_path().joinpath("footprint.geojson")
+    footprint = rasters.get_footprint(raster_path)  # Compute #1
     truth_footprint = vectors.read(footprint_path)
     ci.assert_geom_equal(footprint, truth_footprint)
+
+
+@s3_env
+@dask_env(
+    nof_computes=1
+)  # TODO: Read with downsampling issue https://github.com/opendatacube/odc-geo/issues/236
+def test_read(tmp_path, raster_path, ds_name, ds_dtype):
+    """Test read function"""
+    # xda, xds
+    xda = get_xda(raster_path)
+    xds = get_xds(raster_path)
 
     with rasterio.open(str(raster_path)) as ds:
         # -- Read and test laziness
         assert_chunked_computed(xda, "Native xda")
-
-        # Should be always lazy
-        xda_dask = rasters.read(raster_path, chunks=True)
-        ci.assert_chunked(xda_dask), "Read with chunks = True"
 
         # Native resolution
         xda_1 = rasters.read(ds, resolution=ds.res[0])
@@ -168,8 +180,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
 
         # Upsampling (reproject)
         xda_4 = rasters.read(raster_path, resolution=ds.res[0] / 2)
-        # TODO: https://github.com/opendatacube/odc-geo/issues/236
-        # assert_chunked_computed(xda_4, "Read with downsampling")
+        assert_chunked_computed(xda_4, "Read with upsampling")
 
         # Read a xarray
         xda_5 = rasters.read(xda)
@@ -177,13 +188,20 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
 
         # Downsampling (coarsen)
         xda_6 = rasters.read(raster_path, resolution=ds.res[0] * 2)
-        assert_chunked_computed(xda_6, "Read with upsampling")
+        assert_chunked_computed(xda_6, "Read with downsampling")
+
+        # Downsampling (reproject)
+        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 1.5)  # Compute #1
+        # TODO: remove when https://github.com/opendatacube/odc-geo/issues/236 is fixed
+        # assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
         # Test shape (link between resolution and size)
         assert xda_4.shape[-2] == xda.shape[-2] * 2
         assert xda_4.shape[-1] == xda.shape[-1] * 2
         assert xda_6.shape[-2] == xda.shape[-2] / 2
         assert xda_6.shape[-1] == xda.shape[-1] / 2
+        assert xda_7.shape[-1] == round(xda.shape[-1] / 1.5)
+        assert xda_7.shape[-2] == round(xda.shape[-2] / 1.5)
         with pytest.raises(ValueError):
             rasters.read(ds, resolution=[20, 20, 20])
 
@@ -193,10 +211,9 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert xds[ds_name].shape == xda.shape
         assert xda_1.rio.crs == ds.crs
         assert xda_1.rio.transform() == ds.transform
-        np.testing.assert_array_equal(xda_1, xda_2)
-        np.testing.assert_array_equal(xda_1, xda_3)
-        np.testing.assert_array_equal(xda, xda_5)
-        np.testing.assert_array_equal(xda, xda_dask)
+        xr.testing.assert_equal(xda_1, xda_2)
+        xr.testing.assert_equal(xda_1, xda_3)
+        xr.testing.assert_equal(xda, xda_5)
 
         ci.assert_xr_encoding_attrs(xda, xda_1)
         ci.assert_xr_encoding_attrs(xda, xda_2)
@@ -204,12 +221,25 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(xda, xda_4)
         ci.assert_xr_encoding_attrs(xda, xda_5)
         ci.assert_xr_encoding_attrs(xda, xda_6)
-        ci.assert_xr_encoding_attrs(xda, xda_dask, unchecked_attr="preferred_chunks")
+        ci.assert_xr_encoding_attrs(xda, xda_7)
         ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
 
 
 @s3_env
-@dask_env
+def test_read_np_vs_dask(raster_path):
+    xda = get_xda(raster_path, chunks=None)
+
+    # Should be always lazy
+    xda_dask = rasters.read(raster_path, chunks=True)
+    ci.assert_chunked(xda_dask), "Read with chunks = True"
+
+    # Test arrays are the same
+    xr.testing.assert_equal(xda, xda_dask)
+    ci.assert_xr_encoding_attrs(xda, xda_dask, unchecked_attr="preferred_chunks")
+
+
+@s3_env
+@dask_env(nof_computes=2)  # Write x2
 def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     """Test read (with window) function"""
     raster_window_path = rasters_path().joinpath("window.tif")
@@ -222,7 +252,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
         window=mask_path,
     )
     assert_chunked_computed(xda_window, "Read with a window with native resolution")
-    rasters.write(xda_window, xda_window_out, dtype=np.uint8)
+    rasters.write(xda_window, xda_window_out, dtype=np.uint8)  # Compute #1
     ci.assert_raster_equal(xda_window_out, raster_window_path)
 
     # Window with updated resolution
@@ -234,7 +264,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     # TODO: https://github.com/opendatacube/odc-geo/issues/236
     # assert_chunked_computed(xda_window_20, "Read with a window with updated resolution")
 
-    rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
+    rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)  # Compute #2
     ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
     # Non existing window
@@ -246,7 +276,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
 
 
 @s3_env
-@dask_env
+@dask_env()
 @pytest.mark.timeout(4, func_only=True)
 def test_very_big_file(tmp_path, mask_path):
     """Test read with big files function (should be fast, if not there is something going on...)"""
@@ -262,7 +292,83 @@ def test_very_big_file(tmp_path, mask_path):
 
 
 @s3_env
-@dask_env
+@dask_env(max_computes=3)  # Write x2 or 3
+@pytest.mark.parametrize(
+    ("dtype", "nodata_val"),
+    [
+        pytest.param(np.uint8, UINT8_NODATA),
+        pytest.param(np.int8, INT8_NODATA),
+        pytest.param(np.uint16, UINT16_NODATA),
+        pytest.param(np.int16, FLOAT_NODATA),
+        pytest.param(np.uint32, UINT16_NODATA),
+        pytest.param(np.int32, UINT16_NODATA),
+        pytest.param(np.float32, FLOAT_NODATA),
+        pytest.param(np.float64, FLOAT_NODATA),
+    ],
+)
+def test_write(dtype, nodata_val, tmp_path, raster_path):
+    """Test write (global check + cogs) function"""
+    xda = get_xda(raster_path)
+    dtype_str = dtype.__name__
+
+    test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
+    test_cog_path = os.path.join(tmp_path, f"test_cog_{dtype_str}.tif")
+    test_cog_no_dask_path = os.path.join(tmp_path, f"test_cog_no_dask{dtype_str}.tif")
+
+    # Force negative value if possible
+    if "uint" not in dtype_str:
+        xda.data[:, 0, -1] = -3
+
+    # -------------------------------------------------------------------------------------------------
+    # Test GeoTiffs
+    rasters.write(xda, test_path, dtype=dtype, **KAPUT_KWARGS)  # Compute #1
+    _test_raster_after_write(test_path, dtype, nodata_val)
+
+    # -------------------------------------------------------------------------------------------------
+    # Test COGs
+    if dtype not in [np.int8]:
+        rasters.write(
+            xda,
+            test_cog_path,
+            dtype=dtype,
+            driver="COG",
+            **KAPUT_KWARGS,
+        )  # Compute #2
+        _test_raster_after_write(test_path, dtype, nodata_val)
+
+    # -------------------------------------------------------------------------------------------------
+    # COGs without dask
+    if dtype not in [np.int8]:
+        rasters.write(
+            xda,
+            test_cog_no_dask_path,
+            dtype=dtype,
+            driver="COG",
+            write_cogs_with_dask=False,
+            **KAPUT_KWARGS,
+        )  # Compute #3
+        _test_raster_after_write(test_path, dtype, nodata_val)
+
+    # test deprecation warning
+    test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
+    with pytest.deprecated_call():
+        rasters.write(
+            xda, path=test_deprecated_path, dtype=dtype
+        )  # This doesn't compute (because of context manager ?)
+
+
+@s3_env
+# @dask_env(nof_compute=1)  # Write x1: TODO: Right now, Zarr doesn't seem to work with dask and GDAL 3.6.
+def test_write_zarr(tmp_path, raster_path):
+    # test zarr
+    xda = get_xda(raster_path, chunks=None)
+    zarr_path = os.path.join(tmp_path, "z.zarr")
+    rasters.write(xda, path=zarr_path, driver="Zarr")
+    xr.testing.assert_equal(xda, rasters.read(zarr_path, driver="Zarr"))
+
+
+@s3_env
+@dask_env(nof_computes=2)  # Write x2
 def test_write_basic(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
 
@@ -286,7 +392,7 @@ def test_write_basic(tmp_path, raster_path, ds_dtype):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_write_png(tmp_path, raster_path):
     """Test write (PNG) function"""
 
@@ -296,7 +402,7 @@ def test_write_png(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x2 with dask, but only one compute!
 def test_write_dask(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
     # xda, xds
@@ -306,12 +412,10 @@ def test_write_dask(tmp_path, raster_path, ds_dtype):
     # DataArray
     xda_out = os.path.join(tmp_path, "test_xda.tif")
     delayed_1 = rasters.write(xda, xda_out, dtype=ds_dtype, compute=False)
-    # assert not os.path.isfile(xda_out)
 
     # Dataset
     xds_out = os.path.join(tmp_path, "test_xds.tif")
     delayed_2 = rasters.write(xds, xds_out, dtype=ds_dtype, compute=False)
-    # assert os.path.isfile(xds_out)
 
     # Compute
     import dask
@@ -326,7 +430,7 @@ def test_write_dask(tmp_path, raster_path, ds_dtype):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=2)  # Write x2
 def test_mask(tmp_path, raster_path, mask):
     """Test mask function"""
     # xda, xds
@@ -353,7 +457,7 @@ def test_mask(tmp_path, raster_path, mask):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=4)  # Write x4
 def test_paint(tmp_path, raster_path, mask):
     """Test paint function"""
     # xda, xds
@@ -394,7 +498,7 @@ def test_paint(tmp_path, raster_path, mask):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=2)  # Write x2
 def test_crop(tmp_path, raster_path, mask):
     """Test crop function"""
     # xda, xds
@@ -405,14 +509,14 @@ def test_crop(tmp_path, raster_path, mask):
     xda_cropped = get_output(tmp_path, "test_crop_xda.tif", DEBUG)
     crop_xda = rasters.crop(xda, mask.geometry, **KAPUT_KWARGS)
     assert_chunked_computed(crop_xda, "Crop DataArray")
-    rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
+    rasters.write(crop_xda, xda_cropped, dtype=np.uint8)  # Compute #1
     ci.assert_xr_encoding_attrs(xda, crop_xda)
 
     # Dataset
     xds_cropped = get_output(tmp_path, "test_crop_xds.tif", DEBUG)
     crop_xds = rasters.crop(xds, mask, nodata=get_nodata_value_from_xr(xds))
     assert_chunked_computed(crop_xds, "Crop Dataset")
-    rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
+    rasters.write(crop_xds, xds_cropped, dtype=np.uint8)  # Compute #2
     ci.assert_xr_encoding_attrs(xds, crop_xds)
 
     raster_cropped_xarray_path = rasters_path().joinpath("raster_cropped_xarray.tif")
@@ -423,20 +527,19 @@ def test_crop(tmp_path, raster_path, mask):
     mask_z = geometry.force_3d(mask)
     crop_z = rasters.crop(xda, mask_z)
     assert_chunked_computed(crop_z, "Crop 3D")
-    np.testing.assert_array_equal(crop_xda, crop_z)
+    xr.testing.assert_equal(crop_xda, crop_z)
     ci.assert_xr_encoding_attrs(crop_xda, crop_z)
 
 
 @s3_env
 @is_not_lazy_yet
-@dask_env
+@dask_env(nof_computes=3)  # Sieve x2 write x1
 def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
     # TODO: not lazy
 
-    # xda, xds
+    # xda
     xda = get_xda(raster_path)
-    xds = get_xds(raster_path)
 
     # DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
@@ -445,7 +548,25 @@ def test_sieve(tmp_path, raster_path):
     rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, sieve_xda)
 
+    # Tests
+    raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
+    ci.assert_raster_equal(xda_sieved, raster_sieved_path)
+
+    # From path
+    sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
+    assert_chunked_computed(sieve_xda_path, "Sieve DataArray (directly from path)")
+    xr.testing.assert_equal(sieve_xda, sieve_xda_path)
+
+
+@s3_env
+@is_not_lazy_yet
+@dask_env(nof_computes=2)  # Sieve x2
+def test_sieve_different_dtypes(tmp_path, raster_path):
     # Test with different dtypes
+
+    # xda
+    xda = get_xda(raster_path)
+
     sieve_xda_float = rasters.sieve(
         xda.astype(np.uint8).astype(np.float32), sieve_thresh=20, connectivity=4
     )
@@ -454,7 +575,15 @@ def test_sieve(tmp_path, raster_path):
         xda.astype(np.uint8), sieve_thresh=20, connectivity=4
     )
     assert_chunked_computed(sieve_xda_uint, "Sieve DataArray (uint)")
-    np.testing.assert_array_equal(sieve_xda_uint, sieve_xda_float)
+    xr.testing.assert_equal(sieve_xda_uint, sieve_xda_float)
+
+
+@s3_env
+@is_not_lazy_yet
+@dask_env(nof_computes=2)  # Sieve x1 write x1
+def test_sieve_dataset(tmp_path, raster_path):
+    # xds
+    xds = get_xds(raster_path)
 
     # Dataset
     xds_sieved = os.path.join(tmp_path, "test_sieved_xds.tif")
@@ -465,17 +594,11 @@ def test_sieve(tmp_path, raster_path):
 
     # Tests
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
-    ci.assert_raster_equal(xda_sieved, raster_sieved_path)
     ci.assert_raster_equal(xds_sieved, raster_sieved_path)
-
-    # From path
-    sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
-    assert_chunked_computed(sieve_xda_path, "Sieve DataArray (directly from path)")
-    np.testing.assert_array_equal(sieve_xda, sieve_xda_path)
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_collocate_self(tmp_path, raster_path):
     """Test collocate (with itself) functions"""
     # xda, xds
@@ -502,7 +625,7 @@ def test_collocate_self(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_collocate(tmp_path):
     """Test collocate functions"""
 
@@ -547,7 +670,7 @@ def test_collocate(tmp_path):
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
     # TODO: daskify this and test laziness
@@ -564,7 +687,7 @@ def test_merge_gtiff(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=5)  # vectorize x5 (vectorize not lazy yet)
 def test_vectorize(tmp_path, raster_path, ds_name):
     """Test vectorize function"""
     # xda, xds
@@ -598,7 +721,7 @@ def test_vectorize(tmp_path, raster_path, ds_name):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=2)  # vectorize x2 (vectorize not lazy yet)
 def test_get_valid_vec(tmp_path, raster_path, ds_name):
     """Test get_valid_vector function"""
     # xda, xds
@@ -620,7 +743,7 @@ def test_get_valid_vec(tmp_path, raster_path, ds_name):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=2)  # vectorize x2 (vectorize not lazy yet)
 def test_nodata_vec(tmp_path, raster_path, ds_name):
     """Test get_nodata_vector function"""
     nodata_truth_path = rasters_path().joinpath("nodata.geojson")
@@ -746,79 +869,6 @@ def _test_raster_after_write(test_path, dtype, nodata_val):
             assert ds.read()[:, 0, -1] == -3
 
 
-@s3_env
-@dask_env
-@pytest.mark.parametrize(
-    ("dtype", "nodata_val"),
-    [
-        pytest.param(np.uint8, UINT8_NODATA),
-        pytest.param(np.int8, INT8_NODATA),
-        pytest.param(np.uint16, UINT16_NODATA),
-        pytest.param(np.int16, FLOAT_NODATA),
-        pytest.param(np.uint32, UINT16_NODATA),
-        pytest.param(np.int32, UINT16_NODATA),
-        pytest.param(np.float32, FLOAT_NODATA),
-        pytest.param(np.float64, FLOAT_NODATA),
-    ],
-)
-def test_write(dtype, nodata_val, tmp_path, raster_path):
-    """Test write (global check + cogs) function"""
-    xda = get_xda(raster_path)
-    dtype_str = dtype.__name__
-
-    test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
-    test_cog_path = os.path.join(tmp_path, f"test_cog_{dtype_str}.tif")
-    test_cog_no_dask_path = os.path.join(tmp_path, f"test_cog_no_dask{dtype_str}.tif")
-
-    # Force negative value if possible
-    if "uint" not in dtype_str:
-        xda.data[:, 0, -1] = -3
-
-    # -------------------------------------------------------------------------------------------------
-    # Test GeoTiffs
-    rasters.write(xda, test_path, dtype=dtype, **KAPUT_KWARGS)
-    _test_raster_after_write(test_path, dtype, nodata_val)
-
-    # -------------------------------------------------------------------------------------------------
-    # Test COGs
-    if dtype not in [np.int8]:
-        rasters.write(
-            xda,
-            test_cog_path,
-            dtype=dtype,
-            driver="COG",
-            **KAPUT_KWARGS,
-        )
-        _test_raster_after_write(test_path, dtype, nodata_val)
-
-    # -------------------------------------------------------------------------------------------------
-    # COGs without dask
-    if dtype not in [np.int8]:
-        rasters.write(
-            xda,
-            test_cog_no_dask_path,
-            dtype=dtype,
-            driver="COG",
-            write_cogs_with_dask=False,
-            **KAPUT_KWARGS,
-        )
-        _test_raster_after_write(test_path, dtype, nodata_val)
-
-    # test deprecation warning
-    test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
-    with pytest.deprecated_call():
-        rasters.write(xda, path=test_deprecated_path, dtype=dtype)
-
-
-def test_write_zarr(tmp_path, raster_path):
-    # test zarr
-    xda = get_xda(raster_path)
-    zarr_path = os.path.join(tmp_path, "z.zarr")
-    rasters.write(xda, path=zarr_path, driver="Zarr")
-    # Just test to read the zarr array
-    np.testing.assert_array_equal(xda.data, rasters.read(zarr_path).data)
-
-
 def test_dim():
     """Test on BEAM-DIMAP function"""
     dim_path = rasters_path().joinpath("DIM.dim")
@@ -827,52 +877,91 @@ def test_dim():
     assert dim_img_path == rasters_path().joinpath("DIM.data", "dim.img")
 
 
-@dask_env
-def test_bit():
+@s3_env
+@dask_env(nof_computes=1)  # compute x1
+@pytest.mark.parametrize(
+    ("dtype", "bit_id"),
+    [
+        pytest.param(np.uint16, 15),
+        pytest.param(np.uint8, 7),
+        pytest.param(np.uint32, 31),
+    ],
+)
+def test_read_bit_array(dtype, bit_id):
     """Test bit arrays"""
+    data = np.ones((1, 2, 2), dtype=dtype)
+
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        # If we want to use dask, convert this array to a dask array
+        from dask.array import from_array
+
+        data = from_array(data)
     # Bit
-    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint16))
+    np_ones = xr.DataArray(data)
     ones = rasters.read_bit_array(np_ones, bit_id=0)
-    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 15)))
-    assert (np_ones.data == ones).all()
-    for arr in zeros:
-        assert (np_ones.data == 1 + arr).all()
+    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, bit_id)))
 
-    # Bit
-    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint8))
-    ones = rasters.read_bit_array(np_ones, bit_id=0)
-    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 7)))
-    assert (np_ones.data == ones).all()
-    for arr in zeros:
-        assert (np_ones.data == 1 + arr).all()
+    # Outputs an array (either dask or numpy)
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        import dask
 
-    # Bit
-    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint32))
-    ones = rasters.read_bit_array(np_ones, bit_id=0)
-    zeros = rasters.read_bit_array(np_ones, bit_id=list(np.arange(1, 31)))
-    assert (np_ones.data == ones).all()
-    for arr in zeros:
-        assert (np_ones.data == 1 + arr).all()
+        delayed = []
+        delayed.append(dask.delayed(np.testing.assert_array_equal)(np_ones.data, ones))
+        for arr in zeros:
+            delayed.append(
+                dask.delayed(np.testing.assert_array_equal)(np_ones.data, 1 + arr)
+            )
 
-    # uint8
-    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=np.uint8))
-    ones = rasters.read_uint8_array(np_ones, bit_id=0)
-    zeros = rasters.read_uint8_array(np_ones, bit_id=list(np.arange(1, 7)))
-    assert (np_ones.data == ones).all()
-    for arr in zeros:
-        assert (np_ones.data == 1 + arr).all()
-
-    # uint8 from floats
-    np_ones = xr.DataArray(np.ones((1, 2, 2), dtype=float))
-    ones = rasters.read_uint8_array(np_ones, bit_id=0)
-    zeros = rasters.read_uint8_array(np_ones, bit_id=list(np.arange(1, 7)))
-    assert (np_ones.data == ones).all()
-    for arr in zeros:
-        assert (np_ones.data == 1 + arr).all()
+        dask.compute(delayed)
+    else:
+        np.testing.assert_array_equal(np_ones.data, ones)
+        for arr in zeros:
+            np.testing.assert_array_equal(np_ones.data, 1 + arr)
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # compute x1
+@pytest.mark.parametrize(
+    ("dtype", "bit_id"),
+    [
+        pytest.param(np.uint8, 7),
+        pytest.param(float, 7),
+    ],
+)
+def test_read_uint8_array(dtype, bit_id):
+    # uint8
+    data = np.ones((1, 2, 2), dtype=dtype)
+
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        # If we want to use dask, convert this array to a dask array
+        from dask.array import from_array
+
+        data = from_array(data)
+
+    np_ones = xr.DataArray(data)
+    ones = rasters.read_uint8_array(np_ones, bit_id=0)
+    zeros = rasters.read_uint8_array(np_ones, bit_id=list(np.arange(1, bit_id)))
+
+    # Outputs an array (either dask or numpy)
+    if os.environ[CI_SERTIT_USE_DASK] == "1":
+        import dask
+
+        delayed = []
+        delayed.append(dask.delayed(np.testing.assert_array_equal)(np_ones.data, ones))
+        for arr in zeros:
+            delayed.append(
+                dask.delayed(np.testing.assert_array_equal)(np_ones.data, 1 + arr)
+            )
+
+        dask.compute(delayed)
+    else:
+        np.testing.assert_array_equal(np_ones.data, ones)
+        for arr in zeros:
+            np.testing.assert_array_equal(np_ones.data, 1 + arr)
+
+
+@s3_env
+@dask_env(nof_computes=1)  # assert_equal x1
 def test_set_nodata():
     """Test xarray functions"""
     nodata_val = 0
@@ -903,7 +992,7 @@ def test_set_nodata():
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_xarray_fct(raster_path):
     """Test xarray functions"""
     xda = get_xda(raster_path)
@@ -930,7 +1019,7 @@ def test_xarray_fct(raster_path):
     ci.assert_val(xda_sum.name, "sum", "name")
 
 
-@dask_env
+@dask_env(nof_computes=2)  # assert_equal x2
 def test_where():
     """Test overloading of xr.where function"""
     new_name = "mask_A"
@@ -959,7 +1048,7 @@ def test_where():
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_aspect(tmp_path, dem_path):
     """Test aspect function"""
     aspect_path = rasters_path().joinpath("aspect.tif")
@@ -975,7 +1064,7 @@ def test_aspect(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_hillshade(tmp_path, dem_path):
     """Test hillshade function"""
     hlsd_path = rasters_path().joinpath("hillshade.tif")
@@ -989,7 +1078,7 @@ def test_hillshade(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_slope(tmp_path, dem_path):
     """Test slope function"""
     slope_path = rasters_path().joinpath("slope.tif")
@@ -1002,7 +1091,7 @@ def test_slope(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_slope_rad(tmp_path, dem_path):
     """Test slope (radian) function"""
     slope_r_path = rasters_path().joinpath("slope_r.tif")
@@ -1016,7 +1105,7 @@ def test_slope_rad(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env
+@dask_env(nof_computes=1)  # Write x1
 def test_slope_pct(tmp_path, dem_path):
     """Test slope (pct) function"""
     slope_p_path = rasters_path().joinpath("slope_p.tif")
@@ -1030,21 +1119,18 @@ def test_slope_pct(tmp_path, dem_path):
 
 
 @s3_env
+@dask_env(nof_computes=1)  # rasterize x1
 @is_not_lazy_yet
-@dask_env
-def test_rasterize(tmp_path, raster_path):
+def test_rasterize_binary(tmp_path, raster_path):
     """Test rasterize fct"""
-    # TODO: not lazy
-    vec_path = rasters_path().joinpath("vector.geojson")
-    raster_float_path = rasters_path().joinpath("raster_float.tif")
-    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    raster_true_path = rasters_path().joinpath("rasterized.tif")
-    xda = get_xda(raster_path)
-
-    chunks = {"band": 1, "x": 2048, "y": 2084}
 
     # Binary vector
+    vec_path = rasters_path().joinpath("vector.geojson")
+    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
+    chunks = {"band": 1, "x": 2048, "y": 2084}
     out_bin_path = os.path.join(tmp_path, "out_bin.tif")
+
+    # Rasterize
     rast_bin = rasters.rasterize(
         rasters.read(raster_path, chunks=chunks), vec_path, **KAPUT_KWARGS
     )
@@ -1053,8 +1139,19 @@ def test_rasterize(tmp_path, raster_path):
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
 
+
+@s3_env
+@dask_env(nof_computes=1)  # rasterize x1
+@is_not_lazy_yet
+def test_rasterize_float(tmp_path, raster_path):
     # Binary vector with floating point raster
+    vec_path = rasters_path().joinpath("vector.geojson")
+    raster_float_path = rasters_path().joinpath("raster_float.tif")
+    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
+    chunks = {"band": 1, "x": 2048, "y": 2084}
     out_bin_path = os.path.join(tmp_path, "out_bin_float.tif")
+
+    # Rasterize
     rast_bin = rasters.rasterize(
         rasters.read(raster_float_path, chunks=chunks), vec_path
     )
@@ -1065,19 +1162,38 @@ def test_rasterize(tmp_path, raster_path):
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
 
-    # Vector
+
+@s3_env
+@dask_env(nof_computes=1)  # rasterize x1
+@is_not_lazy_yet
+def test_rasterize_value_field(tmp_path, raster_path):
+    # Use value_field
+    vec_path = rasters_path().joinpath("vector.geojson")
+    raster_true_path = rasters_path().joinpath("rasterized.tif")
     out_path = os.path.join(tmp_path, "out.tif")
+
+    # Rasterize
     rast = rasters.rasterize(
         raster_path, vec_path, value_field="raster_val", dtype=np.uint8
     )
-    assert_chunked_computed(rast, "Rasterize DataArray (vector)")
+    assert_chunked_computed(rast, "Rasterize DataArray (use value_field)")
     rasters.write(rast, out_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_path, out_path, decimal=4)
 
+
+@s3_env
+@dask_env(nof_computes=1)  # rasterize x1
+@is_not_lazy_yet
+def test_rasterize_multi_band_raster(tmp_path, raster_path):
+    xda = get_xda(raster_path)
+    vec_path = rasters_path().joinpath("vector.geojson")
+    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
+
     # Multiband raster
     out_bin_mb_path = os.path.join(tmp_path, "out_bin_mb.tif")
 
+    # Rasterize
     rast_bin = rasters.rasterize(
         xr.concat([xda, xda], dim="band"), vec_path, **KAPUT_KWARGS
     )
@@ -1133,7 +1249,7 @@ def test_get_nodata_deprecation():
 
 
 @s3_env
-@dask_env
+@dask_env()
 def test_get_notata_from_xr(raster_path):
     """Test get_nodata_value_from_xr"""
     ci.assert_val(get_nodata_value_from_xr(rasters.read(raster_path)), 255, "nodata")
@@ -1198,14 +1314,16 @@ def test_deg_meters_conversion():
     )
 
 
+@s3_env
+@dask_env(nof_computes=1)  # write x1
 def test_classify(tmp_path):
     """Test classify"""
     d_ndvi_path = rasters_path() / "20200824_S2_20200908_S2_dNDVI.tif"
     sev_truth = rasters_path() / "fire_sev_ndvi_truth.tif"
-    sev_out = get_output(tmp_path, "fire_sev_ndvi.tif", DEBUG)
+    sev_out = get_output(tmp_path, "fire_sev_ndvi.tif", DEBUG, dask_folders=True)
     sev = rasters.classify(
         rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4]
     )
     assert_chunked_computed(sev, "Classify DataArray")
-    rasters.write(sev, sev_out, dtype=np.uint8)
+    rasters.write(sev, sev_out, dtype=np.uint8, nodata=255)
     ci.assert_raster_equal(sev_truth, sev_out)

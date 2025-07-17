@@ -83,38 +83,57 @@ def set_dask_env_var():
         os.environ[dask.SERTIT_DEFAULT_CHUNKS] = "none"
 
 
-def dask_env(function):
+def dask_env(nof_computes=None, max_computes=0):
     """
     Create dask-using environment
 
     Returns:
         Callable: decorated function
     """
-    # Test laziness
-    os.environ[CI_SERTIT_TEST_LAZY] = "1" if TEST_LAZY else "0"
 
-    @wraps(function)
-    def dask_env_wrapper(*_args, **_kwargs):
-        """S3 environment wrapper"""
-        # Dask
-        os.environ[CI_SERTIT_USE_DASK] = "1"
-        set_dask_env_var()
-        with dask.get_or_create_dask_client():
-            LOGGER.info("Using DASK multithreaded.")
+    def dask_env_decorator(function):
+        # Test laziness
+        os.environ[CI_SERTIT_TEST_LAZY] = "1" if TEST_LAZY else "0"
+
+        @wraps(function)
+        def dask_env_wrapper(*_args, **_kwargs):
+            """S3 environment wrapper"""
+            # Not dask
+            LOGGER.info("Using NUMPY")
+            os.environ[CI_SERTIT_USE_DASK] = "0"
+            set_dask_env_var()
             function(*_args, **_kwargs)
 
-        with dask.get_or_create_dask_client(processes=True):
-            LOGGER.info("Using DASK with local cluster")
-            function(*_args, **_kwargs)
+            # Dask
+            os.environ[CI_SERTIT_USE_DASK] = "1"
+            set_dask_env_var()
 
-        # Not dask
-        LOGGER.info("Using NUMPY")
-        os.environ[CI_SERTIT_USE_DASK] = "0"
-        set_dask_env_var()
-        function(*_args, **_kwargs)
+            with (
+                dask.get_or_create_dask_client(),
+                dask.raise_if_dask_computes(
+                    nof_computes=nof_computes,
+                    max_computes=max_computes,
+                    dont_raise=os.environ[CI_SERTIT_TEST_LAZY] == "0",
+                ),
+            ):
+                LOGGER.info("Using DASK multithreaded.")
+                function(*_args, **_kwargs)
 
-    os.environ.pop(CI_SERTIT_USE_DASK, None)
-    return dask_env_wrapper
+            with (
+                dask.get_or_create_dask_client(processes=True),
+                dask.raise_if_dask_computes(
+                    nof_computes=nof_computes,
+                    max_computes=max_computes,
+                    dont_raise=os.environ[CI_SERTIT_TEST_LAZY] == "0",
+                ),
+            ):
+                LOGGER.info("Using DASK with local cluster")
+                function(*_args, **_kwargs)
+
+        os.environ.pop(CI_SERTIT_USE_DASK, None)
+        return dask_env_wrapper
+
+    return dask_env_decorator
 
 
 def is_not_lazy_yet(function):
@@ -165,9 +184,21 @@ def s3_env(*args, **kwargs):
     return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026
 
 
-def get_output(tmp, file, debug=False):
+def get_output(tmp, file, debug=False, dask_folders=False):
     if debug:
         out_path = AnyPath(__file__).resolve().parent / "ci_output"
+
+        if dask_folders:
+            client = dask.get_client()
+            if client:
+                multithreading = not client.cluster.processes
+                if multithreading:
+                    out_path /= "dask_multithreading"
+                else:
+                    out_path /= "dask_multiple_clusters"
+            else:
+                out_path /= "numpy"
+
         out_path.mkdir(parents=True, exist_ok=True)
         return out_path / file
     else:
