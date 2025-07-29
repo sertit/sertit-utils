@@ -126,7 +126,9 @@ def get_dask_lock(name):
     if is_dask_installed():
         from dask.distributed import Lock
 
-        lock = Lock(name, client=get_client())
+        current_client = get_client()
+        if current_client:
+            lock = Lock(name, client=current_client)
     else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
