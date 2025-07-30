@@ -1097,8 +1097,8 @@ def read(
 
                 # Force-update the transform, otherwise everything will break after that
                 xda.rio.write_transform(inplace=True)
-            elif factor_h > 1:
-                # Workaround: https://github.com/opendatacube/odc-geo/issues/236
+            elif factor_h > 10:
+                # Workaround for highly decimated rasters: https://github.com/opendatacube/odc-geo/issues/236
                 LOGGER.debug(
                     f"Resampling by reprojection (with rioxarray): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
                 )
