@@ -191,7 +191,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert_chunked_computed(xda_6, "Read with downsampling")
 
         # Downsampling (reproject)
-        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 1.5)  # Compute #1
+        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 10.1)  # Compute #1
         # TODO: remove when https://github.com/opendatacube/odc-geo/issues/236 is fixed
         # assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
@@ -200,8 +200,8 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert xda_4.shape[-1] == xda.shape[-1] * 2
         assert xda_6.shape[-2] == xda.shape[-2] / 2
         assert xda_6.shape[-1] == xda.shape[-1] / 2
-        assert xda_7.shape[-1] == round(xda.shape[-1] / 1.5)
-        assert xda_7.shape[-2] == round(xda.shape[-2] / 1.5)
+        assert xda_7.shape[-1] == round(xda.shape[-1] / 10.1)
+        assert xda_7.shape[-2] == round(xda.shape[-2] / 10.1)
         with pytest.raises(ValueError):
             rasters.read(ds, resolution=[20, 20, 20])
 
