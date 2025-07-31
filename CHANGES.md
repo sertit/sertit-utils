@@ -18,6 +18,7 @@
 - FIX: Fix `ci.assert_val` with nans
 - FIX: Better nan management in `ci.assert_raster_almost_equal_magnitude`
 - FIX: Make vectorize-based functions to work with `xarray.Dataset`
+- FIX: Fix original dtype in `read_bit_array` 
 - CI: Correctly compute numpy case with dask_env decorator
 - CI: Correctly manage dask in `test_rasters.test_set_nodata` and `test_rasters.test_where` (create a dask array to evaluate laziness)
 - CI: Check correctly the number of attended computations per raster tests ([#47](https://github.com/sertit/sertit-utils/issues/47))

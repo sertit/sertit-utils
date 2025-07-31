@@ -1811,7 +1811,10 @@ def read_bit_array(
     if isinstance(bit_mask, np.ndarray):
         bit_mask = np.nan_to_num(bit_mask)
     elif isinstance(bit_mask, xr.DataArray):
+        orig_dtype = bit_mask.encoding.get("dtype")
         bit_mask = bit_mask.fillna(0).data
+        if orig_dtype is not None and bit_mask.dtype != orig_dtype:
+            bit_mask = bit_mask.astype(orig_dtype)
     else:
         try:
             bit_mask = bit_mask.fillna(0)
