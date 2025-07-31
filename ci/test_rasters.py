@@ -1121,21 +1121,18 @@ def test_slope_pct(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # rasterize x1
-@is_not_lazy_yet
+@dask_env(nof_computes=1)  # Write x1
 def test_rasterize_binary(tmp_path, raster_path):
     """Test rasterize fct"""
+    xda = get_xda(raster_path)
 
     # Binary vector
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    chunks = {"band": 1, "x": 2048, "y": 2084}
     out_bin_path = os.path.join(tmp_path, "out_bin.tif")
 
     # Rasterize
-    rast_bin = rasters.rasterize(
-        rasters.read(raster_path, chunks=chunks), vec_path, **KAPUT_KWARGS
-    )
+    rast_bin = rasters.rasterize(xda, vec_path, **KAPUT_KWARGS)
     assert_chunked_computed(rast_bin, "Rasterize DataArray (binary vector)")
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
@@ -1143,20 +1140,16 @@ def test_rasterize_binary(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # rasterize x1
-@is_not_lazy_yet
+@dask_env(nof_computes=1)  # Write x1
 def test_rasterize_float(tmp_path, raster_path):
     # Binary vector with floating point raster
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    chunks = {"band": 1, "x": 2048, "y": 2084}
     out_bin_path = os.path.join(tmp_path, "out_bin_float.tif")
 
     # Rasterize
-    rast_bin = rasters.rasterize(
-        rasters.read(raster_float_path, chunks=chunks), vec_path
-    )
+    rast_bin = rasters.rasterize(rasters.read(raster_float_path), vec_path)
     assert_chunked_computed(
         rast_bin, "Rasterize DataArray (binary vector with floating point raster)"
     )
@@ -1166,8 +1159,7 @@ def test_rasterize_float(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # rasterize x1
-@is_not_lazy_yet
+@dask_env(nof_computes=1)  # Write x1
 def test_rasterize_value_field(tmp_path, raster_path):
     # Use value_field
     vec_path = rasters_path().joinpath("vector.geojson")
@@ -1185,8 +1177,7 @@ def test_rasterize_value_field(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # rasterize x1
-@is_not_lazy_yet
+@dask_env(nof_computes=1)  # Write x1
 def test_rasterize_multi_band_raster(tmp_path, raster_path):
     xda = get_xda(raster_path)
     vec_path = rasters_path().joinpath("vector.geojson")

@@ -29,10 +29,12 @@ import numpy as np
 import xarray as xr
 from shapely.geometry import Polygon
 
+from sertit.vectors import EPSG_4326
+
 try:
     import rasterio
     import rioxarray
-    from rasterio import features
+    from rasterio import CRS, features, rpc, warp
     from rasterio.enums import Resampling
     from rioxarray.exceptions import MissingCRS
 except ModuleNotFoundError as ex:
@@ -297,6 +299,7 @@ def rasterize(
     vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
+    default_value: int = 1,
     name: str = None,
     **kwargs,
 ) -> AnyXrDataStructure:
@@ -317,6 +320,7 @@ def rasterize(
         vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
+        default_value (int): Used as value for all geometries, if `value_field` not provided
         name (str): Name to give to the raster
     Returns:
         AnyXrDataStructure: Rasterized vector
@@ -326,18 +330,57 @@ def rasterize(
         >>> vec_path = "path/to/vector.shp"
         >>> rasterize(raster_path, vec_path, value_field="classes")
     """
-    # Use classic option
-    arr, meta = rasters_rio.rasterize(
-        xds, vector, value_field, default_nodata, **kwargs
+    if not isinstance(vector, gpd.GeoDataFrame):
+        vector = vectors.read(vector, crs=xds.rio.crs)
+    else:
+        vector = vector.to_crs(crs=xds.rio.crs)
+
+    # Manage vector values
+    if value_field:
+        geom_value = (
+            (geom, value) for geom, value in zip(vector.geometry, vector[value_field])
+        )
+        dtype = kwargs.pop("dtype", vector[value_field].dtype)
+    else:
+        geom_value = vector.geometry
+        dtype = kwargs.pop("dtype", np.uint8)
+
+    # Manage nodata
+    if "nodata" in kwargs:
+        nodata = kwargs.pop("nodata")
+    else:
+        nodata = get_nodata_value_from_xr(xds)
+
+    if nodata is None:
+        nodata = default_nodata
+
+    # Rasterize vector
+    mask = features.rasterize(
+        geom_value,
+        out_shape=(xds.rio.height, xds.rio.width),
+        fill=nodata,  # Outside vector
+        default_value=default_value,  # Inside vector
+        transform=xds.rio.transform(),
+        dtype=dtype,
+        all_touched=kwargs.get("all_touched", True),
+        **misc.select_dict(kwargs, ["merge_alg"]),
     )
-    if len(arr.shape) != 3:
-        arr = np.expand_dims(arr, axis=0)
+
+    # Convert to dask array if input data is chunked
+    if dask.is_chunked(xds):
+        import dask.array as da
+
+        mask = da.from_array(mask, chunks=(xds.chunks[0][0], xds.chunks[1][0]))
+
+    # Expand dim to match classic rasterio pattern {count, heigh, width}
+    if len(mask.shape) != 3:
+        mask = np.expand_dims(mask, axis=0)
 
     # Set result back in xarray (ensure copying in a one band xarray)
-    rasterized_xds = xds[0:1].copy(data=arr)
+    rasterized_xds = xds[0:1].copy(data=mask)
 
     # Change nodata
-    rasterized_xds = set_nodata(rasterized_xds, nodata_val=meta["nodata"])
+    rasterized_xds = set_nodata(rasterized_xds, nodata_val=nodata)
 
     if not name:
         try:
@@ -2333,3 +2376,174 @@ def classify(
         classified_raster = classified_raster.rename(new_name)
         classified_raster.attrs["long_name"] = new_name
     return classified_raster
+
+
+def _reproject_rpcs(
+    src_xda: xr.DataArray,
+    rpcs: rpc.RPC,
+    dem_path: str,
+    ortho_path: AnyPathStrType,
+    pixel_size: float = None,
+    resampling: Resampling = Resampling.bilinear,
+    crs: CRS = None,
+    nodata: float = None,
+    num_threads: int = None,
+    extent: gpd.GeoDataFrame = None,
+    name: str = None,
+    tmp_dir=None,
+    **kwargs,
+) -> (np.ndarray, dict):
+    """
+    Reproject using RPCs (cannot use another pixel size than src to ensure RPCs are valid)
+
+    Args:
+        src_arr (np.ndarray): Array to reproject
+        src_meta (dict): Metadata
+        rpcs (rpc.RPC): RPCs
+        dem_path (str): DEM path
+
+    Returns:
+        (np.ndarray, dict): Reprojected array and its metadata
+    """
+    # Convert to paths
+    dem_path = AnyPath(dem_path)
+    if tmp_dir is not None:
+        tmp_dir = AnyPath(tmp_dir)
+
+    # Get src crs (check that)
+    raw_crs = src_xda.rio.crs()
+    if not raw_crs:
+        raw_crs = EPSG_4326
+
+    # Get num threads
+    if num_threads is None:
+        num_threads = perf.get_max_cores()
+
+    # Manage nodata
+
+    # Set RPC keywords
+    # See https://gdal.org/en/stable/api/gdal_alg.html#_CPPv426GDALCreateRPCTransformerV2PK13GDALRPCInfoV2idPPc
+    LOGGER.debug(f"Orthorectifying data with {dem_path}")
+
+    # RPC_DEM doesn't work with cloud-based DEM
+    # Read it to the extent of the product and save it on disk
+    if path.is_cloud_path(dem_path):
+        cached_dem_path = tmp_dir / dem_path.name
+        if not cached_dem_path.is_file():
+            LOGGER.warning(
+                "gdalwarp cannot process DEM stored on cloud with 'RPC_DEM' argument, "
+                "hence cloud-stored DEM cannot be used with non-orthorectified DIMAP data. "
+                f"(DEM: {dem_path}). "
+                "The DEM will be cached before the operation."
+            )
+
+            write(
+                read(dem_path, window=extent),
+                cached_dem_path,
+                dtype=np.float32,
+            )
+
+            LOGGER.debug("DEM cached.")
+        dem_path = str(cached_dem_path)
+
+    kwargs.update(
+        {
+            "RPC_DEM": dem_path,
+            "RPC_DEM_MISSING_VALUE": 0,
+            "OSR_USE_ETMERC": "YES",
+            "BIGTIFF": "IF_NEEDED",
+        }
+    )
+    # https://gis.stackexchange.com/questions/328366/gdalwarp-orthorectification-worldview-3-not-using-rpc-projection-properly fixed
+    # Error threshold for transformation approximation, expressed as a number of source pixels.
+    # Defaults to 0.125 pixels unless the RPC_DEM transformer option is specified, in which case an exact transformer, i.e. err_threshold=0, will be used.
+
+    # Reproject with rioxarray
+    # Seems to handle the resolution well on the contrary to rasterio's reproject...
+    try:
+        out_xda = src_xda.rio.reproject(
+            dst_crs=crs,
+            resolution=pixel_size,
+            resampling=resampling,
+            nodata=nodata,
+            num_threads=num_threads,
+            rpcs=rpcs,
+            dtype=src_xda.dtype,
+            **kwargs,
+        )
+
+        write(
+            out_xda,
+            ortho_path,
+            dtype=np.float32,
+            nodata=nodata,
+            tags=kwargs.get("tags"),
+            predictor=kwargs.get("predictor"),
+            driver=kwargs.get("driver"),
+        )
+
+    # Daskified reproject doesn't seem to work with RPC
+    # See https://github.com/opendatacube/odc-geo/issues/193
+    # from odc.geo import xr # noqa
+    # out_xda = src_xda.odc.reproject(
+    #     how=self.crs(),
+    #     resolution=self.pixel_size,
+    #     resampling=kwargs.pop("resampling", self.band_resampling),
+    #     dst_nodata=self._raw_nodata,
+    #     num_threads=utils.get_max_cores(),
+    #     rpcs=rpcs,
+    #     dtype=src_xda.dtype,
+    #     **kwargs
+    # )
+
+    # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
+    # https://github.com/corteva/rioxarray/issues/844
+    except ValueError:
+        nodata = get_nodata_value_from_xr(src_xda)
+        arr = src_xda.fillna(nodata) if nodata is not None else src_xda
+
+        # WARNING: may not give correct output pixel size
+        out_arr, dst_transform = warp.reproject(
+            arr.compute().data,
+            src_transform=None,
+            rpcs=rpcs,
+            src_crs=raw_crs,
+            src_nodata=nodata,
+            dst_crs=crs,
+            dst_resolution=pixel_size,
+            dst_nodata=nodata,  # input data should be in integer
+            num_threads=num_threads,
+            resampling=resampling,
+            **kwargs,
+        )
+        # Get dims
+        count, height, width = out_arr.shape
+
+        # Update metadata
+        meta = {
+            "driver": "GTiff",
+            "dtype": src_xda.dtype,
+            "nodata": nodata,
+            "width": width,
+            "height": height,
+            "count": count,
+            "crs": crs,
+            "transform": dst_transform,
+            "compress": "lzw",
+        }
+        rasters_rio.write(
+            out_arr,
+            meta,
+            ortho_path,
+            dtype=np.float32,
+            nodata=nodata,
+            tags=kwargs.get("tags"),
+            predictor=kwargs.get("predictor"),
+            driver=kwargs.get("driver"),
+        )
+        out_xda = read(ortho_path)
+
+    if name:
+        out_xda.rename(name)
+        out_xda.attrs["long_name"] = name
+    return out_xda

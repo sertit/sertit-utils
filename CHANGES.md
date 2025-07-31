@@ -9,6 +9,7 @@
 - **ENH: Add a performance module (`sertit.perf`) featuring max core-related functions and environment variables**
 - OPTIM: Use `odc.xr.xr_reproject` to enable lazy dask computation for rescaling data in `rasters.read` (in case of upscaling only)
 - OPTIM: Make `rasters.read_bit_array` and `rasters.read_uint8_array` lazy ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- OPTIM: Make `rasters.rasterize` lazy
 - OPTIM: Some other minor optimizations regarding to dask usage ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - FIX: Check if rasters function outputs a lazy or computed array (for now only throw warnings as most functions are not lazy) ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - FIX: Fix `ci.assert_val` for xr.DataArrayCoordinates

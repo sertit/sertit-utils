@@ -245,6 +245,7 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
                     arr = any_raster_type.fillna(nodata)
                 else:
                     arr = any_raster_type
+                # /!\ Warning: this triggers a dask compute!
                 ds.write(arr.data)
                 out = function(ds, *args, **kwargs)
 
