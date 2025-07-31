@@ -407,6 +407,11 @@ def _vectorize(
     Returns:
         gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
     """
+    # Manage chunked data (function not daskified yet)
+    if dask.is_chunked(xds):
+        LOGGER.warning("'_vectorize' function is not lazy yet. Computing the raster.")
+        xds = xds.compute()
+
     # Manage nodata value
     uint8_nodata = 255
     if get_nodata_value_from_xr(xds) is not None:
@@ -1564,15 +1569,19 @@ def sieve(
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
     """
-    # TODO: daskify this: use xr.apply_ufunc?
-
     assert connectivity in [4, 8]
+
+    # Manage chunked data (function not daskified yet)
+    if dask.is_chunked(xds):
+        LOGGER.warning("Sieving function is not lazy yet. Computing the raster.")
+        xds = xds.compute()
 
     mask = xr.where(np.isnan(xds), 0, 1).astype(np.uint8).data
     data = xds.astype(np.uint8).data
 
     # Sieve
     try:
+        # Dask: 2 'compute's in xr.apply_ufunc if xds not computed before!
         sieved_arr = xr.apply_ufunc(
             features.sieve,
             data,
@@ -1590,6 +1599,7 @@ def sieve(
 
     # Manage integer files
     with contextlib.suppress(ValueError):
+        # Dask: 1 more 'compute' in here if xds not computed before!
         sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
 
     sieved_xds = xds.copy(data=sieved_arr)
@@ -1746,6 +1756,7 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
     """
     # TODO: daskify this. How?
+    # For now there is no conflicts here as we are opening the paths directly with rasterio
     return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
 
 

@@ -230,7 +230,11 @@ class _CountingScheduler:
         import traceback
 
         for tb in traceback.extract_stack()[::-1]:
-            if tb.filename.startswith("/home/data") and "test_" in tb.filename:
+            # Change this condition if we are using dask elsewhere than rasters.py and we want to display the tb
+            if (
+                tb.filename.lower().startswith("/home/data")
+                and "/rasters.py" in tb.filename
+            ):
                 LOGGER.debug(
                     f"Computation number {self.total_computes}: {tb.line} | {tb.name} in {tb.filename} at line {tb.lineno}"
                 )

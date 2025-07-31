@@ -533,7 +533,9 @@ def test_crop(tmp_path, raster_path, mask):
 
 @s3_env
 @is_not_lazy_yet
-@dask_env(nof_computes=3)  # Sieve x2 write x1
+@dask_env(
+    nof_computes=2
+)  # Sieve x2 (write a not-chunked array, so no additional 'compute')
 def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
     # TODO: not lazy
@@ -541,18 +543,18 @@ def test_sieve(tmp_path, raster_path):
     # xda
     xda = get_xda(raster_path)
 
-    # DataArray
+    # Sieve DataArray
     xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
     sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
     assert_chunked_computed(sieve_xda, "Sieve DataArray")
     rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, sieve_xda)
 
-    # Tests
+    # Test equality
     raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
     ci.assert_raster_equal(xda_sieved, raster_sieved_path)
 
-    # From path
+    # Sieve From path
     sieve_xda_path = rasters.sieve(raster_path, sieve_thresh=20, connectivity=4)
     assert_chunked_computed(sieve_xda_path, "Sieve DataArray (directly from path)")
     xr.testing.assert_equal(sieve_xda, sieve_xda_path)
@@ -580,7 +582,9 @@ def test_sieve_different_dtypes(tmp_path, raster_path):
 
 @s3_env
 @is_not_lazy_yet
-@dask_env(nof_computes=2)  # Sieve x1 write x1
+@dask_env(
+    nof_computes=1
+)  # Sieve x1 (write a not-chunked array, so no additional 'compute')
 def test_sieve_dataset(tmp_path, raster_path):
     # xds
     xds = get_xds(raster_path)
@@ -670,10 +674,8 @@ def test_collocate(tmp_path):
 
 
 @s3_env
-@dask_env()
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
-    # TODO: daskify this and test laziness
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
     raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
     rasters.merge_gtiff(
