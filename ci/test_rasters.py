@@ -246,7 +246,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
     # Window with native resolution
-    xda_window_out = os.path.join(tmp_path, "test_xda_window.tif")
+    xda_window_out = get_output(tmp_path, "test_xda_window.tif", DEBUG)
     xda_window = rasters.read(
         raster_path,
         window=mask_path,
@@ -256,7 +256,7 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     ci.assert_raster_equal(xda_window_out, raster_window_path)
 
     # Window with updated resolution
-    xda_window_20_out = os.path.join(tmp_path, "test_xda_20_window.tif")
+    xda_window_20_out = get_output(tmp_path, "test_xda_20_window.tif", DEBUG)
     gdf = mask.to_crs(EPSG_4326)
     xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
     ci.assert_val(round(xda_window_20.rio.resolution()[0]), 20, "resolution")
@@ -311,9 +311,11 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
     xda = get_xda(raster_path)
     dtype_str = dtype.__name__
 
-    test_path = os.path.join(tmp_path, f"test_nodata_{dtype_str}.tif")
-    test_cog_path = os.path.join(tmp_path, f"test_cog_{dtype_str}.tif")
-    test_cog_no_dask_path = os.path.join(tmp_path, f"test_cog_no_dask{dtype_str}.tif")
+    test_path = get_output(tmp_path, f"test_nodata_{dtype_str}.tif", DEBUG)
+    test_cog_path = get_output(tmp_path, f"test_cog_{dtype_str}.tif", DEBUG)
+    test_cog_no_dask_path = get_output(
+        tmp_path, f"test_cog_no_dask{dtype_str}.tif", DEBUG
+    )
 
     # Force negative value if possible
     if "uint" not in dtype_str:
@@ -350,7 +352,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
         _test_raster_after_write(test_path, dtype, nodata_val)
 
     # test deprecation warning
-    test_deprecated_path = os.path.join(tmp_path, "test_depr.tif")
+    test_deprecated_path = get_output(tmp_path, "test_depr.tif", DEBUG)
     with pytest.deprecated_call():
         rasters.write(
             xda, path=test_deprecated_path, dtype=dtype
@@ -362,7 +364,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
 def test_write_zarr(tmp_path, raster_path):
     # test zarr
     xda = get_xda(raster_path, chunks=None)
-    zarr_path = os.path.join(tmp_path, "z.zarr")
+    zarr_path = get_output(tmp_path, "z.zarr", DEBUG)
     rasters.write(xda, path=zarr_path, driver="Zarr")
     xr.testing.assert_equal(xda, rasters.read(zarr_path, driver="Zarr"))
 
@@ -377,12 +379,12 @@ def test_write_basic(tmp_path, raster_path, ds_dtype):
     xds = get_xds(raster_path)
 
     # DataArray
-    xda_out = os.path.join(tmp_path, "test_xda.tif")
+    xda_out = get_output(tmp_path, "test_xda.tif", DEBUG)
     rasters.write(xda, xda_out, dtype=ds_dtype)
     assert os.path.isfile(xda_out)
 
     # Dataset
-    xds_out = os.path.join(tmp_path, "test_xds.tif")
+    xds_out = get_output(tmp_path, "test_xds.tif", DEBUG)
     rasters.write(xds, xds_out, dtype=ds_dtype)
     assert os.path.isfile(xds_out)
 
@@ -397,7 +399,7 @@ def test_write_png(tmp_path, raster_path):
     """Test write (PNG) function"""
 
     # Just test if this doesn't fail
-    xda_out = os.path.join(tmp_path, "test_xda.png")
+    xda_out = get_output(tmp_path, "test_xda.png", DEBUG)
     rasters.write(get_xda(raster_path), xda_out, dtype="uint8", driver="PNG")
 
 
@@ -410,11 +412,11 @@ def test_write_dask(tmp_path, raster_path, ds_dtype):
     xds = get_xds(raster_path)
 
     # DataArray
-    xda_out = os.path.join(tmp_path, "test_xda.tif")
+    xda_out = get_output(tmp_path, "test_xda.tif", DEBUG)
     delayed_1 = rasters.write(xda, xda_out, dtype=ds_dtype, compute=False)
 
     # Dataset
-    xds_out = os.path.join(tmp_path, "test_xds.tif")
+    xds_out = get_output(tmp_path, "test_xds.tif", DEBUG)
     delayed_2 = rasters.write(xds, xds_out, dtype=ds_dtype, compute=False)
 
     # Compute
@@ -438,14 +440,14 @@ def test_mask(tmp_path, raster_path, mask):
     xds = get_xds(raster_path)
 
     # DataArray
-    xda_masked = os.path.join(tmp_path, "test_mask_xda.tif")
+    xda_masked = get_output(tmp_path, "test_mask_xda.tif", DEBUG)
     mask_xda = rasters.mask(xda, mask.geometry, **KAPUT_KWARGS)
     assert_chunked_computed(mask_xda, "Mask DataArray")
     rasters.write(mask_xda, xda_masked, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, mask_xda)
 
     # Dataset
-    xds_masked = os.path.join(tmp_path, "test_mask_xds.tif")
+    xds_masked = get_output(tmp_path, "test_mask_xds.tif", DEBUG)
     mask_xds = rasters.mask(xds, mask)
     assert_chunked_computed(mask_xds, "Mask Dataset")
     rasters.write(mask_xds, xds_masked, dtype=np.uint8)
@@ -466,7 +468,7 @@ def test_paint(tmp_path, raster_path, mask):
 
     # -- DataArray --
     # Invert = True
-    xda_paint_true = os.path.join(tmp_path, "test_paint_true_xda.tif")
+    xda_paint_true = get_output(tmp_path, "test_paint_true_xda.tif", DEBUG)
     paint_true_xda = rasters.paint(
         xda, mask.geometry, value=600, invert=True, **KAPUT_KWARGS
     )
@@ -475,7 +477,7 @@ def test_paint(tmp_path, raster_path, mask):
     ci.assert_xr_encoding_attrs(xda, paint_true_xda)
 
     # Invert = False
-    xda_paint_false = os.path.join(tmp_path, "test_paint_false_xda.tif")
+    xda_paint_false = get_output(tmp_path, "test_paint_false_xda.tif", DEBUG)
     paint_false_xda = rasters.paint(xda, mask.geometry, value=600, invert=False)
     assert_chunked_computed(paint_false_xda, "Paint DataArray (invert = false)")
     rasters.write(paint_false_xda, xda_paint_false, dtype=np.uint8)
@@ -483,14 +485,14 @@ def test_paint(tmp_path, raster_path, mask):
 
     # -- Dataset --
     # Invert = True
-    xds_paint_true = os.path.join(tmp_path, "test_paint_true_xds.tif")
+    xds_paint_true = get_output(tmp_path, "test_paint_true_xds.tif", DEBUG)
     paint_true_xds = rasters.paint(xds, mask, value=600, invert=True)
     assert_chunked_computed(paint_true_xds, "Paint Dataset (invert = true)")
     rasters.write(paint_true_xds, xds_paint_true, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_true_xds)
 
     # Invert = False
-    xds_paint_false = os.path.join(tmp_path, "test_paint_false_xds.tif")
+    xds_paint_false = get_output(tmp_path, "test_paint_false_xds.tif", DEBUG)
     paint_false_xds = rasters.paint(xds, mask, value=600, invert=False)
     assert_chunked_computed(paint_false_xds, "Paint Dataset (invert = false)")
     rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
@@ -544,7 +546,7 @@ def test_sieve(tmp_path, raster_path):
     xda = get_xda(raster_path)
 
     # Sieve DataArray
-    xda_sieved = os.path.join(tmp_path, "test_sieved_xda.tif")
+    xda_sieved = get_output(tmp_path, "test_sieved_xda.tif", DEBUG)
     sieve_xda = rasters.sieve(xda, sieve_thresh=20, connectivity=4)
     assert_chunked_computed(sieve_xda, "Sieve DataArray")
     rasters.write(sieve_xda, xda_sieved, dtype=np.uint8)
@@ -590,7 +592,7 @@ def test_sieve_dataset(tmp_path, raster_path):
     xds = get_xds(raster_path)
 
     # Dataset
-    xds_sieved = os.path.join(tmp_path, "test_sieved_xds.tif")
+    xds_sieved = get_output(tmp_path, "test_sieved_xds.tif", DEBUG)
     sieve_xds = rasters.sieve(xds, sieve_thresh=20, connectivity=4)
     assert_chunked_computed(sieve_xds, "Sieve Dataset")
     rasters.write(sieve_xds, xds_sieved, dtype=np.uint8)
@@ -677,7 +679,7 @@ def test_collocate(tmp_path):
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
-    raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
+    raster_merged_gtiff_out = get_output(tmp_path, "test_merged.tif", DEBUG)
     rasters.merge_gtiff(
         [raster_path, raster_to_merge_path],
         raster_merged_gtiff_out,
@@ -779,7 +781,7 @@ def test_vrt(tmp_path, raster_path):
     raster_path = rasters_path().joinpath("raster.tif")
 
     # Merge VRT
-    raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
+    raster_merged_vrt_out = get_output(tmp_path, "test_merged.vrt", DEBUG)
     rasters.merge_vrt(
         [raster_path, raster_to_merge_path], raster_merged_vrt_out, **KAPUT_KWARGS
     )
@@ -811,7 +813,7 @@ def test_merge_different_crs_rel(tmp_path):
     )
 
     # Merge VRT
-    raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
+    raster_merged_vrt_out = get_output(tmp_path, "test_merged.vrt", DEBUG)
     rasters.merge_vrt([raster_1_path, raster_2_path], raster_merged_vrt_out)
     ci.assert_raster_equal(raster_merged_vrt_out, true_vrt_path)
 
@@ -833,7 +835,7 @@ def test_merge_different_crs_abs(tmp_path):
         "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
     )
 
-    raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
+    raster_merged_vrt_out = get_output(tmp_path, "test_merged.vrt", DEBUG)
     rasters.merge_vrt(
         [raster_1_path, raster_2_path], raster_merged_vrt_out, abs_path=True
     )
@@ -853,7 +855,7 @@ def test_merge_different_crs_gtiff(tmp_path):
         "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
     )
     # Merge GTiff
-    raster_merged_tif_out = os.path.join(tmp_path, "test_merged.tif")
+    raster_merged_tif_out = get_output(tmp_path, "test_merged.tif", DEBUG)
     rasters.merge_gtiff([raster_1_path, raster_2_path], raster_merged_tif_out)
     ci.assert_raster_max_mismatch(
         raster_merged_tif_out, true_tif_path, max_mismatch_pct=1e-4
@@ -1056,7 +1058,7 @@ def test_aspect(tmp_path, dem_path):
     aspect_path = rasters_path().joinpath("aspect.tif")
 
     # Path OUT
-    aspect_path_out = os.path.join(tmp_path, "aspect_out.tif")
+    aspect_path_out = get_output(tmp_path, "aspect_out.tif", DEBUG)
 
     # Aspect
     aspect = rasters.aspect(dem_path)
@@ -1070,7 +1072,7 @@ def test_aspect(tmp_path, dem_path):
 def test_hillshade(tmp_path, dem_path):
     """Test hillshade function"""
     hlsd_path = rasters_path().joinpath("hillshade.tif")
-    hlsd_path_out = os.path.join(tmp_path, "hillshade_out.tif")
+    hlsd_path_out = get_output(tmp_path, "hillshade_out.tif", DEBUG)
 
     # Hillshade
     hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
@@ -1084,7 +1086,7 @@ def test_hillshade(tmp_path, dem_path):
 def test_slope(tmp_path, dem_path):
     """Test slope function"""
     slope_path = rasters_path().joinpath("slope.tif")
-    slope_path_out = os.path.join(tmp_path, "slope_out.tif")
+    slope_path_out = get_output(tmp_path, "slope_out.tif", DEBUG)
     # Slope
     slp = rasters.slope(dem_path)
     assert_chunked_computed(slp, "Slope")
@@ -1097,7 +1099,7 @@ def test_slope(tmp_path, dem_path):
 def test_slope_rad(tmp_path, dem_path):
     """Test slope (radian) function"""
     slope_r_path = rasters_path().joinpath("slope_r.tif")
-    slope_r_path_out = os.path.join(tmp_path, "slope_r_out.tif")
+    slope_r_path_out = get_output(tmp_path, "slope_r_out.tif", DEBUG)
 
     # Slope rad
     slp_r = rasters.slope(dem_path, in_pct=False, in_rad=True)
@@ -1111,7 +1113,7 @@ def test_slope_rad(tmp_path, dem_path):
 def test_slope_pct(tmp_path, dem_path):
     """Test slope (pct) function"""
     slope_p_path = rasters_path().joinpath("slope_p.tif")
-    slope_p_path_out = os.path.join(tmp_path, "slope_p_out.tif")
+    slope_p_path_out = get_output(tmp_path, "slope_p_out.tif", DEBUG)
 
     # Slope pct
     slp_p = rasters.slope(dem_path, in_pct=True)
@@ -1129,7 +1131,7 @@ def test_rasterize_binary(tmp_path, raster_path):
     # Binary vector
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    out_bin_path = os.path.join(tmp_path, "out_bin.tif")
+    out_bin_path = get_output(tmp_path, "out_bin.tif", DEBUG)
 
     # Rasterize
     rast_bin = rasters.rasterize(xda, vec_path, **KAPUT_KWARGS)
@@ -1146,7 +1148,7 @@ def test_rasterize_float(tmp_path, raster_path):
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    out_bin_path = os.path.join(tmp_path, "out_bin_float.tif")
+    out_bin_path = get_output(tmp_path, "out_bin_float.tif", DEBUG)
 
     # Rasterize
     rast_bin = rasters.rasterize(rasters.read(raster_float_path), vec_path)
@@ -1164,7 +1166,7 @@ def test_rasterize_value_field(tmp_path, raster_path):
     # Use value_field
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_true_path = rasters_path().joinpath("rasterized.tif")
-    out_path = os.path.join(tmp_path, "out.tif")
+    out_path = get_output(tmp_path, "out_rasterized.tif", DEBUG)
 
     # Rasterize
     rast = rasters.rasterize(
@@ -1184,7 +1186,7 @@ def test_rasterize_multi_band_raster(tmp_path, raster_path):
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
 
     # Multiband raster
-    out_bin_mb_path = os.path.join(tmp_path, "out_bin_mb.tif")
+    out_bin_mb_path = get_output(tmp_path, "out_bin_mb.tif", DEBUG)
 
     # Rasterize
     rast_bin = rasters.rasterize(
