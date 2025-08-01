@@ -295,7 +295,7 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
 
 @any_raster_to_xr_ds
 def rasterize(
-    xds: AnyRasterType,
+    xda: xr.DataArray,
     vector: Union[gpd.GeoDataFrame, AnyPathStrType],
     value_field: str = None,
     default_nodata: int = 0,
@@ -316,7 +316,7 @@ def rasterize(
         With dask usage, this function is not lazy (yet)!
 
     Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray, used as base for the vector's rasterization data (shape, etc.)
+        xda (xr.DataArray): Path to the raster or a rasterio dataset or a xarray.DataArray, used as base for the vector's rasterization data (shape, etc.)
         vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
@@ -331,9 +331,9 @@ def rasterize(
         >>> rasterize(raster_path, vec_path, value_field="classes")
     """
     if not isinstance(vector, gpd.GeoDataFrame):
-        vector = vectors.read(vector, crs=xds.rio.crs)
+        vector = vectors.read(vector, crs=xda.rio.crs)
     else:
-        vector = vector.to_crs(crs=xds.rio.crs)
+        vector = vector.to_crs(crs=xda.rio.crs)
 
     # Manage vector values
     if value_field:
@@ -349,35 +349,56 @@ def rasterize(
     if "nodata" in kwargs:
         nodata = kwargs.pop("nodata")
     else:
-        nodata = get_nodata_value_from_xr(xds)
+        nodata = get_nodata_value_from_xr(xda)
 
     if nodata is None:
         nodata = default_nodata
 
+    # Check if the nodata value can be cast into the new dtype
+    is_castable = np.can_cast(np.array(nodata, dtype=xda.dtype), dtype)
+
+    # Floating point values that can be converted to integers are allowed (if they respect min / max for the specific dtype)
+    min_max_dtype = np.iinfo(dtype)
+    is_valid_int = (
+        abs(nodata - int(nodata)) == 0
+        and min_max_dtype.min < nodata < min_max_dtype.max
+    )
+
+    if not is_castable and not is_valid_int:
+        old_nodata = nodata
+        nodata = get_nodata_value_from_dtype(dtype)
+
+        # Only throw a warning if the value is really different  (we don't care about 255.0 being replaced by 255)
+        if old_nodata - nodata != 0.0:
+            LOGGER.warning(
+                f"Impossible to cast nodata value ({old_nodata}) into the wanted dtype ({str(dtype)}). "
+                f"Default nodata value for this current dtype will be used ({nodata})."
+            )
+
     # Rasterize vector
     mask = features.rasterize(
         geom_value,
-        out_shape=(xds.rio.height, xds.rio.width),
+        out_shape=(xda.rio.height, xda.rio.width),
         fill=nodata,  # Outside vector
         default_value=default_value,  # Inside vector
-        transform=xds.rio.transform(),
+        transform=xda.rio.transform(),
         dtype=dtype,
         all_touched=kwargs.get("all_touched", True),
         **misc.select_dict(kwargs, ["merge_alg"]),
     )
 
     # Convert to dask array if input data is chunked
-    if dask.is_chunked(xds):
+    if dask.is_chunked(xda):
         import dask.array as da
 
-        mask = da.from_array(mask, chunks=(xds.chunks[0][0], xds.chunks[1][0]))
+        mask = da.from_array(mask, chunks=(xda.chunks[0][0], xda.chunks[1][0]))
 
     # Expand dim to match classic rasterio pattern {count, heigh, width}
     if len(mask.shape) != 3:
         mask = np.expand_dims(mask, axis=0)
 
     # Set result back in xarray (ensure copying in a one band xarray)
-    rasterized_xds = xds[0:1].copy(data=mask)
+    rasterized_xds = xda[0:1].copy(data=mask)
 
     # Change nodata
     rasterized_xds = set_nodata(rasterized_xds, nodata_val=nodata)
