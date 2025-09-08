@@ -1419,9 +1419,9 @@ def merge_vrt(
 
     See here: https://gdal.org/programs/gdalbuildvrt.html
 
-    Creates VRT with relative paths !
+    Creates VRT with relative paths!
 
-    This function handles files of different projection by create intermediate VRT used for warping.
+    This function handles files of different projection by creating intermediate VRT used for warping.
     All VRTs will be written with relative paths.
 
     Args:
@@ -1540,8 +1540,10 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
 
-    .. WARNING::
-        They should have the same CRS otherwise the mosaic will be false !
+    This function handles files of different projection by creating intermediate VRT used for warping.
+
+    Using :code:`rasterio.merge` with default arguments behind the hood so you can provide any valid argument into the kwargs.
+    For example, to modify the merging method, you can pass :code:`method="max"`
 
     Args:
         paths (list): Path of the rasters to be merged with the same CRS)
@@ -1607,7 +1609,7 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
             tmp_dir.cleanup()
 
     # Save merge datasets
-    write(merged_array, merged_meta, merged_path)
+    write(merged_array, merged_meta, merged_path, **kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
