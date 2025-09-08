@@ -1589,7 +1589,25 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
             crs_datasets.append(src)
 
         # Merge all datasets
-        merged_array, merged_transform = merge.merge(crs_datasets, **kwargs)
+        merge_args = [
+            "bounds",
+            "res",
+            "precision",
+            "indexes",
+            "output_count",
+            "resampling",
+            "method",
+            "target_aligned_pixels",
+            "mem_limit",
+            "use_highest_res",
+            "masked",
+            "dst_path",
+            "dst_kwds",
+        ]
+        merge_kwargs = misc.select_dict(kwargs, merge_args + ["nodata", "dtype"])
+        write_kwargs = misc.prune_dict(kwargs, merge_args)
+
+        merged_array, merged_transform = merge.merge(crs_datasets, **merge_kwargs)
         merged_meta = crs_datasets[0].meta.copy()
         merged_meta.update(
             {
@@ -1609,7 +1627,7 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
             tmp_dir.cleanup()
 
     # Save merge datasets
-    write(merged_array, merged_meta, merged_path, **kwargs)
+    write(merged_array, merged_meta, merged_path, **write_kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:

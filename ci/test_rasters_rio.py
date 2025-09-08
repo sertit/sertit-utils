@@ -213,6 +213,8 @@ def test_merge_gtiff(tmp_path, raster_path):
         [raster_path, raster_to_merge_path],
         raster_merged_gtiff_out,
         method="max",
+        driver="GTiff",
+        dtype="uint8",
     )
 
     ci.assert_raster_equal(raster_merged_gtiff_out, raster_merged_gtiff_path)
