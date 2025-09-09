@@ -7,6 +7,7 @@
 - **ENH: Add an environment variable (`SERTIT_DEFAULT_CHUNKS`) to control default chunks in xarray rasters and a function better managing default chunks (`dask.get_default_chunks`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - **ENH: Add a classify function to classify a raster according to bins and values** ([#40](https://github.com/sertit/sertit-utils/issues/40))
 - **ENH: Add a performance module (`sertit.perf`) featuring max core-related functions and environment variables**
+- **ENH: Create a wrapper for reprojection, handling different usecases: dask, RPCs, etc. Using `odc.geo`, `rioxarray` or `rasterio` according to the usecase** ([#41](https://github.com/sertit/sertit-utils/issues/41))
 - OPTIM: Use `odc.xr.xr_reproject` to enable lazy dask computation for rescaling data in `rasters.read` (in case of upscaling only)
 - OPTIM: Make `rasters.read_bit_array` and `rasters.read_uint8_array` lazy ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - OPTIM: Make `rasters.rasterize` lazy

@@ -21,6 +21,7 @@ xarray>=2024.06.0
 shapely >= 2.0.0
 odc-geo>=0.4.6
 xarray-spatial>=0.3.6
+xdem
 
 # Colorlog
 colorlog

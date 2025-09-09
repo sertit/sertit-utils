@@ -22,6 +22,7 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 import contextlib
 import logging
 from functools import wraps
+from tempfile import TemporaryDirectory
 from typing import Any, Callable, Optional, Union
 
 import geopandas as gpd
@@ -1166,42 +1167,27 @@ def read(
 
                 # Force-update the transform, otherwise everything will break after that
                 xda.rio.write_transform(inplace=True)
-            elif factor_h > 10:
-                # Workaround for highly decimated rasters: https://github.com/opendatacube/odc-geo/issues/236
-                LOGGER.debug(
-                    f"Resampling by reprojection (with rioxarray): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
-                )
-                xda = xda.rio.reproject(
-                    xda.rio.crs,
-                    shape=(new_height, new_width),
-                    resampling=resampling,
-                )
             else:
-                LOGGER.debug(
-                    f"Resampling by reprojection (with odc.geo): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
-                )
-                from affine import Affine
-                from odc.geo import xr as odc_geo_xr  # noqa: F401
-                from odc.geo.geobox import GeoBox
+                if factor_h > 10:
+                    # Workaround for highly decimated rasters: https://github.com/opendatacube/odc-geo/issues/236
+                    LOGGER.debug(
+                        f"Resampling by reprojection (with rioxarray): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
+                    )
+                    use_dask = False
+                else:
+                    LOGGER.debug(
+                        f"Resampling by reprojection (with odc.geo): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
+                    )
+                    use_dask = True
 
                 # Manage nodata
-                nodata = get_nodata_value_from_xr(xda)
-                src_affine: Affine = xda.rio.transform()  # For typing
-                xda = xda.odc.reproject(
-                    how=GeoBox(
-                        (new_height, new_width),
-                        src_affine * Affine.scale(factor_w, factor_h),
-                        xda.rio.crs,
-                    ),
+                xda = reproject(
+                    xda,
+                    shape=(new_height, new_width),
                     resampling=resampling,
-                    num_threads=perf.get_max_cores(),
-                    dst_nodata=nodata,
-                    **kwargs,
+                    dst_crs=xda.rio.crs,
+                    use_dask=use_dask,
                 )
-
-                # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-                xda.attrs.pop("nodata", None)
-                xda.rio.write_nodata(nodata, encoded=True, inplace=True)
 
         # Convert to wanted type
         if as_type:
@@ -1486,28 +1472,16 @@ def _collocate_dataarray(
         collocated_xda = other
     else:
         try:
-            from odc.geo import xr
-
             LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
 
             # Manage nodata
-            nodata = get_nodata_value_from_xr(other)
-
-            from odc.geo.geobox import GeoBox
-
-            collocated_xda = xr.xr_reproject(
-                src=other,
-                how=GeoBox(
-                    reference.rio.shape, reference.rio.transform(), reference.rio.crs
-                ),
+            collocated_xda = reproject(
+                other,
+                shape=reference.rio.shape,
                 resampling=resampling,
-                num_threads=perf.get_max_cores(),
-                dst_nodata=nodata,
-            ).rename(other.name)
-
-            # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-            collocated_xda.attrs.pop("nodata", None)
-            collocated_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
+                dst_crs=reference.rio.crs,
+                name=other.name,
+            )
 
         except ImportError:
             LOGGER.debug("Collocating with 'rioxarray.reproject_match'")
@@ -2401,57 +2375,312 @@ def classify(
     return classified_raster
 
 
-def _reproject_rpcs(
+@any_raster_to_xr_ds
+def reproject(
     src_xda: xr.DataArray,
-    rpcs: rpc.RPC,
-    dem_path: str,
-    ortho_path: AnyPathStrType,
     pixel_size: float = None,
+    shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
-    crs: CRS = None,
+    dst_crs: CRS = None,
     nodata: float = None,
     num_threads: int = None,
-    extent: gpd.GeoDataFrame = None,
+    use_dask: bool = True,
+    ortho_path: AnyPathStrType = None,
     name: str = None,
-    tmp_dir=None,
+    # under this, arguments only for reprojecting with RPCs
+    rpcs: rpc.RPC = None,
+    dem_path: str = None,
+    extent: gpd.GeoDataFrame = None,
+    vcrs: Union[str, int] = None,
+    caching_folder: AnyPathStrType = None,
     **kwargs,
-) -> (np.ndarray, dict):
-    """
-    Reproject using RPCs (cannot use another pixel size than src to ensure RPCs are valid)
-
-    Args:
-        src_arr (np.ndarray): Array to reproject
-        src_meta (dict): Metadata
-        rpcs (rpc.RPC): RPCs
-        dem_path (str): DEM path
-
-    Returns:
-        (np.ndarray, dict): Reprojected array and its metadata
-    """
-    # Convert to paths
-    dem_path = AnyPath(dem_path)
-    if tmp_dir is not None:
-        tmp_dir = AnyPath(tmp_dir)
-
-    # Get src crs (check that)
-    raw_crs = src_xda.rio.crs()
-    if not raw_crs:
-        raw_crs = EPSG_4326
-
+) -> xr.DataArray:
+    """"""
     # Get num threads
     if num_threads is None:
         num_threads = perf.get_max_cores()
 
-    # Manage nodata
+    if rpcs is not None:
+        reprojected_xda = _reproject_rpcs(
+            src_xda=src_xda,
+            rpcs=rpcs,
+            dem_path=dem_path,
+            ortho_path=ortho_path,
+            pixel_size=pixel_size,
+            shape=shape,
+            resampling=resampling,
+            dst_crs=dst_crs,
+            nodata=nodata,
+            num_threads=num_threads,
+            name=name,
+            extent=extent,
+            caching_folder=caching_folder,
+            vcrs=vcrs,
+            **kwargs,
+        )
+    else:
+        reprojected_xda = _reproject_without_rpcs(
+            src_xda=src_xda,
+            pixel_size=pixel_size,
+            shape=shape,
+            resampling=resampling,
+            dst_crs=dst_crs,
+            nodata=nodata,
+            num_threads=num_threads,
+            use_dask=use_dask,
+            **kwargs,
+        )
 
-    # Set RPC keywords
-    # See https://gdal.org/en/stable/api/gdal_alg.html#_CPPv426GDALCreateRPCTransformerV2PK13GDALRPCInfoV2idPPc
-    LOGGER.debug(f"Orthorectifying data with {dem_path}")
+    # Rename DataArray
+    if name:
+        reprojected_xda = reprojected_xda.rename(name)
+        reprojected_xda.attrs["long_name"] = name
+
+    if ortho_path is not None:
+        write(
+            reprojected_xda,
+            ortho_path,
+            dtype=kwargs.get("dtype", np.float32),
+            nodata=nodata,
+            tags=kwargs.get("tags"),
+            predictor=kwargs.get("predictor"),
+            driver=kwargs.get("driver"),
+            **kwargs,
+        )
+
+    return reprojected_xda
+
+
+def _reproject_without_rpcs(
+    src_xda: xr.DataArray,
+    pixel_size: float = None,
+    shape: tuple = None,
+    resampling: Resampling = Resampling.bilinear,
+    dst_crs: CRS = None,
+    nodata: float = None,
+    num_threads: int = None,
+    use_dask: bool = True,
+    **kwargs,
+):
+    if use_dask:
+        from odc.geo import xr as odc_geo_xr  # noqa: F401
+
+        if nodata is None:
+            nodata = get_nodata_value_from_xr(src_xda)
+
+        # Use Geobox as it seems to work better than shape
+        if shape is not None:
+            from affine import Affine
+            from odc.geo.geobox import GeoBox
+
+            height, width = shape
+            factor_h = src_xda.rio.height / height
+            factor_w = src_xda.rio.width / width
+            src_affine: Affine = src_xda.rio.transform()  # For typing
+
+            how = GeoBox(
+                (height, width),
+                src_affine * Affine.scale(factor_w, factor_h),
+                src_xda.rio.crs,
+            )
+
+            # Remove pixel_size
+            pixel_size = None
+
+        else:
+            how = dst_crs
+
+        # Issues https://github.com/opendatacube/odc-geo/issues/236
+        LOGGER.debug("src_xda.odc.reproject")
+        reprojected_xda = src_xda.odc.reproject(
+            how=how,
+            resolution=pixel_size,
+            resampling=resampling,
+            dst_nodata=nodata,
+            num_threads=num_threads,
+            dtype=src_xda.dtype,
+            anchor="floating",  # << closest option to what rioxarray does
+            XSCALE=None,
+            YSCALE=None,  # << turn off GDAL warp work-arounds (like rioxarray)
+            **kwargs,
+        )
+
+        # Set nodata in rioxr's way and remove odc.geo nodata in attributes
+        reprojected_xda.attrs.pop("nodata", None)
+        reprojected_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
+    else:
+        if dask.is_chunked(src_xda):
+            LOGGER.warning(
+                "You chose to reproject your chunked data without dask. Computing it before reprojecting."
+            )
+            src_xda = src_xda.compute()
+
+        LOGGER.debug("src_xda.rio.reproject")
+        reprojected_xda = src_xda.rio.reproject(
+            dst_crs=dst_crs,
+            resolution=pixel_size,
+            shape=shape,
+            resampling=resampling,
+            nodata=nodata,
+            num_threads=num_threads,
+            dtype=src_xda.dtype,
+            **kwargs,
+        )
+    return reprojected_xda
+
+
+def _reproject_rpcs(
+    src_xda: xr.DataArray,
+    rpcs: rpc.RPC,
+    dem_path: str,
+    pixel_size: float = None,
+    shape: tuple = None,
+    resampling: Resampling = Resampling.bilinear,
+    dst_crs: CRS = None,
+    nodata: float = None,
+    num_threads: int = None,
+    name: str = None,
+    extent: gpd.GeoDataFrame = None,
+    caching_folder: AnyPathStrType = None,
+    vcrs: Union[str, int] = None,
+    **kwargs,
+) -> xr.DataArray:
+    """
+    Reproject using RPCs (cannot use another pixel size than src to ensure RPCs are valid).
+    Using rioxarray's reproject method, with a fallback onto rasterio for old versions of rioxarray (and Python 3.9).
+
+    .. WARNING::
+        RPC reprojection is not daskified yet. See https://github.com/opendatacube/odc-geo/issues/193
+
+    .. WARNING::
+       Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
+
+    Args:
+        src_xda (xr.DataArray): Source DataArray to be reprojected. Will be computed if needed.
+        rpcs (rpc.RPC): Corresponding RPCs
+        dem_path (str): Path to the DEM that will be used to reproject. Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
+        pixel_size (float): Destination pixel size in the dst CRS. If None, using the default one computed from the reprojection.
+        shape (tuple): Shape of the destination raster. If None, using the default one computed from the reprojection. Superseeds pixel_size.
+        resampling (Resampling): Resampling method
+        dst_crs (CRS): Destination CRS. If None, the source CRS will be used.
+        nodata (float): Nodata to use
+        num_threads (int): Number of threads to use. If None, use the number given by perf.get_max_cores
+        name (str): Name of the reprojected DataArray
+        extent (gpd.GeoDataFrame): Extent used to cache the DEM if needed. If not needed, caching the whole DEM.
+        caching_folder (AnyPathStrType): Folder where to cache the DEM if needed. If not provided, a temporary folder will be used.
+        vcrs (Union[str, int]): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
+        **kwargs: Other arguments, mainly for reprojection itself and writing ('dtype', 'tags', 'predictor', 'driver')
+
+    Returns:
+        xr.DataArray: Reprojected DataArray
+    """
+    try:
+        import xdem  # noqa
+    except ImportError as ex:
+        raise ImportError(
+            "RPC reprojection requires the 'xdem' package to ensure vertical CRS validity."
+        ) from ex
+
+    ####
+    # Daskified reproject doesn't seem to work with RPC
+    # See https://github.com/opendatacube/odc-geo/issues/193
+    ####
+    # Manage chunked data (function not daskified yet)
+    if dask.is_chunked(src_xda):
+        LOGGER.warning(
+            "Reprojection with RPCs doesn't work with Dask. Computing the raster."
+        )
+        src_xda = src_xda.compute()
+
+    # Convert to Paths
+    dem_path = AnyPath(dem_path)
+
+    # Manage caching folder if needed
+    tmp_caching_folder = None
+    if caching_folder is not None:
+        caching_folder = AnyPath(caching_folder)
+    else:
+        if path.is_cloud_path(dem_path):
+            tmp_caching_folder = TemporaryDirectory()
+            caching_folder = AnyPath(tmp_caching_folder.name)
+
+    # Get src crs (check that)
+    src_crs = src_xda.rio.crs()
+    if not src_crs:
+        src_crs = EPSG_4326
 
     # RPC_DEM doesn't work with cloud-based DEM
-    # Read it to the extent of the product and save it on disk
+    dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
+
+    # Update GDAL parameters
+    kwargs = __rpc_gdal_options(dem_path, kwargs)
+
+    # Reproject with rioxarray
+    # Seems to handle the resolution well on the contrary to rasterio's reproject...
+    try:
+        reprojected_xda = src_xda.rio.reproject(
+            dst_crs=dst_crs,
+            resolution=pixel_size,
+            shape=shape,
+            resampling=resampling,
+            nodata=nodata,
+            num_threads=num_threads,
+            rpcs=rpcs,
+            dtype=src_xda.dtype,
+            **kwargs,
+        )
+
+    # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
+    # https://github.com/corteva/rioxarray/issues/844
+    except ValueError:
+        reprojected_xda = __reproject_rpc_fallback_rio(
+            src_xda=src_xda,
+            rpcs=rpcs,
+            src_crs=src_crs,
+            dst_crs=dst_crs,
+            pixel_size=pixel_size,
+            shape=shape,
+            num_threads=num_threads,
+            resampling=resampling,
+            **kwargs,
+        )
+
+    if tmp_caching_folder is not None:
+        tmp_caching_folder.cleanup()
+
+    return reprojected_xda
+
+
+def __preprocess_dem(
+    dem_path: AnyPathType,
+    src_extent: gpd.GeoDataFrame,
+    caching_folder: AnyPathType,
+    vcrs=Union[str, int],
+    **kwargs,
+) -> AnyPathType:
+    """
+    # Caching #
+    RPC_DEM doesn't work with cloud-based DEM
+    Read it to the extent of the product and save it on disk
+
+    # Adjusting #
+    Make sure DEM's height is relative to an ellipsoid
+    https://stereopipeline.readthedocs.io/en/latest/next_steps.html#conv-to-ellipsoid
+    A DEM relative to a geoid/areoid must be converted so that its heights are relative to an ellipsoid. This must be done for any Copernicus and SRTM DEMs.
+
+    Args:
+        dem_path (AnyPathType): DEM path
+        src_extent (gpd.GeoDataFrame): Source extent
+        caching_folder (AnyPathType): Folder where to cache the DEM
+        vcrs (Union[str, int]): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
+
+    Returns:
+        AnyPathType: Path to the cached DEM
+    """
+    LOGGER.debug(f"Orthorectifying data with {dem_path}")
+
     if path.is_cloud_path(dem_path):
-        cached_dem_path = tmp_dir / dem_path.name
+        cached_dem_path = caching_folder / dem_path.name
         if not cached_dem_path.is_file():
             LOGGER.warning(
                 "gdalwarp cannot process DEM stored on cloud with 'RPC_DEM' argument, "
@@ -2461,112 +2690,160 @@ def _reproject_rpcs(
             )
 
             write(
-                read(dem_path, window=extent),
+                read(dem_path, window=src_extent),
                 cached_dem_path,
                 dtype=np.float32,
             )
 
             LOGGER.debug("DEM cached.")
-        dem_path = str(cached_dem_path)
+        dem_path = cached_dem_path
 
+    # -- Manage vertical CRS --
+    ellipsoid_dem_path = caching_folder / f"{dem_path.stem}_ellipsoid{dem_path.suffix}"
+    if not ellipsoid_dem_path.is_file():
+        import xdem
+
+        dem = xdem.DEM(str(dem_path), vcrs=vcrs)
+
+        # Set vertical CRS
+        if dem.vcrs is None:
+            # Try to automatically detect DEM VCRS (if we got here, it's that the automatic procedure coming from xdem has failed)
+            dem_name = path.get_filename(dem_path)
+
+            # COPDEM30 is largely used in Sertit
+            if "Copernicus" in dem_name or "COPDEM" in dem_name:
+                dem.set_vcrs("EGM08")
+
+        if dem.vcrs is None:
+            LOGGER.warning(
+                "Impossible to detect vertical CRS of your DEM. Orthorectification may be inaccurate. If needed, pass 'vcrs' to the function to adjust."
+            )
+            ellipsoid_dem_path = dem_path
+        else:
+            # Convert to ellipsoid vertical CRS
+            dem_ellipsoid = dem.to_vcrs("Ellipsoid")
+
+            # Save back on disk
+            dem_ellipsoid.save(ellipsoid_dem_path)
+
+    return ellipsoid_dem_path
+
+
+def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
+    """
+    Add RPC-specific option to GDAL kwargs (topp be passed to rioxarray of rasterio)
+
+    Args:
+        dem_path  (AnyPathStrType): DEM path
+        kwargs (dict): Reprojection kwargs
+
+    Returns:
+        dict: Updated options
+    """
+    # ------- DEM VALIDITY -------
+    # DEM needs to have correct datum (WSG84 ellipsoid and not a geoid datum) -> how to check that?
+    # COPDEM-30 is not OK!
+    # https://xdem.readthedocs.io/en/stable/vertical_ref.html
+
+    # Set RPC options
     kwargs.update(
         {
-            "RPC_DEM": dem_path,
-            "RPC_DEM_MISSING_VALUE": 0,
-            "OSR_USE_ETMERC": "YES",
+            "RPC_DEM": str(dem_path),
             "BIGTIFF": "IF_NEEDED",
         }
     )
-    # https://gis.stackexchange.com/questions/328366/gdalwarp-orthorectification-worldview-3-not-using-rpc-projection-properly fixed
+    # https://gis.stackexchange.com/questions/328366/gdalwarp-orthorectification-worldview-3-not-using-rpc-projection-properly (says it needs 'error threshold = 0')
+    # It seems fixed by default for RPC, i.e. from gdalwarp: https://gdal.org/en/stable/programs/gdalwarp.html#cmdoption-gdalwarp-et
     # Error threshold for transformation approximation, expressed as a number of source pixels.
     # Defaults to 0.125 pixels unless the RPC_DEM transformer option is specified, in which case an exact transformer, i.e. err_threshold=0, will be used.
+    # We are using RPC_DEM so it should be fine
 
-    # Reproject with rioxarray
-    # Seems to handle the resolution well on the contrary to rasterio's reproject...
-    try:
-        out_xda = src_xda.rio.reproject(
-            dst_crs=crs,
-            resolution=pixel_size,
-            resampling=resampling,
-            nodata=nodata,
-            num_threads=num_threads,
-            rpcs=rpcs,
-            dtype=src_xda.dtype,
-            **kwargs,
-        )
+    # DEM nodata
+    with rasterio.open(dem_path) as src:
+        dem_nodata = src.nodata
 
-        write(
-            out_xda,
-            ortho_path,
-            dtype=np.float32,
-            nodata=nodata,
-            tags=kwargs.get("tags"),
-            predictor=kwargs.get("predictor"),
-            driver=kwargs.get("driver"),
-        )
+    if dem_nodata is not None:
+        kwargs.update({"RPC_DEM_MISSING_VALUE": dem_nodata})
 
-    # Daskified reproject doesn't seem to work with RPC
-    # See https://github.com/opendatacube/odc-geo/issues/193
-    # from odc.geo import xr # noqa
-    # out_xda = src_xda.odc.reproject(
-    #     how=self.crs(),
-    #     resolution=self.pixel_size,
-    #     resampling=kwargs.pop("resampling", self.band_resampling),
-    #     dst_nodata=self._raw_nodata,
-    #     num_threads=utils.get_max_cores(),
-    #     rpcs=rpcs,
-    #     dtype=src_xda.dtype,
-    #     **kwargs
+    # OSR_USE_ETMERC:
+    # Warning 1: OSR_USE_ETMERC is a legacy configuration option, which now has only effect when set to NO (YES is the default). Use OSR_USE_APPROX_TMERC=YES instead
+    # kwargs.update(
+    #     {
+    #         "OSR_USE_ETMERC": "YES",
+    #     }
     # )
 
-    # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
-    # https://github.com/corteva/rioxarray/issues/844
-    except ValueError:
-        nodata = get_nodata_value_from_xr(src_xda)
-        arr = src_xda.fillna(nodata) if nodata is not None else src_xda
+    # Other threads found on RPC reprojection
+    # https://gis.stackexchange.com/questions/456358/run-gdalwarp-to-rectify-a-raster-rpc-embedded-with-dem-but-got-error-too-many
 
-        # WARNING: may not give correct output pixel size
-        out_arr, dst_transform = warp.reproject(
-            arr.compute().data,
-            src_transform=None,
+    return kwargs
+
+
+def __reproject_rpc_fallback_rio(
+    src_xda,
+    rpcs,
+    src_crs,
+    dst_crs,
+    pixel_size: float = None,
+    shape: tuple = None,
+    num_threads: int = None,
+    resampling: Resampling = Resampling.bilinear,
+    **kwargs,
+) -> xr.DataArray:
+    """
+    Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
+    https://github.com/corteva/rioxarray/issues/844
+
+    Returns:
+        xr.DataArray: Reprojected array
+
+    """
+    dst_transform = None
+    if shape is not None:
+        from rasterio.warp import calculate_default_transform
+
+        dst_transform = calculate_default_transform(
+            src_crs,
+            dst_crs,
+            width=src_xda.rio.width,
+            height=src_xda.rio.height,
             rpcs=rpcs,
-            src_crs=raw_crs,
-            src_nodata=nodata,
-            dst_crs=crs,
-            dst_resolution=pixel_size,
-            dst_nodata=nodata,  # input data should be in integer
-            num_threads=num_threads,
-            resampling=resampling,
-            **kwargs,
+            dst_width=shape[0],
+            dst_height=shape[1],
+            # **kwargs
         )
-        # Get dims
-        count, height, width = out_arr.shape
+        pixel_size = None
 
-        # Update metadata
-        meta = {
-            "driver": "GTiff",
-            "dtype": src_xda.dtype,
-            "nodata": nodata,
-            "width": width,
-            "height": height,
-            "count": count,
-            "crs": crs,
-            "transform": dst_transform,
-            "compress": "lzw",
-        }
-        rasters_rio.write(
-            out_arr,
-            meta,
-            ortho_path,
-            dtype=np.float32,
-            nodata=nodata,
-            tags=kwargs.get("tags"),
-            predictor=kwargs.get("predictor"),
-            driver=kwargs.get("driver"),
-        )
-        out_xda = read(ortho_path)
+    nodata = get_nodata_value_from_xr(src_xda)
+    arr = src_xda.fillna(nodata) if nodata is not None else src_xda
 
-    if name:
-        out_xda.rename(name)
-        out_xda.attrs["long_name"] = name
-    return out_xda
+    # WARNING: may not give exact output pixel size
+    out_arr, dst_transform = warp.reproject(
+        arr.data,
+        rpcs=rpcs,
+        src_crs=src_crs,
+        src_nodata=nodata,
+        dst_transform=dst_transform,
+        dst_crs=dst_crs,
+        dst_resolution=pixel_size,
+        dst_nodata=nodata,
+        num_threads=num_threads,
+        resampling=resampling,
+        **kwargs,
+    )
+    # Get dims
+    count, height, width = out_arr.shape
+
+    # Update metadata
+    meta = {
+        "driver": "GTiff",
+        "dtype": src_xda.dtype,
+        "nodata": nodata,
+        "width": width,
+        "height": height,
+        "count": count,
+        "crs": dst_crs,
+        "transform": dst_transform,
+        "compress": "lzw",
+    }
+    return read((out_arr, meta))

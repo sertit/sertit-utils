@@ -47,7 +47,7 @@ version = {attr = "sertit.__version__"}
 [project.optional-dependencies]
 colorlog = ["colorlog"]
 rasters_rio = ["rasterio>=1.3.10"]
-rasters = ["rasterio>=1.3.10", "rioxarray>=0.10.0"]
+rasters = ["rasterio>=1.3.10", "rioxarray>=0.10.0", "xdem"]
 dask =  [
     "rasterio[s3]>=1.3.10",
     "rioxarray>=0.10.0",
@@ -59,6 +59,7 @@ dask =  [
     # rasters libraries leveraging dask
     "odc-geo>=0.4.6",
     "xarray-spatial>=0.3.6",
+    "xdem",
 ]
 full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
 
