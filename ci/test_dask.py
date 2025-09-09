@@ -135,15 +135,15 @@ def test_env_var(capfd):
     with dask.get_or_create_dask_client(
         processes=True, env_vars={"PROCESSES": "True"}
     ) as client:
-        client.run(lambda: print("processes=" + os.environ["PROCESSES"]))
+        client.run(lambda: print("1. processes=" + os.environ["PROCESSES"]))
         out, err = capfd.readouterr()
-        assert "processes=True" in out
-        assert "processes=False" not in out
+        assert "1. processes=True" in out
+        assert "1. processes=False" not in out
 
     with dask.get_or_create_dask_client(
         processes=False, env_vars={"PROCESSES": "False"}
     ) as client:
-        client.run(lambda: print("processes=" + os.environ["PROCESSES"]))
+        client.run(lambda: print("2. processes=" + os.environ["PROCESSES"]))
         out, err = capfd.readouterr()
-        assert "processes=False" in out
-        assert "processes=True" not in out
+        assert "2. processes=False" in out
+        assert "2. processes=True" not in out
