@@ -44,7 +44,18 @@ except ModuleNotFoundError as ex:
         "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
 
-from sertit import AnyPath, geometry, logs, misc, path, perf, strings, vectors, xml
+from sertit import (
+    AnyPath,
+    geometry,
+    logs,
+    misc,
+    os_utils,
+    path,
+    perf,
+    strings,
+    vectors,
+    xml,
+)
 from sertit.logs import SU_NAME
 from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
 
@@ -1511,9 +1522,15 @@ def merge_vrt(
         merged_path = strings.to_cmd_string(str(merged_path))
 
     # Run cmd
+    qgis_bin = os_utils.qgis_bin()
+    if qgis_bin is not None:
+        gdal_build_vrt_exe = strings.to_cmd_string(str(qgis_bin / "gdalbuildvrt.exe"))
+    else:
+        gdal_build_vrt_exe = "gdalbuildvrt"
+
     arg_list = [val for item in kwargs.items() for val in item]
     try:
-        vrt_cmd = ["gdalbuildvrt", merged_path, *paths, *arg_list]
+        vrt_cmd = [gdal_build_vrt_exe, merged_path, *paths, *arg_list]
         misc.run_cli(vrt_cmd, cwd=vrt_root)
 
     except RuntimeError:
@@ -1526,7 +1543,7 @@ def merge_vrt(
                     f.write(f"{p}\n")
 
             vrt_cmd = [
-                "gdalbuildvrt",
+                gdal_build_vrt_exe,
                 "-input_file_list",
                 tmp_file,
                 merged_path,

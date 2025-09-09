@@ -30,6 +30,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "semver",
     "tqdm",
     "lxml",
     "dill",
