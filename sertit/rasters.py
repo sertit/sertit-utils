@@ -2106,7 +2106,8 @@ def _run_hillshade(data, az_rad, alt_rad, res):
     return hshade
 
 
-@any_raster_to_xr_ds
+# TODO: change that once xdem has an xarray accessor: https://github.com/GlacioHack/xdem/pull/656
+@rasters_rio.any_raster_to_rio_ds
 @_3d_to_2d
 def hillshade(
     xds: AnyRasterType, azimuth: float = 315, zenith: float = 45, **kwargs
@@ -2114,14 +2115,13 @@ def hillshade(
     """
     Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
 
+    Wrapping of :py:func:`xdem.DEM.hillshade`.
+
+    Using :code:`Horn` method by default (other possible is :code:`ZevenbergThorne`).
+
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     NB: altitude = zenith
-
-    References:
-
-    - `1 <https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py>`_
-    - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -2132,63 +2132,32 @@ def hillshade(
         AnyXrDataStructure: Hillshade
     """
     try:
-        issue_solved = False
-        if issue_solved:
-            from xrspatial import hillshade
+        import xdem
+    except ImportError as ex:
+        raise ImportError("Hillshade requires the 'xdem' package.") from ex
 
-            xds = hillshade(
-                xds,
-                azimuth=int(azimuth),
-                angle_altitude=90 - int(zenith),
-                name=kwargs.get("name", "hillshade"),
-                shadows=kwargs.get("shadows"),
-            )
-            # Output result is different: result = (shaded + 1) / 2; shaded = 2 * result - 1
-            xds = 2 * xds - 1
-
-            # We want: result_gdal = np.where(shaded <= 0, 1.0, 254.0 * shaded + 1)
-            xds = where(xds <= 0, 1.0, 254.0 * xds + 1, xds)
-        else:
-            # replace xarray-spatial fct with GDAL compatible one
-            from functools import partial
-
-            try:
-                _func = partial(
-                    _run_hillshade,
-                    az_rad=azimuth * DEG_2_RAD,
-                    alt_rad=(90 - zenith) * DEG_2_RAD,
-                    res=np.abs(xds.rio.resolution()),
-                )
-                out = xds.data.map_overlap(
-                    _func, depth=(1, 1), boundary=np.nan, meta=np.array(())
-                )
-            except AttributeError:
-                # Without dask
-                out = _run_hillshade(
-                    xds.data,
-                    az_rad=azimuth * DEG_2_RAD,
-                    alt_rad=(90 - zenith) * DEG_2_RAD,
-                    res=np.abs(xds.rio.resolution()),
-                )
-
-            xds = xds.copy(data=out)
-
-    except ImportError:
-        LOGGER.debug(
-            "'Hillshade' not computed with Dask as 'xarray-spatial' is not installed."
+    xds = (
+        xdem.DEM(xds)
+        .hillshade(
+            method=kwargs.get("method", "Horn"),
+            azimuth=azimuth,
+            altitude=90 - zenith,
+            z_factor=kwargs.get("z_factor", 1.0),
+            mp_config=kwargs.get("mp_config"),
         )
-        # Use classic option
-        arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
-
-        xds = xds.copy(data=arr)
-
-    xds = xds.rename(kwargs.get("name", "hillshade"))
+        .to_xarray(kwargs.get("name", "hillshade"))
+        .astype("float32")
+    )
     xds.attrs["long_name"] = "hillshade"
+
+    # 0 is nodata according to doc: https://xdem.readthedocs.io/en/stable/gen_modules/xdem.DEM.hillshade.html
+    xds = set_nodata(xds, 0)
 
     return xds
 
 
-@any_raster_to_xr_ds
+# TODO: change that once xdem has an xarray accessor: https://github.com/GlacioHack/xdem/pull/656
+@rasters_rio.any_raster_to_rio_ds
 @_3d_to_2d
 def slope(
     xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False, **kwargs
@@ -2196,7 +2165,11 @@ def slope(
     """
     Compute the slope of a DEM (in degrees).
 
-    Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
+    Wrapping of :py:func:`xdem.DEM.slope`.
+
+    Using :code:`Horn` method by default (other possible is :code:`ZevenbergThorne`).
+
+    Goal: replace usage of `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -2206,36 +2179,42 @@ def slope(
     Returns:
         AnyXrDataStructure: Slope
     """
+
     try:
-        from xrspatial import slope
+        import xdem
+    except ImportError as ex:
+        raise ImportError("Slope requires the 'xdem' package.") from ex
 
-        xds = slope(xds)
-
-        if in_pct:
-            xds = 100 * np.tan(xds * DEG_2_RAD)
-        elif in_rad:
-            xds = xds * DEG_2_RAD
-    except ImportError:
-        LOGGER.debug(
-            "'Slope' not computed with Dask as 'xarray-spatial' is not installed."
+    xds = (
+        xdem.DEM(xds)
+        .slope(
+            method=kwargs.get("method", "Horn"),
+            degrees=not in_rad,
+            mp_config=kwargs.get("mp_config"),
         )
-
-        # Use classic option
-        arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
-
-        xds = xds.copy(data=arr)
-
-    xds = xds.rename(kwargs.get("name", "slope"))
+        .to_xarray(kwargs.get("name", "slope"))
+        .astype("float32")
+    )
     xds.attrs["long_name"] = "slope"
+
+    if in_pct:
+        xds = 100 * np.tan(xds * DEG_2_RAD)
 
     return xds
 
 
-@any_raster_to_xr_ds
+# TODO: change that once xdem has an xarray accessor: https://github.com/GlacioHack/xdem/pull/656
+@rasters_rio.any_raster_to_rio_ds
 @_3d_to_2d
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     """
     Compute the aspect of a DEM.
+
+    Wrapping of :py:func:`xdem.DEM.aspect`.
+
+    Using :code:`Horn` method by default (other possible is :code:`ZevenbergThorne`).
+
+    In degrees by default.
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -2244,15 +2223,23 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
         AnyXrDataStructure: Aspect
     """
     try:
-        from xrspatial import aspect
+        import xdem
+    except ImportError as ex:
+        raise ImportError("Aspect requires the 'xdem' package.") from ex
 
-        xds = aspect(xds, name=kwargs.get("name", "aspect"))
-        xds.attrs["long_name"] = "aspect"
-        return xds
-    except ImportError as exc:
-        raise NotImplementedError(
-            "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
-        ) from exc
+    xds = (
+        xdem.DEM(xds)
+        .aspect(
+            method=kwargs.get("method", "Horn"),
+            degrees=kwargs.get("degrees", True),
+            mp_config=kwargs.get("mp_config"),
+        )
+        .to_xarray(kwargs.get("name", "aspect"))
+        .astype("float32")
+    )
+    xds.attrs["long_name"] = "aspect"
+
+    return xds
 
 
 # TODO: add other DEM-related functions like 'curvature', etc if needed. Create a dedicated module?

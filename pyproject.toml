@@ -58,7 +58,6 @@ dask =  [
     "cytoolz",
     # rasters libraries leveraging dask
     "odc-geo>=0.4.6",
-    "xarray-spatial>=0.3.6",
     "xdem",
 ]
 full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
