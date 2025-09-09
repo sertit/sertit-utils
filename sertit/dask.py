@@ -52,7 +52,7 @@ def get_client():
 
 
 @contextmanager
-def get_or_create_dask_client(processes=False):
+def get_or_create_dask_client(processes=False, env_vars=None):
     """
     Return default Dask client or create a local cluster and linked  client if not existing
     Returns:
@@ -93,6 +93,10 @@ def get_or_create_dask_client(processes=False):
                     client = Client(
                         processes=processes,
                     )
+            if env_vars:
+                client.run(
+                    lambda: os.environ.update({k: v for k, v in env_vars.items()})
+                )
 
             yield client
 

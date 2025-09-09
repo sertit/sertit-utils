@@ -15,10 +15,16 @@
 # limitations under the License.
 """Script testing dask functions"""
 
+import logging
+import os
+
 import pytest
 
 from ci.script_utils import rasters_path, s3_env
 from sertit import ci, dask, rasters
+from sertit.logs import SU_NAME
+
+LOGGER = logging.getLogger(SU_NAME)
 
 ci.reduce_verbosity()
 
@@ -123,3 +129,21 @@ def test_raise_compute():
     #     arr = values.vindex[
     #         xr.apply_ufunc(np.digitize, a, [0.1, 0.2], dask="allowed").data
     #     ]
+
+
+def test_env_var(capfd):
+    with dask.get_or_create_dask_client(
+        processes=True, env_vars={"PROCESSES": "True"}
+    ) as client:
+        client.run(lambda: print("processes=" + os.environ["PROCESSES"]))
+        out, err = capfd.readouterr()
+        assert "processes=True" in out
+        assert "processes=False" not in out
+
+    with dask.get_or_create_dask_client(
+        processes=False, env_vars={"PROCESSES": "False"}
+    ) as client:
+        client.run(lambda: print("processes=" + os.environ["PROCESSES"]))
+        out, err = capfd.readouterr()
+        assert "processes=False" in out
+        assert "processes=True" not in out
