@@ -3,8 +3,7 @@ import re
 from functools import cmp_to_key
 from pathlib import Path
 
-from semver import Version
-
+from sertit import strings
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -25,6 +24,8 @@ def _compare_str_containing_version(str1: str, str2: str):
         1 if v1 >= v2
 
     """
+    from semver import Version
+
     match_pattern = r"\d+\.\d+\.?\d+?"
     v1 = Version.parse(
         re.search(match_pattern, str1).group(), optional_minor_and_patch=True
@@ -40,7 +41,7 @@ def _compare_str_containing_version(str1: str, str2: str):
         return 1
 
 
-def qgis_bin() -> Path | None:
+def qgis_bin() -> Path:
     """
     Looking for qgis bin directory in Windows filesystem and return it.
 
@@ -73,3 +74,21 @@ def qgis_bin() -> Path | None:
         qgis_dir = osgeo_path if osgeo_path.exists() else None
 
     return qgis_dir
+
+
+def gdalbuildvrt_exe() -> str:
+    """
+    Looking for gdalbuildvrt exe from the path or inside qgis bin directory.
+
+    Returns:
+        str: gdalbuildvrt exe
+
+    """
+    qgis = qgis_bin()
+
+    if qgis is not None:
+        gdal_build_vrt_exe = strings.to_cmd_string(str(qgis / "gdalbuildvrt.exe"))
+    else:
+        gdal_build_vrt_exe = "gdalbuildvrt"
+
+    return gdal_build_vrt_exe

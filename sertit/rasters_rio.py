@@ -1522,12 +1522,7 @@ def merge_vrt(
         merged_path = strings.to_cmd_string(str(merged_path))
 
     # Run cmd
-    qgis_bin = os_utils.qgis_bin()
-    if qgis_bin is not None:
-        gdal_build_vrt_exe = strings.to_cmd_string(str(qgis_bin / "gdalbuildvrt.exe"))
-    else:
-        gdal_build_vrt_exe = "gdalbuildvrt"
-
+    gdal_build_vrt_exe = os_utils.gdalbuildvrt_exe()
     arg_list = [val for item in kwargs.items() for val in item]
     try:
         vrt_cmd = [gdal_build_vrt_exe, merged_path, *paths, *arg_list]
