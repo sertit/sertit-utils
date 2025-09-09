@@ -2440,11 +2440,11 @@ def reproject(
         write(
             reprojected_xda,
             ortho_path,
-            dtype=kwargs.get("dtype", np.float32),
+            dtype=kwargs.pop("dtype", np.float32),
             nodata=nodata,
-            tags=kwargs.get("tags"),
-            predictor=kwargs.get("predictor"),
-            driver=kwargs.get("driver"),
+            tags=kwargs.pop("tags", None),
+            predictor=kwargs.pop("predictor", None),
+            driver=kwargs.pop("driver", None),
             **kwargs,
         )
 
@@ -2600,12 +2600,11 @@ def _reproject_rpcs(
     if caching_folder is not None:
         caching_folder = AnyPath(caching_folder)
     else:
-        if path.is_cloud_path(dem_path):
-            tmp_caching_folder = TemporaryDirectory()
-            caching_folder = AnyPath(tmp_caching_folder.name)
+        tmp_caching_folder = TemporaryDirectory()
+        caching_folder = AnyPath(tmp_caching_folder.name)
 
     # Get src crs (check that)
-    src_crs = src_xda.rio.crs()
+    src_crs = src_xda.rio.crs
     if not src_crs:
         src_crs = EPSG_4326
 
