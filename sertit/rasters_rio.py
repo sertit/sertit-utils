@@ -124,25 +124,6 @@ def get_nodata_value_from_dtype(dtype) -> float:
     return nodata
 
 
-def get_nodata_value(dtype) -> float:
-    """
-    .. deprecated:: 1.41.0
-       Use :code:`get_nodata_value_from_dtype` instead.
-
-    Get default nodata value:
-
-    Args:
-        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
-
-    Returns:
-        float: Nodata value
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Use 'get_nodata_value_from_dtype' instead."
-    )
-    return get_nodata_value_from_dtype(dtype)
-
-
 def bigtiff_value(arr: Any) -> str:
     """
     Returns :code:`YES` if array is larger than 4 GB, :code:`IF_NEEDED` otherwise.
@@ -267,17 +248,6 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
         return out
 
     return wrapper
-
-
-def path_arr_dst(function: Callable) -> Callable:
-    """
-    .. deprecated:: 1.40.0
-       Use :py:func:`rasters.any_raster_to_rio_ds` instead.
-    """
-    logs.deprecation_warning(
-        "Deprecated 'path_arr_dst' decorator. Please use 'any_raster_to_rio_ds' instead."
-    )
-    return any_raster_to_rio_ds(function)
 
 
 @any_raster_to_rio_ds
@@ -443,19 +413,6 @@ def update_meta(arr: AnyNumpyArray, meta: dict) -> dict:
         out_meta["nodata"] = arr.fill_value
 
     return out_meta
-
-
-def get_nodata_mask(
-    array: AnyNumpyArray,
-    has_nodata: bool,
-    default_nodata: int = 0,
-) -> np.ndarray:
-    """
-    .. deprecated:: 1.36.0
-       Use :py:func:`rasters_rio.get_data_mask` instead.
-    """
-    logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
-    return get_data_mask(array, has_nodata, default_nodata)
 
 
 def get_data_mask(

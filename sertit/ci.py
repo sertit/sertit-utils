@@ -31,8 +31,8 @@ from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, dask, files, rasters, s3, unistra
-from sertit.logs import SU_NAME, deprecation_warning
+from sertit import AnyPath, dask, files, rasters, s3
+from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyXrDataStructure
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -41,61 +41,6 @@ LOGGER = logging.getLogger(SU_NAME)
 AWS_ACCESS_KEY_ID = s3.AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY = s3.AWS_SECRET_ACCESS_KEY
 AWS_S3_ENDPOINT = s3.AWS_S3_ENDPOINT
-
-
-def s3_env(*args, **kwargs):
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.s3_env(*args, **kwargs)
-
-
-def define_s3_client():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.define_s3_client()
-
-
-def get_db2_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db2_path()
-
-
-def get_db3_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db3_path()
-
-
-def get_db4_path():
-    """
-    .. deprecated:: 1.30.0
-       Import it from :py:mod:`sertit.unistra` instead of :py:mod:`sertit.ci`
-    """
-    deprecation_warning(
-        "This function is deprecated. Import it from 'sertit.unistra' instead of 'sertit.ci'"
-    )
-    return unistra.get_db4_path()
 
 
 def assert_val(val_1: Any, val_2: Any, field: str) -> None:

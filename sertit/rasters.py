@@ -132,25 +132,6 @@ def get_nodata_value_from_dtype(dtype) -> float:
     return rasters_rio.get_nodata_value_from_dtype(dtype)
 
 
-def get_nodata_value(dtype) -> float:
-    """
-    .. deprecated:: 1.41.0
-       Use :code:`get_nodata_value_from_dtype` instead.
-
-    Get default nodata value:
-
-    Args:
-        dtype: Dtype for the wanted nodata. Best if numpy's dtype.
-
-    Returns:
-        float: Nodata value
-    """
-    logs.deprecation_warning(
-        "This function is deprecated. Use 'get_nodata_value_from_dtype' instead."
-    )
-    return get_nodata_value_from_dtype(dtype)
-
-
 def any_raster_to_xr_ds(function: Callable) -> Callable:
     """
     Allows a function to ingest AnyRasterType and convert it into a xr.DataArray:
@@ -228,27 +209,6 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
         return out
 
     return wrapper
-
-
-def path_xarr_dst(function: Callable) -> Callable:
-    """
-    .. deprecated:: 1.40.0
-       Use :py:func:`rasters.any_raster_to_xr_ds` instead.
-    """
-    logs.deprecation_warning(
-        "Deprecated 'path_xarr_dst' decorator. Please use 'any_raster_to_xr_ds' instead."
-    )
-    return any_raster_to_xr_ds(function)
-
-
-@any_raster_to_xr_ds
-def get_nodata_mask(xds: AnyXrDataStructure) -> np.ndarray:
-    """
-    .. deprecated:: 1.36.0
-       Use :py:func:`rasters.get_data_mask` instead.
-    """
-    logs.deprecation_warning("This function is deprecated. Use 'get_data_mask' instead")
-    return get_data_mask(xds)
 
 
 @any_raster_to_xr_ds

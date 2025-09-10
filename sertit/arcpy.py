@@ -153,32 +153,6 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
         super(ArcPyLogHandler, self).emit(record)
 
 
-def feature_layer_to_path(feature_layer) -> str:
-    """
-    .. deprecated:: 1.36.0
-       Use :py:func:`gp_layer_to_path` instead.
-
-    Use :func:`gp_layer_to_path` instead.
-
-    Convert a feature layer to its source path.
-
-    Args:
-        feature_layer: Feature layer
-
-    Returns:
-        str: Path to the feature layer source
-
-    """
-    deprecation_warning("This function is deprecated. Use gp_layer_to_path instead.")
-    # Get path
-    if hasattr(feature_layer, "dataSource"):
-        path = feature_layer.dataSource
-    else:
-        path = str(feature_layer)
-
-    return path
-
-
 def gp_layer_to_path(feature_layer) -> str:
     """
     Convert a GP layer to its source path.
