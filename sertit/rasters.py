@@ -724,7 +724,7 @@ def mask(
             data=xr.mask(xds, poly=shapes, invert=invert, all_touched=all_touched)
         )
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         LOGGER.debug("Using 'rasterio' masking function")
 
         # Use classic option if odc-geo is not installed
@@ -861,7 +861,7 @@ def crop(
 
             try:
                 shapes = shapes.union_all()
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 # Geopandas < 1.1.0
                 shapes = shapes.unary_union
 
@@ -872,7 +872,7 @@ def crop(
 
         return set_metadata(cropped, xds)
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
             shapes = shapes.to_crs(xds.rio.crs).geometry
 
@@ -1363,7 +1363,7 @@ def write(
 
                 is_written = True
 
-            except (ModuleNotFoundError, KeyError):
+            except (ModuleNotFoundError, KeyError):  # pragma: no cover
                 # COGs cannot be written via dask via rioxarray for the moment
                 LOGGER.debug(
                     "Loading raster in memory as COGs cannot be written with Dask via 'rioxarray' for the moment. "
@@ -1439,7 +1439,7 @@ def _collocate_dataarray(
                 name=other.name,
             )
 
-        except ImportError:
+        except ImportError:  # pragma: no cover
             LOGGER.debug("Collocating with 'rioxarray.reproject_match'")
             # If odc-geo isn't installed, use rioxarray (not daskified!)
             collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
@@ -1582,7 +1582,7 @@ def sieve(
             kwargs={"size": sieve_thresh, "connectivity": connectivity, "mask": mask},
             dask="allowed",
         )
-    except ValueError:
+    except ValueError:  # pragma: no cover
         LOGGER.debug("Impossible to use 'xr.apply_ufunc' when sieving.")
         sieved_arr = features.sieve(
             data, size=sieve_thresh, connectivity=connectivity, mask=mask
@@ -2089,7 +2089,7 @@ def hillshade(
     """
     try:
         issue_solved = False
-        if issue_solved:
+        if issue_solved:  # pragma: no cover
             from xrspatial import hillshade
 
             xds = hillshade(
@@ -2129,7 +2129,7 @@ def hillshade(
 
             xds = xds.copy(data=out)
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         LOGGER.debug(
             "'Hillshade' not computed with Dask as 'xarray-spatial' is not installed."
         )
@@ -2171,7 +2171,7 @@ def slope(
             xds = 100 * np.tan(xds * DEG_2_RAD)
         elif in_rad:
             xds = xds * DEG_2_RAD
-    except ImportError:
+    except ImportError:  # pragma: no cover
         LOGGER.debug(
             "'Slope' not computed with Dask as 'xarray-spatial' is not installed."
         )
@@ -2877,7 +2877,7 @@ def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
     return kwargs
 
 
-def __reproject_rpc_fallback_rio(
+def __reproject_rpc_fallback_rio(  # pragma: no cover
     src_xda,
     rpcs,
     src_crs,
