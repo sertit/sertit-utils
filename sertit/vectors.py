@@ -68,7 +68,7 @@ if is_geopandas_1_0():
     from shapely.errors import GEOSException
 
     CPLE_AppDefinedError = Exception
-else:
+else:  # pragma: no cover
     from fiona._err import CPLE_AppDefinedError
     from fiona.errors import DriverError as DataSourceError
     from fiona.errors import UnsupportedGeometryTypeError as GEOSException
@@ -134,7 +134,7 @@ def set_kml_driver() -> None:
         [1 rows x 12 columns]
 
     """
-    if not is_geopandas_1_0():
+    if not is_geopandas_1_0():  # pragma: no cover
         import fiona
 
         drivers = fiona.drvsupport.supported_drivers
