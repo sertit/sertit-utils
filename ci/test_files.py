@@ -242,10 +242,6 @@ def test_json():
         )  # Enum are stored following their value
         assert obj == test_dict
 
-        # Test deprecation
-        with pytest.deprecated_call():
-            files.save_json(json_file, test_dict)
-
 
 def test_pickle():
     """Test pickle functions"""

@@ -1,6 +1,6 @@
 # Release History
 
-## 1.48.0 (2025--dd)
+## 1.48.0 (2025-mm-dd)
 
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))
 

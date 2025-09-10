@@ -42,8 +42,6 @@ from sertit.rasters import (
     INT8_NODATA,
     UINT8_NODATA,
     UINT16_NODATA,
-    any_raster_to_xr_ds,
-    get_nodata_value_from_dtype,
     get_nodata_value_from_xr,
 )
 from sertit.vectors import EPSG_4326
@@ -350,13 +348,6 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
             **KAPUT_KWARGS,
         )  # Compute #3
         _test_raster_after_write(test_path, dtype, nodata_val)
-
-    # test deprecation warning
-    test_deprecated_path = get_output(tmp_path, "test_depr.tif", DEBUG)
-    with pytest.deprecated_call():
-        rasters.write(
-            xda, path=test_deprecated_path, dtype=dtype
-        )  # This doesn't compute (because of context manager ?)
 
 
 @s3_env
@@ -1198,51 +1189,6 @@ def test_rasterize_multi_band_raster(tmp_path, raster_path):
     rasters.write(rast_bin, out_bin_mb_path, dtype=np.uint8, nodata=255)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_mb_path, decimal=4)
-
-
-@s3_env
-def test_decorator_deprecation(raster_path):
-    from sertit.rasters import path_xarr_dst
-
-    @any_raster_to_xr_ds
-    def _ok_rasters(xds):
-        assert isinstance(xds, xr.DataArray)
-        return xds
-
-    @path_xarr_dst
-    def _depr_rasters(xds):
-        assert isinstance(xds, xr.DataArray)
-        return xds
-
-    # Not able to warn deprecation from inside the decorator
-    xr.testing.assert_equal(_ok_rasters(raster_path), _depr_rasters(raster_path))
-
-
-def test_get_nodata_deprecation():
-    """Test deprecation of get_nodata_value"""
-    # Test deprecation
-    for dtype in [
-        np.uint8,
-        np.int8,
-        np.uint16,
-        np.uint32,
-        np.int32,
-        np.int64,
-        np.uint64,
-        int,
-        "int",
-        np.int16,
-        np.float32,
-        np.float64,
-        float,
-        "float",
-    ]:
-        with pytest.deprecated_call():
-            from sertit.rasters import get_nodata_value
-
-            ci.assert_val(
-                get_nodata_value_from_dtype(dtype), get_nodata_value(dtype), dtype
-            )
 
 
 @s3_env
