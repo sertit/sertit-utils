@@ -35,7 +35,7 @@ import numpy as np
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import AnyPath, logs, path
+from sertit import AnyPath, path
 from sertit.logs import SU_NAME
 from sertit.strings import DATE_FORMAT
 from sertit.types import AnyPathStrType, AnyPathType
@@ -227,12 +227,6 @@ def read_archived_xml(
         >>> read_archived_xml(arch_path, file_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'xml_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("xml_regex")
-
     xml_bytes = read_archived_file(archive_path, regex=regex, file_list=file_list)
 
     return etree.fromstring(xml_bytes)
@@ -601,15 +595,6 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
         >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
         >>> save_json(output_json, json_dict)
     """
-    if isinstance(output_json, dict):
-        # Old order. Swap the variables.
-        logs.deprecation_warning(
-            "The order of the function has changed. Please set json_dict in first!"
-        )
-        tmp = output_json
-        output_json = json_dict
-        json_dict = tmp
-
     kwargs["indent"] = kwargs.get("indent", 3)
     kwargs["cls"] = kwargs.get("cls", CustomEncoder)
 

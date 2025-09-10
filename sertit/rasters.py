@@ -1248,11 +1248,6 @@ def write(
         >>> write(xds, raster_out)
     """
     delayed = None
-    if output_path is None:
-        logs.deprecation_warning(
-            "'path' is deprecated in 'rasters.write'. Use 'output_path' instead."
-        )
-        output_path = kwargs.pop("path")
 
     # Prune empty kwargs to avoid throwing GDAL warnings/errors
     kwargs = {k: v for k, v in kwargs.items() if v is not None}

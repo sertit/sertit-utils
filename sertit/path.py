@@ -25,7 +25,7 @@ import tempfile
 import zipfile
 from typing import Any, Union
 
-from sertit import AnyPath, logs
+from sertit import AnyPath
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -214,12 +214,6 @@ def get_archived_path(
         >>> path = get_archived_path(arch_path, file_regex)
         'dir/filename.tif'
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
     # Get file list
     archive_path = AnyPath(archive_path)
 
@@ -284,12 +278,6 @@ def get_archived_rio_path(
         >>> rasterio.open(path)
         <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
-    if regex is None:
-        logs.deprecation_warning(
-            "'file_regex' is deprecated, please use 'regex' instead."
-        )
-        regex = kwargs.pop("file_regex")
-
     archive_path = AnyPath(archive_path)
     if archive_path.suffix in [".tar", ".zip"]:
         prefix = archive_path.suffix[-3:]

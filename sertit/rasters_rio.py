@@ -47,7 +47,6 @@ except ModuleNotFoundError as ex:
 from sertit import (
     AnyPath,
     geometry,
-    logs,
     misc,
     os_utils,
     path,
@@ -1078,12 +1077,6 @@ def write(
         >>> # Rewrite it on disk
         >>> write(raster, meta, raster_out)
     """
-    if output_path is None:
-        logs.deprecation_warning(
-            "'path' is deprecated in 'rasters_rio.write'. Use 'output_path' instead."
-        )
-        output_path = kwargs.pop("path")
-
     raster_out = raster.copy()
 
     # Prune empty kwargs to avoid throwing GDAL warnings/errors

@@ -1,8 +1,6 @@
 import logging
 import logging.handlers
 
-from sertit.logs import deprecation_warning
-
 # Arcpy types from inside a schema
 SHORT = "int32:4"
 """ 'Short' type for ArcGis GDB """
