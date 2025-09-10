@@ -1,6 +1,6 @@
 # Release History
 
-## 1.47.0 (2025-mm-dd)
+## 1.47.0 (2025-09-10)
 
 - **ENH: Add a function checking if an array is computed or still chunked (`dask.is_computed`, `dask.is_chunked`) and its equivalents to assert whether arrays have been computed or not (`ci.assert_chunked` and `ci.assert_computed`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - **ENH: Add a context manager checking counting dask computations (`dask.raise_if_dask_computes`)** ([#47](https://github.com/sertit/sertit-utils/issues/47))
