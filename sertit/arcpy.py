@@ -28,7 +28,7 @@ def init_conda_arcpy_env():
 
     Resolves several issues.
     """
-    try:
+    try:  # pragma: no cover
         from packaging.version import InvalidVersion, Version
 
         try:
@@ -47,7 +47,7 @@ def init_conda_arcpy_env():
         pass
 
 
-class ArcPyLogger:
+class ArcPyLogger:  # pragma: no cover
     def __init__(self, name=None, prefix_log_file="atools_"):
         """
         This class inits a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
@@ -120,7 +120,7 @@ class ArcPyLogger:
         self.logger.info("You can read logs in the file: " + f.name)
 
 
-class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
+class ArcPyLogHandler(logging.handlers.RotatingFileHandler):  # pragma: no cover
     """
     Custom logging class that bounces messages to the arcpy tool window as well
     as reflecting back to the file.
@@ -151,7 +151,7 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):
         super(ArcPyLogHandler, self).emit(record)
 
 
-def gp_layer_to_path(feature_layer) -> str:
+def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
     """
     Convert a GP layer to its source path.
 
