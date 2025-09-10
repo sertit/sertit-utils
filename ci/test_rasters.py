@@ -1324,3 +1324,54 @@ def test_classify(tmp_path):
     assert_chunked_computed(sev, "Classify DataArray")
     rasters.write(sev, sev_out, dtype=np.uint8, nodata=255)
     ci.assert_raster_equal(sev_truth, sev_out)
+
+
+@s3_env
+# @dask_env(nof_computes=1)  # write x1 RPC is not lazy yet, no need to test it multiple times
+def test_reproject_rpc(tmp_path):
+    """Test reproject with rpc"""
+    spot_path = (
+        rasters_path()
+        / "IMG_SPOT7_MS_001_A"
+        / "DIM_SPOT7_MS_201602150257025_SEN_1671661101.XML"
+    )
+    copdem_path = rasters_path() / "Copernicus_DSM_10_S07_00_E106_00_DEM.tif"
+    with rasterio.open(str(spot_path)) as ds:
+        rpc_reproj = rasters.reproject(
+            spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0
+        )
+
+    ci.assert_val(rpc_reproj.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    ci.assert_val(rpc_reproj.rio.count, 4, "Reprojected count")
+    ci.assert_val(rpc_reproj.rio.encoded_nodata, 0, "Reprojected encoded nodata")
+    ci.assert_val(rpc_reproj.rio.nodata, np.nan, "Reprojected nodata")
+
+
+@s3_env
+@dask_env(nof_computes=0)
+def test_reproject(tmp_path, raster_path):
+    """Test reproject"""
+    # xda
+    xda = get_xda(raster_path)
+    use_dask = os.environ[CI_SERTIT_USE_DASK] == "1"
+
+    # Reproject to a pixel_size
+    size_arr = rasters.reproject(xda, pixel_size=60, use_dask=use_dask)
+    ci.assert_val(round(size_arr.rio.resolution()[0]), 60, "Reprojected pixel size")
+    ci.assert_val(size_arr.rio.count, 1, "Reprojected count")
+    with pytest.raises(AssertionError):
+        ci.assert_val(round(xda.rio.resolution()[0]), 60, "Native pixel pize")
+
+    # Reproject to a shape
+    shape_arr = rasters.reproject(xda, shape=(161, 232), use_dask=use_dask)
+    ci.assert_val(shape_arr.shape, (1, 161, 232), "Reprojected shape")
+    ci.assert_val(shape_arr.rio.shape, (161, 232), "Reprojected shape (rio)")
+    ci.assert_val(shape_arr.rio.count, 1, "Reprojected count")
+    with pytest.raises(AssertionError):
+        ci.assert_val(xda.rio.shape, (1, 161, 232), "Native shape")
+
+    # Reproject to espg:4326
+    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326", use_dask=use_dask)
+    ci.assert_val(wgs84_arr.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    with pytest.raises(AssertionError):
+        ci.assert_val(xda.rio.crs.to_epsg(), 4326, "Native CRS")

@@ -1473,7 +1473,7 @@ def _collocate_dataarray(
         collocated_xda = other
     else:
         try:
-            LOGGER.debug("Collocating with 'odc.geo.xr.xr_reproject'")
+            LOGGER.debug("Collocating with dask-enabled reproject")
 
             # Manage nodata
             collocated_xda = reproject(
@@ -2432,6 +2432,14 @@ def reproject(
             **kwargs,
         )
 
+    # In some cases (according to some frameworks...), nodata is not correctly set. Force it to be sure.
+    # Only for float data, as it will set nans in place of nodata value
+    if reprojected_xda.dtype.kind == "f":
+        reprojected_xda = set_nodata(reprojected_xda, nodata_val=nodata)
+    else:
+        # Else only ensure nodata is written
+        reprojected_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
+
     # Rename DataArray
     if name:
         reprojected_xda = reprojected_xda.rename(name)
@@ -2463,8 +2471,14 @@ def _reproject_without_rpcs(
     use_dask: bool = True,
     **kwargs,
 ):
+    if dst_crs is None:
+        dst_crs = src_xda.rio.crs
+
     if use_dask:
         from odc.geo import xr as odc_geo_xr  # noqa: F401
+
+        if pixel_size is None:
+            pixel_size = "auto"
 
         if nodata is None:
             nodata = get_nodata_value_from_xr(src_xda)
@@ -2484,9 +2498,6 @@ def _reproject_without_rpcs(
                 src_affine * Affine.scale(factor_w, factor_h),
                 src_xda.rio.crs,
             )
-
-            # Remove pixel_size
-            pixel_size = None
 
         else:
             how = dst_crs
@@ -2508,7 +2519,6 @@ def _reproject_without_rpcs(
 
         # Set nodata in rioxr's way and remove odc.geo nodata in attributes
         reprojected_xda.attrs.pop("nodata", None)
-        reprojected_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
     else:
         if dask.is_chunked(src_xda):
             LOGGER.warning(
@@ -2632,7 +2642,8 @@ def _reproject_rpcs(
 
     # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
     # https://github.com/corteva/rioxarray/issues/844
-    except ValueError:
+    except ValueError as ex:
+        LOGGER.warning(ex)
         reprojected_xda = __reproject_rpc_fallback_rio(
             src_xda=src_xda,
             rpcs=rpcs,
@@ -2642,6 +2653,8 @@ def _reproject_rpcs(
             shape=shape,
             num_threads=num_threads,
             resampling=resampling,
+            caching_folder=caching_folder,
+            nodata=nodata,
             **kwargs,
         )
 
@@ -2786,8 +2799,10 @@ def __reproject_rpc_fallback_rio(
     dst_crs,
     pixel_size: float = None,
     shape: tuple = None,
+    nodata: float = None,
     num_threads: int = None,
     resampling: Resampling = Resampling.bilinear,
+    caching_folder: AnyPathStrType = None,
     **kwargs,
 ) -> xr.DataArray:
     """
@@ -2814,7 +2829,8 @@ def __reproject_rpc_fallback_rio(
         )
         pixel_size = None
 
-    nodata = get_nodata_value_from_xr(src_xda)
+    if nodata is None:
+        nodata = get_nodata_value_from_xr(src_xda)
     arr = src_xda.fillna(nodata) if nodata is not None else src_xda
 
     # WARNING: may not give exact output pixel size
@@ -2846,4 +2862,8 @@ def __reproject_rpc_fallback_rio(
         "transform": dst_transform,
         "compress": "lzw",
     }
-    return read((out_arr, meta))
+    rio_path = caching_folder / "tmp_rio.tif"
+    rasters_rio.write(out_arr, meta, rio_path, nodata=nodata)  # Write rasterio
+    return read(
+        rio_path, chunks=None
+    )  # Load in memory because caching_folder will be removed
