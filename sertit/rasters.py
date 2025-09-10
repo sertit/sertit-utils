@@ -994,12 +994,13 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
 
             from rasterio import MemoryFile
 
-            with (
-                MemoryFile() as memfile,
-                memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds,
-            ):
-                ds.write(arr)
-                out = function(ds, *args, **kwargs)
+            with MemoryFile() as memfile:
+                #  Open in write mode
+                with memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds:
+                    ds.write(arr)
+                # Open in read mode (otherwise rioxarray will fail)
+                with memfile.open() as ds:
+                    out = function(ds, *args, **kwargs)
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):

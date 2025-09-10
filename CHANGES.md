@@ -23,7 +23,8 @@
 - FIX: Make vectorize-based functions to work with `xarray.Dataset`
 - FIX: Fix original dtype in `read_bit_array` 
 - FIX: Better kwargs management in `merge_gtiff`
-- CI: Correctly compute numpy case with dask_env decorator
+- FIX: Fix reading a tuple (array, metadata) with `rasters.read`
+- CI: Correctly compute numpy case with `dask_env` decorator
 - CI: Correctly manage dask in `test_rasters.test_set_nodata` and `test_rasters.test_where` (create a dask array to evaluate laziness)
 - CI: Check correctly the number of attended computations per raster tests ([#47](https://github.com/sertit/sertit-utils/issues/47))
 - DOC: Document which function of rasters isn't lazy yet (currently: `sieve`, `rasterize`, `vectorize` and other functions depending on it) ([#47](https://github.com/sertit/sertit-utils/issues/47))
