@@ -9,6 +9,7 @@
 - **ENH: Add a performance module (`sertit.perf`) featuring max core-related functions and environment variables**
 - **ENH: Create a wrapper for reprojection, handling different usecases: dask, RPCs, etc. Using `odc.geo`, `rioxarray` or `rasterio` according to the usecase** ([#41](https://github.com/sertit/sertit-utils/issues/41))
 - **ENH: Allow the user to pass environment variables to dask clients** ([#31](https://github.com/sertit/sertit-utils/issues/31))
+- **ENH: Create a `os_utils` module grouping several functions looking for useful executables, such as QGIS**
 - OPTIM: Use `odc.xr.xr_reproject` to enable lazy dask computation for rescaling data in `rasters.read` (in case of upscaling only)
 - OPTIM: Make `rasters.read_bit_array` and `rasters.read_uint8_array` lazy ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - OPTIM: Make `rasters.rasterize` lazy
