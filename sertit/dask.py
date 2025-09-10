@@ -132,7 +132,7 @@ def get_dask_lock(name):
 
         current_client = get_client()
         if current_client:
-            lock = Lock(name, client=current_client)
+            lock = Lock(name)
     else:
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
