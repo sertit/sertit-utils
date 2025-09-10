@@ -5,6 +5,7 @@
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - FIX: Remove warnings ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - FIX: Improve coverage ([#56](https://github.com/sertit/sertit-utils/issues/56))
+- CI: Add `os_utils` tests ([#56](https://github.com/sertit/sertit-utils/issues/56))
 
 ## 1.47.0 (2025-09-10)
 

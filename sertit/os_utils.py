@@ -33,10 +33,10 @@ def _compare_str_containing_version(str1: str, str2: str):
     v2 = Version.parse(
         re.search(match_pattern, str2).group(), optional_minor_and_patch=True
     )
-    if v1 <= v2:
-        return -1
     if v1 == v2:
         return 0
+    elif v1 < v2:
+        return -1
     else:
         return 1
 
@@ -50,14 +50,14 @@ def qgis_bin() -> Path:
     # Find QGis in ProgramFiles
     qgis_dirs = []
     parent_path_qgis = Path("C:/") / "Program Files"
-    if parent_path_qgis.exists():
+    if parent_path_qgis.exists():  # pragma: no cover
         qgis_dirs = [
             str(pt)
             for pt in parent_path_qgis.iterdir()
             if pt.stem.lower().startswith("qgis")
         ]
 
-    if len(qgis_dirs) > 0:
+    if len(qgis_dirs) > 0:  # pragma: no cover
         # Take the latest one available
         qgis_dirs = sorted(qgis_dirs, key=cmp_to_key(_compare_str_containing_version))
         qgis_valid_dirs = []
