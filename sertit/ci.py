@@ -151,7 +151,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     try:
         import rasterio
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_equal."
         ) from ex
@@ -188,7 +188,7 @@ def assert_raster_almost_equal(
     """
     try:
         import rasterio
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
@@ -247,7 +247,7 @@ def assert_raster_almost_equal_magnitude(
     """
     try:
         import rasterio
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
@@ -353,7 +353,7 @@ def assert_raster_max_mismatch(
     """
     try:
         import rasterio
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_max_mismatch."
         ) from ex
@@ -458,7 +458,7 @@ def assert_geom_equal(
     """
     try:
         from sertit import vectors
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
         ) from ex
@@ -535,7 +535,7 @@ def assert_geom_almost_equal(
     """
     try:
         from sertit import vectors
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
         ) from ex

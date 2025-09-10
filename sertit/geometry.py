@@ -560,7 +560,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     """
     try:
         from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
         ) from ex
@@ -594,7 +594,7 @@ def _get_radius_nearest(
     """
     try:
         from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:
+    except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
         ) from ex

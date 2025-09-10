@@ -38,7 +38,7 @@ try:
     from rasterio import CRS, features, rpc, warp
     from rasterio.enums import Resampling
     from rioxarray.exceptions import MissingCRS
-except ModuleNotFoundError as ex:
+except ModuleNotFoundError as ex:  # pragma: no cover
     raise ModuleNotFoundError(
         "Please install 'rioxarray' to use the 'rasters' package."
     ) from ex
@@ -2205,7 +2205,7 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
         xds = aspect(xds, name=kwargs.get("name", "aspect"))
         xds.attrs["long_name"] = "aspect"
         return xds
-    except ImportError as exc:
+    except ImportError as exc:  # pragma: no cover
         raise NotImplementedError(
             "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
         ) from exc
@@ -2672,8 +2672,8 @@ def _reproject_rpcs(
     """
     try:
         import xdem  # noqa
-    except ImportError as ex:
-        raise ImportError(
+    except ModuleNotFoundError as ex:  # pragma: no cover
+        raise ModuleNotFoundError(
             "RPC reprojection requires the 'xdem' package to ensure vertical CRS validity."
         ) from ex
 

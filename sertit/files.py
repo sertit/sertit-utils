@@ -110,7 +110,7 @@ def extract_file(
 
             with py7zr.SevenZipFile(file_path, "r") as z7_file:
                 extract_sub_dir(z7_file, z7_file.getnames())
-        except ModuleNotFoundError as exc:
+        except ModuleNotFoundError as exc:  # pragma: no cover
             raise TypeError("Please install 'py7zr' to extract .7z files") from exc
     else:
         raise TypeError(

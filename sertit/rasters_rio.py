@@ -39,7 +39,7 @@ try:
     from rasterio.enums import Resampling
     from rasterio.vrt import WarpedVRT
     from rasterio.windows import Window, from_bounds
-except ModuleNotFoundError as ex:
+except ModuleNotFoundError as ex:  # pragma: no cover
     raise ModuleNotFoundError(
         "Please install 'rasterio' to use the 'rasters_rio' package."
     ) from ex
