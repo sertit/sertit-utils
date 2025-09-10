@@ -31,7 +31,7 @@ def is_dask_installed():
         from dask.distributed import get_client  # noqa: F401
 
         return True
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         return False
 
 
@@ -43,7 +43,7 @@ def get_client():
         with contextlib.suppress(ValueError):
             # Return default client
             client = get_client()
-    else:
+    else:  # pragma: no cover
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
@@ -100,7 +100,7 @@ def get_or_create_dask_client(processes=False, env_vars=None):
 
             yield client
 
-        else:
+        else:  # pragma: no cover
             LOGGER.warning(
                 "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
             )
@@ -108,7 +108,7 @@ def get_or_create_dask_client(processes=False, env_vars=None):
         try:
             if client is not None:
                 client.close()
-        except Exception as ex:
+        except Exception as ex:  # pragma: no cover
             LOGGER.warning(ex)
 
 
@@ -133,7 +133,7 @@ def get_dask_lock(name):
         current_client = get_client()
         if current_client:
             lock = Lock(name)
-    else:
+    else:  # pragma: no cover
         LOGGER.warning(
             "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
         )
