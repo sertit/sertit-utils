@@ -153,7 +153,7 @@ def get_snap_version() -> Version:
     snap_version = None
     try:
         output = subprocess.run(["gpt", "--diag"], capture_output=True)
-    except FileNotFoundError as exc:
+    except FileNotFoundError as exc:  # pragma: no cover
         raise FileNotFoundError("'gpt' not found in your PATH") from exc
 
     stdout = output.stdout.decode("utf-8")

@@ -246,7 +246,7 @@ def _get_db_path(db_nb=2) -> str:
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
-    if not os.path.isdir(db_path):
+    if not os.path.isdir(db_path):  # pragma: no cover
         raise NotADirectoryError(f"Impossible to open {db_path}!")
     return db_path
 
@@ -281,19 +281,3 @@ def get_db3_path() -> str:
         '/mnt/ds2_db3'
     """
     return _get_db_path(3)
-
-
-def get_db4_path() -> str:
-    """
-    Returns DS2 database04 path
-
-    - :code:`/mnt/ds2_db4` when mounted (docker...)
-
-    Returns:
-        str: Mounted directory
-
-    Example:
-        >>> get_db4_path()
-        '/mnt/ds2_db4'
-    """
-    return _get_db_path(4)
