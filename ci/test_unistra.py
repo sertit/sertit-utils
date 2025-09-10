@@ -30,7 +30,6 @@ from sertit.unistra import (
     _get_db_path,
     get_db2_path,
     get_db3_path,
-    get_db4_path,
     get_geodatastore,
     s3_env,
 )
@@ -110,7 +109,6 @@ def test_mnt():
     try:
         assert get_db2_path() == "/mnt/ds2_db2"
         assert get_db3_path() == "/mnt/ds2_db3"
-        assert get_db4_path() == "/mnt/ds2_db4"
     except NotADirectoryError:
         pass
 
