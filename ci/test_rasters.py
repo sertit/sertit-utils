@@ -1353,17 +1353,16 @@ def test_reproject(tmp_path, raster_path):
     """Test reproject"""
     # xda
     xda = get_xda(raster_path)
-    use_dask = os.environ[CI_SERTIT_USE_DASK] == "1"
 
     # Reproject to a pixel_size
-    size_arr = rasters.reproject(xda, pixel_size=60, use_dask=use_dask)
+    size_arr = rasters.reproject(xda, pixel_size=60)
     ci.assert_val(round(size_arr.rio.resolution()[0]), 60, "Reprojected pixel size")
     ci.assert_val(size_arr.rio.count, 1, "Reprojected count")
     with pytest.raises(AssertionError):
         ci.assert_val(round(xda.rio.resolution()[0]), 60, "Native pixel pize")
 
     # Reproject to a shape
-    shape_arr = rasters.reproject(xda, shape=(161, 232), use_dask=use_dask)
+    shape_arr = rasters.reproject(xda, shape=(161, 232))
     ci.assert_val(shape_arr.shape, (1, 161, 232), "Reprojected shape")
     ci.assert_val(shape_arr.rio.shape, (161, 232), "Reprojected shape (rio)")
     ci.assert_val(shape_arr.rio.count, 1, "Reprojected count")
@@ -1371,7 +1370,7 @@ def test_reproject(tmp_path, raster_path):
         ci.assert_val(xda.rio.shape, (1, 161, 232), "Native shape")
 
     # Reproject to espg:4326
-    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326", use_dask=use_dask)
+    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326")
     ci.assert_val(wgs84_arr.rio.crs.to_epsg(), 4326, "Reprojected CRS")
     with pytest.raises(AssertionError):
         ci.assert_val(xda.rio.crs.to_epsg(), 4326, "Native CRS")

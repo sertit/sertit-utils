@@ -2378,14 +2378,14 @@ def classify(
 
 @any_raster_to_xr_ds
 def reproject(
-    src_xda: xr.DataArray,
+    src_xda: AnyRasterType,
     pixel_size: float = None,
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
     nodata: float = None,
     num_threads: int = None,
-    use_dask: bool = True,
+    use_dask: bool = None,
     ortho_path: AnyPathStrType = None,
     name: str = None,
     # under this, arguments only for reprojecting with RPCs
@@ -2396,7 +2396,88 @@ def reproject(
     caching_folder: AnyPathStrType = None,
     **kwargs,
 ) -> xr.DataArray:
-    """"""
+    """
+    Function handling all cases of reprojection, with and without RPCS, with and without dask or chunked arrays.
+
+    Wrappers around:
+    - odc.geo.xr_reproject for chunked arrays (in a dask-backed way)
+    - rioxarray.reprjoect for xarray data
+    - rasterio.reproject as a fallback (especially for Python 3.9)
+
+    .. WARNING::
+        RPC management is much more complex and necessits more arguments.
+
+        RPC reprojection is not daskified yet. See this `issue<https://github.com/opendatacube/odc-geo/issues/193>`_.
+
+        Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
+
+        Orthorectifying data with RPC is using a DEM. This DEM should have its height based on the ellispoid.
+        If your DEM doesn't have a vertical CRS set, please provide it with vcrs.
+
+        Note that in some cases, the vertical CRS is set by default.
+        This library recognizes files with :code:`Copernicus` or :code:`COPDEM` in it (based on :code:`EGM08`).
+        :code:`xdem` may recognize other files. See `the documentation<https://xdem.readthedocs.io/en/stable/vertical_ref.html>`_ for more insights.
+
+    Args:
+        src_xda (AnyRasterType): Raster to be reprojected
+        pixel_size (float): Destination pixel size (in the destination CRS units). If not provided, the pixel size will be deducted from other parameters.
+        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes pixel_size.
+        resampling (Resampling): Resampling method. Defaults to Resampling.bilinear.
+        dst_crs (CRS): Destination CRS. If not provided, the CRS will be retrieved from the source raster.
+        nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
+        num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
+        use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.       ortho_path:
+        name (str): Name of the output DataArray.
+        rpcs (rpc.RPC): RPC to orthorectify some raster
+        dem_path (AnyPathStrType): Path to the DEM, only used if rpcs is given.
+        extent (gpd.GeoDataFrame): GeoDataFrame containing extent of the raster to extract the DEM, only used if rpcs is given.
+        vcrs (Union[str, int]): Vertical CRS of the DEM, only used if rpcs is given. Can be automatically deducted in some cases (COPDEM, etc.). Better to set it tu be sure.
+        caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted in the end of the process. Only used if rpcs is given.
+        **kwargs: Other arguments to pass to reproject or write
+
+    Returns:
+        xr.DataArray: Reprojected raster
+
+    Examples:
+        Example with RPCs
+        >>> # Imports
+        >>> import logging
+        >>> from sertit import AnyPath, logs, rasters, vectors
+        >>> logs.init_logger(logging.getLogger("sertit"))
+        >>>
+        >>> # Data
+        >>> spot_path = AnyPath("IMG_SPOT7_MS_001_A", "DIM_SPOT7_MS_201602150257025_SEN_1671661101.XML")
+        >>> copdem_path = AnyPath("Copernicus_DSM_10_S07_00_E106_00_DEM.tif")
+        >>>
+        >>> # Reproject
+        >>> with rasterio.open(spot_path) as ds:
+        >>>     rpc_reproj = rasters.reproject(spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0)
+        [WARNING] - Reprojection with RPCs doesn't work with Dask. Computing the raster.
+        [DEBUG] - Orthorectifying data with Copernicus_DSM_10_S07_00_E106_00_DEM.tif
+        >>>
+        >>> # See if we have a CRS
+        >>> rpc_reproj.rio.crs.to_epsg()
+        4326
+        >>>
+        >>> # See if the corrdinates are correctly set (lon = 106,x, lat = -6,x)
+        >>> # These coordinates correspond to the tile of the DEM in input (S07_00_E106_00)
+        >>> rpc_reproj.coords
+        Coordinates:
+          * x            (x) float64 40kB 106.6 106.6 106.6 106.6 ... 107.0 107.0 107.0
+          * y            (y) float64 46kB -6.0 -6.0 -6.0 -6.0 ... -6.421 -6.421 -6.421
+          * band         (band) int64 32B 1 2 3 4
+            spatial_ref  int64 8B 0
+
+        Example of very simple reprojections
+        >>> # Reproject to change the pixel size of the raster
+        >>> rasters.reproject(xda, pixel_size=60)
+
+        >>> # Reproject to a specific shape
+        >>> rasters.reproject(xda, shape=(161, 232))
+
+        >>> # Reproject to a specific CRS
+        >>> rasters.reproject(xda, dst_crs="EPSG:4326")
+    """
     # Get num threads
     if num_threads is None:
         num_threads = perf.get_max_cores()
@@ -2471,72 +2552,121 @@ def _reproject_without_rpcs(
     use_dask: bool = True,
     **kwargs,
 ):
+    """Sub-function to reproject without RPCs."""
+    if use_dask is None:
+        # We have more confidence in rioxarray's implementation than odc.geo
+        # So, if the array is not chunked, use rioxarray
+        use_dask = dask.is_chunked(src_xda)
+
+    # A CRS is needed
     if dst_crs is None:
         dst_crs = src_xda.rio.crs
 
-    if use_dask:
-        from odc.geo import xr as odc_geo_xr  # noqa: F401
+    # Chose reprojection function and compute it
+    reproj_fct = __reproject_odc_geo if use_dask else __reproject_rioxarray
 
-        if pixel_size is None:
-            pixel_size = "auto"
+    reprojected_xda = reproj_fct(
+        src_xda=src_xda,
+        pixel_size=pixel_size,
+        shape=shape,
+        resampling=resampling,
+        dst_crs=dst_crs,
+        nodata=nodata,
+        num_threads=num_threads,
+        **kwargs,
+    )
 
-        if nodata is None:
-            nodata = get_nodata_value_from_xr(src_xda)
+    return reprojected_xda
 
-        # Use Geobox as it seems to work better than shape
-        if shape is not None:
-            from affine import Affine
-            from odc.geo.geobox import GeoBox
 
-            height, width = shape
-            factor_h = src_xda.rio.height / height
-            factor_w = src_xda.rio.width / width
-            src_affine: Affine = src_xda.rio.transform()  # For typing
+def __reproject_odc_geo(
+    src_xda: xr.DataArray,
+    pixel_size: float = None,
+    shape: tuple = None,
+    resampling: Resampling = Resampling.bilinear,
+    dst_crs: CRS = None,
+    nodata: float = None,
+    num_threads: int = None,
+    **kwargs,
+):
+    """Wrapper around odc-geo's reproject function."""
+    from odc.geo import xr as odc_geo_xr  # noqa: F401
 
-            how = GeoBox(
-                (height, width),
-                src_affine * Affine.scale(factor_w, factor_h),
-                src_xda.rio.crs,
-            )
+    if pixel_size is None:
+        pixel_size = "auto"
 
-        else:
-            how = dst_crs
+    if nodata is None:
+        nodata = get_nodata_value_from_xr(src_xda)
 
-        # Issues https://github.com/opendatacube/odc-geo/issues/236
-        LOGGER.debug("src_xda.odc.reproject")
-        reprojected_xda = src_xda.odc.reproject(
-            how=how,
-            resolution=pixel_size,
-            resampling=resampling,
-            dst_nodata=nodata,
-            num_threads=num_threads,
-            dtype=src_xda.dtype,
-            anchor="floating",  # << closest option to what rioxarray does
-            XSCALE=None,
-            YSCALE=None,  # << turn off GDAL warp work-arounds (like rioxarray)
-            **kwargs,
+    # Use Geobox as it seems to work better than shape
+    if shape is not None:
+        from affine import Affine
+        from odc.geo.geobox import GeoBox
+
+        height, width = shape
+        factor_h = src_xda.rio.height / height
+        factor_w = src_xda.rio.width / width
+        src_affine: Affine = src_xda.rio.transform()  # For typing
+
+        how = GeoBox(
+            (height, width),
+            src_affine * Affine.scale(factor_w, factor_h),
+            src_xda.rio.crs,
         )
 
-        # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-        reprojected_xda.attrs.pop("nodata", None)
     else:
-        if dask.is_chunked(src_xda):
-            LOGGER.warning(
-                "You chose to reproject your chunked data without dask. Computing it before reprojecting."
-            )
-            src_xda = src_xda.compute()
+        how = dst_crs
 
-        LOGGER.debug("src_xda.rio.reproject")
-        reprojected_xda = src_xda.rio.reproject(
-            dst_crs=dst_crs,
-            resolution=pixel_size,
-            shape=shape,
-            resampling=resampling,
-            nodata=nodata,
-            num_threads=num_threads,
-            dtype=src_xda.dtype,
-            **kwargs,
+    # Issues https://github.com/opendatacube/odc-geo/issues/236
+    LOGGER.debug("src_xda.odc.reproject")
+    reprojected_xda = src_xda.odc.reproject(
+        how=how,
+        resolution=pixel_size,
+        resampling=resampling,
+        dst_nodata=nodata,
+        num_threads=num_threads,
+        dtype=src_xda.dtype,
+        anchor="floating",  # << closest option to what rioxarray does
+        XSCALE=None,
+        YSCALE=None,  # << turn off GDAL warp work-arounds (like rioxarray)
+        **kwargs,
+    )
+
+    # Set nodata in rioxr's way and remove odc.geo nodata in attributes
+    reprojected_xda.attrs.pop("nodata", None)
+
+    return reprojected_xda
+
+
+def __reproject_rioxarray(
+    src_xda: xr.DataArray,
+    pixel_size: float = None,
+    shape: tuple = None,
+    resampling: Resampling = Resampling.bilinear,
+    dst_crs: CRS = None,
+    nodata: float = None,
+    num_threads: int = None,
+    **kwargs,
+):
+    """Wrapper around rioxarray's reproject function."""
+    if dask.is_chunked(src_xda):
+        LOGGER.warning(
+            "You chose to reproject your chunked data without dask. Computing it before reprojecting."
         )
+        src_xda = src_xda.compute()
+
+    LOGGER.debug("src_xda.rio.reproject")
+    reprojected_xda = src_xda.rio.reproject(
+        dst_crs=dst_crs,
+        resolution=pixel_size,
+        shape=shape,
+        resampling=resampling,
+        nodata=nodata,
+        num_threads=num_threads,
+        dtype=src_xda.dtype,
+        **kwargs,
+    )
+
     return reprojected_xda
 
 
