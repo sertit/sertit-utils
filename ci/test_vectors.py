@@ -22,7 +22,6 @@ import warnings
 
 import geopandas as gpd
 import pytest
-from rasterio import CRS
 from shapely import wkt
 
 from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
@@ -84,15 +83,6 @@ def test_vectors():
     # UTM and bounds
     aoi = vectors.read(kml_path, **KAPUT_KWARGS)
     _assert_attributes(aoi, kml_path)
-
-    with pytest.deprecated_call():
-        assert (
-            vectors.corresponding_utm_projection(aoi.centroid.x, aoi.centroid.y)
-            == "EPSG:32638"
-        )
-        assert CRS.from_string("EPSG:32638") == vectors.to_utm_crs(
-            aoi.centroid.x, aoi.centroid.y
-        )
 
     env = aoi.envelope[0]
 

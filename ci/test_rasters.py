@@ -356,7 +356,7 @@ def test_write_zarr(tmp_path, raster_path):
     # test zarr
     xda = get_xda(raster_path, chunks=None)
     zarr_path = get_output(tmp_path, "z.zarr", DEBUG)
-    rasters.write(xda, path=zarr_path, driver="Zarr")
+    rasters.write(xda, output_path=zarr_path, driver="Zarr")
     xr.testing.assert_equal(xda, rasters.read(zarr_path, driver="Zarr"))
 
 
