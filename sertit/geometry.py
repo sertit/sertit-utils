@@ -166,7 +166,7 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
 
         if not verbose:
             geos_logger.setLevel(previous_level)
-    except ImportError:
+    except ImportError:  # pragma: no cover
         import shapely
 
         LOGGER.warning(
@@ -618,7 +618,7 @@ def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_2d function even with geopandas < 1.0.0"""
     try:
         return vect.force_2d()
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         vect.geometry = vect.geometry.apply(shapely.force_2d)
         return vect
 
@@ -627,6 +627,6 @@ def force_3d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_3d function even with geopandas < 1.0.0"""
     try:
         return vect.force_3d()
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         vect.geometry = vect.geometry.apply(shapely.force_3d)
         return vect
