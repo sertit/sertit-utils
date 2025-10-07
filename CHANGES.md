@@ -4,6 +4,7 @@
 
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - FIX: Always return x, y spatial coordinates when reprojecting with `odc.geo` (instead of its default behaviour, see [here](https://github.com/opendatacube/odc-geo/issues/250))
+- FIX: Allow other coordinates than x and y (to support `odc.geo`) in `rasters.collocate`
 - FIX: Remove warnings ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - FIX: Improve coverage ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - CI: Add `os_utils` tests ([#56](https://github.com/sertit/sertit-utils/issues/56))

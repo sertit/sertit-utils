@@ -1516,13 +1516,30 @@ def collocate(
                 reference, resampling=resampling, **kwargs
             )
 
-    # Bug for now, tiny difference in coords
-    collocated_xds = collocated_xds.assign_coords(
-        {
-            "x": reference.x,
-            "y": reference.y,
-        }
-    )
+    # Assign directly the coordinates to correct tiny differences in coordinates du to float precision
+
+    # From odc-geo
+    STANDARD_SPATIAL_DIMS = [
+        ("y", "x"),
+        ("yc", "xc"),
+        ("latitude", "longitude"),
+        ("lat", "lon"),
+    ]
+    coord_dict = {}
+
+    for dims in STANDARD_SPATIAL_DIMS:
+        if dims[0] in reference.dims and dims[1] in reference.dims:
+            coord_dict = {
+                dims[0]: reference[dims[0]],
+                dims[1]: reference[dims[1]],
+            }
+    if not coord_dict:
+        raise ValueError(
+            "No standard spatial dimensions (y, x) or (latitude, longitude) found in reference. "
+            f"Something is wrong with your reference dimensions: ({reference.dims})."
+        )
+
+    collocated_xds = collocated_xds.assign_coords(coord_dict)
 
     # Set back attributes and encoding
     collocated_xds.rio.update_attrs(other.attrs, inplace=True)
