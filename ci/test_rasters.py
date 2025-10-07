@@ -1291,6 +1291,8 @@ def test_reproject_rpc(tmp_path):
     ci.assert_val(rpc_reproj.rio.count, 4, "Reprojected count")
     ci.assert_val(rpc_reproj.rio.encoded_nodata, 0, "Reprojected encoded nodata")
     ci.assert_val(rpc_reproj.rio.nodata, np.nan, "Reprojected nodata")
+    assert "x" in rpc_reproj.dims
+    assert "y" in rpc_reproj.dims
 
 
 @s3_env
@@ -1300,23 +1302,42 @@ def test_reproject(tmp_path, raster_path):
     # xda
     xda = get_xda(raster_path)
 
-    # Reproject to a pixel_size
+    # -- Reproject to a pixel_size --
     size_arr = rasters.reproject(xda, pixel_size=60)
     ci.assert_val(round(size_arr.rio.resolution()[0]), 60, "Reprojected pixel size")
     ci.assert_val(size_arr.rio.count, 1, "Reprojected count")
+    ci.assert_val(size_arr.dims, xda.dims, "Reprojected dimensions")
     with pytest.raises(AssertionError):
         ci.assert_val(round(xda.rio.resolution()[0]), 60, "Native pixel pize")
 
-    # Reproject to a shape
+    # -- Reproject to a shape --
     shape_arr = rasters.reproject(xda, shape=(161, 232))
+    ci.assert_val(shape_arr.shape, (1, 161, 232), "Reprojected shape")
+    ci.assert_val(shape_arr.rio.shape, (161, 232), "Reprojected shape (rio)")
+    ci.assert_val(shape_arr.rio.count, 1, "Reprojected count")
+    ci.assert_val(shape_arr.dims, xda.dims, "Reprojected dimensions")
+    with pytest.raises(AssertionError):
+        ci.assert_val(xda.rio.shape, (1, 161, 232), "Native shape")
+
+    # -- Reproject to espg:4326 --
+    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326")
+    ci.assert_val(wgs84_arr.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    ci.assert_val(wgs84_arr.dims, xda.dims, "Reprojected dimensions")
+    with pytest.raises(AssertionError):
+        ci.assert_val(xda.rio.crs.to_epsg(), 4326, "Native CRS")
+
+    # -- Reproject to espg:4326 + shape --
+    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326", shape=(161, 232))
+
+    # From geographic to projected coordinates
+    ci.assert_val(wgs84_arr.dims, xda.dims, "Reprojected dimensions")
+
+    # Tests 4326
+    ci.assert_val(wgs84_arr.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    with pytest.raises(AssertionError):
+        ci.assert_val(xda.rio.crs.to_epsg(), 4326, "Native CRS")
     ci.assert_val(shape_arr.shape, (1, 161, 232), "Reprojected shape")
     ci.assert_val(shape_arr.rio.shape, (161, 232), "Reprojected shape (rio)")
     ci.assert_val(shape_arr.rio.count, 1, "Reprojected count")
     with pytest.raises(AssertionError):
         ci.assert_val(xda.rio.shape, (1, 161, 232), "Native shape")
-
-    # Reproject to espg:4326
-    wgs84_arr = rasters.reproject(xda, dst_crs="EPSG:4326")
-    ci.assert_val(wgs84_arr.rio.crs.to_epsg(), 4326, "Reprojected CRS")
-    with pytest.raises(AssertionError):
-        ci.assert_val(xda.rio.crs.to_epsg(), 4326, "Native CRS")

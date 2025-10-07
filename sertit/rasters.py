@@ -2553,22 +2553,24 @@ def __reproject_odc_geo(
     if nodata is None:
         nodata = get_nodata_value_from_xr(src_xda)
 
-    # Use Geobox as it seems to work better than shape
+    # Use Geobox as it seems to work better than shape directly
     if shape is not None:
         from affine import Affine
         from odc.geo.geobox import GeoBox
 
         height, width = shape
-        factor_h = src_xda.rio.height / height
-        factor_w = src_xda.rio.width / width
         src_affine: Affine = src_xda.rio.transform()  # For typing
 
-        how = GeoBox(
-            (height, width),
-            src_affine * Affine.scale(factor_w, factor_h),
+        src_geobox = GeoBox(
+            (src_xda.rio.height, src_xda.rio.width),
+            src_affine,
             src_xda.rio.crs,
         )
 
+        if dst_crs == src_xda.rio.crs:
+            how = src_geobox.zoom_to(shape=(height, width))
+        else:
+            how = src_geobox.to_crs(dst_crs, shape=(height, width))
     else:
         how = dst_crs
 
@@ -2589,6 +2591,14 @@ def __reproject_odc_geo(
 
     # Set nodata in rioxr's way and remove odc.geo nodata in attributes
     reprojected_xda.attrs.pop("nodata", None)
+
+    # Set back dimensions with initial names (y, x)
+    odc_dims = reprojected_xda.odc.spatial_dims
+    rio_dims = src_xda.odc.spatial_dims
+    if odc_dims != rio_dims:
+        reprojected_xda = reprojected_xda.rename(
+            {odc_dim: rio_dim for odc_dim, rio_dim in zip(odc_dims, rio_dims)}
+        )
 
     return reprojected_xda
 
