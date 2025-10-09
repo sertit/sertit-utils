@@ -22,6 +22,7 @@ import warnings
 
 import geopandas as gpd
 import pytest
+from rasterio import CRS
 from shapely import wkt
 
 from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
@@ -361,3 +362,12 @@ def test_read_dbf():
     ci.assert_geom_equal(fiona, pyogrio)
     _assert_attributes(fiona, dbf_path)
     _assert_attributes(pyogrio, dbf_path)
+
+
+def test_to_utm_crs():
+    """Test to_utm_crs function"""
+    kml_path = vectors_path().joinpath("aoi.kml")
+    aoi = vectors.read(kml_path)
+    assert CRS.from_string("EPSG:32638") == vectors.to_utm_crs(
+        aoi.centroid.x, aoi.centroid.y
+    )

@@ -79,6 +79,43 @@ GEOSException = GEOSException
 CPLE_AppDefinedError = CPLE_AppDefinedError
 
 
+def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
+    """
+    Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
+
+    Args:
+        lon (float): Longitude (WGS84, epsg:4326)
+        lat (float): Latitude (WGS84, epsg:4326)
+
+    Returns:
+        CRS: UTM CRS
+
+    Example:
+        >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
+        <Derived Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984 ensemble
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+    """
+    # Manage the case with centroids etc. that are already written as arrays
+    try:
+        point = gpd.points_from_xy([lon], [lat])
+    except ValueError:
+        point = gpd.points_from_xy(lon, lat)
+
+    return gpd.GeoDataFrame(geometry=point, crs=EPSG_4326).estimate_utm_crs()
+
+
 def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
