@@ -3,6 +3,8 @@
 ## 1.48.0 (2025-mm-dd)
 
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))
+- **ENH: Allow `dst_transform` to be passed to `rasters.reproject`**
+- FIX: Fix collocation error with reference transform not being passed in `rasters.collocate`
 - FIX: Always return x, y spatial coordinates when reprojecting with `odc.geo` (instead of its default behaviour, see [here](https://github.com/opendatacube/odc-geo/issues/250))
 - FIX: Allow other coordinates than x and y (to support `odc.geo`) in `rasters.collocate`
 - FIX: Remove warnings ([#56](https://github.com/sertit/sertit-utils/issues/56))

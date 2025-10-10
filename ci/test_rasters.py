@@ -48,7 +48,7 @@ from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
 
-DEBUG = False
+DEBUG = True
 
 
 def test_indexes(caplog):
@@ -621,24 +621,25 @@ def test_collocate_self(tmp_path, raster_path):
     ci.assert_xr_encoding_attrs(xds, coll_xds)
 
 
+def __test_collocate_output(ref, other, coll, dtype):
+    """Test collocated outputs"""
+    assert_chunked_computed(coll, f"Collocate DataArray ({dtype})")
+
+    # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
+    ci.assert_xr_encoding_attrs(other, coll)
+    ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")
+    ci.assert_val(coll.name, other.name, f"Collocated name ({float})")
+
+    # But located on the reference one
+    assert ref.coords.identical(coll.coords)
+    with pytest.raises(AssertionError):
+        ci.assert_val(ref.coords, other.coords, f"Raw coordinates ({dtype})")
+
+
 @s3_env
 @dask_env()
 def test_collocate(tmp_path):
     """Test collocate functions"""
-
-    def __test_collocate_output(ref, other, coll, dtype):
-        """Test collocated outputs"""
-        assert_chunked_computed(coll, f"Collocate DataArray ({dtype})")
-
-        # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
-        ci.assert_xr_encoding_attrs(other, coll)
-        ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")
-        ci.assert_val(coll.name, other.name, f"Collocated name ({float})")
-
-        # But located on the reference one
-        assert ref.coords.identical(coll.coords)
-        with pytest.raises(AssertionError):
-            ci.assert_val(ref.coords, other.coords, f"Raw coordinates ({dtype})")
 
     # Inputs
     other_float = rasters.read(
@@ -664,6 +665,19 @@ def test_collocate(tmp_path):
     # Other in uint8
     coll_uint8 = rasters.collocate(reference=ref, other=other_uint8)
     __test_collocate_output(ref, other_uint8, coll_uint8, "uint8")
+
+
+@s3_env
+@dask_env(nof_computes=1)  # Write
+def test_collocate_different_crs(tmp_path):
+    """Test collocate function (with different CRS)"""
+    ref = rasters.read(rasters_path().joinpath("hand_ref.tif"))
+    raw = rasters.read(rasters_path().joinpath("hand_raw.tif"))
+    ok = rasters_path().joinpath("hand_coll.tif")
+    coll = rasters.collocate(reference=ref, other=raw)
+    coll_path = get_output(tmp_path, "test_hand_coll.tif", DEBUG)
+    rasters.write(coll, coll_path, dtype="float32")
+    ci.assert_raster_equal(coll_path, ok)
 
 
 @s3_env

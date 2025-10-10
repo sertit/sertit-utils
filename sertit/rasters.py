@@ -28,6 +28,7 @@ from typing import Any, Callable, Optional, Union
 import geopandas as gpd
 import numpy as np
 import xarray as xr
+from affine import Affine
 from shapely.geometry import Polygon
 
 from sertit.vectors import EPSG_4326
@@ -1427,21 +1428,27 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
-        try:
-            LOGGER.debug("Collocating with dask-enabled reproject")
+        collocated_xda = None
+        if dask.is_chunked(other):
+            try:
+                LOGGER.debug("Collocating with dask-enabled reproject")
 
-            # Manage nodata
-            collocated_xda = reproject(
-                other,
-                shape=reference.rio.shape,
-                resampling=resampling,
-                dst_crs=reference.rio.crs,
-                name=other.name,
-            )
+                # Manage nodata
+                collocated_xda = reproject(
+                    other,
+                    shape=reference.rio.shape,
+                    dst_transform=reference.rio.transform(),
+                    resampling=resampling,
+                    dst_crs=reference.rio.crs,
+                    name=other.name,
+                )
 
-        except ImportError:  # pragma: no cover
+            except ImportError:  # pragma: no cover
+                # If odc-geo isn't installed, use rioxarray (not daskified!)
+                pass
+
+        if collocated_xda is None:
             LOGGER.debug("Collocating with 'rioxarray.reproject_match'")
-            # If odc-geo isn't installed, use rioxarray (not daskified!)
             collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
     return collocated_xda
 
@@ -2355,6 +2362,7 @@ def reproject(
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
+    dst_transform: Affine = None,
     nodata: float = None,
     num_threads: int = None,
     use_dask: bool = None,
@@ -2396,6 +2404,7 @@ def reproject(
         shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes pixel_size.
         resampling (Resampling): Resampling method. Defaults to Resampling.bilinear.
         dst_crs (CRS): Destination CRS. If not provided, the CRS will be retrieved from the source raster.
+        dst_transform (Affine): Destination transfgorm. If not provided, the transform will be computed from other parameters.
         nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
         num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
         use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.       ortho_path:
@@ -2479,6 +2488,7 @@ def reproject(
             shape=shape,
             resampling=resampling,
             dst_crs=dst_crs,
+            dst_transform=dst_transform,
             nodata=nodata,
             num_threads=num_threads,
             use_dask=use_dask,
@@ -2519,6 +2529,7 @@ def _reproject_without_rpcs(
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
+    dst_transform: Affine = None,
     nodata: float = None,
     num_threads: int = None,
     use_dask: bool = True,
@@ -2543,6 +2554,7 @@ def _reproject_without_rpcs(
         shape=shape,
         resampling=resampling,
         dst_crs=dst_crs,
+        dst_transform=dst_transform,
         nodata=nodata,
         num_threads=num_threads,
         **kwargs,
@@ -2557,6 +2569,7 @@ def __reproject_odc_geo(
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
+    dst_transform: Affine = None,
     nodata: float = None,
     num_threads: int = None,
     **kwargs,
@@ -2576,18 +2589,27 @@ def __reproject_odc_geo(
         from odc.geo.geobox import GeoBox
 
         height, width = shape
-        src_affine: Affine = src_xda.rio.transform()  # For typing
 
-        src_geobox = GeoBox(
-            (src_xda.rio.height, src_xda.rio.width),
-            src_affine,
-            src_xda.rio.crs,
-        )
+        if dst_transform is None:
+            src_affine: Affine = src_xda.rio.transform()  # For typing
 
-        if dst_crs == src_xda.rio.crs:
-            how = src_geobox.zoom_to(shape=(height, width))
+            src_geobox = GeoBox(
+                (src_xda.rio.height, src_xda.rio.width),
+                src_affine,
+                src_xda.rio.crs,
+            )
+
+            if dst_crs == src_xda.rio.crs:
+                how = src_geobox.zoom_to(shape=(height, width))
+            else:
+                how = src_geobox.to_crs(dst_crs, shape=(height, width))
+
         else:
-            how = src_geobox.to_crs(dst_crs, shape=(height, width))
+            how = GeoBox(
+                (height, width),
+                dst_transform,
+                dst_crs,
+            )
     else:
         how = dst_crs
 
@@ -2626,6 +2648,7 @@ def __reproject_rioxarray(
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
+    dst_transform: Affine = None,
     nodata: float = None,
     num_threads: int = None,
     **kwargs,
@@ -2642,6 +2665,7 @@ def __reproject_rioxarray(
         dst_crs=dst_crs,
         resolution=pixel_size,
         shape=shape,
+        transform=dst_transform,
         resampling=resampling,
         nodata=nodata,
         num_threads=num_threads,
