@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(SU_NAME)
 
 
 def base_fct(value):
-    raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+    raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
         "DATA", "rasters", "raster.tif"
     )
     assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
@@ -59,7 +59,7 @@ def test_s3_raster():
     ):
         # There is a mistake in endpoint but AWS_S3_ENDPOINT should override it
         with temp_s3(endpoint="mistake.s3.unistra.fr"):
-            raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+            raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
                 "DATA", "rasters", "raster.tif"
             )
             assert (
@@ -82,7 +82,7 @@ def test_s3_vector():
         tempenv.TemporaryEnvironment({USE_S3_STORAGE: "1", CI_SERTIT_S3: "1"}),
         temp_s3(endpoint="s3.unistra.fr"),
     ):
-        vector_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+        vector_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
             "DATA", "vectors", "aoi.shp"
         )
         assert vector_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"

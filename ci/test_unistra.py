@@ -38,7 +38,7 @@ ci.reduce_verbosity()
 
 
 def base_fct(value):
-    raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+    raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
         "DATA", "rasters", "raster.tif"
     )
     assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
@@ -63,7 +63,7 @@ def test_unistra_s3():
         {s3.USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: None, CI_SERTIT_S3: "1"}
     ):
         # Test s3_env and define_s3_client (called inside)
-        raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+        raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
             "DATA", "rasters", "raster.tif"
         )
         assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
@@ -91,7 +91,7 @@ def test_unistra_s3():
         }
     ):
         # Test s3_env and define_s3_client (called inside)
-        raster_path = AnyPath("s3://sertit-sertit-utils-ci").joinpath(
+        raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
             "DATA", "rasters", "raster.tif"
         )
         assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
