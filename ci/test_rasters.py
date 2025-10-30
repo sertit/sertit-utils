@@ -48,7 +48,7 @@ from sertit.vectors import EPSG_4326
 
 ci.reduce_verbosity()
 
-DEBUG = True
+DEBUG = False
 
 
 def test_indexes(caplog):
@@ -1310,7 +1310,7 @@ def test_reproject_rpc(tmp_path):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # xr.testing.assert_equal x1 per array
+@dask_env(nof_computes=2)  # write x2
 def test_reproject_gcps(tmp_path):
     """Test reproject with GCPs"""
     spot_path = rasters_path() / "SPOT-5" / "METADATA.DIM"
@@ -1345,8 +1345,15 @@ def test_reproject_gcps(tmp_path):
     ci.assert_val(gcps_reproj.rio.nodata, np.nan, "Reprojected nodata")
     assert "x" in gcps_reproj.dims
     assert "y" in gcps_reproj.dims
+
+    gcps_out = get_output(tmp_path, "gcps.tif", DEBUG, dask_folders=True)
+    updated_gcps_out = get_output(
+        tmp_path, "updated_gcps.tif", DEBUG, dask_folders=True
+    )
+    rasters.write(gcps_reproj, gcps_out, dtype=np.uint16, nodata=0)
+    rasters.write(updated_gcps_reproj, updated_gcps_out, dtype=np.uint16, nodata=0)
     with pytest.raises(AssertionError):
-        xr.testing.assert_equal(gcps_reproj, updated_gcps_reproj)
+        ci.assert_raster_equal(gcps_out, updated_gcps_out)
 
 
 @s3_env
