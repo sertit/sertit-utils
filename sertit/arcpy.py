@@ -215,3 +215,132 @@ def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
         path = str(feature_layer)
 
     return path
+
+
+def run_in_conda_env(
+    executable: list[str],
+    logger_name: str = "sertit_utils",
+    conda_env_name: str | None = None,
+    python_path: str = "",
+):
+    """
+    This function runs an executable thanks to conda run in a python subprocess.
+    It uses the subcommand `conda run` to run the executable in a conda environment.
+    If conda_env_name is None, it chooses an environment in the following order (it stops at the first one found):
+    - arcgispro-eo-backend
+    - arcgispro-eo-backend-testing
+    - self
+
+    Where self is the current environment. If self is given, a subprocess is launched anyway with the same python interpreter.
+
+    This function is designed to solve ArcGis limits by running an executable files in another conda environment
+    and thus solves a lot of issues.
+
+    Args:
+        executable: Executable name, with additional arguments to be passed to the executable on invocation.
+        logger_name: The logger name to use.
+        conda_env_name: Name of the conda environment where to run the executable.
+        python_path: Set the PYTHON_PATH variable in the child subprocess.
+
+    Returns:
+
+    """
+    import json
+    import logging
+    import os
+    import pathlib
+    import subprocess
+    import sys
+
+    logger = logging.getLogger(logger_name)
+
+    CREATE_NO_WINDOW = 0x08000000
+    env_list = subprocess.run(
+        ["conda", "env", "list", "--json"],
+        capture_output=True,
+        creationflags=CREATE_NO_WINDOW,
+    )
+    env_list = json.loads(env_list.stdout)
+    current_env = env_list["default_prefix"]
+    current_env_name = pathlib.Path(current_env).name
+    env_path_list = env_list["envs"]
+
+    if conda_env_name is None:
+        available_env = []
+        available_prefix = []
+
+        # Find available environments
+        for env in env_path_list:
+            name = pathlib.Path(env).name
+            prefix = pathlib.Path(env).parent
+            if name == "arcgispro-eo-backend-testing":
+                available_env.append(name)
+                available_prefix.append(str(prefix))
+            if name == "arcgispro-eo-backend":
+                available_env.append(name)
+                available_prefix.append(str(prefix))
+
+        # Choose the most appropriate environment to run the command line
+        if "arcgispro-eo-backend" in available_env:
+            conda_env_name = "arcgispro-eo-backend"
+            conda_env_prefix = available_prefix[
+                available_env.index("arcgispro-eo-backend")
+            ]
+        elif "arcgispro-eo-backend-testing" in available_env:
+            conda_env_name = "arcgispro-eo-backend-testing"
+            conda_env_prefix = available_prefix[
+                available_env.index("arcgispro-eo-backend-testing")
+            ]
+        else:
+            conda_env_name = current_env_name
+            conda_env_prefix = str(pathlib.Path(current_env).parent)
+
+        conda_path = str(pathlib.Path(conda_env_prefix) / conda_env_name)
+
+    else:
+        conda_path = conda_env_name
+
+    cmd_line = [
+        "conda",
+        "run",
+        "--live-stream",
+        "-p",
+        conda_path,
+    ] + executable
+
+    # Copy and clean the environment
+    env = os.environ
+    clean_env = {}
+    for key, value in env.items():
+        value_as_list = value.split(";")
+        value_as_list_filtered = [
+            el for el in value_as_list if el.find(current_env_name) == -1
+        ]
+        if len(value_as_list_filtered) > 0:
+            value_as_str = ";".join(value_as_list_filtered)
+            clean_env[key] = value_as_str
+
+    clean_env["PYTHONPATH"] = python_path
+
+    with subprocess.Popen(
+        cmd_line,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=clean_env,
+        close_fds=False,
+    ) as process:
+        for line in process.stdout:
+            line = line.decode(
+                encoding=sys.stdout.encoding,
+                errors=("replace" if sys.version_info < (3, 5) else "backslashreplace"),
+            ).rstrip()
+            logger.info(line)
+
+        # Get return value
+        retval = process.wait(timeout=None)
+
+        # Kill process
+        process.kill()
+
+        return retval
