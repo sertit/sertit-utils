@@ -36,7 +36,7 @@ from sertit.vectors import EPSG_4326
 try:
     import rasterio
     import rioxarray
-    from rasterio import CRS, features, rpc, warp
+    from rasterio import CRS, control, features, rpc, warp
     from rasterio.enums import Resampling
     from rioxarray.exceptions import MissingCRS
 except ModuleNotFoundError as ex:  # pragma: no cover
@@ -377,7 +377,7 @@ def rasterize(
     return rasterized_xds
 
 
-def _work_on_xds(function):
+def _works_on_xds(function):
     """"""
 
     @wraps(function)
@@ -396,7 +396,7 @@ def _work_on_xds(function):
 
 
 @any_raster_to_xr_ds
-@_work_on_xds
+@_works_on_xds
 def _vectorize(
     xds: AnyRasterType,
     values: Union[None, int, list] = None,
@@ -563,7 +563,7 @@ def vectorize(
 
 
 @any_raster_to_xr_ds
-@_work_on_xds
+@_works_on_xds
 def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster, returned as a vector.
@@ -602,7 +602,7 @@ def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
 
 
 @any_raster_to_xr_ds
-@_work_on_xds
+@_works_on_xds
 def get_nodata_vector(
     xds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
 ) -> gpd.GeoDataFrame:
@@ -1332,9 +1332,6 @@ def write(
             try:
                 # Filter out and convert kwargs to avoid any error
                 da_kwargs = {
-                    # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
-                    # OverflowError: Python integer 999999 out of bounds for xxx
-                    # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
                     "stats": np.dtype(dtype).itemsize >= 4,
                     # Other default arguments
                     "compression": kwargs["compress"].upper(),
@@ -1357,6 +1354,9 @@ def write(
                         xds, nodata, dtype, output_path, compute, da_kwargs
                     )
                 except Exception:
+                    # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
+                    # OverflowError: Python integer 999999 out of bounds for xxx
+                    # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
                     da_kwargs["stats"] = False
                     delayed = __save_cog_with_dask(
                         xds, nodata, dtype, output_path, compute, da_kwargs
@@ -1384,7 +1384,8 @@ def write(
                 kwargs["BLOCKSIZE"] = blocksize
 
         if not is_written:
-            # Write with windows as we don't want to_raster to blow up the RAM
+            # Write with windows as we don't want to_raster to blow up the RAM (only if dask is not used)
+            # Does nothing if writing with dask
             kwargs["windowed"] = xds.rio.height * xds.rio.width > 20000 * 20000
 
     # Default write on disk
@@ -2363,6 +2364,7 @@ def reproject(
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
     dst_transform: Affine = None,
+    gcps: control.GroundControlPoint = None,
     nodata: float = None,
     num_threads: int = None,
     use_dask: bool = None,
@@ -2405,9 +2407,11 @@ def reproject(
         resampling (Resampling): Resampling method. Defaults to Resampling.bilinear.
         dst_crs (CRS): Destination CRS. If not provided, the CRS will be retrieved from the source raster.
         dst_transform (Affine): Destination transfgorm. If not provided, the transform will be computed from other parameters.
+        gcps ((control.GroundControlPoint, CRS)): Ground Control Points
         nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
         num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
-        use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.       ortho_path:
+        use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.
+        ortho_path (AnyPathStrType): Path to the orthorectified array
         name (str): Name of the output DataArray.
         rpcs (rpc.RPC): RPC to orthorectify some raster
         dem_path (AnyPathStrType): Path to the DEM, only used if rpcs is given.
@@ -2489,6 +2493,7 @@ def reproject(
             resampling=resampling,
             dst_crs=dst_crs,
             dst_transform=dst_transform,
+            gcps=gcps,
             nodata=nodata,
             num_threads=num_threads,
             use_dask=use_dask,
@@ -2530,6 +2535,7 @@ def _reproject_without_rpcs(
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
     dst_transform: Affine = None,
+    gcps: control.GroundControlPoint = None,
     nodata: float = None,
     num_threads: int = None,
     use_dask: bool = True,
@@ -2540,6 +2546,10 @@ def _reproject_without_rpcs(
         # We have more confidence in rioxarray's implementation than odc.geo
         # So, if the array is not chunked, use rioxarray
         use_dask = dask.is_chunked(src_xda)
+
+    # Write GCPs into the DataArray if provided
+    if gcps is not None:
+        src_xda.rio.write_gcps(gcps, dst_crs, inplace=True)
 
     # A CRS is needed
     if dst_crs is None:

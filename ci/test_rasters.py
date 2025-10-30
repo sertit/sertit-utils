@@ -1310,6 +1310,46 @@ def test_reproject_rpc(tmp_path):
 
 
 @s3_env
+@dask_env(nof_computes=2)  # xr.testing.assert_equal x1 per array
+def test_reproject_gcps(tmp_path):
+    """Test reproject with GCPs"""
+    spot_path = rasters_path() / "SPOT-5" / "METADATA.DIM"
+
+    with rasterio.open(str(spot_path)) as ds:
+        gcps_reproj = rasters.reproject(
+            rasters.read(ds.name, indexes=1),
+            gcps=ds.gcps[0],
+            dst_crs="epsg:4326",
+            nodata=0,
+        )
+
+        # Update the GCPs and redo a reprojection to see if GCPs are really applied
+        updated_gcps = ds.gcps[0]
+        # Update height
+        for gcp, z in zip(updated_gcps, [226.5, 260, 179, 471.9]):
+            gcp.z = z
+        # Update x
+        updated_gcps[0].x += 0.3
+        updated_gcps[-1].x += 0.3
+
+        updated_gcps_reproj = rasters.reproject(
+            rasters.read(ds.name, indexes=1),
+            gcps=updated_gcps,
+            dst_crs="epsg:4326",
+            nodata=0,
+        )
+
+    ci.assert_val(gcps_reproj.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    ci.assert_val(gcps_reproj.rio.count, 1, "Reprojected count")
+    ci.assert_val(gcps_reproj.rio.encoded_nodata, 0, "Reprojected encoded nodata")
+    ci.assert_val(gcps_reproj.rio.nodata, np.nan, "Reprojected nodata")
+    assert "x" in gcps_reproj.dims
+    assert "y" in gcps_reproj.dims
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(gcps_reproj, updated_gcps_reproj)
+
+
+@s3_env
 @dask_env(nof_computes=0)
 def test_reproject(tmp_path, raster_path):
     """Test reproject"""
