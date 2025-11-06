@@ -20,6 +20,11 @@ TEXT = "str:255"
 DATE = "datetime"
 """ 'Date' type for ArcGis GDB """
 
+AGP_EO_ENV = "arcgispro-eo-backend"
+AGP_EO_ENV_TEST = "arcgispro-eo-backend-testing"
+AGP_ENVS = [AGP_EO_ENV, AGP_EO_ENV_TEST]
+""" ArcGis Pro environments """
+
 
 # flake8: noqa
 def init_conda_arcpy_env():
@@ -273,28 +278,23 @@ def run_in_conda_env(
         for env in env_path_list:
             name = pathlib.Path(env).name
             prefix = pathlib.Path(env).parent
-            if name == "arcgispro-eo-backend-testing":
-                available_env.append(name)
-                available_prefix.append(str(prefix))
-            if name == "arcgispro-eo-backend":
+            if name in AGP_ENVS:
                 available_env.append(name)
                 available_prefix.append(str(prefix))
 
         # Choose the most appropriate environment to run the command line
-        if "arcgispro-eo-backend" in available_env:
-            conda_env_name = "arcgispro-eo-backend"
-            conda_env_prefix = available_prefix[
-                available_env.index("arcgispro-eo-backend")
-            ]
-        elif "arcgispro-eo-backend-testing" in available_env:
-            conda_env_name = "arcgispro-eo-backend-testing"
-            conda_env_prefix = available_prefix[
-                available_env.index("arcgispro-eo-backend-testing")
-            ]
+        if len(available_env) > 0:
+            # AGP_EO_ENV has priority over AGP_EO_ENV_TEST
+            conda_env_name = (
+                AGP_EO_ENV if AGP_EO_ENV in available_env else AGP_EO_ENV_TEST
+            )
+            conda_env_prefix = available_prefix[available_env.index(conda_env_name)]
         else:
+            # Default to the current environment if no backend environment is found
             conda_env_name = current_env_name
             conda_env_prefix = str(pathlib.Path(current_env).parent)
 
+        # Create conda path
         conda_path = str(pathlib.Path(conda_env_prefix) / conda_env_name)
 
     else:
