@@ -1,6 +1,6 @@
 # Release History
 
-## 1.48.0 (2025-mm-dd)
+## 1.48.0 (2025-11-07)
 
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - **ENH: Allow `dst_transform` and `gcps` to be passed to `rasters.reproject`**
