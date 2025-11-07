@@ -9,6 +9,7 @@
 - FIX: Allow other coordinates than x and y (to support `odc.geo`) in `rasters.collocate`
 - FIX: Remove warnings ([#56](https://github.com/sertit/sertit-utils/issues/56))
 - FIX: Improve coverage ([#56](https://github.com/sertit/sertit-utils/issues/56))
+- FIX: Handle ImportError in `arcpy.init_conda_arcpy_env`
 - CI: Add `os_utils` tests ([#56](https://github.com/sertit/sertit-utils/issues/56))
 
 ## 1.47.0 (2025-09-10)
