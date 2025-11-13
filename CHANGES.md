@@ -1,5 +1,8 @@
 # Release History
 
+## 1.4x.x (2025-x-x)
+- ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`
+
 ## 1.48.0 (2025-11-07)
 
 - **BREAKING CHANGE: Remove deprecated functions and arguments** ([#56](https://github.com/sertit/sertit-utils/issues/56))

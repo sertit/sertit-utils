@@ -245,6 +245,7 @@ def run_in_conda_env(
         executable: Executable name, with additional arguments to be passed to the executable on invocation.
         logger_name: The logger name to use.
         conda_env_name: Name of the conda environment where to run the executable.
+                        Set it to "self" to force the subprocess to run in the current environment.
         python_path: Set the PYTHON_PATH variable in the child subprocess.
 
     Returns:
@@ -295,6 +296,11 @@ def run_in_conda_env(
             conda_env_prefix = str(pathlib.Path(current_env).parent)
 
         # Create conda path
+        conda_path = str(pathlib.Path(conda_env_prefix) / conda_env_name)
+
+    elif conda_env_name == "self":
+        conda_env_name = current_env_name
+        conda_env_prefix = str(pathlib.Path(current_env).parent)
         conda_path = str(pathlib.Path(conda_env_prefix) / conda_env_name)
 
     else:
