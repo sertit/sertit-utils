@@ -1288,7 +1288,7 @@ def test_classify(tmp_path):
 
 @s3_env
 # @dask_env(nof_computes=1)  # write x1 RPC is not lazy yet, no need to test it multiple times
-def test_reproject_rpc(tmp_path):
+def test_reproject_rpcs(tmp_path):
     """Test reproject with rpc"""
     spot_path = (
         rasters_path()
@@ -1299,6 +1299,31 @@ def test_reproject_rpc(tmp_path):
     with rasterio.open(str(spot_path)) as ds:
         rpc_reproj = rasters.reproject(
             spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0
+        )
+
+    ci.assert_val(rpc_reproj.rio.crs.to_epsg(), 4326, "Reprojected CRS")
+    ci.assert_val(rpc_reproj.rio.count, 4, "Reprojected count")
+    ci.assert_val(rpc_reproj.rio.encoded_nodata, 0, "Reprojected encoded nodata")
+    ci.assert_val(rpc_reproj.rio.nodata, np.nan, "Reprojected nodata")
+    assert "x" in rpc_reproj.dims
+    assert "y" in rpc_reproj.dims
+
+
+@s3_env
+# @dask_env(nof_computes=1)  # write x1 RPC is not lazy yet, no need to test it multiple times
+def test_reproject_rpcs_no_crs(tmp_path):
+    """Test reproject with rpc"""
+    spot_path = (
+        rasters_path()
+        / "0032100150001_01"
+        / "SV1-04_20200607_L1B0001022989_0032100150001_01-MUX.tiff"
+    )
+    copdem_path = rasters_path() / "Copernicus_DSM_10_S07_00_E106_00_DEM.tif"
+    with rasterio.open(str(spot_path)) as ds:
+        arr = rasters.read(spot_path)
+        assert arr.rio.crs is None
+        rpc_reproj = rasters.reproject(
+            arr, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0
         )
 
     ci.assert_val(rpc_reproj.rio.crs.to_epsg(), 4326, "Reprojected CRS")

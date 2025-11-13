@@ -2763,7 +2763,12 @@ def _reproject_rpcs(
     # Get src crs (check that)
     src_crs = src_xda.rio.crs
     if not src_crs:
+        # RPCs are always in 4326 by convention
+        # https://rasterio.readthedocs.io/en/latest/topics/reproject.html#reprojecting-with-other-georeferencing-metadata
         src_crs = EPSG_4326
+
+        # CRS has to be set for rioxarray
+        src_xda.rio.write_crs(src_crs, inplace=True)
 
     # RPC_DEM doesn't work with cloud-based DEM
     dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
