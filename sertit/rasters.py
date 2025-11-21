@@ -1040,7 +1040,7 @@ def read(
         **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
 
     Returns:
-        Union[AnyXrDataStructure]: Masked xarray corresponding to the raster data and its metadata
+        AnyXrDataStructure: Masked xarray corresponding to the raster data and its metadata
 
     Example:
         >>> raster_path = "path/to/raster.tif"
