@@ -4,6 +4,8 @@
 
 - **ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`**
 - **ENH: Factorize more of `run_in_conda_env` functions: `arcpy.create_conda_env_cli` and `arcpy.run_in_conda_env_cli`**
+- **ENH: Add extend_env and shell arguments to run_in_conda_env function**
+- FIX: run_in_conda_env function not running on Unix system
 - FIX: Make sure arrays have a CRS when reprojected with RPCs. If not, set `epsg:4326` as default, by convention.
 - FIX: Add an error if the window doesn't cover the dataset in `get_window`
 - FIX: Add a default value for `other_args` in `snap.get_gpt_cli`
