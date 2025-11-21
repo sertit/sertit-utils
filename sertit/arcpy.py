@@ -233,6 +233,8 @@ def run_in_conda_env(
     logger_name: str = "sertit_utils",
     conda_env_name: str | None = None,
     python_path: str = "",
+    extend_env: dict = {},
+    shell=True,
 ):
     """
     This function runs an executable thanks to conda run in a python subprocess.
@@ -247,12 +249,22 @@ def run_in_conda_env(
     This function is designed to solve ArcGis limits by running an executable files in another conda environment
     and thus solves a lot of issues.
 
+    The `extend_env` argument allows one to add environment variable in the child subprocess.
+    For example, if parent_env = { "PYTHON_PATH": "/path/to/python_lib,/another_path/to/python_lib", "VAR": "True" }
+    and extend_env = {"PYTHON_PATH": "/child_path/to/python_lib,/another_path/to/python_lib"}
+    Then, child_env = {"PYTHON_PATH": "/child_path/to/python_lib,/another_path/to/python_lib", "VAR": "True"}
+
+    The child_env took the whole `PYTHON_PATH` variable from `extend_env` and the variable `VAR` from the parent_env.
+
     Args:
         executable: Executable name, with additional arguments to be passed to the executable on invocation.
         logger_name: The logger name to use.
         conda_env_name: Name of the conda environment where to run the executable.
                         Set it to "self" to force the subprocess to run in the current environment.
         python_path: Set the PYTHON_PATH variable in the child subprocess.
+        extend_env: Dict to extend environment in the sub-process. extend_env is merged with
+                    the parent process environment by overriding it if necessary.
+        shell: Run subprocess in a shell if True.
 
     Returns:
 
@@ -263,15 +275,24 @@ def run_in_conda_env(
     import pathlib
     import subprocess
     import sys
+    import platform
 
     logger = logging.getLogger(logger_name)
 
-    CREATE_NO_WINDOW = 0x08000000
-    env_list = subprocess.run(
-        ["conda", "env", "list", "--json"],
-        capture_output=True,
-        creationflags=CREATE_NO_WINDOW,
-    )
+    list_env_cmd = ["conda", "env", "list", "--json"]
+    if platform.system() == "Windows":
+        CREATE_NO_WINDOW = 0x08000000
+        env_list = subprocess.run(
+            list_env_cmd,
+            capture_output=True,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    else:
+        env_list = subprocess.run(
+            list_env_cmd,
+            capture_output=True,
+        )
+
     env_list = json.loads(env_list.stdout)
     current_env = env_list["default_prefix"]
     current_env_name = pathlib.Path(current_env).name
@@ -333,10 +354,12 @@ def run_in_conda_env(
             clean_env[key] = value_as_str
 
     clean_env["PYTHONPATH"] = python_path
+    # Add env_extend allowing to overwrite
+    clean_env = clean_env | extend_env
 
     with subprocess.Popen(
         cmd_line,
-        shell=True,
+        shell=shell,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=clean_env,
