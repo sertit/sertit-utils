@@ -3,6 +3,8 @@
 ## 1.4x.x (2025-x-x)
 
 - **ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`**
+- **ENH: Add extend_env and shell arguments to run_in_conda_env function**
+- FIX: run_in_conda_env function not running on Unix system
 - FIX: Make sure arrays have a CRS when reprojected with RPCs. If not, set `epsg:4326` as default, by convention.
 
 ## 1.48.0 (2025-11-07)
