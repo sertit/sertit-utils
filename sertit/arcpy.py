@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
 
+from sertit.logs import SertitException
+
 # Arcpy types from inside a schema
 SHORT = "int32:4"
 """ 'Short' type for ArcGis GDB """
@@ -222,6 +224,10 @@ def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
     return path
 
 
+class ListCondaEnvError(SertitException):
+    """Raise this exception if one failed to list conda environment"""
+
+
 def run_in_conda_env(
     executable: list[str],
     logger_name: str = "sertit_utils",
@@ -286,6 +292,8 @@ def run_in_conda_env(
             list_env_cmd,
             capture_output=True,
         )
+    if env_list.returncode > 0:
+        raise ListCondaEnvError(env_list.stderr)
 
     env_list = json.loads(env_list.stdout)
     current_env = env_list["default_prefix"]
