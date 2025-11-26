@@ -925,20 +925,26 @@ def get_window(ds: AnyRasterType, window: Any):
             ) from exc
 
     # Use rioxarray way to convert window to integer
-    (row_start, row_stop), (col_start, col_stop) = window.toranges()
-    row_start = 0 if row_start < 0 else np.floor(row_start)
-    row_stop = 0 if row_stop < 0 else np.ceil(row_stop)
-    col_start = 0 if col_start < 0 else np.floor(col_start)
-    col_stop = 0 if col_stop < 0 else np.ceil(col_stop)
-    row_slice = slice(int(row_start), int(row_stop))
-    col_slice = slice(int(col_start), int(col_stop))
+    try:
+        (row_start, row_stop), (col_start, col_stop) = window.toranges()
+        row_start = 0 if row_start < 0 else np.floor(row_start)
+        row_stop = 0 if row_stop < 0 else np.ceil(row_stop)
+        col_start = 0 if col_start < 0 else np.floor(col_start)
+        col_stop = 0 if col_stop < 0 else np.ceil(col_stop)
+        row_slice = slice(int(row_start), int(row_stop))
+        col_slice = slice(int(col_start), int(col_stop))
 
-    window = Window.from_slices(
-        rows=row_slice,
-        cols=col_slice,
-        width=int(window.width),
-        height=int(window.height),
-    )
+        window = Window.from_slices(
+            rows=row_slice,
+            cols=col_slice,
+            width=int(window.width),
+            height=int(window.height),
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "Impossible to create a window on your dataset! Make sure the two are overlapping."
+        ) from exc
+
     return window
 
 
