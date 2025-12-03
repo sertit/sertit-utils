@@ -104,3 +104,13 @@ log_cli_level = "INFO"
 
 [tool.coverage.run]
 omit = ["*/__init__.py"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def run_in_conda_env",  # This doesn't run in CI
+    "def create_conda_env_cli",  # This doesn't run in CI
+    "def run_in_conda_env_cli",  # This doesn't run in CI
+    "except ModuleNotFoundError:",  # This doesn't run in CI
+    "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI
+    "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI
+]

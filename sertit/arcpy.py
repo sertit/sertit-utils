@@ -1,5 +1,11 @@
 import logging
 import logging.handlers
+import pickle
+import tempfile
+from functools import wraps
+from typing import Any
+
+import click
 
 # Arcpy types from inside a schema
 SHORT = "int32:4"
@@ -350,3 +356,116 @@ def run_in_conda_env(
         process.kill()
 
         return retval
+
+
+@click.command(
+    context_settings=dict(
+        help_option_names=["-h", "--help"], max_content_width=300, show_default=True
+    )
+)
+@click.option(
+    "-i",
+    "--input-file",
+    help="Path to the pickle corresponding to the inputs of your function.",
+    type=str,
+    required=False,
+)
+@click.option(
+    "-o",
+    "--output-file",
+    help="Path to the pickle corresponding to the outputs of your function.",
+    type=str,
+    required=False,
+)
+def create_conda_env_cli(input_file: str, output_file: str):
+    """
+    Create the CLI to run the decorated function in a new conda environment.
+
+    To be used in the backend CLI main.
+
+    Examples:
+        >>> from sertit.arcpy import create_conda_env_cli
+        >>> from my_tool.my_tool_core import my_tool_core
+        >>> create_conda_env_cli(standalone_mode=False)(my_tool_core)
+    """
+
+    def decorator(function):
+        @wraps(function)
+        def wrapper(input_file, output_file):
+            with open(input_file, "rb") as fp_in:
+                inputs: dict = pickle.load(fp_in)
+
+            output = function(**inputs)
+            with open(output_file, "wb") as fp_out:
+                pickle.dump(output, fp_out)
+
+        return wrapper(input_file, output_file)
+
+    return decorator
+
+
+def run_in_conda_env_cli(
+    cli_path: str, inputs: dict, logger_name: str, tools_path: str
+) -> tuple[int, Any]:
+    """
+    Run the given command line with the given inputs in a new conda environment.
+
+    Scope: run a complicated tool with heavy deps from inside a conda environment ccontaining arcpy
+
+    To be used in the .pyt file.
+
+    Args:
+        cli_path (str):
+        inputs (dict): Inputs of the function wrapped by the CLI as a dictionary
+        logger_name (str): Logger name
+        tools_path (str): Path to the tools
+
+    Returns:
+        tuple[int, Any]: Return value and outputs of the function
+
+    Examples:
+        >>> def main_arcgis(parameters, messages, tools_path):
+        >>>     from sertit.arcpy import run_in_conda_env_cli
+        >>>     from my_tool import LOGGER_NAME, my_backend_cli
+        >>>
+        >>>     inputs = {
+        >>>         "aoi_path": "aoi.shp",
+        >>>         "input": "input.tif",
+        >>>         "resolution": 10,
+        >>>     }
+        >>>
+        >>>     retval, output_path = run_in_conda_env_cli(
+        >>>         cli_path=my_backend_cli.__file__,
+        >>>         inputs=inputs,
+        >>>         logger_name=LOGGER_NAME,
+        >>>         tools_path=tools_path,
+        >>>     )
+        >>>
+        >>>     if retval == 0:
+        >>>         logger.info("RasterFillHoles was a success.")
+        >>>     else:
+        >>>         logger.error("Subprocess RasterFillHoles failed.")
+    """
+    with tempfile.NamedTemporaryFile(delete=False) as fp_in:
+        fp_in_name = fp_in.name
+    with tempfile.NamedTemporaryFile(delete=False) as fp_out:
+        fp_out_name = fp_out.name
+    with open(fp_in_name, "wb") as fp_in:
+        pickle.dump(inputs, fp_in)
+
+    cmd_line = [
+        "python",
+        str(cli_path),
+        "--input-file",
+        fp_in.name,
+        "--output-file",
+        fp_out.name,
+    ]
+    retval = run_in_conda_env(cmd_line, logger_name=logger_name, python_path=tools_path)
+    if retval == 0:
+        with open(fp_out_name, "rb") as fp_out:
+            ret = pickle.load(fp_out)
+    else:
+        ret = None
+
+    return retval, ret
