@@ -16,6 +16,9 @@
 # limitations under the License.
 """Script testing the arcpy module"""
 
+import pickle
+import sys
+
 from sertit import arcpy, ci
 
 ci.reduce_verbosity()
@@ -28,3 +31,30 @@ def test_arcpy():
     import geopandas as gpd
     import rasterio
     from lxml import etree  # Should work
+
+
+def test_create_conda_env_cli(tmp_path):
+    """Test create_conda_env_cli function"""
+
+    # Create a dumb fct
+    def my_tool_core(a):
+        return a + 2, "test"
+
+    # Pickle paths
+    in_pkl_path = tmp_path / "input.pkl"
+    out_pkl_path = tmp_path / "output.pkl"
+
+    # Add input for the fct in a pickle
+    with open(in_pkl_path, "wb") as fp_in:
+        pickle.dump({"a": 1}, fp_in)
+
+    # Create CLI and run fct
+    sys.argv = [__file__, "-i", str(in_pkl_path), "-o", str(out_pkl_path)]
+    arcpy.create_conda_env_cli(standalone_mode=False)(my_tool_core)
+
+    # Load output
+    with open(out_pkl_path, "rb") as fp_out:
+        out = pickle.load(fp_out)
+
+    # Check output
+    ci.assert_val(out, (3, "test"), "Test create_backend_cli")
