@@ -819,9 +819,7 @@ def crop(
     Cropping a dataset:
     setting nodata outside the given shapes AND cropping the raster to the shapes extent.
 
-    Overload of
-    `rioxarray.clip <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray.raster_array.RasterArray.clip>`_
-    function in order to create a masked_array.
+    Overload of :py:func:`rioxarray.clip` or :py:func:`xds.odc.crop` in case of a dask array
 
     Args:
         xds (:any:`AnyRasterType`): Path to the raster or a rasterio dataset or a xarray

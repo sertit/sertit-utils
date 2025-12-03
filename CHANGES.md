@@ -1,6 +1,6 @@
 # Release History
 
-## 1.4x.x (2025-x-x)
+## 1.49.0 (2025-x-x)
 
 - **ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`**
 - **ENH: Factorize more of `run_in_conda_env` functions: `arcpy.create_conda_env_cli` and `arcpy.run_in_conda_env_cli`**
