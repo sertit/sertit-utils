@@ -6,6 +6,7 @@
 - **ENH: Factorize more of `run_in_conda_env` functions: `arcpy.create_conda_env_cli` and `arcpy.run_in_conda_env_cli`**
 - FIX: Make sure arrays have a CRS when reprojected with RPCs. If not, set `epsg:4326` as default, by convention.
 - FIX: Add an error if the window doesn't cover the dataset in `get_window`
+- FIX: Add a default value for `other_args` in `snap.get_gpt_cli`
 
 ## 1.48.0 (2025-11-07)
 

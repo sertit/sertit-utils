@@ -79,7 +79,7 @@ def bytes2snap(nof_bytes: int) -> str:
 
 
 def get_gpt_cli(
-    graph_path: str, other_args: list, display_snap_opt: bool = False
+    graph_path: str, other_args: list = None, display_snap_opt: bool = False
 ) -> list:
     """
     Get GPT command line with system OK optimizations.
@@ -115,6 +115,10 @@ def get_gpt_cli(
     Returns:
         list: GPT command line as a list
     """
+    # Overload with env variables
+    if other_args is None:
+        other_args = []
+
     # Overload with env variables
     max_cores = perf.get_max_cores()
     tile_size = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
