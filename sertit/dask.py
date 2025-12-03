@@ -238,7 +238,7 @@ class _CountingScheduler:
             if (
                 tb.filename.lower().startswith("/home/data")
                 and "/rasters.py" in tb.filename
-            ):
+            ):  # pragma: no cover
                 LOGGER.debug(
                     f"Computation number {self.total_computes}: {tb.line} | {tb.name} in {tb.filename} at line {tb.lineno}"
                 )
@@ -265,7 +265,7 @@ class _CountingScheduler:
         if self.nof_computes is not None and self.total_computes != self.nof_computes:
             text = f"Unexpected number of computes. Total: {self.total_computes} != {self.nof_computes}."
 
-            if self.dont_raise:
+            if self.dont_raise:  # pragma: no cover
                 LOGGER.warning(text)
             else:
                 raise RuntimeError(text)
@@ -277,7 +277,7 @@ def raise_if_dask_computes(
     max_computes=0, nof_computes=None, dont_raise=False, force_synchronous=False
 ):
     # return a dummy context manager so that this can be used for non-dask objects
-    if not is_dask_installed():
+    if not is_dask_installed():  # pragma: no cover
         yield contextlib.nullcontext()
 
     import dask

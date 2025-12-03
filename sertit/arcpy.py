@@ -54,7 +54,7 @@ def init_conda_arcpy_env():
             import geopandas as gpd
 
             gpd.options.io_engine = "pyogrio"
-    except (ModuleNotFoundError, ImportError):
+    except (ModuleNotFoundError, ImportError):  # pragma: no cover
         pass
 
 

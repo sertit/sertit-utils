@@ -19,14 +19,30 @@ import logging
 import os
 
 import pytest
+import tempenv
 
 from ci.script_utils import rasters_path, s3_env
 from sertit import ci, dask, rasters
+from sertit.dask import SERTIT_DEFAULT_CHUNKS, get_default_chunks
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
 
 ci.reduce_verbosity()
+
+
+def test_default_chunks():
+    with tempenv.TemporaryEnvironment({SERTIT_DEFAULT_CHUNKS: None}):
+        ci.assert_val(get_default_chunks(), "auto", "default chunks: unset")
+
+    with tempenv.TemporaryEnvironment({SERTIT_DEFAULT_CHUNKS: "none"}):
+        ci.assert_val(get_default_chunks(), None, "default chunks: none")
+
+    with tempenv.TemporaryEnvironment({SERTIT_DEFAULT_CHUNKS: "auto"}):
+        ci.assert_val(get_default_chunks(), "auto", "default chunks: auto")
+
+    with tempenv.TemporaryEnvironment({SERTIT_DEFAULT_CHUNKS: "true"}):
+        ci.assert_val(get_default_chunks(), True, "default chunks: true")
 
 
 @s3_env

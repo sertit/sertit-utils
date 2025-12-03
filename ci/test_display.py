@@ -16,6 +16,7 @@
 """Script testing SNAP functions"""
 
 import numpy as np
+import pytest
 
 from ci.script_utils import dask_env, display_path, s3_env
 from sertit import ci, display, rasters_rio
@@ -57,3 +58,6 @@ def test_display():
         scaled_uint8_2d, (arr_2d[0, ...] * 254 + 1).astype(np.uint8)
     )
     np.testing.assert_array_equal(scaled_uint8_3d, (arr_3d * 254 + 1).astype(np.uint8))
+
+    with pytest.raises(ValueError):
+        display.scale(np.expand_dims(stack, 0))

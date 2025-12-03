@@ -277,7 +277,7 @@ def reset_logging() -> None:
                     handler.acquire()
                     handler.flush()
                     handler.close()
-                except (OSError, ValueError):
+                except (OSError, ValueError):  # pragma: no cover
                     pass
                 finally:
                     handler.release()

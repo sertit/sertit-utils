@@ -398,7 +398,7 @@ def run_cli(
     ) as process:
         output = ""
         if not in_background:
-            for line in process.stdout:
+            for line in process.stdout:  # pragma: no cover
                 line = line.decode(
                     encoding=sys.stdout.encoding,
                     errors=(
@@ -416,7 +416,7 @@ def run_cli(
 
     # Check return value
     if check_return_value and retval != 0:
-        raise RuntimeError(f"Exe {cmd[0]} has failed.")
+        raise RuntimeError(f"Exe {cmd[0]} has failed.")  # pragma: no cover
 
     return retval, output
 
@@ -454,8 +454,7 @@ def in_docker() -> bool:
     try:
         with open("/proc/1/cgroup") as ifh:
             in_dck = "docker" in ifh.read()
-    # pylint: disable=W0703
-    except Exception:
+    except Exception:  # pragma: no cover
         in_dck = False
 
     return in_dck

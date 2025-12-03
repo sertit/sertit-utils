@@ -35,6 +35,11 @@ def test_run_command():
     cmd = ["cd", ".."]
     misc.run_cli(cmd, in_background=True, cwd="/")  # Just ensure no exception is thrown
 
+    with pytest.raises(TypeError):
+        misc.run_cli(
+            1, in_background=True, cwd="/"
+        )  # Just ensure no exception is thrown
+
 
 def test_get_function_name():
     """Test get_function_name"""
@@ -124,6 +129,17 @@ def test_enum():
         "convert_from",
     )
 
+    ci.assert_val(
+        Polarization.convert_from("HH"),
+        [
+            Polarization.hh,
+        ],
+        "convert_from no list",
+    )
+
+    with pytest.raises(TypeError):
+        Polarization.convert_from(["ZZ"])
+
 
 def test_unique():
     """Test unique function"""
@@ -161,3 +177,5 @@ def test_compare_versions():
     assert compare_version("geopandas", "5.0.0", "<")
     assert compare_version(__version__, "5.0.0", "<")
     assert compare_version(__version__, "1.0.0", ">")
+    with pytest.raises(TypeError):
+        assert compare_version(__version__, 1, ">")

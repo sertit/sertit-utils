@@ -105,12 +105,12 @@ def extract_file(
         with tarfile.open(file_path, "r") as tar_file:
             extract_sub_dir(tar_file, tar_file.getnames())
     elif file_path.suffix == ".7z":
-        try:
+        try:  # pragma: no cover
             import py7zr
 
             with py7zr.SevenZipFile(file_path, "r") as z7_file:
                 extract_sub_dir(z7_file, z7_file.getnames())
-        except ModuleNotFoundError as exc:  # pragma: no cover
+        except ModuleNotFoundError as exc:
             raise TypeError("Please install 'py7zr' to extract .7z files") from exc
     else:
         raise TypeError(
@@ -173,7 +173,10 @@ def read_archived_file(
 
     # Open tar and zip XML
     try:
-        if archive_path.suffix == ".tar":
+        # Use this fct to manage tar.gz files (.suffix only returns .gz)
+        ext = path.get_ext(archive_path)
+
+        if ext == "tar":
             with tarfile.open(archive_path) as tar_ds:
                 # file_list is not very useful for TAR files...
                 if file_list is None:
@@ -182,14 +185,14 @@ def read_archived_file(
                 name = list(filter(regex.match, file_list))[0]
                 tarinfo = tar_ds.getmember(name)
                 file_str = tar_ds.extractfile(tarinfo).read()
-        elif archive_path.suffix == ".zip":
+        elif ext == "zip":
             with zipfile.ZipFile(archive_path) as zip_ds:
                 if file_list is None:
                     file_list = [f.filename for f in zip_ds.filelist]
                 name = list(filter(regex.match, file_list))[0]
                 file_str = zip_ds.read(name)
 
-        elif archive_path.suffix == ".tar.gz":
+        elif ext == "tar.gz":
             raise TypeError(
                 ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )
@@ -400,13 +403,13 @@ def remove(path: AnyPathStrType) -> None:
     elif path.is_dir():
         try:
             shutil.rmtree(path)
-        except OSError:
+        except OSError:  # pragma: no cover
             LOGGER.debug("Impossible to remove the directory %s", path, exc_info=True)
 
     elif path.is_file():
         try:
             path.unlink()
-        except OSError:
+        except OSError:  # pragma: no cover
             LOGGER.debug("Impossible to remove the file %s", path, exc_info=True)
 
 
@@ -478,11 +481,11 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
                 out = AnyPath(shutil.copytree(src, dst))
             elif os.path.isfile(src):
                 out = AnyPath(shutil.copy2(src, dst))
-        except shutil.Error:
+        except shutil.Error:  # pragma: no cover
             LOGGER.debug("Error in copy!", exc_info=True)
             out = src
             # eg. source or destination doesn't exist
-        except OSError as ex:
+        except OSError as ex:  # pragma: no cover
             raise OSError(f"Copy error: {ex.strerror}") from ex
 
     return out

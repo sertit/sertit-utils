@@ -228,7 +228,7 @@ def simplify_footprint(
 
         # WARNING if nof_vertices > max_nof_vertices
         nof_vertices = len(value.exterior.coords)
-        if nof_vertices > max_nof_vertices:
+        if nof_vertices > max_nof_vertices:  # pragma: no cover
             LOGGER.warning(
                 f"The number of vertices ({nof_vertices}) of your simplified footprint is higher than {max_nof_vertices}."
                 f"However, it cannot be simplified further according to the given resolution ({resolution})."
@@ -388,7 +388,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
             out = (
                 out.map(lambda geom: ops.split(geom, boundary).geoms).explode().dropna()  # noqa: B023
             )
-        except GeometryTypeError:
+        except GeometryTypeError:  # pragma: no cover
             # MultiLineStrings
             for line in boundary.geoms:
                 out = (

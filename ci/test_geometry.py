@@ -145,6 +145,11 @@ def test_intersects():
     inter = intersects(vectors.read(lakes_path), vectors.read(water_path))
     ci.assert_val(inter.index, [2, 3], "Index")
 
+    inter = intersects(
+        vectors.read(lakes_path), vectors.read(water_path), buffer_on_input=1000
+    )
+    ci.assert_val(inter.index, [0, 1, 2, 3], "Index")
+
 
 @s3_env
 def test_buffer():

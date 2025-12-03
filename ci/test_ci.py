@@ -23,9 +23,10 @@ import pytest
 from lxml import etree
 
 from ci.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, path, rasters, rasters_rio, vectors
+from sertit import ci, files, path, rasters, rasters_rio, vectors
 
-ci.reduce_verbosity()
+# Test another logger
+ci.reduce_verbosity(["other_logger"])
 
 
 @s3_env
@@ -68,7 +69,7 @@ def test_assert_base():
 
 
 @s3_env
-def test_assert_dir():
+def test_assert_dir(tmp_path):
     """Test CI functions"""
     # Dirs
     dir2 = files_path().joinpath("core")
@@ -76,6 +77,15 @@ def test_assert_dir():
     ci.assert_dir_equal(files_path(), files_path())
     with pytest.raises(AssertionError):
         ci.assert_dir_equal(files_path(), dir2)
+
+    # Remove a file
+    dir_copy = files.copy(dir2, tmp_path)
+    files.remove(next(dir_copy.glob("*")))
+
+    with pytest.raises(AssertionError):
+        ci.assert_dir_equal(dir_copy, dir2)
+    with pytest.raises(AssertionError):
+        ci.assert_dir_equal(dir2, dir_copy)
 
 
 @s3_env
@@ -117,6 +127,7 @@ def test_assert_raster():
     raster_path = rasters_path().joinpath("raster.tif")
     raster2_path = rasters_path().joinpath("raster_masked.tif")
 
+    # -- Equal --
     ci.assert_raster_equal(raster_path, raster_path)
     with pytest.raises(AssertionError):
         ci.assert_raster_equal(raster_path, raster2_path)
@@ -137,8 +148,14 @@ def test_assert_raster():
         raster_almost_path = os.path.join(tmp, "raster_almost.tif")
         rasters_rio.write(arr, meta, raster_almost_path)
 
-        # Almost equal
+        # -- Almost equal --
+        # Exact
+        ci.assert_raster_almost_equal(raster_float_path, raster_float_path)
+
+        # Almost
         ci.assert_raster_almost_equal(raster_float_path, raster_almost_path)
+
+        # Errors
         with pytest.raises(AssertionError):
             raster2_path = rasters_path().joinpath("raster_masked.tif")
             ci.assert_raster_almost_equal(raster_path, raster2_path)
@@ -151,13 +168,23 @@ def test_assert_raster():
             rasters_rio.write(arr, meta, raster_too_much_path)
             ci.assert_raster_almost_equal(raster_float_path, raster_too_much_path)
 
-        # Max mismatch
+        # -- Max mismatch --
+        # Exact
         ci.assert_raster_max_mismatch(raster_path, raster_path, max_mismatch_pct=0.001)
+        ci.assert_raster_max_mismatch(raster_path, raster_path, max_mismatch_pct=2)
+
+        # Errors
         with pytest.raises(AssertionError):
             ci.assert_raster_max_mismatch(raster_float_path, raster_almost_path)
 
-        # Magnitude
+        # -- Magnitude --
+        # Exact
+        ci.assert_raster_almost_equal_magnitude(raster_float_path, raster_float_path)
+
+        # Almost
         ci.assert_raster_almost_equal_magnitude(raster_float_path, raster_almost_path)
+
+        # Errors
         with pytest.raises(AssertionError):
             raster2_path = rasters_path().joinpath("raster_masked.tif")
             ci.assert_raster_almost_equal_magnitude(raster_path, raster2_path)
@@ -176,9 +203,12 @@ def test_assert_raster():
     rast_1_xr = rasters.read(raster_path)
     rast_2_xr = rasters.read(raster2_path)
     rast_2_xr.encoding["add_field"] = True
+    rast_2_xr.attrs["add_field"] = True
     ci.assert_xr_encoding_attrs(rast_1_xr, rast_1_xr)
     with pytest.raises(AssertionError):
         ci.assert_xr_encoding_attrs(rast_1_xr, rast_2_xr)
+    with pytest.raises(AssertionError):
+        ci.assert_xr_encoding_attrs(rast_2_xr, rast_1_xr)
 
 
 @s3_env
@@ -238,6 +268,6 @@ def test_assert_html():
         html_ok = etree.parse(str(html_path)).getroot()
         html_nok = etree.parse(str(html_bad_path)).getroot()
 
-        ci.assert_xml_equal(html_ok, html_ok)
+        ci.assert_html_equal(html_ok, html_ok)
         with pytest.raises(AssertionError):
-            ci.assert_xml_equal(html_ok, html_nok)
+            ci.assert_html_equal(html_ok, html_nok)

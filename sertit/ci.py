@@ -76,12 +76,12 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
                 assert all(val_1 == val_2), desc
                 test_done = True
 
-        if not test_done:
+        if not test_done:  # pragma: no cover
             # xarray.DataArrayCoordinates are failing
             assert val_1.equals(val_2), desc
             test_done = True
 
-    if not test_done:
+    if not test_done:  # pragma: no cover
         raise AssertionError(
             f"{desc} - Test hasn't been done. Please write an issue about that."
         )
