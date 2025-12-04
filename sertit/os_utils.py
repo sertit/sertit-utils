@@ -86,7 +86,7 @@ def gdalbuildvrt_exe() -> str:
     """
     qgis = qgis_bin()
 
-    if qgis is not None:
+    if qgis is not None:  # pragma: no cover
         gdal_build_vrt_exe = strings.to_cmd_string(str(qgis / "gdalbuildvrt.exe"))
     else:
         gdal_build_vrt_exe = "gdalbuildvrt"

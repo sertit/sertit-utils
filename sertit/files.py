@@ -485,7 +485,7 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
             LOGGER.debug("Error in copy!", exc_info=True)
             out = src
             # eg. source or destination doesn't exist
-        except OSError as ex:  # pragma: no cover
+        except OSError as ex:
             raise OSError(f"Copy error: {ex.strerror}") from ex
 
     return out

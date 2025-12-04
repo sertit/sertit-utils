@@ -79,7 +79,7 @@ def test_assert_dir(tmp_path):
         ci.assert_dir_equal(files_path(), dir2)
 
     # Remove a file
-    dir_copy = files.copy(dir2, tmp_path)
+    dir_copy = files.copy(dir2, tmp_path / "core")
     files.remove(next(dir_copy.glob("*")))
 
     with pytest.raises(AssertionError):

@@ -202,6 +202,11 @@ def test_cp_rm(tmp_path):
     # Copy file
     curr_path = os.path.realpath(__file__)
     file_1 = files.copy(curr_path, tmp_path)
+
+    # Copy a folder onto a file: OSError: Copy error: File exists
+    with pytest.raises(OSError):
+        files.copy(tmp_path, file_1)
+
     file_2 = files.copy(curr_path, os.path.join(tmp_path, "test_pattern.py"))
 
     # Copy dir

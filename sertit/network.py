@@ -70,7 +70,7 @@ def exponential_backoff(
 
     abs_max_tries = int(os.environ.get("EXP_BACK_OFF_ABS_MAX_RETRIES", "100"))
     if abs_max_tries <= 2:
-        raise Exception(
+        raise ValueError(
             "Environment variable 'EXP_BACK_OFF_ABS_MAX_RETRIES' must be positive finite integer greater "
             "than 2"
         )
@@ -115,7 +115,6 @@ def exponential_backoff(
     cumulated_wait_time = 0.0
 
     # First try with no wait
-    # pylint: disable=W0703
     # W0703: Catching too general exception Exception (broad-except)
     try:
         return network_request()
@@ -140,7 +139,7 @@ def exponential_backoff(
             )
 
         time.sleep(curr_wait_time)
-        # pylint: disable=W0703
+
         # W0703: Catching too general exception Exception (broad-except)
         try:
             return network_request()

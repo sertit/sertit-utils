@@ -16,6 +16,7 @@
 """Script testing the network.control"""
 
 import pytest
+import tempenv
 
 from sertit import ci, network
 
@@ -36,7 +37,7 @@ class NetworkRequestMocker:
             raise Exception("Resource is unavailable")
 
 
-def test_network():
+def test_network_err():
     mocker = NetworkRequestMocker(5)
 
     with pytest.raises(Exception):  # noqa: B017
@@ -53,6 +54,89 @@ def test_network():
             random_state=0,
         )
 
+    with (
+        tempenv.TemporaryEnvironment({"EXP_BACK_OFF_ABS_MAX_RETRIES": "1"}),
+        pytest.raises(ValueError),
+    ):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=-0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=-2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=-0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=1,
+            desc="Requesting mock resource",
+            random_state=0,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="Requesting mock resource",
+            random_state=0.5,
+        )
+
+    with pytest.raises(TypeError):
+        network.exponential_backoff(
+            network_request=lambda: mocker.network_request(),
+            wait_time_slot=0.05,
+            increase_factor=2,
+            max_wait=0.1,
+            max_retries=6,
+            desc="",
+            random_state=0.5,
+        )
+
+
+def test_network():
+    mocker = NetworkRequestMocker(5)
     resource = network.exponential_backoff(
         network_request=lambda: mocker.network_request(),
         wait_time_slot=0.05,
