@@ -1,6 +1,6 @@
 # Release History
 
-## 1.49.0 (2025-x-x)
+## 1.49.0 (2025-12-04)
 
 - **BREAKING CHANGE: Drop Python 3.9 support** ([#35](https://github.com/sertit/sertit-utils/issues/35))
 - **ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`**
