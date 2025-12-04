@@ -7,7 +7,6 @@ from typing import Any
 
 import click
 
-from sertit.logs import SertitException
 
 # Arcpy types from inside a schema
 SHORT = "int32:4"
@@ -230,10 +229,6 @@ def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
     return path
 
 
-class ListCondaEnvError(SertitException):
-    """Raise this exception if one failed to list conda environment"""
-
-
 def run_in_conda_env(
     executable: list[str],
     logger_name: str = "sertit_utils",
@@ -282,6 +277,7 @@ def run_in_conda_env(
     import subprocess
     import sys
     import platform
+    from sertit.exception import ListCondaEnvError
 
     logger = logging.getLogger(logger_name)
 

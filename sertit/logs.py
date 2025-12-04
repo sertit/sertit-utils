@@ -302,7 +302,3 @@ def deprecation_warning(msg: str) -> None:
     from warnings import warn
 
     warn(msg, category=DeprecationWarning, stacklevel=3)  # Don't show this function
-
-
-class SertitException(Exception):
-    """A base class for Sertit exceptions."""
