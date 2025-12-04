@@ -432,7 +432,13 @@ def create_conda_env_cli(input_file: str, output_file: str):
 
 
 def run_in_conda_env_cli(
-    cli_path: str, inputs: dict, logger_name: str, tools_path: str
+    cli_path: str,
+    inputs: dict,
+    logger_name: str,
+    tools_path: str,
+    conda_env_name: str = "",
+    extend_env: dict = {},
+    shell: bool = True,
 ) -> tuple[int, Any]:
     """
     Run the given command line with the given inputs in a new conda environment.
@@ -442,11 +448,15 @@ def run_in_conda_env_cli(
     To be used in the .pyt file.
 
     Args:
-        cli_path (str):
+        cli_path (str): Path to CLI file.
         inputs (dict): Inputs of the function wrapped by the CLI as a dictionary
         logger_name (str): Logger name
         tools_path (str): Path to the tools
-
+        conda_env_name (str): Name of the conda environment where to run the executable.
+                        Set it to "self" to force the subprocess to run in the current environment.
+        extend_env (dict): Dict to extend environment in the sub-process. extend_env is merged with
+                    the parent process environment by overriding it if necessary.
+        shell (bool): Run subprocess in a shell if True.
     Returns:
         tuple[int, Any]: Return value and outputs of the function
 
@@ -488,7 +498,14 @@ def run_in_conda_env_cli(
         "--output-file",
         fp_out.name,
     ]
-    retval = run_in_conda_env(cmd_line, logger_name=logger_name, python_path=tools_path)
+    retval = run_in_conda_env(
+        cmd_line,
+        conda_env_name=conda_env_name,
+        logger_name=logger_name,
+        python_path=tools_path,
+        extend_env=extend_env,
+        shell=shell,
+    )
     if retval == 0:
         with open(fp_out_name, "rb") as fp_out:
             ret = pickle.load(fp_out)
