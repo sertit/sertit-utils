@@ -585,13 +585,13 @@ def _read_kml(
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
     engine = None
 
-    # Errors reading KML and KMZ with pyogrio for now (v0.11.0 still buggy)
+    # Errors reading KML and KMZ with pyogrio until v0.12.0
     # https://github.com/geopandas/pyogrio/issues/543
     # https://github.com/geopandas/pyogrio/issues/444
     use_pyogrio = is_geopandas_1_0()
     from importlib.metadata import version
 
-    if misc.compare_version("pyogrio", "0.11.1", "<="):
+    if misc.compare_version("pyogrio", "0.12.0", "<"):
         engine = "fiona"
         use_pyogrio = False
 

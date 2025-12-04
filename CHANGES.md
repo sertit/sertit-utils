@@ -10,6 +10,7 @@
 - FIX: Make sure arrays have a CRS when reprojected with RPCs. If not, set `epsg:4326` as default, by convention.
 - FIX: Add an error if the window doesn't cover the dataset in `get_window`
 - FIX: Add a default value for `other_args` in `snap.get_gpt_cli`
+- FIX: Read KMLs with `pyogrio 0.12.0` ([#52](https://github.com/sertit/sertit-utils/issues/52))
 
 ## 1.48.0 (2025-11-07)
 
