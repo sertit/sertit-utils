@@ -474,9 +474,6 @@ def _vectorize(
             data, has_nodata=False, default_nodata=nodata
         )
 
-        if data.dtype != np.uint8:
-            raise TypeError("Your data should be classified (np.uint8).")
-
     # WARNING: features.shapes do NOT accept dask arrays!
     if not isinstance(data, (np.ndarray, np.ma.masked_array)):
         # TODO: daskify this (geoutils ?)
@@ -959,7 +956,14 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
                     ds.write(arr)
                 # Open in read mode (otherwise rioxarray will fail)
                 with memfile.open() as ds:
-                    out = function(ds, *args, **kwargs)
+                    LOGGER.warning(
+                        "Giving a tuple as the function's input makes you load the result in memory. Consider using an xarray structure, a path or a rasterio Dataset instead."
+                    )
+                    out = function(ds, *args, **kwargs, chunks=None)
+
+                    if dask.is_chunked(out):  # pragma: no cover
+                        with contextlib.suppress(AttributeError):
+                            out = out.compute()
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):

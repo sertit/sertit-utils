@@ -35,7 +35,7 @@ from ci.script_utils import (
     rasters_path,
     s3_env,
 )
-from sertit import ci, geometry, path, rasters, rasters_rio, unistra, vectors
+from sertit import ci, dask, geometry, path, rasters, rasters_rio, unistra, vectors
 from sertit.rasters import (
     DEG_LAT_TO_M,
     FLOAT_NODATA,
@@ -210,8 +210,8 @@ def test_rasters_footprint(tmp_path, raster_path, ds_name, ds_dtype):
 
 @s3_env
 @dask_env(
-    nof_computes=1
-)  # TODO: Read with downsampling issue https://github.com/opendatacube/odc-geo/issues/236
+    nof_computes=2
+)  # 1x comparing loaded and unloaded data and 1x TODO: Read with downsampling issue https://github.com/opendatacube/odc-geo/issues/236
 def test_read(tmp_path, raster_path, ds_name, ds_dtype):
     """Test read function"""
     # xda, xds
@@ -252,7 +252,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         # assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
         xda_8 = rasters.read(rasters_rio.read(ds))
-        assert_chunked_computed(xda_8, "Read with tuple")
+        ci.assert_val(dask.is_computed(xda_8), True, "Read with tuple")
 
         # Errors
         with pytest.raises(ValueError):
@@ -281,7 +281,9 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         xr.testing.assert_equal(xda_1, xda_2)
         xr.testing.assert_equal(xda_1, xda_3)
         xr.testing.assert_equal(xda, xda_5)
-        xr.testing.assert_equal(xda, xda_8)
+        xr.testing.assert_equal(
+            xda, xda_8
+        )  # This compares loaded and unloaded data -> a computation is done
 
         ci.assert_xr_encoding_attrs(xda, xda_1)
         ci.assert_xr_encoding_attrs(xda, xda_2)
@@ -290,8 +292,11 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(xda, xda_5)
         ci.assert_xr_encoding_attrs(xda, xda_6)
         ci.assert_xr_encoding_attrs(xda, xda_7)
-        ci.assert_xr_encoding_attrs(xda, xda_8)
         ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
+
+        # With tuple, additional GTiff attributes are lost
+        with pytest.raises(AssertionError):
+            ci.assert_xr_encoding_attrs(xda, xda_8)
 
 
 @s3_env
@@ -562,7 +567,7 @@ def test_paint(tmp_path, raster_path, mask):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # Write x2
+@dask_env(nof_computes=3)  # Write x2 + assert_equal
 def test_crop(tmp_path, raster_path, mask):
     """Test crop function"""
     # xda, xds
@@ -800,9 +805,6 @@ def test_vectorize(tmp_path, raster_path, ds_name):
     # Dataset
     vect_xds = rasters.vectorize(xds)
     ci.assert_geom_equal(vect_xds[ds_name], vect_truth)
-
-    with pytest.raises(TypeError):
-        vect_xda = rasters.vectorize(xda.astype(np.float32))
 
 
 @s3_env
@@ -1471,7 +1473,7 @@ def test_reproject_gcps(tmp_path):
 
 
 @s3_env
-@dask_env(nof_computes=0)
+@dask_env(nof_computes=1)  # Write x1 for ortho_path
 def test_reproject(tmp_path, raster_path):
     """Test reproject"""
     # xda

@@ -159,7 +159,7 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
         with pytest.raises(ValueError):
             rasters_rio.read(
                 raster_path,
-                window=Window(col_off=50000, row_off=50000, width=50100, height=50100),
+                window=Window(col_off=360, row_off=0, width=-1, height=321),
             )
 
 
