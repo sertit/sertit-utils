@@ -34,6 +34,9 @@ def test_conversion():
         assert strings.str_to_bool(true)
         assert not strings.str_to_bool(false)
 
+    with pytest.raises(ValueError):
+        strings.str_to_bool("oopsie")
+
     # Str to logging verbosity
     debug_str = ("debug", "d", 10)
     info_str = ("info", "i", 20)
@@ -68,12 +71,27 @@ def test_conversion():
     assert strings.str_to_list_of_dates(list_of_dates) == list_of_datetimes
     assert strings.str_to_list_of_dates(list_of_datetimes) == list_of_datetimes
 
+    date_fmt = "%Y%m%d%H"
+    ci.assert_val(
+        strings.str_to_date("now", date_format=date_fmt),
+        datetime.strptime(datetime.now().strftime(date_fmt), date_fmt),
+        "now",
+    )
+    ci.assert_val(
+        strings.str_to_date("today", date_format=date_fmt),
+        datetime.strptime(datetime.today().strftime(date_fmt), date_fmt),
+        "now",
+    )
+
     # Str to list
     list_str_up = ["A", "B"]
     list_str_low = ["a", "b"]
     assert strings.str_to_list(list_str_up) == list_str_up
     assert strings.str_to_list(list_str_low, case="upper") == list_str_up
     assert strings.str_to_list(list_str_up, case="lower") == list_str_low
+
+    with pytest.raises(ValueError):
+        strings.str_to_list(21)
 
 
 def test_str():

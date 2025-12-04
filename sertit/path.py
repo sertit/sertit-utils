@@ -153,6 +153,7 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
 def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     """
     Get the list of all the files contained in an archive.
+    Only works with .zip and .tar files.
 
     Args:
         archive_path (AnyPathStrType): Archive path
@@ -167,14 +168,19 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
     """
     archive_path = AnyPath(archive_path)
     if archive_path.suffix == ".zip":
-        with zipfile.ZipFile(archive_path) as zip_ds:
-            file_list = [f.filename for f in zip_ds.filelist]
+        try:
+            with zipfile.ZipFile(archive_path) as zip_ds:
+                file_list = [f.filename for f in zip_ds.filelist]
+        except zipfile.BadZipFile as ex:  # pragma: no cover
+            raise zipfile.BadZipFile(
+                f"Impossible to open archive: {archive_path}"
+            ) from ex
     else:
         try:
             with tarfile.open(archive_path) as tar_ds:
                 tar_mb = tar_ds.getmembers()
                 file_list = [mb.name for mb in tar_mb]
-        except tarfile.ReadError as ex:
+        except tarfile.ReadError as ex:  # pragma: no cover
             raise tarfile.ReadError(
                 f"Impossible to open archive: {archive_path}"
             ) from ex
@@ -191,7 +197,8 @@ def get_archived_path(
     **kwargs,
 ) -> Union[list, AnyPathType]:
     """
-    Get archived file path from inside the archive.
+    Get archived files path from inside the archive.
+    Only works with .zip and .tar files.
 
     .. WARNING::
         If :code:`as_list` is :code:`False`, it will only return the first file matched !
@@ -279,9 +286,11 @@ def get_archived_rio_path(
         <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
     """
     archive_path = AnyPath(archive_path)
-    if archive_path.suffix in [".tar", ".zip"]:
+    ext = get_ext(archive_path)
+
+    if ext in ["tar", "zip"]:
         prefix = archive_path.suffix[-3:]
-    elif archive_path.suffix == ".tar.gz":
+    elif ext == "tar.gz":
         raise TypeError(
             ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
         )
@@ -507,7 +516,10 @@ def get_file_in_dir(
     directory = AnyPath(directory)
 
     # Glob pattern
-    glob_pattern = pattern_str if exact_name else "*" + pattern_str + "*"
+    glob_pattern = (
+        pattern_str if exact_name or pattern_str == "*" else "*" + pattern_str + "*"
+    )
+
     if extension:
         if not extension.startswith("."):
             extension = "." + extension
@@ -550,6 +562,7 @@ def is_writable(dir_path: AnyPathStrType):
         bool: True if the directory is writable
     """
     try:
+        # Try to write a temporary file in the given directory, if success, return true
         with tempfile.TemporaryFile(dir=str(dir_path)):
             pass
     except (OSError, FileNotFoundError) as e:
@@ -561,8 +574,9 @@ def is_writable(dir_path: AnyPathStrType):
             errno.EINVAL,
         ]:  # 2, 13, 17, 30, 22
             return False
-        e.filename = dir_path
-        raise
+        else:  # pragma: no cover
+            e.filename = str(dir_path)
+            raise e
     return True
 
 

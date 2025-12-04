@@ -307,7 +307,7 @@ def get_new_shape(
                 new_width = size[0]
         except (TypeError, KeyError) as exc:
             raise ValueError(
-                f"Size should be None or a castable to a list: {size}"
+                f"Size should be None or a 2 digits iterable: {size}"
             ) from exc
     elif resolution is not None:
         if isinstance(resolution, (int, float)):
@@ -331,7 +331,7 @@ def get_new_shape(
                     )
             except (TypeError, KeyError) as exc:
                 raise ValueError(
-                    f"Resolution should be None, 2 floats or a castable to a list: {resolution}"
+                    f"Resolution should be None or a 2 digits iterable: {resolution}"
                 ) from exc
     else:
         do_resampling = False
@@ -525,7 +525,7 @@ def rasterize(
         and min_max_dtype.min < nodata < min_max_dtype.max
     )
 
-    if not is_castable and not is_valid_int:
+    if not is_castable and not is_valid_int:  # pragma: no cover
         old_nodata = nodata
         nodata = get_nodata_value_from_dtype(dtype)
 
@@ -1449,7 +1449,7 @@ def merge_vrt(
                                 crs_path.relative_to(merged_path.parent),
                             )
                             xml.write(vrt_root, new_crs_path)
-                        except ValueError as ex:
+                        except ValueError as ex:  # pragma: no cover
                             LOGGER.warning(f"Your VRT will be absolute as {str(ex)}")
 
                         # Add in place
@@ -1472,7 +1472,7 @@ def merge_vrt(
                 path.real_rel_path(merged_path, vrt_root)
             )
 
-    except ValueError:
+    except ValueError:  # pragma: no cover
         # ValueError when crs_merged_path and crs_paths are not on the same disk
         paths = [strings.to_cmd_string(str(p)) for p in crs_paths_cp]
         merged_path = strings.to_cmd_string(str(merged_path))
@@ -1484,7 +1484,7 @@ def merge_vrt(
         vrt_cmd = [gdal_build_vrt_exe, merged_path, *paths, *arg_list]
         misc.run_cli(vrt_cmd, cwd=vrt_root)
 
-    except RuntimeError:
+    except RuntimeError:  # pragma: no cover
         # Manage too long command line
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_file = os.path.join(tmp_dir, "list.txt")
@@ -1634,7 +1634,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     uint8_packed = (array & msk).astype(bool).astype(np.uint8)
     try:
         unpacked = uint8_packed.reshape(xshape + [nof_bits])
-    except IndexError:
+    except IndexError:  # pragma: no cover
         # Workaround for weird bug in reshape with dask
         unpacked = uint8_packed.compute().reshape(xshape + [nof_bits])
 

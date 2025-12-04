@@ -109,6 +109,7 @@ omit = ["*/__init__.py"]
 exclude_also = [
     "def run_in_conda_env",  # This doesn't run in CI
     "def run_in_conda_env_cli",  # This doesn't run in CI
+    "def _set_aws_file_path",  # This doesn't run in CI (only works on workstations)
     "except ModuleNotFoundError:",  # This doesn't run in CI
     "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI
     "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI

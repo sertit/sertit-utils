@@ -68,7 +68,7 @@ def read(xml_path: AnyPathStrType) -> _Element:
             xml_tree = parse(str(xml_path))
             root = xml_tree.getroot()
 
-    except XMLSyntaxError as exc:
+    except XMLSyntaxError as exc:  # pragma: no cover
         raise ValueError(f"Invalid metadata XML for {xml_path}!") from exc
 
     return root
@@ -104,7 +104,7 @@ def read_archive(
 
         return files.read_archived_xml(path, regex, file_list=file_list)
 
-    except XMLSyntaxError as exc:
+    except XMLSyntaxError as exc:  # pragma: no cover
         raise ValueError(f"Invalid metadata XML for {path}!") from exc
 
 

@@ -75,6 +75,10 @@ def test_vectors():
     # UTM to WKT
     aoi3 = vectors.get_aoi_wkt(utm_path, as_str=False)
 
+    # UTM to WKT
+    with pytest.raises(FileNotFoundError):
+        vectors.get_aoi_wkt("non_existing.geojson", as_str=False)
+
     assert aoi.equals(aoi2)  # No reprojection, should be equal
     assert aoi.equals_exact(
         aoi3, tolerance=0.5 * 10**6
@@ -105,6 +109,8 @@ def test_vectors():
         vectors.get_geodf([1, 2, 3, 4, 5], aoi.crs)
     with pytest.raises(TypeError):
         vectors.get_geodf([1, 2], aoi.crs)
+    with pytest.raises(TypeError):
+        vectors.get_geodf(2, aoi.crs)
 
 
 @s3_env
@@ -200,21 +206,28 @@ def test_gml():
 
 
 @s3_env
-def test_write():
-    vect_paths = [
-        vectors_path().joinpath("aoi.shp"),
-        vectors_path().joinpath("aoi.kml"),
-        vectors_path().joinpath("aoi.geojson"),
-    ]
+@pytest.mark.parametrize(
+    ("filename"),
+    [
+        pytest.param("aoi.shp"),
+        pytest.param("aoi.kml"),
+        pytest.param("aoi.geojson"),
+    ],
+)
+def test_write(tmp_path, filename):
+    vect_path = vectors_path() / filename
+    vect = vectors.read(vect_path)
+    vect_out_path = os.path.join(tmp_path, os.path.basename(vect_path))
+    vectors.write(vect, vect_out_path)
+    vect_out = vectors.read(vect_out_path)
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        for vect_path in vect_paths:
-            vect = vectors.read(vect_path)
-            vect_out_path = os.path.join(tmp_dir, os.path.basename(vect_path))
-            vectors.write(vect, vect_out_path)
-            vect_out = vectors.read(vect_out_path)
+    ci.assert_geom_equal(vect_out, vect)
 
-            ci.assert_geom_equal(vect_out, vect)
+
+@s3_env
+def test_write_kmz(tmp_path):
+    with pytest.raises(NotImplementedError):
+        vectors.write(vectors.read(vectors_path() / "aoi.shp"), tmp_path / "aoi.kmz")
 
 
 @s3_env

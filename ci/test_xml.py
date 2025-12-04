@@ -107,8 +107,16 @@ def test_xml():
     xml.update_txt(cv_xml, "Age", 22)
     _assert_str(cv_xml.findtext(".//Age"), "22")
 
+    # does nothing
+    xml.update_txt(cv_xml, "feegr", 22)
+    ci.assert_val(cv_xml.findtext(".//feegr"), None, "Does not exist")
+
     xml.update_txt_fct(cv_xml, "Age", lambda x: round(int(x) / 10) * 10)
     _assert_str(cv_xml.findtext(".//Age"), "20")
+
+    # does nothing
+    xml.update_txt_fct(cv_xml, "vczerhgrtz", lambda x: round(int(x) / 10) * 10)
+    ci.assert_val(cv_xml.findtext(".//vczerhgrtz"), None, "Does not exist")
 
     # Write
     true_xml = str(xml_path() / "true.xml")

@@ -83,6 +83,9 @@ def test_archived_paths():
     assert tif_ok == path.get_archived_path(tar_file, ".*RADSAT")
 
     # RASTERIO
+    with pytest.raises(TypeError):
+        path.get_archived_rio_path(targz_file, tif_regex)
+
     tif_zip = path.get_archived_rio_path(zip_file, tif_regex)
     tif_list = path.get_archived_rio_path(zip_file, tif_regex, as_list=True)
     tif_tar = path.get_archived_rio_path(tar_file, ".*RADSAT")
@@ -161,6 +164,12 @@ def test_find_files():
 
     assert found_path == AnyPath(__file__)
 
+    with pytest.raises(FileNotFoundError):
+        path.find_files("cefv", root_paths, max_nof_files, get_as_str)
+
+    with pytest.raises(FileNotFoundError):
+        path.find_files(names, "frz", max_nof_files, get_as_str)
+
 
 def test_get_file_in_dir():
     """Test get_file_in_dir"""
@@ -182,3 +191,34 @@ def test_get_file_in_dir():
 
     assert file[0] == AnyPath(__file__)
     assert filename == os.path.basename(__file__)
+
+    files = path.get_file_in_dir(
+        folder, "*", ".py", filename_only=False, get_list=True, exact_name=False
+    )
+    assert len(files) > 1
+
+    with pytest.raises(FileNotFoundError):
+        path.get_file_in_dir(
+            "fergerg",
+            path.get_filename(__file__),
+            "py",
+            filename_only=True,
+            get_list=False,
+            exact_name=True,
+        )
+
+    with pytest.raises(FileNotFoundError):
+        path.get_file_in_dir(
+            folder,
+            "srger",
+            "py",
+            filename_only=True,
+            get_list=False,
+            exact_name=True,
+        )
+
+
+def test_cloud_path(tmp_path):
+    """Test cloud path"""
+    ci.assert_val(path.is_cloud_path(tmp_path), False, "Local dir")
+    ci.assert_val(path.is_cloud_path("s3://test"), True, "Cloud dir")

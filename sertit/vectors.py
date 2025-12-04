@@ -36,6 +36,7 @@ import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
+from shapely.geometry.base import BaseGeometry
 
 from sertit import AnyPath, files, geometry, misc, path, strings
 from sertit.logs import SU_NAME
@@ -135,7 +136,7 @@ def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDat
         0  POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
     """
     if isinstance(geom, list):
-        if isinstance(geom[0], Polygon):
+        if isinstance(geom[0], BaseGeometry):
             pass
         else:
             try:
@@ -144,12 +145,12 @@ def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDat
                 raise TypeError(
                     "Give the extent as 'left', 'bottom', 'right', and 'top'"
                 ) from ex
-    elif isinstance(geom, Polygon):
+    elif isinstance(geom, BaseGeometry):
         geom = [geom]
     elif isinstance(geom, gpd.GeoSeries):
         geom = geom.geometry
     else:
-        raise TypeError("geometry should be a list or a Polygon.")
+        raise TypeError("geometry should be a list or a Geometry.")
 
     return gpd.GeoDataFrame(geometry=geom, crs=crs)
 
@@ -219,7 +220,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
         try:
             with open(aoi_path) as aoi_f:
                 aoi = wkt.load(aoi_f)
-        except Exception as ex:
+        except Exception as ex:  # pragma: no cover
             raise ValueError("AOI WKT cannot be read") from ex
     else:
         try:
@@ -228,7 +229,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
 
             # Get envelope polygon
             geom = aoi_file["geometry"]
-            if len(geom) > 1:
+            if len(geom) > 1:  # pragma: no cover
                 LOGGER.warning(
                     "Your AOI contains several polygons. Only the first will be treated !"
                 )
@@ -237,7 +238,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
             # Convert to WKT
             aoi = wkt.loads(str(polygon))
 
-        except Exception as ex:
+        except Exception as ex:  # pragma: no cover
             raise ValueError("AOI cannot be read by Fiona") from ex
 
     # Convert to string if needed
@@ -456,7 +457,7 @@ def read(
                     f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
                 ) from exc
         # Don't read tar.gz archives (way too slow)
-        elif vector_path.suffixes == [".tar", ".gz"]:
+        elif vector_path.suffixes == [".tar", ".gz"]:  # pragma: no cover
             raise TypeError(
                 ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
             )
@@ -524,7 +525,7 @@ def _read_vector_core(
 
         # Set fiona logger back to what it was
         fiona_logger.setLevel(logging.INFO)
-    except DataSourceError:
+    except DataSourceError:  # pragma: no cover
         raise
     except (ValueError, GEOSException, IndexError) as ex:
         if "Use a.any() or a.all()" in str(ex):
@@ -540,20 +541,20 @@ def _read_vector_core(
 
         # Last try to read this vector
         # Needs ogr2ogr here
-        if shutil.which("ogr2ogr"):
+        if shutil.which("ogr2ogr"):  # pragma: no cover
             # Open as geojson
             tmp_dir = tempfile.TemporaryDirectory()
             vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
             vect.crs = None
-        else:
+        else:  # pragma: no cover
             # Do not print warning for null layer
             if "Null layer" not in str(ex):
                 LOGGER.warning(ex)
             vect = gpd.GeoDataFrame(geometry=[], crs=crs)
 
     # Clean if needed
-    if tmp_dir:
+    if tmp_dir:  # pragma: no cover
         tmp_dir.cleanup()
 
     return vect
@@ -597,7 +598,7 @@ def _read_kml(
     if use_pyogrio:
         try:
             vect = gpd.read_file(gpd_vect_path, driver=driver, engine=engine, **kwargs)
-        except DataSourceError:
+        except DataSourceError:  # pragma: no cover
             LOGGER.error(
                 f"Error in reading {path.get_filename(gpd_vect_path)}. geopandas: {version('geopandas')},  pyogrio: {version('pyogrio')}, engine: {engine}"
             )
@@ -615,7 +616,7 @@ def _read_kml(
                 vect_layer = gpd.read_file(
                     gpd_vect_path, driver=driver, layer=layer, engine=engine, **kwargs
                 )
-                if not vect_layer.empty:
+                if not vect_layer.empty:  # pragma: no cover
                     # KML files are always in WGS84 (and does not contain this information)
                     vect_layer.crs = EPSG_4326
                     vect = pd.concat([vect, vect_layer])
@@ -636,7 +637,7 @@ def _read_kml(
 
             vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
-        else:
+        else:  # pragma: no cover
             # Try reading it in a basic manner
             LOGGER.warning(
                 "Missing `ogr2ogr` in your PATH, your KML may be incomplete. "
@@ -707,7 +708,7 @@ def ogr2geojson(
     ]
     try:
         misc.run_cli(cmd_line)
-    except RuntimeError as ex:
+    except RuntimeError as ex:  # pragma: no cover
         raise RuntimeError(f"Something went wrong with ogr2ogr: {ex}") from ex
 
     return vect_path_gj

@@ -166,7 +166,7 @@ def get_snap_version() -> Version:
         version_str = stdout.split("\n")
         try:
             version_str = [v for v in version_str if "version" in v][0]
-        except IndexError as ex:
+        except IndexError as ex:  # pragma: no cover
             LOGGER.debug(ex)
         else:
             snap_version = version_str.split(" ")[-1]

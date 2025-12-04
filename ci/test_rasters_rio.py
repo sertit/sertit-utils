@@ -82,8 +82,22 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
         raster_2, _ = rasters_rio.read(ds, resolution=[20, 20])
         raster_3, _ = rasters_rio.read(ds, size=(meta1["width"], meta1["height"]))
         raster_4, _ = rasters_rio.read(raster_path, indexes=[1])
+        raster_5, _ = rasters_rio.read((raster, meta))
+
         with pytest.raises(ValueError):
             rasters_rio.read(ds, resolution=[20, 20, 20])
+
+        # Wrong tuple
+        with pytest.raises(TypeError):
+            rasters_rio.read((raster, [1, 2, 3]))
+
+        with pytest.raises(TypeError):
+            rasters_rio.read(([1, 2, 3], meta))
+
+        # xarray
+        from sertit import rasters
+
+        raster_6, meta_6 = rasters_rio.read(rasters.read(raster_path, masked=False))
 
         assert raster.shape == (ds.count, ds.height, ds.width)
         assert meta["crs"] == ds.crs
@@ -91,6 +105,9 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
         np.testing.assert_array_equal(raster_1, raster_2)
         np.testing.assert_array_equal(raster_1, raster_3)
         np.testing.assert_array_equal(raster, raster_4)  # 2D array
+        np.testing.assert_array_equal(raster, raster_5)
+        np.testing.assert_array_equal(raster, raster_6)
+        ci.assert_val(meta, meta_6, "xarray meta")
 
         # -- Read with window
         window_out = os.path.join(tmp_path, "test_xda_window.tif")
@@ -133,13 +150,25 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
                 window=rasters_path().joinpath("non_existing_window.kml"),
             )
 
+        with pytest.raises(TypeError):
+            rasters_rio.read(
+                raster_path,
+                window={"wrong_window"},
+            )
+
+        with pytest.raises(ValueError):
+            rasters_rio.read(
+                raster_path,
+                window=Window(col_off=50000, row_off=50000, width=50100, height=50100),
+            )
+
 
 @s3_env
 def test_write(tmp_path, raster_path, raster_meta):
     """Test write functions"""
     raster_out = os.path.join(tmp_path, "test.tif")
 
-    rasters_rio.write(*raster_meta, raster_out)
+    rasters_rio.write(*raster_meta, raster_out, tags={"my_tag": "test"})
 
     assert os.path.isfile(raster_out)
     ci.assert_raster_equal(raster_path, raster_out)
@@ -386,7 +415,7 @@ def test_rasterize(tmp_path, raster_path):
 
     # Binary vector
     out_bin_path = os.path.join(tmp_path, "out_bin.tif")
-    rast_bin, bin_meta = rasters_rio.rasterize(raster_path, vec_path)
+    rast_bin, bin_meta = rasters_rio.rasterize(raster_path, vectors.read(vec_path))
     rasters_rio.write(rast_bin, bin_meta, out_bin_path)
 
     ci.assert_raster_almost_equal(raster_true_bin_path, out_bin_path, decimal=4)
@@ -394,7 +423,7 @@ def test_rasterize(tmp_path, raster_path):
     # Vector
     out_path = os.path.join(tmp_path, "out.tif")
     rast, meta = rasters_rio.rasterize(
-        raster_path, vec_path, "raster_val", dtype=np.uint8
+        raster_path, vec_path, "raster_val", dtype=np.uint8, nodata=255
     )
     rasters_rio.write(rast, meta, out_path)
 

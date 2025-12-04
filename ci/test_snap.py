@@ -26,7 +26,8 @@ ci.reduce_verbosity()
 
 def test_b2snap():
     """Testing SNAP functions"""
-    assert snap.bytes2snap(32000) == "31K"
+    ci.assert_val(snap.bytes2snap(32000), "31K", "32000")
+    ci.assert_val(snap.bytes2snap(8), "8B", "8")
 
 
 @pytest.mark.skipif(
@@ -34,7 +35,7 @@ def test_b2snap():
 )
 def test_snap():
     # Do not test everything here, depends on the computer...
-    cli = snap.get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
+    cli = snap.get_gpt_cli("graph_path", display_snap_opt=True)
     tile_size = 512
     must_appear = [
         "gpt",

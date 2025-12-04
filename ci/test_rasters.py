@@ -35,7 +35,7 @@ from ci.script_utils import (
     rasters_path,
     s3_env,
 )
-from sertit import ci, geometry, path, rasters, unistra, vectors
+from sertit import ci, geometry, path, rasters, rasters_rio, unistra, vectors
 from sertit.rasters import (
     DEG_LAT_TO_M,
     FLOAT_NODATA,
@@ -129,6 +129,60 @@ def get_xds(raster_path):
     return xr.Dataset({ds_name: get_xda(raster_path)})
 
 
+def test_get_nodata_value_from_dtype():
+    """Test get_nodata_value_from_dtype function"""
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("uint8"), UINT8_NODATA, "uint8 nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.uint8), UINT8_NODATA, "uint8 nodata"
+    )
+
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("int8"), INT8_NODATA, "int8 nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.int8), INT8_NODATA, "int8 nodata"
+    )
+
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("int"), UINT16_NODATA, "int nodata"
+    )
+    ci.assert_val(rasters.get_nodata_value_from_dtype(int), UINT16_NODATA, "int nodata")
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.uint16), UINT16_NODATA, "int nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("int32"), UINT16_NODATA, "int nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.uint64), UINT16_NODATA, "int nodata"
+    )
+
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.int16), FLOAT_NODATA, "float nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.float32), FLOAT_NODATA, "float nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(np.float64), FLOAT_NODATA, "float nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype(float), FLOAT_NODATA, "float nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("float"), FLOAT_NODATA, "float nodata"
+    )
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("float64"), FLOAT_NODATA, "float nodata"
+    )
+
+    ci.assert_val(
+        rasters.get_nodata_value_from_dtype("float16"), FLOAT_NODATA, "unknown nodata"
+    )
+
+
 @s3_env
 @dask_env()
 def test_rasters_extent(tmp_path, raster_path, ds_name, ds_dtype):
@@ -138,6 +192,10 @@ def test_rasters_extent(tmp_path, raster_path, ds_name, ds_dtype):
     extent = rasters.get_extent(raster_path)
     truth_extent = vectors.read(extent_path)
     ci.assert_geom_equal(extent, truth_extent)
+
+    # any_raster_to_xr_ds with None
+    with pytest.raises(ValueError):
+        rasters.get_extent(None)
 
 
 @s3_env
@@ -193,6 +251,17 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         # TODO: remove when https://github.com/opendatacube/odc-geo/issues/236 is fixed
         # assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
+        xda_8 = rasters.read(rasters_rio.read(ds))
+        assert_chunked_computed(xda_8, "Read with tuple")
+
+        # Errors
+        with pytest.raises(ValueError):
+            rasters.read(raster_path, size={100: 100})
+
+        with pytest.raises(ValueError):
+            rasters.read(raster_path, resolution=[100, 100, 100])
+            rasters.read(raster_path, resolution={100: 100})
+
         # Test shape (link between resolution and size)
         assert xda_4.shape[-2] == xda.shape[-2] * 2
         assert xda_4.shape[-1] == xda.shape[-1] * 2
@@ -212,6 +281,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         xr.testing.assert_equal(xda_1, xda_2)
         xr.testing.assert_equal(xda_1, xda_3)
         xr.testing.assert_equal(xda, xda_5)
+        xr.testing.assert_equal(xda, xda_8)
 
         ci.assert_xr_encoding_attrs(xda, xda_1)
         ci.assert_xr_encoding_attrs(xda, xda_2)
@@ -220,6 +290,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(xda, xda_5)
         ci.assert_xr_encoding_attrs(xda, xda_6)
         ci.assert_xr_encoding_attrs(xda, xda_7)
+        ci.assert_xr_encoding_attrs(xda, xda_8)
         ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
 
 
@@ -518,7 +589,7 @@ def test_crop(tmp_path, raster_path, mask):
 
     # Test with mask with Z
     mask_z = geometry.force_3d(mask)
-    crop_z = rasters.crop(xda, mask_z)
+    crop_z = rasters.crop(xda, mask_z, nodata=get_nodata_value_from_xr(xda))
     assert_chunked_computed(crop_z, "Crop 3D")
     xr.testing.assert_equal(crop_xda, crop_z)
     ci.assert_xr_encoding_attrs(crop_xda, crop_z)
@@ -730,6 +801,9 @@ def test_vectorize(tmp_path, raster_path, ds_name):
     vect_xds = rasters.vectorize(xds)
     ci.assert_geom_equal(vect_xds[ds_name], vect_truth)
 
+    with pytest.raises(TypeError):
+        vect_xda = rasters.vectorize(xda.astype(np.float32))
+
 
 @s3_env
 @dask_env(nof_computes=2)  # vectorize x2 (vectorize not lazy yet)
@@ -902,11 +976,17 @@ def test_read_bit_array(dtype, bit_id):
     """Test bit arrays"""
     data = np.ones((1, 2, 2), dtype=dtype)
 
+    # Unpack
+    nof_bits = 8 * np.dtype(dtype).itemsize
+    bit_arr = rasters.unpackbits(data, nof_bits=nof_bits)
+    ci.assert_val(bit_arr.shape, (1, 2, 2, nof_bits), "Bit array shape")
+
     if os.environ[CI_SERTIT_USE_DASK] == "1":
         # If we want to use dask, convert this array to a dask array
         from dask.array import from_array
 
         data = from_array(data)
+
     # Bit
     np_ones = xr.DataArray(data)
     ones = rasters.read_bit_array(np_ones, bit_id=0)
@@ -917,6 +997,9 @@ def test_read_bit_array(dtype, bit_id):
         import dask
 
         delayed = []
+        delayed.append(
+            dask.delayed(np.testing.assert_array_equal)(bit_arr[..., 0], ones)
+        )
         delayed.append(dask.delayed(np.testing.assert_array_equal)(np_ones.data, ones))
         for arr in zeros:
             delayed.append(
@@ -1141,7 +1224,7 @@ def test_rasterize_binary(tmp_path, raster_path):
     out_bin_path = get_output(tmp_path, "out_bin.tif", DEBUG)
 
     # Rasterize
-    rast_bin = rasters.rasterize(xda, vec_path, **KAPUT_KWARGS)
+    rast_bin = rasters.rasterize(xda, vectors.read(vec_path), **KAPUT_KWARGS)
     assert_chunked_computed(rast_bin, "Rasterize DataArray (binary vector)")
     rasters.write(rast_bin, out_bin_path, dtype=np.uint8, nodata=255)
 
@@ -1278,9 +1361,15 @@ def test_classify(tmp_path):
     d_ndvi_path = rasters_path() / "20200824_S2_20200908_S2_dNDVI.tif"
     sev_truth = rasters_path() / "fire_sev_ndvi_truth.tif"
     sev_out = get_output(tmp_path, "fire_sev_ndvi.tif", DEBUG, dask_folders=True)
+
+    name = "Classif"
+
     sev = rasters.classify(
-        rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4]
+        rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4], new_name=name
     )
+
+    ci.assert_val(sev.attrs.pop("long_name"), name, "name")
+
     assert_chunked_computed(sev, "Classify DataArray")
     rasters.write(sev, sev_out, dtype=np.uint8, nodata=255)
     ci.assert_raster_equal(sev_truth, sev_out)
@@ -1389,12 +1478,15 @@ def test_reproject(tmp_path, raster_path):
     xda = get_xda(raster_path)
 
     # -- Reproject to a pixel_size --
-    size_arr = rasters.reproject(xda, pixel_size=60)
+    ortho_path = tmp_path / "ortho.tif"
+    size_arr = rasters.reproject(xda, ortho_path=ortho_path, pixel_size=60)
     ci.assert_val(round(size_arr.rio.resolution()[0]), 60, "Reprojected pixel size")
     ci.assert_val(size_arr.rio.count, 1, "Reprojected count")
     ci.assert_val(size_arr.dims, xda.dims, "Reprojected dimensions")
     with pytest.raises(AssertionError):
         ci.assert_val(round(xda.rio.resolution()[0]), 60, "Native pixel pize")
+
+    assert ortho_path.is_file()
 
     # -- Reproject to a shape --
     shape_arr = rasters.reproject(xda, shape=(161, 232))

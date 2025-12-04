@@ -15,6 +15,7 @@
 # limitations under the License.
 """Script testing the CI"""
 
+import contextlib
 import os
 import tempfile
 
@@ -32,12 +33,13 @@ from sertit.unistra import (
     get_db3_path,
     get_geodatastore,
     s3_env,
+    unistra_s3,
 )
 
 ci.reduce_verbosity()
 
 
-def base_fct(value):
+def base_fct():
     raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
         "DATA", "rasters", "raster.tif"
     )
@@ -47,18 +49,17 @@ def base_fct(value):
 
 
 @s3_env
-def with_s3():
-    base_fct(1)
-    return 1
+def test_with_s3():
+    base_fct()
 
 
-def without_s3():
-    S3Client().set_as_default_client()
-    base_fct(None)
+def test_without_s3():
+    with pytest.raises(AssertionError):
+        S3Client().set_as_default_client()
+        base_fct()
 
 
-@s3_env
-def test_unistra_s3():
+def core_fct():
     with tempenv.TemporaryEnvironment(
         {s3.USE_S3_STORAGE: "1", AWS_S3_ENDPOINT: None, CI_SERTIT_S3: "1"}
     ):
@@ -103,14 +104,24 @@ def test_unistra_s3():
         assert str(get_geodatastore()).endswith("BASES_DE_DONNEES")
 
 
+@s3_env
+def test_unistra_s3_decorator():
+    core_fct()
+
+
+def test_unistra_s3_context_manager():
+    with unistra_s3():
+        core_fct()
+
+
 @pytest.mark.skipif(not misc.in_docker(), reason="Only works in docker")
 def test_mnt():
     """Test mounted directories"""
-    try:
+    with contextlib.suppress(NotADirectoryError):
         assert get_db2_path() == "/mnt/ds2_db2"
+
+    with contextlib.suppress(NotADirectoryError):
         assert get_db3_path() == "/mnt/ds2_db3"
-    except NotADirectoryError:
-        pass
 
     with pytest.raises(NotADirectoryError):
         _get_db_path(5)

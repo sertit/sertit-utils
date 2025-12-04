@@ -179,10 +179,10 @@ def get_geodatastore() -> AnyPathType:
     else:
         try:
             db_dir = AnyPath(get_db2_path(), "BASES_DE_DONNEES")
-        except NotADirectoryError:
+        except NotADirectoryError:  # pragma: no cover
             db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
 
-        if not db_dir.is_dir():
+        if not db_dir.is_dir():  # pragma: no cover
             raise NotADirectoryError("Impossible to open database directory !")
 
     return AnyPath(db_dir)
@@ -203,8 +203,9 @@ def does_unistra_profile_exist() -> bool:
     credentials_path = AnyPath(credentials_path)
     if not credentials_path.exists():
         return False
-    config.read(credentials_path)
-    return "unistra" in config.sections()
+    else:  # pragma: no cover
+        config.read(credentials_path)
+        return "unistra" in config.sections()
 
 
 def _set_aws_file_path() -> None:

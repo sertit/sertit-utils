@@ -202,9 +202,9 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
 
                     # Convert in dataset if we have DataArrays, else keep the dict
                     out = xr.Dataset(xds_dict) if convert_to_xdataset else xds_dict
-                except Exception as ex:
+                except Exception as ex:  # pragma: no cover
                     raise TypeError("Function not available for xarray.Dataset") from ex
-            else:
+            else:  # pragma: no cover
                 raise exc
 
         return out
@@ -247,7 +247,7 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
 
     try:
         is_nan = np.isnan(nodata)
-    except TypeError:
+    except TypeError:  # pragma: no cover
         is_nan = False
 
     nodata_pos = np.isnan(xds.data) if is_nan else xds.data == nodata
@@ -1284,7 +1284,7 @@ def write(
         # Default compression to deflate for COGs
         kwargs["compress"] = kwargs.get("compress", "deflate")
 
-        if dtype == np.int8:
+        if dtype == np.int8:  # pragma: no cover
             LOGGER.warning(
                 "For some reason, it is impossible to write int8 COGs. "
                 "Your data will be converted to uint8. "
@@ -1391,7 +1391,7 @@ def write(
         LOGGER.debug(f"Writing '{path.get_filename(output_path)}' to disk.")
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
-        if "_FillValue" in xds.attrs:
+        if "_FillValue" in xds.attrs:  # pragma: no cover
             xds.attrs.pop("_FillValue")
 
         if not is_zarr:
@@ -1516,7 +1516,7 @@ def collocate(
             collocated_xds = collocated_xds.rio.set_spatial_dims(
                 x_dim=other.rio.x_dim, y_dim=other.rio.y_dim, inplace=True
             )
-        except Exception:
+        except Exception:  # pragma: no cover
             # For datasets, maybe the code here over is a bit much, so use the reproject match function as a backup (just in case)
             collocated_xds = other.rio.reproject_match(
                 reference, resampling=resampling, **kwargs
@@ -1539,7 +1539,7 @@ def collocate(
                 dims[0]: reference[dims[0]],
                 dims[1]: reference[dims[1]],
             }
-    if not coord_dict:
+    if not coord_dict:  # pragma: no cover
         raise ValueError(
             "No standard spatial dimensions (y, x) or (latitude, longitude) found in reference. "
             f"Something is wrong with your reference dimensions: ({reference.dims})."
@@ -2791,7 +2791,7 @@ def _reproject_rpcs(
 
     # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
     # https://github.com/corteva/rioxarray/issues/844
-    except ValueError as ex:
+    except ValueError as ex:  # pragma : no cover
         LOGGER.warning(ex)
         reprojected_xda = __reproject_rpc_fallback_rio(
             src_xda=src_xda,
@@ -2876,7 +2876,7 @@ def __preprocess_dem(
             if "Copernicus" in dem_name or "COPDEM" in dem_name:
                 dem.set_vcrs("EGM08")
 
-        if dem.vcrs is None:
+        if dem.vcrs is None:  # pragma: no cover
             LOGGER.warning(
                 "Impossible to detect vertical CRS of your DEM. Orthorectification may be inaccurate. If needed, pass 'vcrs' to the function to adjust."
             )
