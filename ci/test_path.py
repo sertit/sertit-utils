@@ -197,6 +197,11 @@ def test_get_file_in_dir():
     )
     assert len(files) > 1
 
+    first_file = path.get_file_in_dir(
+        folder, "*", ".py", filename_only=False, get_list=False, exact_name=False
+    )
+    ci.assert_val(files[0], first_file, "First file")
+
     with pytest.raises(FileNotFoundError):
         path.get_file_in_dir(
             "fergerg",
@@ -222,3 +227,4 @@ def test_cloud_path(tmp_path):
     """Test cloud path"""
     ci.assert_val(path.is_cloud_path(tmp_path), False, "Local dir")
     ci.assert_val(path.is_cloud_path("s3://test"), True, "Cloud dir")
+    ci.assert_val(path.is_cloud_path(1), False, "Not a path")
