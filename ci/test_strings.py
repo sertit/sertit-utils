@@ -42,12 +42,13 @@ def test_conversion():
     info_str = ("info", "i", 20)
     warn_str = ("warning", "w", "warn", 30)
     err_str = ("error", "e", "err", 40)
-    for debug, info, warn, err in zip(
-        debug_str, info_str, warn_str, err_str, strict=True
-    ):
+    for debug in debug_str:
         assert strings.str_to_verbosity(debug) == logging.DEBUG
+    for info in info_str:
         assert strings.str_to_verbosity(info) == logging.INFO
+    for warn in warn_str:
         assert strings.str_to_verbosity(warn) == logging.WARNING
+    for err in err_str:
         assert strings.str_to_verbosity(err) == logging.ERROR
 
     with pytest.raises(argparse.ArgumentTypeError):
