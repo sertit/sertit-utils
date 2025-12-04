@@ -1124,7 +1124,7 @@ def write(
 
     if (
         out_meta["compress"].lower() in ["lzw", "deflate", "zstd"]
-        and "predictor" not in out_meta  # noqa: W503
+        and "predictor" not in out_meta
     ):
         if out_meta["dtype"] in [np.float32, np.float64, float]:
             out_meta["predictor"] = "3"

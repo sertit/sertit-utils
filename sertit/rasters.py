@@ -1328,7 +1328,7 @@ def write(
     if (
         not is_zarr
         and kwargs.get("compress", "").lower() in ["lzw", "deflate", "zstd"]
-        and "predictor" not in kwargs  # noqa: W503
+        and "predictor" not in kwargs
     ):
         if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
             kwargs["predictor"] = "3"

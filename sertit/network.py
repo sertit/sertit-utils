@@ -18,8 +18,8 @@
 import logging
 import os
 import time
+from collections.abc import Callable
 from random import Random
-from typing import Callable
 
 from sertit.logs import SU_NAME
 
