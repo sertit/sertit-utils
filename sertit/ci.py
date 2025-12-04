@@ -22,7 +22,7 @@ import filecmp
 import logging
 import pprint
 from doctest import Example
-from typing import Any, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
@@ -33,7 +33,7 @@ from shapely.testing import assert_geometries_equal
 
 from sertit import AnyPath, dask, files, rasters, s3
 from sertit.logs import SU_NAME
-from sertit.types import AnyPathStrType, AnyXrDataStructure
+from sertit.types import AnyPathStrType, AnyVectorType, AnyXrDataStructure
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -430,8 +430,8 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
 
 
 def assert_geom_equal(
-    geom_1: Union[AnyPathStrType, "gpd.GeoDataFrame"],
-    geom_2: Union[AnyPathStrType, "gpd.GeoDataFrame"],
+    geom_1: AnyVectorType,
+    geom_2: AnyVectorType,
     ignore_z=True,
 ) -> None:
     """
@@ -441,8 +441,8 @@ def assert_geom_equal(
     Useful for pytests.
 
     Args:
-        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
-        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
+        geom_1 (AnyVectorType): Geometry 1
+        geom_2 (AnyVectorType): Geometry 2
         ignore_z (bool): Ignore Z coordinate
 
     Warning:
@@ -505,8 +505,8 @@ def assert_geom_equal(
 
 
 def assert_geom_almost_equal(
-    geom_1: Union[AnyPathStrType, "gpd.GeoDataFrame"],
-    geom_2: Union[AnyPathStrType, "gpd.GeoDataFrame"],
+    geom_1: AnyVectorType,
+    geom_2: AnyVectorType,
     decimal=9,
     ignore_z=True,
 ) -> None:
@@ -517,8 +517,8 @@ def assert_geom_almost_equal(
     Useful for pytests.
 
     Args:
-        geom_1 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 1
-        geom_2 (Union[AnyPathStrType, "gpd.GeoDataFrame"]): Geometry 2
+        geom_1 (AnyVectorType): Geometry 1
+        geom_2 (AnyVectorType): Geometry 2
         decimal (int): Number of decimal
         ignore_z (bool): Ignore Z coordinate
 
@@ -660,7 +660,7 @@ def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) ->
 def assert_xr_encoding_attrs(
     xda_1: AnyXrDataStructure,
     xda_2: AnyXrDataStructure,
-    unchecked_attr: Union[list, str] = None,
+    unchecked_attr: list | str = None,
 ):
     """
     Assert that the attributes and the encoding of xarray.DataArray/set are the same
@@ -668,7 +668,7 @@ def assert_xr_encoding_attrs(
     Args:
         xda_1 (AnyXrDataStructure): First xarray
         xda_2 (AnyXrDataStructure): Second xarray
-        unchecked_attr (Union[list, str]): Don't check this list of attributes
+        unchecked_attr (list | str): Don't check this list of attributes
     """
     if unchecked_attr is None:
         unchecked_attr = []

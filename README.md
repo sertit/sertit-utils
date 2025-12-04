@@ -17,16 +17,14 @@ Find the API documentation [**here**](https://sertit-utils.readthedocs.io/latest
 For installing this library to your environment, please type this: `pip install sertit[full]`
 
 `[full]` will allow you to use the whole library, but you will need to install also `rioxarray` and `geopandas`
-(with GDAL installation issues on Windows, so please install them from wheels that you can
-find [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#rasterio)).
 
 However, if you do not need everything, you can type instead:
 
-- *nothing*, and you won't need `rasterio`, `rioxarray`: `pip install sertit --extra-index-url ...`
-- `[rasters_rio]`, and you won't need `rioxarray`: `pip install sertit[rasters_rio] --extra-index-url ...`
-- `[rasters]`: `pip install sertit[rasters] --extra-index-url ...`
-- `[colorlog]`: `pip install sertit[colorlog] --extra-index-url ...` to have `colorlog` installed
-- `[dask]`: `pip install sertit[dask] --extra-index-url ...` to have `dask` installed
+- *nothing*, and you won't need `rasterio`, `rioxarray`: `pip install sertit`
+- `[rasters_rio]`, and you won't need `rioxarray`: `pip install sertit[rasters_rio]`
+- `[rasters]`: `pip install sertit[rasters]`
+- `[colorlog]`: `pip install sertit[colorlog]` to have `colorlog` installed
+- `[dask]`: `pip install sertit[dask]` to have `dask` installed
 
 ### Conda
 

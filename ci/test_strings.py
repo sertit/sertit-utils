@@ -30,7 +30,7 @@ def test_conversion():
     # Str to bool
     true_str = (True, "yes", "true", "t", "y", "1")
     false_str = (False, "no", "false", "f", "n", "0")
-    for true, false in zip(true_str, false_str):
+    for true, false in zip(true_str, false_str, strict=True):
         assert strings.str_to_bool(true)
         assert not strings.str_to_bool(false)
 
@@ -42,7 +42,9 @@ def test_conversion():
     info_str = ("info", "i", 20)
     warn_str = ("warning", "w", "warn", 30)
     err_str = ("error", "e", "err", 40)
-    for debug, info, warn, err in zip(debug_str, info_str, warn_str, err_str):
+    for debug, info, warn, err in zip(
+        debug_str, info_str, warn_str, err_str, strict=True
+    ):
         assert strings.str_to_verbosity(debug) == logging.DEBUG
         assert strings.str_to_verbosity(info) == logging.INFO
         assert strings.str_to_verbosity(warn) == logging.WARNING

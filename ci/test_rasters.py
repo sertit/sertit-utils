@@ -1442,7 +1442,7 @@ def test_reproject_gcps(tmp_path):
         # Update the GCPs and redo a reprojection to see if GCPs are really applied
         updated_gcps = ds.gcps[0]
         # Update height
-        for gcp, z in zip(updated_gcps, [226.5, 260, 179, 471.9]):
+        for gcp, z in zip(updated_gcps, [226.5, 260, 179, 471.9], strict=True):
             gcp.z = z
         # Update x
         updated_gcps[0].x += 0.3

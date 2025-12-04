@@ -20,7 +20,7 @@ import logging
 import re
 import uuid
 from datetime import date, datetime
-from typing import Any, Union
+from typing import Any
 
 from sertit.logs import SU_NAME
 
@@ -123,13 +123,13 @@ def str_to_verbosity(verbosity_str: str) -> int:
 
 
 def str_to_list(
-    list_str: Union[str, list], additional_separator: str = "", case: str = None
+    list_str: list | str, additional_separator: str = "", case: str = None
 ) -> list:
     """
     Convert str to list with :code:`,`, :code:`;`, :code:`\x20` separators.
 
     Args:
-        list_str (Union[str, list]): List as a string
+        list_str (list | str): List as a string
         additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\\\x20` (space).
         case (str): {none, 'lower', 'upper'}
 
@@ -171,9 +171,7 @@ def str_to_list(
     return out_list
 
 
-def str_to_date(
-    date_str: Union[str, datetime], date_format: str = DATE_FORMAT
-) -> datetime:
+def str_to_date(date_str: str | datetime, date_format: str = DATE_FORMAT) -> datetime:
     """
     Convert string to a :code:`datetime.datetime`.
 
@@ -184,7 +182,7 @@ def str_to_date(
     - Already formatted datetimes and dates
 
     Args:
-        date_str (str): Date as a string
+        date_str (str | datetime): Date as a string
         date_format (str): Format of the date (as ingested by strptime)
 
     Returns:
@@ -235,7 +233,7 @@ def str_to_date(
 
 
 def str_to_list_of_dates(
-    date_str: Union[list, str],
+    date_str: list | str,
     date_format: str = DATE_FORMAT,
     additional_separator: str = "",
 ) -> list:
@@ -249,7 +247,7 @@ def str_to_list_of_dates(
     - Already formatted datetimes and dates
 
     Args:
-        date_str (Union[list, str]): Date as a string
+        date_str (list | str): Date as a string
         date_format (str): Format of the date (as ingested by strptime)
         additional_separator (str): Additional separator
 

@@ -176,7 +176,7 @@ def test_nearest_neighbors():
     closest, distances = nearest_neighbors(
         src, candidates, method="radius", radius=radius, **KAPUT_KWARGS
     )
-    for curr_closest, curr_dist in zip(closest, distances):
+    for curr_closest, curr_dist in zip(closest, distances, strict=True):
         ci.assert_val(len(curr_closest), 1, "length")
         assert curr_dist[0] < radius, (
             f"distance superior to radius: {curr_dist[0]} > {radius}"
@@ -187,7 +187,7 @@ def test_nearest_neighbors():
     closest, distances = nearest_neighbors(
         src, candidates, method="k_neighbors", k_neighbors=nof_neighbors
     )
-    for curr_closest, curr_dist in zip(closest, distances):
+    for curr_closest, curr_dist in zip(closest, distances, strict=True):
         ci.assert_val(len(curr_closest), nof_neighbors, "length")
         assert curr_dist[0] < radius, (
             f"distance superior to wanted distance: {curr_dist[0]} > {radius}"

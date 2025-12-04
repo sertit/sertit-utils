@@ -29,7 +29,7 @@ import tempfile
 import zipfile
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
@@ -117,12 +117,12 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     return gpd.GeoDataFrame(geometry=point, crs=EPSG_4326).estimate_utm_crs()
 
 
-def get_geodf(geom: Union[Polygon, list, gpd.GeoSeries], crs: str) -> gpd.GeoDataFrame:
+def get_geodf(geom: BaseGeometry | list | gpd.GeoSeries, crs: str) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
 
     Args:
-        geom (Union[Polygon, list]): List of Polygons, or Polygon or bounds
+        geom (BaseGeometry | list | gpd.GeoSeries): List of Polygons, or Polygon or bounds
         crs (str): CRS of the polygon
 
     Returns:
@@ -183,7 +183,7 @@ def set_kml_driver() -> None:
             drivers["KML"] = "rw"
 
 
-def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Polygon]:
+def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
     or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
@@ -201,7 +201,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> Union[str, Pol
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
-        Union[str, Polygon]: AOI formatted as a WKT stored in lat/lon
+         str | Polygon: AOI formatted as a WKT stored in lat/lon
 
     Example:
         >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...

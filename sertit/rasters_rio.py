@@ -23,13 +23,14 @@ import contextlib
 import logging
 import os
 import tempfile
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from shapely.geometry import Polygon
+from shapely.geometry.base import BaseGeometry
 
 try:
     import rasterio
@@ -56,7 +57,13 @@ from sertit import (
     xml,
 )
 from sertit.logs import SU_NAME
-from sertit.types import AnyNumpyArray, AnyPathStrType, AnyPathType, AnyRasterType
+from sertit.types import (
+    AnyNumpyArray,
+    AnyPathStrType,
+    AnyPathType,
+    AnyRasterType,
+    AnyVectorType,
+)
 
 np.seterr(divide="ignore", invalid="ignore")
 
@@ -252,8 +259,8 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
 @any_raster_to_rio_ds
 def get_new_shape(
     ds: AnyRasterType,
-    resolution: Union[tuple, list, float],
-    size: Union[tuple, list],
+    resolution: tuple | list | float,
+    size: tuple | list,
     window: Window = None,
 ) -> (int, int, bool):
     """
@@ -263,8 +270,8 @@ def get_new_shape(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (tuple | list): Size of the array (width, height). Not used if resolution is provided.
         window (Window): Window to be read
 
     Returns:
@@ -469,12 +476,12 @@ def get_data_mask(
 @any_raster_to_rio_ds
 def rasterize(
     ds: AnyRasterType,
-    vector: Union[gpd.GeoDataFrame, AnyPathStrType],
+    vector: AnyVectorType,
     value_field: str = None,
     default_nodata: int = 0,
     default_value: int = 1,
     **kwargs,
-) -> (np.ma.masked_array, dict):
+) -> tuple[np.ma.masked_array, dict]:
     """
     Rasterize a vector into raster format.
 
@@ -484,7 +491,7 @@ def rasterize(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
+        vector (AnyVectorType): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary (`default_nodata`, `default_value`).
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
         default_value (int): Used as value for all geometries, if `value_field` not provided
@@ -500,7 +507,8 @@ def rasterize(
     # Manage vector values
     if value_field:
         geom_value = (
-            (geom, value) for geom, value in zip(vector.geometry, vector[value_field])
+            (geom, value)
+            for geom, value in zip(vector.geometry, vector[value_field], strict=True)
         )
         dtype = kwargs.pop("dtype", vector[value_field].dtype)
     else:
@@ -558,7 +566,7 @@ def rasterize(
 @any_raster_to_rio_ds
 def _vectorize(
     ds: AnyRasterType,
-    values: Union[None, int, list] = None,
+    values: None | int | list = None,
     keep_values: bool = True,
     dissolve: bool = False,
     get_nodata: bool = False,
@@ -580,7 +588,7 @@ def _vectorize(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        values (None | int | list): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
@@ -636,7 +644,7 @@ def _vectorize(
 @any_raster_to_rio_ds
 def vectorize(
     ds: AnyRasterType,
-    values: Union[None, int, list] = None,
+    values: None | int | list = None,
     keep_values: bool = True,
     dissolve: bool = False,
     default_nodata: int = 0,
@@ -654,7 +662,7 @@ def vectorize(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        values (None | int | list): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         default_nodata (int): Default values for nodata in case of non-existing in file
@@ -753,8 +761,8 @@ def get_nodata_vector(ds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
 @any_raster_to_rio_ds
 def _mask(
     ds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
-    nodata: Optional[int] = None,
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
+    nodata: int | None = None,
     do_crop: bool = False,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
@@ -767,7 +775,7 @@ def _mask(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         do_crop (bool): Whether to crop the raster to the extent of the shapes. Default is False.
@@ -809,8 +817,8 @@ def _mask(
 @any_raster_to_rio_ds
 def mask(
     ds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
-    nodata: Optional[int] = None,
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
+    nodata: int | None = None,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
@@ -824,7 +832,7 @@ def mask(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
@@ -853,8 +861,8 @@ def mask(
 @any_raster_to_rio_ds
 def crop(
     ds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
-    nodata: Optional[int] = None,
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
+    nodata: int | None = None,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
@@ -870,7 +878,7 @@ def crop(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
@@ -951,8 +959,8 @@ def get_window(ds: AnyRasterType, window: Any):
 @any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
-    resolution: Union[tuple, list, float] = None,
-    size: Union[tuple, list] = None,
+    resolution: tuple | list | float = None,
+    size: tuple | list = None,
     window: Any = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
@@ -972,8 +980,8 @@ def read(
 
     Args:
         ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (Union[tuple, list]): Size of the array (width, height). Not used if resolution is provided.
+        resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (tuple | list): Size of the array (width, height). Not used if resolution is provided.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
             In case of an iterable, assumption is made it corresponds to geographic bounds.
             For pixel, please provide a rasterio.Window directly.
@@ -1289,7 +1297,7 @@ def sieve(
 
 def get_dim_img_path(
     dim_path: AnyPathStrType, img_name: str = "*", get_list: bool = False
-) -> Union[list, AnyPathType]:
+) -> list | AnyPathType:
     """
     Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
@@ -1641,9 +1649,7 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return unpacked
 
 
-def read_bit_array(
-    bit_mask: np.ndarray, bit_id: Union[list, int]
-) -> Union[np.ndarray, list]:
+def read_bit_array(bit_mask: np.ndarray, bit_id: int | list) -> np.ndarray | list:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number bit_id)
 
@@ -1653,7 +1659,7 @@ def read_bit_array(
           Example: read the bit 0 of the mask as a cloud mask (Theia)
 
     Returns:
-        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+        np.ndarray | list: Binary mask or list of binary masks if a list of bit_id is given
 
     Example:
         >>> bit_array = np.random.randint(5, size=[3,3])

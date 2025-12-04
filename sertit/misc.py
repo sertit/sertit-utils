@@ -22,7 +22,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from enum import Enum, unique
-from typing import Any, Union
+from typing import Any
 
 from packaging.version import Version
 
@@ -93,12 +93,12 @@ class ListEnum(Enum):
             raise ValueError(f"Non existing {val} in {cls.list_values()}") from ex
 
     @classmethod
-    def convert_from(cls, to_convert: Union[list, str]) -> list:
+    def convert_from(cls, to_convert: list | str) -> list:
         """
         Convert from a list or a string to an enum instance
 
         Args:
-            to_convert (Union[list, str]): List or string to convert into an enum instance
+            to_convert (list | str): List or string to convert into an enum instance
 
         Returns:
             list: Converted list
@@ -160,8 +160,8 @@ def unique(sequence: list):
 
 
 def remove_empty_values(
-    object_with_empty_values: Union[dict, list], other_empty_values: list = None
-) -> Union[dict, list]:
+    object_with_empty_values: list | dict, other_empty_values: list = None
+) -> list | dict:
     """
     Remove empty values from list.
 
@@ -334,7 +334,7 @@ def find_by_key(data: dict, target: str) -> Any:
 
 
 def run_cli(
-    cmd: Union[str, list],
+    cmd: list | str,
     timeout: float = None,
     check_return_value: bool = True,
     in_background: bool = True,
@@ -513,14 +513,12 @@ def compare(a, b, operation: str) -> bool:
     return ops[operation](a, b)
 
 
-def compare_version(
-    lib: Union[str, Version], version_to_check: str, operator: str
-) -> bool:
+def compare_version(lib: str | Version, version_to_check: str, operator: str) -> bool:
     """
     Compare the version of a librarie to a reference, giving the operator.
 
     Args:
-        lib (str): Name of the library, it's version as a string or as a Version object
+        lib (str | Version): Name of the library, it's version as a string or as a Version object
         version_to_check (str): Version of the library to be compared
         operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
 

@@ -23,7 +23,7 @@ import re
 import tarfile
 import tempfile
 import zipfile
-from typing import Any, Union
+from typing import Any
 
 from sertit import AnyPath
 from sertit.logs import SU_NAME
@@ -195,7 +195,7 @@ def get_archived_path(
     case_sensitive: bool = False,
     file_list: list = None,
     **kwargs,
-) -> Union[list, AnyPathType]:
+) -> list | AnyPathType:
     """
     Get archived files path from inside the archive.
     Only works with .zip and .tar files.
@@ -213,7 +213,7 @@ def get_archived_path(
         file_list (list): List of files to get archived from. Optional, if not given it will be re-computed.
 
     Returns:
-        Union[list, str]: Path from inside the zipfile
+        list | AnyPathType: Path from inside the zipfile
 
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
@@ -249,7 +249,7 @@ def get_archived_rio_path(
     as_list: bool = False,
     file_list: list = None,
     **kwargs,
-) -> Union[list, AnyPathType]:
+) -> list | AnyPathType:
     """
     Get archived file path from inside the archive, to be read with rasterio:
 
@@ -275,7 +275,7 @@ def get_archived_rio_path(
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
-        Union[list, str]: Band path that can be read by rasterio
+        list | AnyPathType: Band path that can be read by rasterio
 
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
@@ -322,13 +322,13 @@ def get_archived_rio_path(
     return archived_band_paths
 
 
-def get_filename(file_path: AnyPathStrType, other_exts: Union[list, str] = None) -> str:
+def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> str:
     """
     Get file name (without extension) from file path, ie:
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
-        other_exts (Union[list, str]): Other double extensions to discard
+        other_exts (list | str): Other double extensions to discard
 
     Returns:
         str: File name (without extension)
@@ -387,24 +387,24 @@ def get_ext(file_path: AnyPathStrType) -> str:
 
 
 def find_files(
-    names: Union[list, str],
-    root_paths: Union[list, AnyPathStrType],
+    names: list | str,
+    root_paths: list | AnyPathStrType,
     max_nof_files: int = -1,
     get_as_str: bool = False,
-) -> Union[list, str]:
+) -> list | AnyPathType:
     """
     Returns matching files recursively from a list of root paths.
 
     Regex are allowed (using glob)
 
     Args:
-        names (Union[list, str]): File names.
-        root_paths (Union[list, str]): Root paths
+        names (list | str): File names.
+        root_paths (list | str): Root paths
         max_nof_files (int): Maximum number of files (set to -1 for unlimited)
         get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list
 
     Returns:
-        list: File name
+        list | AnyPathType: File name
 
     Example:
         >>> root_path = 'D:/root'
@@ -473,7 +473,7 @@ def get_file_in_dir(
     filename_only: bool = False,
     get_list: bool = False,
     exact_name: bool = False,
-) -> Union[AnyPathType, list]:
+) -> list | AnyPathType:
     """
     Get one or all matching files (pattern + extension) from inside a directory.
 
@@ -491,7 +491,7 @@ def get_file_in_dir(
         exact_name (bool): Get the exact name (without adding :code:`*` before and after the given pattern)
 
     Returns:
-        Union[AnyPathType, list]: File
+        list | AnyPathType: File
 
     Example:
         >>> directory = 'D:/path/to/dir'

@@ -28,7 +28,7 @@ from datetime import date, datetime
 from enum import Enum
 from json import JSONDecoder, JSONEncoder
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import dill
 import numpy as np
@@ -311,14 +311,14 @@ def archive(
 
 def add_to_zip(
     zip_path: AnyPathStrType,
-    dirs_to_add: Union[list, AnyPathStrType],
+    dirs_to_add: list | AnyPathStrType,
 ) -> AnyPathType:
     """
     Add folders to an already existing zip file (recursively).
 
     Args:
         zip_path (AnyPathStrType): Already existing zip file
-        dirs_to_add (Union[list, AnyPathStrType]): Directories to add
+        dirs_to_add (list | AnyPathStrType): Directories to add
 
     Returns:
         AnyPathType: Updated zip_path

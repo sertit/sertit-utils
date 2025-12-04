@@ -21,15 +21,17 @@ You can use this only if you have installed sertit[full] or sertit[rasters]
 
 import contextlib
 import logging
+from collections.abc import Callable
 from functools import wraps
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
 import xarray as xr
 from affine import Affine
 from shapely.geometry import Polygon
+from shapely.geometry.base import BaseGeometry
 
 from sertit.vectors import EPSG_4326
 
@@ -46,7 +48,13 @@ except ModuleNotFoundError as ex:  # pragma: no cover
 
 
 from sertit import AnyPath, dask, geometry, logs, misc, path, perf, rasters_rio, vectors
-from sertit.types import AnyPathStrType, AnyPathType, AnyRasterType, AnyXrDataStructure
+from sertit.types import (
+    AnyPathStrType,
+    AnyPathType,
+    AnyRasterType,
+    AnyVectorType,
+    AnyXrDataStructure,
+)
 
 MAX_CORES = perf.MAX_CORES
 PATH_XARR_DS = AnyRasterType
@@ -258,7 +266,7 @@ def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
 @any_raster_to_xr_ds
 def rasterize(
     xda: xr.DataArray,
-    vector: Union[gpd.GeoDataFrame, AnyPathStrType],
+    vector: AnyVectorType,
     value_field: str = None,
     default_nodata: int = 0,
     default_value: int = 1,
@@ -279,7 +287,7 @@ def rasterize(
 
     Args:
         xda (xr.DataArray): Path to the raster or a rasterio dataset or a xarray.DataArray, used as base for the vector's rasterization data (shape, etc.)
-        vector (Union[gpd.GeoDataFrame, AnyPathStrType]): Vector to be rasterized
+        vector (AnyVectorType): Vector to be rasterized
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
         default_value (int): Used as value for all geometries, if `value_field` not provided
@@ -300,7 +308,8 @@ def rasterize(
     # Manage vector values
     if value_field:
         geom_value = (
-            (geom, value) for geom, value in zip(vector.geometry, vector[value_field])
+            (geom, value)
+            for geom, value in zip(vector.geometry, vector[value_field], strict=True)
         )
         dtype = kwargs.pop("dtype", vector[value_field].dtype)
     else:
@@ -399,12 +408,12 @@ def _works_on_xds(function):
 @_works_on_xds
 def _vectorize(
     xds: AnyRasterType,
-    values: Union[None, int, list] = None,
+    values: None | int | list = None,
     keep_values: bool = True,
     dissolve: bool = False,
     get_nodata: bool = False,
     default_nodata: int = 0,
-) -> Union[gpd.GeoDataFrame, dict]:
+) -> gpd.GeoDataFrame:
     """
     Vectorize a xarray, both to get classes or nodata.
 
@@ -424,7 +433,7 @@ def _vectorize(
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        values (None | int | list): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
@@ -508,7 +517,7 @@ def _vectorize(
 @any_raster_to_xr_ds
 def vectorize(
     xds: AnyRasterType,
-    values: Union[None, int, list] = None,
+    values: None | int | list = None,
     keep_values: bool = True,
     dissolve: bool = False,
     default_nodata: int = 0,
@@ -530,7 +539,7 @@ def vectorize(
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (Union[None, int, list]): Get only the polygons concerning this/these particular values
+        values (None | int | list): Get only the polygons concerning this/these particular values
         keep_values (bool): Keep the passed values. If False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
         default_nodata (int): Default values for nodata in case of non existing in file
@@ -638,7 +647,7 @@ def get_nodata_vector(
 
 
 def _to_odc_geometry(
-    xds: AnyXrDataStructure, shapes: Union[gpd.GeoDataFrame, Polygon, list]
+    xds: AnyXrDataStructure, shapes: gpd.GeoDataFrame | BaseGeometry | list
 ):
     """"""
     from odc.geo import geom
@@ -665,8 +674,8 @@ def _to_odc_geometry(
 @any_raster_to_xr_ds
 def mask(
     xds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
-    nodata: Optional[int] = None,
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
+    nodata: int | None = None,
     **kwargs,
 ) -> AnyXrDataStructure:
     """
@@ -682,7 +691,7 @@ def mask(
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
         **kwargs: Other rasterio.mask options
@@ -740,7 +749,7 @@ def mask(
 @any_raster_to_xr_ds
 def paint(
     xds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
     value: int,
     invert: bool = False,
     **kwargs,
@@ -758,7 +767,7 @@ def paint(
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
@@ -808,8 +817,8 @@ def paint(
 @any_raster_to_xr_ds
 def crop(
     xds: AnyRasterType,
-    shapes: Union[gpd.GeoDataFrame, Polygon, list],
-    nodata: Optional[int] = None,
+    shapes: gpd.GeoDataFrame | BaseGeometry | list,
+    nodata: int | None = None,
     **kwargs,
 ) -> (np.ma.masked_array, dict):
     """
@@ -820,7 +829,7 @@ def crop(
 
     Args:
         xds (:any:`AnyRasterType`): Path to the raster or a rasterio dataset or a xarray
-        shapes (Union[gpd.GeoDataFrame, Polygon, list]): Shapes with the same CRS as the dataset
+        shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
         **kwargs: Other :code:`rioxarray.clip` options
@@ -1000,12 +1009,12 @@ def _3d_to_2d(function):
 @__read__any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
-    resolution: Union[tuple, list, float] = None,
-    size: Union[tuple, list] = None,
+    resolution: tuple | list | float = None,
+    size: tuple | list = None,
     window: Any = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
-    indexes: Union[int, list] = None,
+    indexes: int | list = None,
     as_type: Any = None,
     **kwargs,
 ) -> AnyXrDataStructure:
@@ -1030,14 +1039,14 @@ def read(
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        resolution (Union[tuple, list, float]): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (Union[tuple, list]): Size of the array (width, height). Overrides resolution.
+        resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (tuple | list): Size of the array (width, height). Overrides resolution.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
             In case of an iterable, assumption is made it corresponds to geographic bounds.
             For pixel, please provide a rasterio.Window directly.
         resampling (Resampling): Resampling method
         masked (bool): Get a masked array
-        indexes (Union[int, list]): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
+        indexes (int | list): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
         as_type (Any): Type in which to load the array
         **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
 
@@ -1108,7 +1117,11 @@ def read(
                     f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
                 )
 
-            xda = xda.isel(band=[idx - 1 for ok, idx in zip(ok_indexes, indexes) if ok])
+            xda = xda.isel(
+                band=[
+                    idx - 1 for ok, idx in zip(ok_indexes, indexes, strict=True) if ok
+                ]
+            )
 
             with contextlib.suppress(AttributeError):
                 # Set new long name: Bands nb are idx + 1
@@ -1630,7 +1643,7 @@ def sieve(
 
 def get_dim_img_path(
     dim_path: AnyPathStrType, img_name: str = "*", get_list: bool = False
-) -> Union[list, AnyPathType]:
+) -> list | AnyPathType:
     """
     Get the image path (:code:`.img`) from a :code:`BEAM-DIMAP` data.
 
@@ -1817,8 +1830,8 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
 
 
 def read_bit_array(
-    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
-) -> Union[np.ndarray, list]:
+    bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
+) -> np.ndarray | list:
     """
     Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number :code:`bit_id`)
 
@@ -1828,7 +1841,7 @@ def read_bit_array(
           Example: read the bit 0 of the mask as a cloud mask (Theia)
 
     Returns:
-        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+        np.ndarray | list: Binary mask or list of binary masks if a list of bit_id is given
 
     Example:
         >>> bit_array = np.random.randint(5, size=[3,3])
@@ -1860,8 +1873,8 @@ def read_bit_array(
 
 
 def read_uint8_array(
-    bit_mask: Union[xr.DataArray, np.ndarray], bit_id: Union[list, int]
-) -> Union[np.ndarray, list]:
+    bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
+) -> np.ndarray | list:
     """
     Read 8 bit arrays as a succession of binary masks.
 
@@ -1875,7 +1888,7 @@ def read_uint8_array(
           Example: read the bit 0 of the mask as a cloud mask (Theia)
 
     Returns:
-        Union[np.ndarray, list]: Binary mask or list of binary masks if a list of bit_id is given
+        np.ndarray | list: Binary mask or list of binary masks if a list of bit_id is given
     """
     if isinstance(bit_mask, np.ndarray):
         bit_mask = np.nan_to_num(bit_mask)
@@ -1966,7 +1979,7 @@ def set_metadata(
     return naked_xda
 
 
-def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray:
+def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
     Set nodata to a xarray that have no default nodata value.
 
@@ -1975,7 +1988,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: Union[float, int]) -> xr.DataArray
 
     Args:
         xda (xr.DataArray): DataArray
-        nodata_val (Union[float, int]): Nodata value
+        nodata_val (float): Nodata value
 
     Returns:
         xr.DataArray: DataArray with nodata set
@@ -2376,7 +2389,7 @@ def reproject(
     rpcs: rpc.RPC = None,
     dem_path: str = None,
     extent: gpd.GeoDataFrame = None,
-    vcrs: Union[str, int] = None,
+    vcrs: str | int = None,
     caching_folder: AnyPathStrType = None,
     **kwargs,
 ) -> xr.DataArray:
@@ -2418,7 +2431,7 @@ def reproject(
         rpcs (rpc.RPC): RPC to orthorectify some raster
         dem_path (AnyPathStrType): Path to the DEM, only used if rpcs is given.
         extent (gpd.GeoDataFrame): GeoDataFrame containing extent of the raster to extract the DEM, only used if rpcs is given.
-        vcrs (Union[str, int]): Vertical CRS of the DEM, only used if rpcs is given. Can be automatically deducted in some cases (COPDEM, etc.). Better to set it tu be sure.
+        vcrs (str | int): Vertical CRS of the DEM, only used if rpcs is given. Can be automatically deducted in some cases (COPDEM, etc.). Better to set it tu be sure.
         caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted in the end of the process. Only used if rpcs is given.
         **kwargs: Other arguments to pass to reproject or write
 
@@ -2648,7 +2661,10 @@ def __reproject_odc_geo(
     rio_dims = src_xda.odc.spatial_dims
     if odc_dims != rio_dims:
         reprojected_xda = reprojected_xda.rename(
-            {odc_dim: rio_dim for odc_dim, rio_dim in zip(odc_dims, rio_dims)}
+            {
+                odc_dim: rio_dim
+                for odc_dim, rio_dim in zip(odc_dims, rio_dims, strict=True)
+            }
         )
 
     return reprojected_xda
@@ -2701,7 +2717,7 @@ def _reproject_rpcs(
     name: str = None,
     extent: gpd.GeoDataFrame = None,
     caching_folder: AnyPathStrType = None,
-    vcrs: Union[str, int] = None,
+    vcrs: str | int = None,
     **kwargs,
 ) -> xr.DataArray:
     """
@@ -2727,7 +2743,7 @@ def _reproject_rpcs(
         name (str): Name of the reprojected DataArray
         extent (gpd.GeoDataFrame): Extent used to cache the DEM if needed. If not needed, caching the whole DEM.
         caching_folder (AnyPathStrType): Folder where to cache the DEM if needed. If not provided, a temporary folder will be used.
-        vcrs (Union[str, int]): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
+        vcrs (str | int): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
         **kwargs: Other arguments, mainly for reprojection itself and writing ('dtype', 'tags', 'predictor', 'driver')
 
     Returns:
@@ -2821,7 +2837,7 @@ def __preprocess_dem(
     dem_path: AnyPathType,
     src_extent: gpd.GeoDataFrame,
     caching_folder: AnyPathType,
-    vcrs=Union[str, int],
+    vcrs=str | int,
     **kwargs,
 ) -> AnyPathType:
     """
@@ -2838,7 +2854,7 @@ def __preprocess_dem(
         dem_path (AnyPathType): DEM path
         src_extent (gpd.GeoDataFrame): Source extent
         caching_folder (AnyPathType): Folder where to cache the DEM
-        vcrs (Union[str, int]): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
+        vcrs (str | int): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
 
     Returns:
         AnyPathType: Path to the cached DEM

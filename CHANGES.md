@@ -2,6 +2,7 @@
 
 ## 1.49.0 (2025-x-x)
 
+- **BREAKING CHANGE: Drop Python 3.9 support** ([#35](https://github.com/sertit/sertit-utils/issues/35))
 - **ENH: Force `run_in_conda_env` function to launch the input executable in the same environment with `conda_env_name="self"`**
 - **ENH: Factorize more of `run_in_conda_env` functions: `arcpy.create_conda_env_cli` and `arcpy.run_in_conda_env_cli`**
 - **ENH: Add extend_env and shell arguments to run_in_conda_env function**

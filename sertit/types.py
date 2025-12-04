@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
@@ -9,27 +9,28 @@ from cloudpathlib import CloudPath
 from rasterio.io import DatasetReader, DatasetWriter
 from shapely import MultiPolygon, Polygon
 
-AnyPathType = Union[CloudPath, Path]
+AnyPathType = CloudPath | Path
 """Any Path Type (derived from Pathlib and CloudpathLib)"""
 
-AnyPathStrType = Union[str, CloudPath, Path]
+AnyPathStrType = str | CloudPath | Path
 """Same as :code:`AnyPathType` but appened with :code:`str`"""
 
-AnyXrDataStructure = Union[xr.DataArray, xr.Dataset]
+AnyXrDataStructure = xr.DataArray | xr.Dataset
 """Xarray's DataArray or Dataset"""
 
-AnyNumpyArray = Union[np.ndarray, np.ma.masked_array]
+AnyNumpyArray = np.ndarray | np.ma.masked_array
 """Numpy array or masked array"""
 
-AnyPolygonType = Union[Polygon, MultiPolygon]
+AnyPolygonType = Polygon | MultiPolygon
 """Shapely Polygon or MultiPolygon"""
 
-AnyRioDatasetType = Union[DatasetReader, DatasetWriter]
-""" Any Rasterio Dataset Type (both Reader, Writer) """
+AnyRioDatasetType = DatasetReader | DatasetWriter
+""" Any Rasterio Dataset Type (both Reader | Writer) """
 
-AnyRasterType = Union[
-    AnyPathStrType, tuple[AnyNumpyArray, dict], AnyXrDataStructure, AnyRioDatasetType
-]
+AnyRasterType = (
+    AnyPathStrType | tuple[AnyNumpyArray, dict] | AnyXrDataStructure | AnyRioDatasetType
+)
+
 """
 Any object potentially describing a raster:
 
@@ -39,7 +40,7 @@ Any object potentially describing a raster:
 - or its array + metadata (``np.ndarray`` + dict)
 """
 
-AnyVectorType = Union[AnyPathStrType, gpd.GeoDataFrame]
+AnyVectorType = AnyPathStrType | gpd.GeoDataFrame
 """
 Any object potentially describing a vector:
 

@@ -19,7 +19,6 @@ import logging
 import logging.config
 import os
 from datetime import datetime
-from typing import Union
 
 LOGGING_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
 SU_NAME = "sertit"
@@ -81,7 +80,7 @@ def create_logger(
     stream_log_level: int = logging.INFO,
     output_folder: str = None,
     name: str = None,
-    other_loggers_names: Union[str, list] = None,
+    other_loggers_names: list | str = None,
     other_loggers_file_log_level: int = None,
     other_loggers_stream_log_level: int = None,
 ) -> None:
@@ -99,7 +98,7 @@ def create_logger(
         stream_log_level (int): Stream log level
         output_folder (str): Output folder. Won't create File logger if not specified
         name (str): Name of the log file, prefixed with the date and suffixed with _log. Can be None.
-        other_loggers_names (Union[str, list]): Other existing logger to manage (setting the right format and log level)
+        other_loggers_names (list | str): Other existing logger to manage (setting the right format and log level)
         other_loggers_file_log_level (int): File log level for other loggers
         other_loggers_stream_log_level (int): Stream log level for other loggers
 
