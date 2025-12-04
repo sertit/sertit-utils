@@ -9,7 +9,7 @@ variables:
 
 include:
   - project: 'sertit/groupware'
-    file: '/ci_templates/lint_3_11.yaml'
+    file: '/ci_templates/lint_3_10.yaml'
   - project: 'sertit/groupware'
     file: '/ci_templates/pytest.yaml'
 
