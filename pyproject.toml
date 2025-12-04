@@ -50,10 +50,9 @@ version = {attr = "sertit.__version__"}
 [project.optional-dependencies]
 colorlog = ["colorlog"]
 rasters_rio = ["rasterio>=1.3.10"]
-rasters = ["rasterio>=1.3.10", "rioxarray>=0.10.0", "xdem"]
+rasters = ["sertit[rasters_rio]", "rioxarray>=0.10.0", "xdem"]
 dask =  [
-    "rasterio[s3]>=1.3.10",
-    "rioxarray>=0.10.0",
+    "sertit[rasters]",
     # dask related libraries (to not use dask[complete])
     "dask>=2024.5.1",
     "distributed",
@@ -62,9 +61,8 @@ dask =  [
     # rasters libraries leveraging dask
     "odc-geo>=0.4.6",
     "xarray-spatial>=0.3.6",
-    "xdem",
 ]
-full = ["sertit[colorlog,rasters_rio,rasters,dask]"]
+full = ["sertit[colorlog,dask]"]
 
 [project.urls]
 Bug_Tracker = "https://github.com/sertit/sertit-utils/issues"
