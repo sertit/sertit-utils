@@ -1,5 +1,9 @@
 # Release History
 
+## 1.49.1 (202x-mm-dd)
+
+- FIX: Fix tuple type for `AnyRasterType` 
+
 ## 1.49.0 (2025-12-04)
 
 - **BREAKING CHANGE: Drop Python 3.9 support** ([#35](https://github.com/sertit/sertit-utils/issues/35))
