@@ -335,8 +335,13 @@ def test_window():
     if vectors.is_geopandas_1_0():
         # Default engine is pyogrio, so test here fiona
         ex = TypeError
-        with pytest.raises(ValueError):
-            vectors.read(vect_path, bbox=aoi.total_bounds, engine="fiona")
+
+        # Fiona may not be installed anymore
+        try:
+            with pytest.raises(ValueError):
+                vectors.read(vect_path, bbox=aoi.total_bounds, engine="fiona")
+        except ImportError:
+            pass
     else:
         # Default engine is fiona, so test here pyogrio
         ex = ValueError
@@ -369,12 +374,16 @@ def test_read_dbf():
     # GeoDataFrame DBF
     dbf_path = vectors_path() / "aoi.dbf"
 
-    fiona = vectors.read(dbf_path, engine="fiona")
     pyogrio = vectors.read(dbf_path, engine="pyogrio")
-
-    ci.assert_geom_equal(fiona, pyogrio)
-    _assert_attributes(fiona, dbf_path)
     _assert_attributes(pyogrio, dbf_path)
+
+    # Fiona may not be installed
+    try:
+        fiona = vectors.read(dbf_path, engine="fiona")
+        ci.assert_geom_equal(fiona, pyogrio)
+        _assert_attributes(fiona, dbf_path)
+    except ImportError:
+        pass
 
 
 def test_to_utm_crs():
