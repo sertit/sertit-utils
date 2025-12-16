@@ -2,7 +2,7 @@
 
 ## 1.49.1 (202x-mm-dd)
 
-- FIX: Fix tuple type for `AnyRasterType` 
+- DEPS: Revamp deps
 
 ## 1.49.0 (2025-12-04)
 
