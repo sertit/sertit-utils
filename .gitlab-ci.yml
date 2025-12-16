@@ -23,7 +23,7 @@ include:
         - .gitlab-ci.yml
 
 pytest:
-  image: $EO_CONTAINERS:geo_sertit_latest
+  image: $EO_CONTAINERS:geo_latest
   extends:
     - .pytest
     - .rules_pytest
@@ -40,7 +40,7 @@ pytest_s3:
   extends:
     - .pytest
     - .rules_pytest
-  image: $EO_CONTAINERS:geo_sertit_latest
+  image: $EO_CONTAINERS:geo_latest
   variables:
     COV: sertit
     EXTRA_DEPENDENCIES: full
@@ -48,3 +48,18 @@ pytest_s3:
     - sertit
     - linux
     - low_memory
+
+pytest_314:
+  extends:
+    - .pytest
+  image: $EO_CONTAINERS:geo_314_latest
+  variables:
+    COV: sertit
+    EXTRA_DEPENDENCIES: full
+  tags:
+    - sertit
+    - linux
+    - low_memory
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_NAME == "3.14"'
+      when: always
