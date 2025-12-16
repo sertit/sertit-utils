@@ -176,7 +176,8 @@ def read_archived_file(
         # Use this fct to manage tar.gz files (.suffix only returns .gz)
         ext = path.get_ext(archive_path)
 
-        if ext == "tar":
+        # use 'ext.endswith' to handle cases like SAFE.zip...
+        if ext.endswith("tar"):
             with tarfile.open(archive_path) as tar_ds:
                 # file_list is not very useful for TAR files...
                 if file_list is None:
@@ -185,14 +186,14 @@ def read_archived_file(
                 name = list(filter(regex.match, file_list))[0]
                 tarinfo = tar_ds.getmember(name)
                 file_str = tar_ds.extractfile(tarinfo).read()
-        elif ext == "zip":
+        elif ext.endswith("zip"):
             with zipfile.ZipFile(archive_path) as zip_ds:
                 if file_list is None:
                     file_list = [f.filename for f in zip_ds.filelist]
                 name = list(filter(regex.match, file_list))[0]
                 file_str = zip_ds.read(name)
 
-        elif ext == "tar.gz":
+        elif ext.endswith("tar.gz"):
             raise TypeError(
                 ".tar.gz files are too slow to read from inside the archive. Please extract them instead."
             )

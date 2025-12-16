@@ -110,13 +110,11 @@ def test_archived_err(tmp_path):
 
 
 @s3_env
-def test_archived_files(tmp_path):
+def test_archived_vectors(tmp_path):
     landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
     ok_folder = files_path().joinpath(landsat_name)
     zip_file = files_path().joinpath(f"{landsat_name}.zip")
     tar_file = files_path().joinpath(f"{landsat_name}.tar")
-    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
-    sz_file = files_path().joinpath(f"{landsat_name}.7z")
 
     # VECTORS
     vect_name = "map-overlay.kml"
@@ -129,6 +127,14 @@ def test_archived_files(tmp_path):
         assert not vect_ok.empty
         ci.assert_geom_equal(vect_ok, vect_zip)
         ci.assert_geom_equal(vect_ok, vect_tar)
+
+
+@s3_env
+def test_archived_xml(tmp_path):
+    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
+    ok_folder = files_path().joinpath(landsat_name)
+    zip_file = files_path().joinpath(f"{landsat_name}.zip")
+    tar_file = files_path().joinpath(f"{landsat_name}.tar")
 
     # XML
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
@@ -145,6 +151,17 @@ def test_archived_files(tmp_path):
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
 
+    # SAFE.zip
+    safe_zip_file = files.copy(zip_file, tmp_path / f"{landsat_name}.SAFE.zip")
+    ci.assert_val(
+        safe_zip_file.name, f"{landsat_name}.SAFE.zip", "archive name"
+    )  # Just to be sure
+    xml_safe_zip = files.read_archived_xml(safe_zip_file, xml_regex)
+    ci.assert_xml_equal(xml_ok, xml_safe_zip)
+
+
+@s3_env
+def test_archived_html(tmp_path):
     # FILE + HTML
     html_zip_file = files_path().joinpath("productPreview.zip")
     html_tar_file = files_path().joinpath("productPreview.tar")
@@ -185,6 +202,18 @@ def test_archived_files(tmp_path):
             file_list=path.get_archived_file_list(html_tar_file),
         ),
     )
+
+
+@s3_env
+def test_archived_file_errors(tmp_path):
+    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
+
+    zip_file = files_path().joinpath(f"{landsat_name}.zip")
+    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
+    sz_file = files_path().joinpath(f"{landsat_name}.7z")
+
+    xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_regex = f".*{xml_name}"
 
     # ERRORS
     with pytest.raises(TypeError):

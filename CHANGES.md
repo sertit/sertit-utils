@@ -2,6 +2,7 @@
 
 ## 1.49.1 (202x-mm-dd)
 
+- FIX: Regression fix for `read_archived_xml` to handle back multi-extension files (such as `.SAFE.zip`)
 - DEPS: Revamp deps
 
 ## 1.49.0 (2025-12-04)
