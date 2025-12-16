@@ -2,6 +2,7 @@
 
 ## 1.49.1 (202x-mm-dd)
 
+- ENH: Support for Python 3.14
 - FIX: Regression fix for `read_archived_xml` to handle back multi-extension files (such as `.SAFE.zip`)
 - CI: Add weekly tests against Python 3.14
 - DEPS: Revamp deps

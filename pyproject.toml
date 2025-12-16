@@ -26,6 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: GIS",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -108,6 +109,5 @@ exclude_also = [
     "def run_in_conda_env_cli",  # This doesn't run in CI
     "def _set_aws_file_path",  # This doesn't run in CI (only works on workstations)
     "except ModuleNotFoundError:",  # This doesn't run in CI
-    "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI
     "except (ModuleNotFoundError, ImportError):",  # This doesn't run in CI
 ]
