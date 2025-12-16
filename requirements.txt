@@ -19,7 +19,7 @@ geopandas>=0.14.4
 cloudpathlib[s3]>=0.15.0
 xarray>=2024.06.0
 shapely>=2.0.0
-odc-geo>=0.5.0
+odc-geo[tiff]>=0.5.0
 xarray-spatial>=0.3.6
 xdem
 

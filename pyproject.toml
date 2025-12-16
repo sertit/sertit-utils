@@ -56,7 +56,7 @@ dask =  [
     "dask[distributed]>=2024.5.1",
     "s3fs",
     # rasters libraries leveraging dask
-    "odc-geo>=0.5.0",
+    "odc-geo[tiff]>=0.5.0",
     "xarray-spatial>=0.3.6",
 ]
 full = ["sertit[colorlog,dask]"]
