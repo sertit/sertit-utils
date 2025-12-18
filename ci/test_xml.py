@@ -21,7 +21,7 @@ import tempfile
 
 import pandas as pd
 
-from ci.script_utils import files_path, xml_path
+from ci.script_utils import LANDSAT_NAME, xml_path
 from sertit import ci, xml
 
 ci.reduce_verbosity()
@@ -49,7 +49,7 @@ def _assert_str(str_1: str, str_2: str) -> None:
     assert str_1 == str_2, f"str_1: {str_1} != str_2: {str_2}"
 
 
-def test_xml():
+def test_xml(landsat_zip):
     """Test XML functions"""
 
     # Check from pandas
@@ -128,11 +128,12 @@ def test_xml():
     # Read archive
     # Based on `files.read_archived_xml`, so it is considered to work.
     # Just test the case with complete path to the archive
-    l8_archived = files_path() / "LM05_L1TP_200030_20121230_20200820_02_T2_CI.zip"
-    xml_archived = f"{l8_archived}!LM05_L1TP_200030_20121230_20200820_02_T2_CI/LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    xml_archived = (
+        f"{landsat_zip}!{LANDSAT_NAME}/LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
+    )
 
     ci.assert_xml_equal(
-        xml.read_archive(l8_archived, r".*_MTL\.xml"), xml.read_archive(xml_archived)
+        xml.read_archive(landsat_zip, r".*_MTL\.xml"), xml.read_archive(xml_archived)
     )
 
 

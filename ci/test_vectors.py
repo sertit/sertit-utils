@@ -25,7 +25,7 @@ import pytest
 from rasterio import CRS
 from shapely import wkt
 
-from ci.script_utils import KAPUT_KWARGS, files_path, s3_env, vectors_path
+from ci.script_utils import KAPUT_KWARGS, LANDSAT_NAME, s3_env, vectors_path
 from sertit import ci, files, path, vectors
 from sertit.logs import SU_NAME
 from sertit.vectors import EPSG_4326, DataSourceError
@@ -313,33 +313,31 @@ def test_utm_context_manager():
     assert vect["centroid_utm"].equals(c2)
 
 
-def test_read_archived():
+def test_read_archived(landsat_prod, landsat_zip, landsat_tar):
     """Test archived vectors"""
-    landsat = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
     map_overlay = "map-overlay.kml"
     map_overlay_regex = ".*{}".format(map_overlay.replace(".", r"\."))
-    map_overlay_extracted_path = files_path() / landsat / map_overlay
-    zip_landsat = files_path() / f"{landsat}.zip"
-    tar_landsat = files_path() / f"{landsat}.tar"
+    map_overlay_extracted_path = landsat_prod / map_overlay
 
     map_overlay_extracted = vectors.read(map_overlay_extracted_path)
 
     ci.assert_geom_equal(
-        map_overlay_extracted, vectors.read(f"{zip_landsat}!{landsat}/{map_overlay}")
+        map_overlay_extracted,
+        vectors.read(f"{landsat_zip}!{LANDSAT_NAME}/{map_overlay}"),
     )
     ci.assert_geom_equal(
         map_overlay_extracted,
-        vectors.read(zip_landsat, archive_regex=map_overlay_regex),
+        vectors.read(landsat_zip, archive_regex=map_overlay_regex),
     )
     ci.assert_geom_equal(
         map_overlay_extracted,
-        vectors.read(tar_landsat, archive_regex=map_overlay_regex),
+        vectors.read(landsat_tar, archive_regex=map_overlay_regex),
     )
 
-    file_list = path.get_archived_file_list(tar_landsat)
+    file_list = path.get_archived_file_list(landsat_tar)
     ci.assert_geom_equal(
         map_overlay_extracted,
-        vectors.read(tar_landsat, archive_regex=map_overlay_regex, file_list=file_list),
+        vectors.read(landsat_tar, archive_regex=map_overlay_regex, file_list=file_list),
     )
 
 

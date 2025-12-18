@@ -1,5 +1,10 @@
 # Release History
 
+## 1.50.1 (2025-12-18)
+
+- FIX: Regression fix for `get_archived_rio_path` to handle back multi-extension files (such as `.SAFE.zip`)
+- CI: Factorize in fixtures
+
 ## 1.50.0 (2025-12-18)
 
 - **ENH: Support for Python 3.14**
@@ -8,7 +13,7 @@
 - **ENH: Add functions to automatically convert GeoSeries into GeoDataFrame (`geometry.to_gdf` and `geometry.ensure_gdf`)**
 - FIX: Regression fix for `read_archived_xml` to handle back multi-extension files (such as `.SAFE.zip`)
 - FIX: Fix back support for multilayer KMZ
-- FIX: Export `ogr2ogr` to GeoPackage to  be more robust than with GeoJSONs
+- FIX: Export `ogr2ogr` to GeoPackage to be more robust than with GeoJSONs
 - CI: Add weekly tests against Python 3.14
 - CI: Don't run classic tests on schedule
 - DEPS: Revamp deps

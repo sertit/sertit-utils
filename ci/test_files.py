@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 from lxml import etree, html
 
-from ci.script_utils import Polarization, files_path, s3_env
+from ci.script_utils import LANDSAT_NAME, Polarization, files_path, s3_env
 from sertit import AnyPath, ci, files, path, vectors
 
 ci.reduce_verbosity()
@@ -94,11 +94,9 @@ def test_archive(tmp_path):
 
 
 @s3_env
-def test_archive_cloud(tmp_path):
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    folder = files_path().joinpath(landsat_name)
-    arch_path = files.archive(folder, tmp_path / landsat_name)
-    ci.assert_val(arch_path.name, landsat_name + ".zip", "archive name")
+def test_archive_cloud(tmp_path, landsat_prod):
+    arch_path = files.archive(landsat_prod, tmp_path / LANDSAT_NAME)
+    ci.assert_val(arch_path.name, LANDSAT_NAME + ".zip", "archive name")
 
 
 def test_archived_err(tmp_path):
@@ -110,19 +108,14 @@ def test_archived_err(tmp_path):
 
 
 @s3_env
-def test_archived_vectors(tmp_path):
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = files_path().joinpath(landsat_name)
-    zip_file = files_path().joinpath(f"{landsat_name}.zip")
-    tar_file = files_path().joinpath(f"{landsat_name}.tar")
-
+def test_archived_vectors(tmp_path, landsat_prod, landsat_zip, landsat_tar):
     # VECTORS
     vect_name = "map-overlay.kml"
-    vec_ok_path = ok_folder.joinpath(vect_name)
+    vec_ok_path = landsat_prod.joinpath(vect_name)
     if shutil.which("ogr2ogr"):  # Only works if ogr2ogr can be found.
         vect_regex = f".*{vect_name}"
-        vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
-        vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
+        vect_zip = vectors.read(landsat_zip, archive_regex=vect_regex)
+        vect_tar = vectors.read(landsat_tar, archive_regex=r".*overlay\.kml")
         vect_ok = vectors.read(vec_ok_path)
         assert not vect_ok.empty
         ci.assert_geom_equal(vect_ok, vect_zip)
@@ -130,32 +123,27 @@ def test_archived_vectors(tmp_path):
 
 
 @s3_env
-def test_archived_xml(tmp_path):
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = files_path().joinpath(landsat_name)
-    zip_file = files_path().joinpath(f"{landsat_name}.zip")
-    tar_file = files_path().joinpath(f"{landsat_name}.tar")
-
+def test_archived_xml(tmp_path, landsat_prod, landsat_zip, landsat_tar):
     # XML
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
-    xml_ok_path = ok_folder.joinpath(xml_name)
+    xml_ok_path = landsat_prod.joinpath(xml_name)
     if path.is_cloud_path(files_path()):
         xml_ok_path = str(xml_ok_path.download_to(tmp_path))
     else:
         xml_ok_path = str(xml_ok_path)
 
     xml_regex = f".*{xml_name}"
-    xml_zip = files.read_archived_xml(zip_file, xml_regex)
-    xml_tar = files.read_archived_xml(tar_file, r".*_MTL\.xml")
+    xml_zip = files.read_archived_xml(landsat_zip, xml_regex)
+    xml_tar = files.read_archived_xml(landsat_tar, r".*_MTL\.xml")
     xml_ok = etree.parse(xml_ok_path).getroot()
     ci.assert_xml_equal(xml_ok, xml_zip)
     ci.assert_xml_equal(xml_ok, xml_tar)
 
     # SAFE.zip
-    safe_zip_file = files.copy(zip_file, tmp_path / f"{landsat_name}.SAFE.zip")
-    ci.assert_val(
-        safe_zip_file.name, f"{landsat_name}.SAFE.zip", "archive name"
-    )  # Just to be sure
+    safe_zip_name = f"{LANDSAT_NAME}.SAFE.zip"
+    safe_zip_file = files.copy(landsat_zip, tmp_path / safe_zip_name)
+    ci.assert_val(safe_zip_file.name, safe_zip_name, "archive name")  # Just to be sure
+
     xml_safe_zip = files.read_archived_xml(safe_zip_file, xml_regex)
     ci.assert_xml_equal(xml_ok, xml_safe_zip)
 
@@ -205,23 +193,17 @@ def test_archived_html(tmp_path):
 
 
 @s3_env
-def test_archived_file_errors(tmp_path):
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-
-    zip_file = files_path().joinpath(f"{landsat_name}.zip")
-    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
-    sz_file = files_path().joinpath(f"{landsat_name}.7z")
-
+def test_archived_file_errors(tmp_path, landsat_zip, landsat_tar_gz, landsat_7z):
     xml_name = "LM05_L1TP_200030_20121230_20200820_02_T2_MTL.xml"
     xml_regex = f".*{xml_name}"
 
     # ERRORS
     with pytest.raises(TypeError):
-        files.read_archived_file(targz_file, xml_regex)
+        files.read_archived_file(landsat_tar_gz, xml_regex)
     with pytest.raises(TypeError):
-        files.read_archived_file(sz_file, xml_regex)
+        files.read_archived_file(landsat_7z, xml_regex)
     with pytest.raises(FileNotFoundError):
-        files.read_archived_file(zip_file, "cdzeferf")
+        files.read_archived_file(landsat_zip, "cdzeferf")
 
 
 def test_cp_rm(tmp_path):

@@ -288,7 +288,7 @@ def get_archived_rio_path(
     archive_path = AnyPath(archive_path)
     ext = get_ext(archive_path)
 
-    if ext in ["tar", "zip"]:
+    if ext.split(".")[-1] in ["tar", "zip"]:
         prefix = archive_path.suffix[-3:]
     elif ext == "tar.gz":
         raise TypeError(

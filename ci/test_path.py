@@ -21,8 +21,8 @@ import tempfile
 
 import pytest
 
-from ci.script_utils import files_path, get_s3_ci_path, s3_env
-from sertit import AnyPath, ci, misc, path, vectors
+from ci.script_utils import LANDSAT_NAME, get_s3_ci_path, s3_env
+from sertit import AnyPath, ci, files, misc, path, vectors
 
 ci.reduce_verbosity()
 
@@ -66,58 +66,86 @@ def test_paths():
 
 
 @s3_env
-def test_archived_paths():
-    landsat_name = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-    ok_folder = files_path().joinpath(landsat_name)
-    zip_file = files_path().joinpath(f"{landsat_name}.zip")
-    tar_file = files_path().joinpath(f"{landsat_name}.tar")
-    targz_file = files_path().joinpath(f"{landsat_name}.tar.gz")
-    sz_file = files_path().joinpath(f"{landsat_name}.7z")
-
+def test_archived_path(landsat_prod, landsat_zip, landsat_tar):
     # Archive file
     tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
-    tif_ok = f"{ok_folder.name}/{tif_name}"
+    tif_ok = f"{landsat_prod.name}/{tif_name}"
     tif_regex = f".*{tif_name}"
-    assert tif_ok == path.get_archived_path(zip_file, tif_regex)
-    assert tif_ok == path.get_archived_path(zip_file, tif_regex, as_list=True)[0]
-    assert tif_ok == path.get_archived_path(tar_file, ".*RADSAT")
+    assert tif_ok == path.get_archived_path(landsat_zip, tif_regex)
+    assert tif_ok == path.get_archived_path(landsat_zip, tif_regex, as_list=True)[0]
+    assert tif_ok == path.get_archived_path(landsat_tar, ".*RADSAT")
+
+
+@s3_env
+def test_archived_rio_path(landsat_prod, landsat_zip, landsat_tar):
+    # Archive file
+    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
+    tif_regex = f".*{tif_name}"
 
     # RASTERIO
-    with pytest.raises(TypeError):
-        path.get_archived_rio_path(targz_file, tif_regex)
-
-    tif_zip = path.get_archived_rio_path(zip_file, tif_regex)
-    tif_list = path.get_archived_rio_path(zip_file, tif_regex, as_list=True)
-    tif_tar = path.get_archived_rio_path(tar_file, ".*RADSAT")
-    tif_ok = ok_folder.joinpath(tif_name)
+    tif_zip = path.get_archived_rio_path(landsat_zip, tif_regex)
+    tif_list = path.get_archived_rio_path(landsat_zip, tif_regex, as_list=True)
+    tif_tar = path.get_archived_rio_path(landsat_tar, ".*RADSAT")
+    tif_ok = landsat_prod.joinpath(tif_name)
     ci.assert_raster_equal(tif_ok, tif_zip)
     ci.assert_raster_equal(tif_ok, tif_list[0])
     ci.assert_raster_equal(tif_ok, tif_tar)
 
-    file_list = path.get_archived_file_list(zip_file)
+    file_list = path.get_archived_file_list(landsat_zip)
     ci.assert_raster_equal(
-        tif_ok, path.get_archived_rio_path(zip_file, tif_regex, file_list=file_list)
+        tif_ok, path.get_archived_rio_path(landsat_zip, tif_regex, file_list=file_list)
     )
 
+
+@s3_env
+def test_archived_rio_path_safe(tmp_path, landsat_prod, landsat_zip):
+    # SAFE.zip
+    safe_zip_file = files.copy(landsat_zip, tmp_path / f"{LANDSAT_NAME}.SAFE.zip")
+    ci.assert_val(
+        safe_zip_file.name, f"{LANDSAT_NAME}.SAFE.zip", "archive name"
+    )  # Just to be sure
+
+    # Archive file
+    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
+    tif_ok = landsat_prod.joinpath(tif_name)
+    tif_regex = f".*{tif_name}"
+
+    rio_safe_zip = path.get_archived_rio_path(safe_zip_file, tif_regex)
+    ci.assert_raster_equal(tif_ok, rio_safe_zip)
+
+
+@s3_env
+def test_archived_vectors(landsat_prod, landsat_zip, landsat_tar):
     # VECTORS
     vect_name = "map-overlay.kml"
-    vec_ok_path = ok_folder.joinpath(vect_name)
+    vec_ok_path = landsat_prod.joinpath(vect_name)
     if shutil.which("ogr2ogr"):  # Only works if ogr2ogr can be found.
         vect_regex = f".*{vect_name}"
-        vect_zip = vectors.read(zip_file, archive_regex=vect_regex)
-        vect_tar = vectors.read(tar_file, archive_regex=r".*overlay\.kml")
+        vect_zip = vectors.read(landsat_zip, archive_regex=vect_regex)
+        vect_tar = vectors.read(landsat_tar, archive_regex=r".*overlay\.kml")
         vect_ok = vectors.read(vec_ok_path)
         assert not vect_ok.empty
         ci.assert_geom_equal(vect_ok, vect_zip)
         ci.assert_geom_equal(vect_ok, vect_tar)
 
+
+@s3_env
+def test_archived_files_errors(landsat_prod, landsat_zip, landsat_tar_gz, landsat_7z):
+    # Archive file
+    tif_name = "LM05_L1TP_200030_20121230_20200820_02_T2_QA_RADSAT.TIF"
+    tif_regex = f".*{tif_name}"
+
     # ERRORS
     with pytest.raises(TypeError):
-        path.get_archived_rio_path(targz_file, tif_regex)
+        path.get_archived_rio_path(landsat_tar_gz, tif_regex)
     with pytest.raises(TypeError):
-        path.get_archived_rio_path(sz_file, tif_regex)
+        path.get_archived_rio_path(landsat_7z, tif_regex)
     with pytest.raises(FileNotFoundError):
-        path.get_archived_rio_path(zip_file, "cdzeferf")
+        path.get_archived_rio_path(landsat_zip, "cdzeferf")
+
+    # Rasterio
+    with pytest.raises(TypeError):
+        path.get_archived_rio_path(landsat_tar_gz, tif_regex)
 
 
 def test_get_file_name():
