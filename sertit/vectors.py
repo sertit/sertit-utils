@@ -597,7 +597,24 @@ def _read_kml(
 
     if use_pyogrio:
         try:
-            vect = gpd.read_file(gpd_vect_path, driver=driver, engine=engine, **kwargs)
+            import pyogrio
+
+            for layer in pyogrio.list_layers(gpd_vect_path):
+                try:
+                    vect_layer = gpd.read_file(
+                        gpd_vect_path,
+                        driver=driver,
+                        layer=layer[0],
+                        engine=engine,
+                        **kwargs,
+                    )
+                    if not vect_layer.empty:
+                        vect = pd.concat([vect, vect_layer])
+                except ValueError:
+                    pass  # Except Null Layer
+
+            # Reset index
+            vect.reset_index(inplace=True, drop=True)
         except DataSourceError:  # pragma: no cover
             LOGGER.error(
                 f"Error in reading {path.get_filename(gpd_vect_path)}. geopandas: {version('geopandas')},  pyogrio: {version('pyogrio')}, engine: {engine}"

@@ -177,6 +177,33 @@ def test_kmz():
 
 
 @s3_env
+def test_multilayer_kmz():
+    """Test KMZ files with multiple layers (Image Footprint an No Data)"""
+    kmz_path = vectors_path().joinpath(
+        "EMSR705_AOI08_DEL_PRODUCT_imageFootprintA_v1.kmz"
+    )
+    json_path = vectors_path().joinpath(
+        "EMSR705_AOI08_DEL_PRODUCT_imageFootprintA_v1.json"
+    )
+
+    # Read vectors
+    kmz = vectors.read(kmz_path)
+    json = vectors.read(json_path)
+
+    # Check attributes
+    _assert_attributes(kmz, kmz_path)
+    _assert_attributes(json, json_path)
+
+    # Check if equivalent
+    assert all(
+        json.normalize().geometry.geom_equals_exact(
+            kmz.explode().to_crs(json.crs).force_2d().normalize().geometry,
+            tolerance=0.5 * 10**-6,
+        )
+    )
+
+
+@s3_env
 def test_gml():
     """Test GML functions"""
     empty_gml = vectors_path().joinpath("empty.GML")

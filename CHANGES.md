@@ -4,6 +4,8 @@
 
 - ENH: Support for Python 3.14
 - FIX: Regression fix for `read_archived_xml` to handle back multi-extension files (such as `.SAFE.zip`)
+- FIX: Fix back support for multilayer KMZ
+- FIX: Export `ogr2ogr` to GeoPackage to  be more robust than with GeoJSONs
 - CI: Add weekly tests against Python 3.14
 - DEPS: Revamp deps
 
