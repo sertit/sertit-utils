@@ -1,6 +1,6 @@
 # Release History
 
-## 1.50.0 (202x-mm-dd)
+## 1.50.0 (2025-12-18)
 
 - **ENH: Support for Python 3.14**
 - **ENH: Allow passing a vector object into `vectors.read`. Converts GeoSeries into GeoDataFrame. `vector_path` is deprecated and is replaced by `vector`**
