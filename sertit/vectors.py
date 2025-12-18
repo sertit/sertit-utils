@@ -544,7 +544,7 @@ def _read_vector_core(
         if shutil.which("ogr2ogr"):  # pragma: no cover
             # Open as geojson
             tmp_dir = tempfile.TemporaryDirectory()
-            vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
+            vect_path_gj = ogr2gpkg(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
             vect.crs = None
         else:  # pragma: no cover
@@ -635,7 +635,7 @@ def _read_kml(
             if not tmp_dir:
                 tmp_dir = tempfile.TemporaryDirectory()
 
-            vect_path_gj = ogr2geojson(raw_path, tmp_dir.name, arch_path)
+            vect_path_gj = ogr2gpkg(raw_path, tmp_dir.name, arch_path)
             vect = gpd.read_file(vect_path_gj, **kwargs)
         else:  # pragma: no cover
             # Try reading it in a basic manner
@@ -652,13 +652,13 @@ def _read_kml(
     return vect
 
 
-def ogr2geojson(
+def ogr2gpkg(
     vector_path: AnyPathStrType,
     out_dir: AnyPathStrType,
     arch_vect_path: str = None,
 ) -> str:
     """
-    Wrapper of ogr2ogr function, converting the input vector to GeoJSON.
+    Wrapper of ogr2ogr function, converting the input vector to GPKG.
 
     Args:
         vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
@@ -695,15 +695,16 @@ def ogr2geojson(
             vector_path = AnyPath(vector_path).fspath
         vect_path = vector_path
 
-    vect_path_gj = os.path.join(
+    vect_path_gpkg = os.path.join(
         out_dir,
-        os.path.basename(vect_path).replace(path.get_ext(vect_path), "geojson"),
+        os.path.basename(vect_path).replace(path.get_ext(vect_path), "gpkg"),
     )
     cmd_line = [
         "ogr2ogr",
+        "-skipfailures",
         "-fieldTypeToString DateTime",  # Disable warning
-        "-f GeoJSON",
-        strings.to_cmd_string(vect_path_gj),  # dst
+        "-f GPKG",
+        strings.to_cmd_string(vect_path_gpkg),  # dst
         strings.to_cmd_string(vect_path),  # src
     ]
     try:
@@ -711,7 +712,7 @@ def ogr2geojson(
     except RuntimeError as ex:  # pragma: no cover
         raise RuntimeError(f"Something went wrong with ogr2ogr: {ex}") from ex
 
-    return vect_path_gj
+    return vect_path_gpkg
 
 
 @contextmanager
