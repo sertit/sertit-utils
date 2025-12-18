@@ -19,7 +19,6 @@ import sys
 from enum import unique
 from functools import wraps
 
-import pytest
 import tempenv
 
 from sertit import AnyPath, ci, dask, unistra
@@ -53,31 +52,6 @@ KAPUT_KWARGS = {"fdezf": 0}
 TEST_LAZY = True
 
 LANDSAT_NAME = "LM05_L1TP_200030_20121230_20200820_02_T2_CI"
-
-
-@pytest.fixture
-def landsat_prod():
-    return files_path() / LANDSAT_NAME
-
-
-@pytest.fixture
-def landsat_zip():
-    return files_path() / f"{LANDSAT_NAME}.zip"
-
-
-@pytest.fixture
-def landsat_tar():
-    return files_path() / f"{LANDSAT_NAME}.tar"
-
-
-@pytest.fixture
-def landsat_tar_gz():
-    return files_path() / f"{LANDSAT_NAME}.tar.gz"
-
-
-@pytest.fixture
-def landsat_7z():
-    return files_path() / f"{LANDSAT_NAME}.7z"
 
 
 @unique

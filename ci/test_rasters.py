@@ -87,38 +87,6 @@ def test_indexes(caplog):
     test_core()
 
 
-@pytest.fixture
-def raster_path():
-    return rasters_path().joinpath("raster.tif")
-
-
-@pytest.fixture
-def dem_path():
-    return rasters_path().joinpath("dem.tif")
-
-
-@pytest.fixture
-def mask_path():
-    return rasters_path().joinpath("raster_mask.geojson")
-
-
-@pytest.fixture
-def mask(mask_path):
-    return vectors.read(mask_path)
-
-
-@pytest.fixture
-def ds_name(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
-        return path.get_filename(ds.name)
-
-
-@pytest.fixture
-def ds_dtype(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
-        return getattr(np, ds.meta["dtype"])
-
-
 def get_xda(raster_path, **kwargs):
     return rasters.read(raster_path, **kwargs)
 

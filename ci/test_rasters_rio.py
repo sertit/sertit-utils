@@ -31,32 +31,6 @@ from sertit.vectors import EPSG_4326
 ci.reduce_verbosity()
 
 
-@pytest.fixture
-def raster_path():
-    return rasters_path().joinpath("raster.tif")
-
-
-@pytest.fixture
-def raster_meta(raster_path):
-    return rasters_rio.read(raster_path, **KAPUT_KWARGS)
-
-
-@pytest.fixture
-def mask_path():
-    return rasters_path().joinpath("raster_mask.geojson")
-
-
-@pytest.fixture
-def mask(mask_path):
-    return vectors.read(mask_path)
-
-
-@pytest.fixture
-def ds_dtype(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
-        return ds.meta["dtype"]
-
-
 @s3_env
 def test_read(tmp_path, raster_path, mask_path, raster_meta):
     """Test read functions"""

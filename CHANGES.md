@@ -3,7 +3,7 @@
 ## 1.50.1 (2025-12-18)
 
 - FIX: Regression fix for `get_archived_rio_path` to handle back multi-extension files (such as `.SAFE.zip`)
-- CI: Factorize in fixtures
+- CI: Factorize fixtures in `conftest.py`
 
 ## 1.50.0 (2025-12-18)
 
