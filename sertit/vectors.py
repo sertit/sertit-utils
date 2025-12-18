@@ -422,6 +422,7 @@ def read(
             logs.deprecation_warning(
                 "'vector_path' is deprecated in 'vectors.read'. Please give 'vector' instead."
             )
+            vector = kwargs.pop("vector_path")
         else:
             raise ValueError("No vector is given.")
 
