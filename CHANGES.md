@@ -7,6 +7,7 @@
 - FIX: Fix back support for multilayer KMZ
 - FIX: Export `ogr2ogr` to GeoPackage to  be more robust than with GeoJSONs
 - CI: Add weekly tests against Python 3.14
+- CI: Don't run classic tests on schedule
 - DEPS: Revamp deps
 
 ## 1.49.0 (2025-12-04)
