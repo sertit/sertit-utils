@@ -26,9 +26,9 @@ from typing import Any
 
 import geopandas as gpd
 import numpy as np
+from geopandas.testing import assert_geoseries_equal
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
-from shapely import force_2d, normalize
 from shapely.testing import assert_geometries_equal
 
 from sertit import AnyPath, dask, files, rasters, s3
@@ -429,10 +429,52 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
             )
 
 
+def _prepare_geoms(
+    geom_1: AnyVectorType,
+    geom_2: AnyVectorType,
+    ignore_z: bool = True,
+    ignore_order: bool = True,
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """
+    Prepare geometries before testing
+
+    Args:
+        geom_1 (AnyVectorType): Geometry 1
+        geom_2 (AnyVectorType): Geometry 2
+        ignore_z (bool): Ignore Z coordinate
+        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
+
+    Returns:
+        Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Prepared geometries
+    """
+    try:
+        from sertit import vectors
+    except ModuleNotFoundError as ex:  # pragma: no cover
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
+        ) from ex
+
+    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        geom_1 = vectors.read(geom_1)
+    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        geom_2 = vectors.read(geom_2)
+
+    if ignore_order:
+        geom_1 = geom_1.sort_values(by=["geometry"]).reset_index(drop=True)
+        geom_2 = geom_2.sort_values(by=["geometry"]).reset_index(drop=True)
+
+    if ignore_z:
+        geom_1.geometry = geom_1.geometry.force_2d()
+        geom_2.geometry = geom_2.geometry.force_2d()
+
+    return geom_1, geom_2
+
+
 def assert_geom_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
-    ignore_z=True,
+    ignore_z: bool = True,
+    ignore_order: bool = True,
 ) -> None:
     """
     Assert that two geometries are equal
@@ -444,6 +486,7 @@ def assert_geom_equal(
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
         ignore_z (bool): Ignore Z coordinate
+        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
 
     Warning:
         Only checks:
@@ -456,52 +499,10 @@ def assert_geom_equal(
         >>> assert_geom_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        from sertit import vectors
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
-        ) from ex
-
-    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = vectors.read(geom_1)
-    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = vectors.read(geom_2)
-
-    assert len(geom_1) == len(geom_2), (
-        f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
+    geom_1, geom_2 = _prepare_geoms(
+        geom_1, geom_2, ignore_z=ignore_z, ignore_order=ignore_order
     )
-    assert geom_1.crs == geom_2.crs, (
-        f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
-    )
-
-    for idx in range(len(geom_1)):
-        curr_geom_1 = normalize(geom_1.geometry.iat[idx])
-        curr_geom_2 = normalize(geom_2.geometry.iat[idx])
-
-        if ignore_z:
-            curr_geom_1 = force_2d(curr_geom_1)
-            curr_geom_2 = force_2d(curr_geom_2)
-
-        # If valid geometries, assert that the both are equal
-        if curr_geom_1.is_valid and curr_geom_2.is_valid:
-            try:
-                assert curr_geom_1.equals(curr_geom_2), (
-                    f"Non equal geometries!\n{curr_geom_1} != {curr_geom_2}"
-                )
-            except AssertionError:
-                # Get tolerance
-                tol = 1e-7 if geom_1.crs.is_geographic else 1e-3
-
-                # This functions tests differently than equals
-                assert_geometries_equal(
-                    curr_geom_1,
-                    curr_geom_2,
-                    tolerance=tol,
-                    equal_none=False,
-                    equal_nan=False,
-                    normalize=True,
-                )
+    assert_geoseries_equal(geom_1.geometry, geom_2.geometry, normalize=True)
 
 
 def assert_geom_almost_equal(
@@ -509,6 +510,7 @@ def assert_geom_almost_equal(
     geom_2: AnyVectorType,
     decimal=9,
     ignore_z=True,
+    ignore_order: bool = True,
 ) -> None:
     """
     Assert that two geometries are equal
@@ -521,6 +523,7 @@ def assert_geom_almost_equal(
         geom_2 (AnyVectorType): Geometry 2
         decimal (int): Number of decimal
         ignore_z (bool): Ignore Z coordinate
+        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
 
     Warning:
         Only checks:
@@ -533,32 +536,24 @@ def assert_geom_almost_equal(
         >>> assert_geom_almost_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        from sertit import vectors
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
-        ) from ex
+    geom_1, geom_2 = _prepare_geoms(
+        geom_1, geom_2, ignore_z=ignore_z, ignore_order=ignore_order
+    )
 
-    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = vectors.read(geom_1)
-    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = vectors.read(geom_2)
-
+    # Check length
     assert len(geom_1) == len(geom_2), (
         f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
     )
+
+    # Check CRS
     assert geom_1.crs == geom_2.crs, (
         f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
     )
 
+    # Loop on geometries
     for idx in range(len(geom_1)):
-        curr_geom_1 = normalize(geom_1.geometry.iat[idx])
-        curr_geom_2 = normalize(geom_2.geometry.iat[idx])
-
-        if ignore_z:
-            curr_geom_1 = force_2d(curr_geom_1)
-            curr_geom_2 = force_2d(curr_geom_2)
+        curr_geom_1 = geom_1.geometry.iat[idx]
+        curr_geom_2 = geom_2.geometry.iat[idx]
 
         # If valid geometries, assert that the both are equal
         if curr_geom_1.is_valid and curr_geom_2.is_valid:

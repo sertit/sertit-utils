@@ -3,6 +3,7 @@
 ## 1.49.1 (202x-mm-dd)
 
 - ENH: Support for Python 3.14
+- ENH: Add a `ignore_order` argument into `ci.assert_geom_equal` and `ci.assert_geom_almost_equal` to ignore the features' order during the check
 - FIX: Regression fix for `read_archived_xml` to handle back multi-extension files (such as `.SAFE.zip`)
 - FIX: Fix back support for multilayer KMZ
 - FIX: Export `ogr2ogr` to GeoPackage to  be more robust than with GeoJSONs
