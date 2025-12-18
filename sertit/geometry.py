@@ -20,6 +20,8 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
 import logging
+from collections.abc import Callable
+from functools import wraps
 
 import geopandas as gpd
 import numpy as np
@@ -34,6 +36,70 @@ from sertit.logs import SU_NAME
 from sertit.types import AnyPolygonType
 
 LOGGER = logging.getLogger(SU_NAME)
+
+
+def to_gdf(any_gpd_type: gpd.GeoDataFrame | gpd.GeoSeries) -> gpd.GeoDataFrame:
+    """
+    Converts a GeoPandas object to a GeoDataFrame.
+
+    This function accepts either a GeoDataFrame or GeoSeries and ensures that the output is always a properly formatted GeoDataFrame.
+    If the input is a GeoSeries, it is wrapped into a GeoDataFrame with the same geometry and coordinate reference system (CRS).
+
+    Args:
+        any_gpd_type (gpd.GeoDataFrame | gpd.GeoSeries): A GeoPandas object, either a GeoDataFrame or GeoSeries, to be converted into a GeoDataFrame.
+
+    Returns:
+        gpd.GeoDataFrame: A validated GeoDataFrame derived from the input GeoPandas object.
+    """
+    if isinstance(any_gpd_type, gpd.GeoSeries):
+        any_gpd_type = gpd.GeoDataFrame(
+            geometry=any_gpd_type.geometry, crs=any_gpd_type.crs
+        )
+
+    elif isinstance(any_gpd_type, gpd.GeoDataFrame):
+        any_gpd_type = any_gpd_type
+
+    return any_gpd_type
+
+
+def ensure_gdf(function: Callable) -> Callable:
+    """
+    Ensure a GeoDataFrame as input (converts the GeoSeries into a GeoDataFrame and reads the paths)
+
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: decorated function
+    """
+
+    @wraps(function)
+    def wrapper(
+        any_gpd_type: gpd.GeoDataFrame | gpd.GeoSeries, *args, **kwargs
+    ) -> gpd.GeoDataFrame:
+        """
+        Path or dataset wrapper
+        Args:
+            any_raster_type (AnyRasterType): Raster path or its dataset
+            *args: args
+            **kwargs: kwargs
+
+        Returns:
+            Any: regular output
+        """
+        if any_gpd_type is None:
+            raise ValueError("'any_gpd_type' shouldn't be None!")
+
+        # Run fct
+        out = function(
+            to_gdf(any_gpd_type),
+            *args,
+            **kwargs,
+        )
+
+        return out
+
+    return wrapper
 
 
 def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, float):
@@ -86,6 +152,7 @@ def from_bounds_to_polygon(
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
 
+@ensure_gdf
 def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Get the wider exterior of a MultiPolygon as a Polygon
@@ -125,6 +192,7 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return wider
 
 
+@ensure_gdf
 def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
     """
     Repair geometries from a dataframe.
@@ -152,31 +220,35 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         1         MULTIPOLYGON (((491314.496 5616444.620, 491295...
     """
     try:
-        geos_logger = logging.getLogger("shapely.geos")
-        previous_level = geos_logger.level
-        if verbose:
-            logging.debug(f"Invalid geometries:\n\t{gdf[~gdf.is_valid]}")
-        else:
-            geos_logger.setLevel(logging.CRITICAL)
+        gdf.geometry = gdf.geometry.make_valid()
+    except AttributeError:  # pragma: no cover
+        try:
+            geos_logger = logging.getLogger("shapely.geos")
+            previous_level = geos_logger.level
+            if verbose:
+                logging.debug(f"Invalid geometries:\n\t{gdf[~gdf.is_valid]}")
+            else:
+                geos_logger.setLevel(logging.CRITICAL)
 
-        # Discard self-intersection and null geometries
-        from shapely.validation import make_valid
+            # Discard self-intersection and null geometries
+            from shapely.validation import make_valid
 
-        gdf.geometry = gdf.geometry.apply(make_valid)
+            gdf.geometry = gdf.geometry.apply(make_valid)
 
-        if not verbose:
-            geos_logger.setLevel(previous_level)
-    except ImportError:  # pragma: no cover
-        import shapely
+            if not verbose:
+                geos_logger.setLevel(previous_level)
+        except ImportError:  # pragma: no cover
+            import shapely
 
-        LOGGER.warning(
-            f"'make_valid' not available in 'shapely' (version {shapely.__version__} < 1.8). "
-            f"The obtained vector may be broken !"
-        )
+            LOGGER.warning(
+                f"'make_valid' not available in 'shapely' (version {shapely.__version__} < 1.8). "
+                f"The obtained vector may be broken !"
+            )
 
     return gdf
 
 
+@ensure_gdf
 def simplify_footprint(
     footprint: gpd.GeoDataFrame, resolution: float, max_nof_vertices: int = 50
 ) -> gpd.GeoDataFrame:
@@ -242,6 +314,7 @@ def simplify_footprint(
     return footprint
 
 
+@ensure_gdf
 def fill_polygon_holes(
     gpd_results: gpd.GeoDataFrame, threshold: float = None
 ) -> gpd.GeoDataFrame:
@@ -250,7 +323,7 @@ def fill_polygon_holes(
     If the threshold is set to None, every hole is filled.
 
     Args:
-        gpd_results (gpd.GeoDataFrame): Geodataframe filled whith drilled polygons
+        gpd_results (gpd.GeoDataFrame): Geodataframe filled with drilled polygons
         threshold (float): Holes area threshold, in meters. If set to None, every hole is filled.
 
     Returns:
@@ -346,6 +419,7 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     )
 
 
+@ensure_gdf
 def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     """
     Split polygons with polygons or lines.
@@ -450,6 +524,7 @@ def intersects(
     ]
 
 
+@ensure_gdf
 def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
     """
     Add a buffer on a vector.
@@ -614,19 +689,22 @@ def _get_radius_nearest(
     return closest, closest_dist
 
 
+@ensure_gdf
 def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_2d function even with geopandas < 1.0.0"""
     try:
-        return vect.force_2d()
+        vect.geometry = vect.geometry.force_2d()
     except AttributeError:  # pragma: no cover
         vect.geometry = vect.geometry.apply(shapely.force_2d)
-        return vect
+
+    return vect
 
 
+@ensure_gdf
 def force_3d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_3d function even with geopandas < 1.0.0"""
     try:
-        return vect.force_3d()
+        vect.geometry = vect.geometry.force_3d()
     except AttributeError:  # pragma: no cover
         vect.geometry = vect.geometry.apply(shapely.force_3d)
-        return vect
+    return vect
