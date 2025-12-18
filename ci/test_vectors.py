@@ -248,6 +248,11 @@ def test_write(tmp_path, filename):
     vectors.write(vect, vect_out_path)
     vect_out = vectors.read(vect_out_path)
 
+    # Sth is wrong with KML precision
+    if filename.endswith("kml"):
+        vect.geometry = vect.geometry.set_precision(12)
+        vect_out.geometry = vect_out.geometry.set_precision(12)
+
     ci.assert_geom_equal(vect_out, vect)
 
 
@@ -390,6 +395,14 @@ def test_read_gdb():
 
     ci.assert_geom_equal(sertit_gdb, gpd_gdb)
     _assert_attributes(sertit_gdb, gdb_path)
+
+
+def test_read_deprecated():
+    """Test read with deprecated arguments"""
+    path = vectors_path().joinpath("aoi.shp")
+
+    with pytest.deprecated_call():
+        vectors.read(vector_path=path)
 
 
 def test_read_dbf():

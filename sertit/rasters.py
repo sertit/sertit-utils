@@ -300,10 +300,7 @@ def rasterize(
         >>> vec_path = "path/to/vector.shp"
         >>> rasterize(raster_path, vec_path, value_field="classes")
     """
-    if not isinstance(vector, gpd.GeoDataFrame):
-        vector = vectors.read(vector, crs=xda.rio.crs)
-    else:
-        vector = vector.to_crs(crs=xda.rio.crs)
+    vector = vectors.read(vector, crs=xda.rio.crs)
 
     # Manage vector values
     if value_field:
@@ -656,12 +653,12 @@ def _to_odc_geometry(
     xds_crs = xds.rio.crs
 
     # Convert input geometry in a GeoDataFrame
-    if isinstance(shapes, gpd.GeoSeries):
-        shapes = gpd.GeoDataFrame(geometry=shapes.geometry, crs=shapes.crs)
-    elif isinstance(shapes, list):
+    if isinstance(shapes, list):
         shapes = gpd.GeoDataFrame(geometry=shapes, crs=xds_crs)
     elif isinstance(shapes, Polygon):
         shapes = gpd.GeoDataFrame(geometry=[shapes], crs=xds_crs)
+    else:
+        shapes = geometry.to_gdf(shapes)
 
     # Dissolve to get a unique polygon
     shapes = geom.Geometry(

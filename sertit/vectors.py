@@ -38,9 +38,9 @@ from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 from shapely.geometry.base import BaseGeometry
 
-from sertit import AnyPath, files, geometry, misc, path, strings
+from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.logs import SU_NAME
-from sertit.types import AnyPathStrType, AnyPathType
+from sertit.types import AnyPathStrType, AnyPathType, AnyVectorType
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -357,7 +357,7 @@ def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
 
 
 def read(
-    vector_path: AnyPathStrType,
+    vector: AnyVectorType | gpd.GeoSeries = None,
     crs: Any = None,
     archive_regex: str = None,
     window: Any = None,
@@ -379,8 +379,13 @@ def read(
     - :code:`path`: File path
     - :code:`name`: File name
 
+    If vector object is passed:
+
+    - in case of :code:`geopandas.GeoSeries`: A :code:`geopandas.GeoDataFrame` is created from it
+    - in case of :code:`geopandas.GeoDataFrame`: returned as is
+
     Args:
-        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
+        vector (AnyVectorType | gpd.GeoSeries): Path to vector to read or vector itself. In case of archive, path to the archive.
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
@@ -412,8 +417,23 @@ def read(
                                Name  ...                                           geometry
         0  Sentinel-1 Image Overlay  ...  POLYGON ((0.85336 42.24660, -2.32032 42.65493,...
     """
+    if vector is None:
+        if "vector_path" in kwargs:
+            logs.deprecation_warning(
+                "'vector_path' is deprecated in 'vectors.read'. Please give 'vector' instead."
+            )
+        else:
+            raise ValueError("No vector is given.")
+
+    # Take care of vector objects
+    if isinstance(vector, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        vect = geometry.to_gdf(vector)
+        if crs is not None:
+            vect = vect.to_crs(crs)
+        return vect
+
     # Default values
-    gpd_vect_path = str(vector_path)
+    gpd_vect_path = str(vector)
     arch_path = None
 
     # -- Manage window and convert it to a bbox
@@ -428,36 +448,34 @@ def read(
 
     # -- Manage the path formatting (create the path to be read by GeoPandas, the archive path if needed, ...)
     try:
-        vector_path = AnyPath(vector_path)
+        vector = AnyPath(vector)
 
         # Manage formatted archive file (fsspec style for example)
-        if "!" in str(vector_path):
-            split_vect = str(vector_path).split("!")
+        if "!" in str(vector):
+            split_vect = str(vector).split("!")
             archive_regex = ".*{}".format(split_vect[1].replace(".", r"\."))
-            vector_path = AnyPath(split_vect[0])
+            vector = AnyPath(split_vect[0])
 
         # Manage archive case
-        if vector_path.suffix in [".tar", ".zip"]:
-            prefix = vector_path.suffix[-3:]
-            file_list = kwargs.pop(
-                "file_list", path.get_archived_file_list(vector_path)
-            )
+        if vector.suffix in [".tar", ".zip"]:
+            prefix = vector.suffix[-3:]
+            file_list = kwargs.pop("file_list", path.get_archived_file_list(vector))
 
             try:
                 regex = re.compile(archive_regex)
                 arch_path = list(filter(regex.match, file_list))[0]
 
                 # Different template if on cloud or not... (only tested with S3)
-                if path.is_cloud_path(vector_path):
-                    gpd_vect_path = f"{prefix}+{vector_path}!{arch_path}"
+                if path.is_cloud_path(vector):
+                    gpd_vect_path = f"{prefix}+{vector}!{arch_path}"
                 else:
-                    gpd_vect_path = f"{prefix}://{vector_path}!{arch_path}"
+                    gpd_vect_path = f"{prefix}://{vector}!{arch_path}"
             except IndexError as exc:
                 raise FileNotFoundError(
-                    f"Impossible to find vector {archive_regex} in {path.get_filename(vector_path)}"
+                    f"Impossible to find vector {archive_regex} in {path.get_filename(vector)}"
                 ) from exc
         # Don't read tar.gz archives (way too slow)
-        elif vector_path.suffixes == [".tar", ".gz"]:  # pragma: no cover
+        elif vector.suffixes == [".tar", ".gz"]:  # pragma: no cover
             raise TypeError(
                 ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
             )
@@ -465,15 +483,15 @@ def read(
         pass
 
     # Check existence of the file (here and not before to handle fsspec cases with '!')
-    if not AnyPath(vector_path).exists():
-        raise FileNotFoundError(f"Non existing vector: {vector_path}")
+    if not AnyPath(vector).exists():
+        raise FileNotFoundError(f"Non existing vector: {vector}")
 
     # Read vector
-    vect = _read_vector_core(gpd_vect_path, vector_path, arch_path, crs, **kwargs)
+    vect = _read_vector_core(gpd_vect_path, vector, arch_path, crs, **kwargs)
 
     # Add some attributes
-    vect.attrs["path"] = str(vector_path)
-    vect.attrs["name"] = path.get_filename(vector_path)
+    vect.attrs["path"] = str(vector)
+    vect.attrs["name"] = path.get_filename(vector)
 
     # Generate spatial index for optimization
     with contextlib.suppress(AttributeError):

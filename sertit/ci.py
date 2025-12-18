@@ -454,10 +454,9 @@ def _prepare_geoms(
             "Please install 'rasterio' and 'geopandas' to use the 'vectors' package."
         ) from ex
 
-    if not isinstance(geom_1, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_1 = vectors.read(geom_1)
-    if not isinstance(geom_2, (gpd.GeoDataFrame, gpd.GeoSeries)):
-        geom_2 = vectors.read(geom_2)
+    # Read geometries (and convert it to GeoDataFrame)
+    geom_1 = vectors.read(geom_1)
+    geom_2 = vectors.read(geom_2)
 
     if ignore_order:
         geom_1 = geom_1.sort_values(by=["geometry"]).reset_index(drop=True)
