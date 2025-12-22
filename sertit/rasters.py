@@ -1402,14 +1402,21 @@ def write(
             if blocksize is not None:
                 kwargs["BLOCKSIZE"] = blocksize
 
-        if not is_written:
+        if not use_dask and not is_written:
             # Write with windows as we don't want to_raster to blow up the RAM (only if dask is not used)
             # Does nothing if writing with dask
-            kwargs["windowed"] = xds.rio.height * xds.rio.width > 20000 * 20000
+            use_windowed = xds.rio.height * xds.rio.width > 20000 * 20000
+            if use_windowed:
+                LOGGER.debug(
+                    f"Writing '{path.get_filename(output_path)}' big file (h: {xds.rio.height} x w: {xds.rio.width}) with rioxarray's 'windowed' method to avoid memory issues."
+                )
+            kwargs["windowed"] = use_windowed
 
     # Default write on disk
     if not is_written:
-        LOGGER.debug(f"Writing '{path.get_filename(output_path)}' to disk.")
+        LOGGER.debug(
+            f"Writing '{path.get_filename(output_path)}' (h: {xds.rio.height} x w: {xds.rio.width}) to disk."
+        )
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
         if "_FillValue" in xds.attrs:  # pragma: no cover
