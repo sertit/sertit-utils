@@ -1,5 +1,10 @@
 # Release History
 
+## 1.50.2 (2025-mm-dd)
+
+- FIX: Better logic with `dask` and related arguments (`save_cog_with_dask` and `compute`) in case of non-chunked array in `rasters.write`
+- FIX: Handle weird `SystemError` (with `Objects/tupleobject.c:927`) with `save_cog_with_dask` in `rasters.write`
+
 ## 1.50.1 (2025-12-18)
 
 - FIX: Regression fix for `get_archived_rio_path` to handle back multi-extension files (such as `.SAFE.zip`)

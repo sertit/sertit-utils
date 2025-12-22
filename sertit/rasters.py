@@ -1244,10 +1244,10 @@ def write(
         output_path (AnyPathStrType): Path where to save it (directories should be existing)
         tags (dict): Tags that will be written in your file
         write_cogs_with_dask (bool): If odc-geo and imagecodecs are installed, write your COGs with Dask.
-            Otherwise, the array will be loaded into memory before writing it on disk (and can cause MemoryErrors).
+            Otherwise, the array will be loaded into memory before writing it on disk (and can cause MemoryErrors). Only used with chunked data.
         compute (bool): If True (default) and data is a dask array, then compute and save the data immediately.
             If False, return a dask Delayed object. Call ".compute()" on the Delayed object to compute the result later.
-            Call ``dask.compute(delayed1, delayed2)`` to save multiple delayed files at once.
+            Call ``dask.compute(delayed1, delayed2)`` to save multiple delayed files at once. Only useful with chunked data.
         **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
 
     Examples:
@@ -1261,6 +1261,8 @@ def write(
         >>> write(xds, raster_out)
     """
     delayed = None
+    use_dask = dask.is_chunked(xds)
+    compute = compute and use_dask
 
     # Prune empty kwargs to avoid throwing GDAL warnings/errors
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
@@ -1340,7 +1342,7 @@ def write(
     if is_cog:
         blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else 512
 
-        if write_cogs_with_dask:
+        if use_dask and write_cogs_with_dask:
             try:
                 # Filter out and convert kwargs to avoid any error
                 da_kwargs = {
@@ -1362,19 +1364,24 @@ def write(
 
                 # Write cog on disk
                 try:
-                    delayed = __save_cog_with_dask(
-                        xds, nodata, dtype, output_path, compute, da_kwargs
-                    )
-                except Exception:
-                    # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
-                    # OverflowError: Python integer 999999 out of bounds for xxx
-                    # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
-                    da_kwargs["stats"] = False
-                    delayed = __save_cog_with_dask(
-                        xds, nodata, dtype, output_path, compute, da_kwargs
-                    )
+                    try:
+                        delayed = __save_cog_with_dask(
+                            xds, nodata, dtype, output_path, compute, da_kwargs
+                        )
+                    except Exception:
+                        # Remove computing statistics for some problematic (for now) dtypes (we need the ability to cast 999999 inside it)
+                        # OverflowError: Python integer 999999 out of bounds for xxx
+                        # https://github.com/opendatacube/odc-geo/issues/189#issuecomment-2513450481
+                        da_kwargs["stats"] = False
+                        delayed = __save_cog_with_dask(
+                            xds, nodata, dtype, output_path, compute, da_kwargs
+                        )
 
-                is_written = True
+                    is_written = True
+                except SystemError:
+                    # Sometimes, some weird multithread errors happen
+                    # SystemError: Objects/tupleobject.c:927: bad argument to internal function
+                    is_written = False
 
             except (ModuleNotFoundError, KeyError):  # pragma: no cover
                 # COGs cannot be written via dask via rioxarray for the moment
