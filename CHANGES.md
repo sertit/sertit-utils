@@ -4,6 +4,7 @@
 
 - FIX: Better logic with `dask` and related arguments (`save_cog_with_dask` and `compute`) in case of non-chunked array in `rasters.write`
 - FIX: Handle weird `SystemError` (with `Objects/tupleobject.c:927`) with `save_cog_with_dask` in `rasters.write`
+- FIX: Fix nodata casting in output dtype in `rasters.write`
 - OPTIM: Review the logic of RPC reprojection and `windowed` writing
 
 ## 1.50.1 (2025-12-18)

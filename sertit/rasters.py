@@ -329,14 +329,14 @@ def rasterize(
     min_max_dtype = np.iinfo(dtype)
     is_valid_int = (
         abs(nodata - int(nodata)) == 0
-        and min_max_dtype.min < nodata < min_max_dtype.max
+        and min_max_dtype.min <= nodata <= min_max_dtype.max
     )
 
     if not is_castable and not is_valid_int:
         old_nodata = nodata
         nodata = get_nodata_value_from_dtype(dtype)
 
-        # Only throw a warning if the value is really different  (we don't care about 255.0 being replaced by 255)
+        # Only throw a warning if the value is really different (we don't care about 255.0 being replaced by 255)
         if old_nodata - nodata != 0.0:
             LOGGER.warning(
                 f"Impossible to cast nodata value ({old_nodata}) into the wanted dtype ({str(dtype)}). "
