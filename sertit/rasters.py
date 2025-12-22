@@ -2760,17 +2760,6 @@ def _reproject_rpcs(
             "RPC reprojection requires the 'xdem' package to ensure vertical CRS validity."
         ) from ex
 
-    ####
-    # Daskified reproject doesn't seem to work with RPC
-    # See https://github.com/opendatacube/odc-geo/issues/193
-    ####
-    # Manage chunked data (function not daskified yet)
-    if dask.is_chunked(src_xda):
-        LOGGER.warning(
-            "Reprojection with RPCs doesn't work with Dask. Computing the raster."
-        )
-        src_xda = src_xda.compute()
-
     # Convert to Paths
     dem_path = AnyPath(dem_path)
 
@@ -2797,6 +2786,17 @@ def _reproject_rpcs(
 
     # Update GDAL parameters
     kwargs = __rpc_gdal_options(dem_path, kwargs)
+
+    ####
+    # Daskified reproject doesn't seem to work with RPC
+    # See https://github.com/opendatacube/odc-geo/issues/193
+    ####
+    # Manage chunked data (function not daskified yet)
+    if dask.is_chunked(src_xda):
+        LOGGER.warning(
+            "Reprojection with RPCs doesn't work with Dask. Computing the raster."
+        )
+        src_xda = src_xda.compute()
 
     # Reproject with rioxarray
     # Seems to handle the resolution well on the contrary to rasterio's reproject...
@@ -2865,31 +2865,27 @@ def __preprocess_dem(
     """
     LOGGER.debug(f"Orthorectifying data with {dem_path}")
 
-    if path.is_cloud_path(dem_path):
-        cached_dem_path = caching_folder / dem_path.name
-        if not cached_dem_path.is_file():
-            LOGGER.warning(
-                "gdalwarp cannot process DEM stored on cloud with 'RPC_DEM' argument, "
-                "hence cloud-stored DEM cannot be used with non-orthorectified DIMAP data. "
-                f"(DEM: {dem_path}). "
-                "The DEM will be cached before the operation."
-            )
-
-            write(
-                read(dem_path, window=src_extent),
-                cached_dem_path,
-                dtype=np.float32,
-            )
-
-            LOGGER.debug("DEM cached.")
-        dem_path = cached_dem_path
-
     # -- Manage vertical CRS --
     ellipsoid_dem_path = caching_folder / f"{dem_path.stem}_ellipsoid{dem_path.suffix}"
     if not ellipsoid_dem_path.is_file():
+        windowed_dem_path = (
+            caching_folder / f"{dem_path.stem}_windowed{dem_path.suffix}"
+        )
+        if not windowed_dem_path.is_file():
+            LOGGER.debug("Subset the DEM to the extent of your data")
+            write(
+                read(dem_path, window=src_extent),
+                windowed_dem_path,
+                dtype=np.float32,
+                driver="GTiff",
+            )
+        else:
+            windowed_dem_path = dem_path
+
         import xdem
 
-        dem = xdem.DEM(str(dem_path), vcrs=vcrs)
+        LOGGER.debug("Creating new DEM object with input vertical CRS")
+        dem = xdem.DEM(str(windowed_dem_path), vcrs=vcrs)
 
         # Set vertical CRS
         if dem.vcrs is None:
@@ -2904,13 +2900,37 @@ def __preprocess_dem(
             LOGGER.warning(
                 "Impossible to detect vertical CRS of your DEM. Orthorectification may be inaccurate. If needed, pass 'vcrs' to the function to adjust."
             )
-            ellipsoid_dem_path = dem_path
+            ellipsoid_dem_path = windowed_dem_path
         else:
             # Convert to ellipsoid vertical CRS
-            dem_ellipsoid = dem.to_vcrs("Ellipsoid")
+            LOGGER.debug(
+                "Convert the DEM to Ellipsoid vertical coordinate reference system."
+            )
+            dem.to_vcrs("Ellipsoid", inplace=True)
 
             # Save back on disk
-            dem_ellipsoid.save(ellipsoid_dem_path)
+            dem.save(ellipsoid_dem_path)
+
+    # Cache DEM in the end only if needed (i.e. not needed if vertically reprojected)
+    if path.is_cloud_path(ellipsoid_dem_path):
+        cached_dem_path = caching_folder / ellipsoid_dem_path.name
+        if not cached_dem_path.is_file():
+            LOGGER.warning(
+                "gdalwarp cannot process DEM stored on cloud with 'RPC_DEM' argument, "
+                "hence cloud-stored DEM cannot be used with non-orthorectified DIMAP data. "
+                f"(DEM: {dem_path}). "
+                "The DEM will be cached before the operation."
+            )
+
+            write(
+                read(ellipsoid_dem_path, window=src_extent),
+                cached_dem_path,
+                dtype=np.float32,
+                driver="GTiff",
+            )
+
+            LOGGER.debug("DEM cached.")
+        ellipsoid_dem_path = cached_dem_path
 
     return ellipsoid_dem_path
 
