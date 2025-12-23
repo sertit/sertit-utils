@@ -430,6 +430,29 @@ def test_write_basic(tmp_path, raster_path, ds_dtype):
 
 @s3_env
 @dask_env(nof_computes=1)  # Write x1
+def test_write_same(tmp_path, raster_path, ds_dtype):
+    """Test write (same) function"""
+    # xda
+    nodata = 255
+    xda = get_xda(raster_path, masked=False, as_type="uint8")
+    xda.rio.write_nodata(nodata, inplace=True)
+    xda_copy = xda.copy(deep=True)
+
+    # Before writing
+    xr.testing.assert_equal(xda, xda_copy)
+    ci.assert_val(xda.rio.nodata, nodata, "nodata")
+
+    # DataArray
+    xda_out = get_output(tmp_path, "test_xda.tif", DEBUG)
+    rasters.write(xda, xda_out, dtype=ds_dtype, nodata=nodata)
+
+    # After writing
+    ci.assert_val(xda.rio.nodata, nodata, "nodata")
+    xr.testing.assert_equal(xda, xda_copy)
+
+
+@s3_env
+@dask_env(nof_computes=1)  # Write x1
 def test_write_png(tmp_path, raster_path):
     """Test write (PNG) function"""
 
@@ -682,33 +705,46 @@ def __test_collocate_output(ref, other, coll, dtype):
 
 @s3_env
 @dask_env()
-def test_collocate(tmp_path):
+@pytest.mark.parametrize(
+    ("ref_type", "other_type"),
+    [
+        pytest.param("float", "float"),
+        pytest.param("float", "int"),
+        pytest.param("int", "int"),
+        pytest.param("int", "float"),
+    ],
+)
+def test_collocate(tmp_path, ref_type, other_type):
     """Test collocate functions"""
 
+    def __get_read_kw(tp):
+        masked = tp == "float"
+        as_type = np.float32 if tp == "float" else np.uint8
+        tp_str = "float" if tp == "float" else "uint8"
+        return (masked, as_type, tp_str)
+
+    ref_masked, ref_as_type, ref_tp_str = __get_read_kw(ref_type)
+    other_masked, other_as_type, other_tp_str = __get_read_kw(other_type)
+
     # Inputs
-    other_float = rasters.read(
-        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m.tif"),
-        masked=True,
-        as_type=np.float32,
-    )
-    other_uint8 = rasters.read(
+    other = rasters.read(
         rasters_path().joinpath(
             "20191115T233722_S3_SLSTR_RBT_CLOUDS_25000-00m_uint8.tif"
         ),
-        masked=False,
-        as_type=np.uint8,
+        masked=other_masked,
+        as_type=other_as_type,
     )
     ref = rasters.read(
-        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_HILLSHADE_MERIT_DEM.tif")
+        rasters_path().joinpath("20191115T233722_S3_SLSTR_RBT_HILLSHADE_MERIT_DEM.tif"),
+        masked=other_masked,
+        as_type=other_as_type,
     )
 
-    # Other in float
-    coll_float = rasters.collocate(reference=ref, other=other_float)
-    __test_collocate_output(ref, other_float, coll_float, "float")
-
-    # Other in uint8
-    coll_uint8 = rasters.collocate(reference=ref, other=other_uint8)
-    __test_collocate_output(ref, other_uint8, coll_uint8, "uint8")
+    # Collocate
+    coll = rasters.collocate(reference=ref, other=other)
+    __test_collocate_output(
+        ref, other, coll, f"ref: {ref_tp_str} / other: {other_tp_str}"
+    )
 
 
 @s3_env

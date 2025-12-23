@@ -1277,11 +1277,7 @@ def write(
 
     # Write nodata
     nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
-    xds.rio.write_nodata(
-        nodata,
-        encoded=True,
-        inplace=True,
-    )
+    xds = xds.rio.write_nodata(nodata, encoded=True)
 
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
