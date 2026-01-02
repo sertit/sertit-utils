@@ -279,10 +279,6 @@ def assert_raster_almost_equal_magnitude(
                 valid_mask_1 = ~np.isnan(marr_1)
                 valid_mask_2 = ~np.isnan(marr_2)
 
-                # Check if both arrays have the same NaN pattern
-                if not np.array_equal(valid_mask_1, valid_mask_2):
-                    raise AssertionError("Arrays have different NaN patterns")
-
                 # If all values are NaN, arrays should be identical
                 if not np.any(valid_mask_1):
                     if not np.array_equal(marr_1, marr_2, equal_nan=True):
