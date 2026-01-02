@@ -517,6 +517,16 @@ def test_mask(tmp_path, raster_path, mask):
 
 
 @s3_env
+def test_chunks_paths(tmp_path, raster_path, mask):
+    chunked = rasters.mask(raster_path, mask, chunks="auto")
+    ci.assert_chunked(chunked)
+    chunked_2 = rasters.mask(raster_path, mask, chunks=True)
+    ci.assert_chunked(chunked_2)
+    computed = rasters.mask(raster_path, mask, chunks=None)
+    ci.assert_computed(computed)
+
+
+@s3_env
 @dask_env(nof_computes=4)  # Write x4
 def test_paint(tmp_path, raster_path, mask):
     """Test paint function"""

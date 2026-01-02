@@ -188,11 +188,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
             raise ValueError("'any_raster_type' shouldn't be None!")
 
         masked = kwargs.get("masked", True)
+        chunks = kwargs.get("chunks", dask.get_default_chunks())
 
         # By default, try with the read fct: this fct returns the xr data structure as is and manages other input types such as tuple, rasterio datasets, paths...
         try:
             out = function(
-                read(any_raster_type, chunks=dask.get_default_chunks(), masked=masked),
+                read(any_raster_type, chunks=chunks, masked=masked),
                 *args,
                 **kwargs,
             )

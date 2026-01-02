@@ -7,6 +7,7 @@
 - FIX: Fix nodata casting in output dtype in `rasters.write`
 - FIX: Don't change the data inplace during writing operations in `rasters.read`
 - FIX: Better NaN logic in `ci.assert_raster_almost_equal_magnitude`
+- FIX: Allow passing `chunks` in kwargs when giving paths into rasters functions
 - OPTIM: Review the logic of RPC reprojection and `windowed` writing
 
 ## 1.50.1 (2025-12-18)
