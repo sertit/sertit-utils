@@ -172,7 +172,7 @@ def set_kml_driver() -> None:
         [1 rows x 12 columns]
 
     """
-    if not is_geopandas_1_0():  # pragma: no cover
+    try:  # pragma: no cover
         import fiona
 
         drivers = fiona.drvsupport.supported_drivers
@@ -181,6 +181,8 @@ def set_kml_driver() -> None:
             drivers["LIBKML"] = "rw"
         if "KML" not in drivers:  # Just in case
             drivers["KML"] = "rw"
+    except ImportError:
+        pass
 
 
 def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Polygon]:
@@ -602,12 +604,13 @@ def _read_kml(
     """
     vect = gpd.GeoDataFrame()
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
-    engine = None
+    engine = kwargs.pop("engine", None)
+
+    use_pyogrio = is_geopandas_1_0() and engine != "fiona"
 
     # Errors reading KML and KMZ with pyogrio until v0.12.0
     # https://github.com/geopandas/pyogrio/issues/543
     # https://github.com/geopandas/pyogrio/issues/444
-    use_pyogrio = is_geopandas_1_0()
     from importlib.metadata import version
 
     if misc.compare_version("pyogrio", "0.12.0", "<"):
@@ -654,8 +657,9 @@ def _read_kml(
                 )
                 if not vect_layer.empty:  # pragma: no cover
                     # KML files are always in WGS84 (and does not contain this information)
-                    vect_layer.crs = EPSG_4326
+                    # vect_layer.set_crs(EPSG_4326, inplace=True, allow_override=True)
                     vect = pd.concat([vect, vect_layer])
+                    vect.set_crs(EPSG_4326, inplace=True, allow_override=True)
             except ValueError:
                 pass  # Except Null Layer
 
@@ -683,7 +687,7 @@ def _read_kml(
                 vect = gpd.read_file(gpd_vect_path, **kwargs)
             except Exception:
                 # Force set CRS to empty vector
-                vect.crs = EPSG_4326
+                vect.set_crs(EPSG_4326, inplace=True, allow_override=True)
 
     return vect
 

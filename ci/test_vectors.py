@@ -22,6 +22,7 @@ import warnings
 
 import geopandas as gpd
 import pytest
+import tempenv
 from rasterio import CRS
 from shapely import wkt
 
@@ -165,6 +166,7 @@ def test_kmz():
     gj = vectors.read(gj_path)
 
     # Check attributes
+    assert kmz.crs is not None, "KMZ CRS"
     _assert_attributes(kmz, kmz_path)
     _assert_attributes(gj, gj_path)
 
@@ -174,6 +176,24 @@ def test_kmz():
             kmz.to_crs(gj.crs).geometry, tolerance=0.5 * 10**-6
         )
     )
+
+
+@s3_env
+def test_kmz_crs():
+    """Test KMZ files with CRS"""
+    with tempenv.TemporaryEnvironment({"OGR_GEOMETRY_ACCEPT_UNCLOSED_RING": "NO"}):
+        kmz_path = vectors_path() / "EMSR686_AOI01_DEL_MONIT02_imageFootprintA_v1.kmz"
+        kmz = vectors.read(kmz_path, engine="fiona")
+        assert kmz.crs is not None, "KMZ CRS"
+        ci.assert_val(len(kmz), 2, "Len KMZ")
+
+        # Zip
+        kmz_zip_path = vectors_path() / "EMSR686_AOI01_DEL_MONIT02_v2.zip"
+        kmz_zip = vectors.read(
+            kmz_zip_path, engine="fiona", archive_regex=kmz_path.name
+        )
+        assert kmz_zip.crs is not None, "KMZ zip CRS"
+        ci.assert_geom_equal(kmz, kmz_zip)
 
 
 @s3_env

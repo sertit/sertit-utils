@@ -1,5 +1,9 @@
 # Release History
 
+## 1.50.3 (2026-mm-dd)
+
+- FIX: FIX legacy KML reading with `fiona` engine
+
 ## 1.50.2 (2026-01-02)
 
 - FIX: Better logic with `dask` and related arguments (`save_cog_with_dask` and `compute`) in case of non-chunked array in `rasters.write`
