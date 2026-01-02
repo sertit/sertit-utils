@@ -272,6 +272,7 @@ def assert_raster_almost_equal_magnitude(
                 marr_2 = np.where(marr_2.mask, np.nan, marr_2)
 
                 # Check if arrays are identical (including NaN positions)
+                # If true, don't compute the magnitude (faster)
                 if np.array_equal(marr_1, marr_2, equal_nan=True):
                     continue
 
