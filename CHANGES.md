@@ -2,7 +2,8 @@
 
 ## 1.50.3 (2026-mm-dd)
 
-- FIX: FIX legacy KML reading with `fiona` engine
+- ENH: Add `auto` option to `decimal` in `ci.assert_geom_almost_equal` to better manage decimals with projected CRS (auto sets 9 decimals for degrees, only 3 for meters)
+- FIX: Fix legacy KML reading with `fiona` engine
 
 ## 1.50.2 (2026-01-02)
 

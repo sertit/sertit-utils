@@ -504,8 +504,8 @@ def assert_geom_equal(
 def assert_geom_almost_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
-    decimal=9,
-    ignore_z=True,
+    decimal: int | str = "auto",
+    ignore_z: bool = True,
     ignore_order: bool = True,
 ) -> None:
     """
@@ -517,7 +517,7 @@ def assert_geom_almost_equal(
     Args:
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
-        decimal (int): Number of decimal
+        decimal (int): Number of decimals. Set it to :code:`auto` for managing automatically the deccimals in projected or geographiic CRS. 9 deccimals for degrees, 3 for meters.
         ignore_z (bool): Ignore Z coordinate
         ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
 
@@ -535,7 +535,6 @@ def assert_geom_almost_equal(
     geom_1, geom_2 = _prepare_geoms(
         geom_1, geom_2, ignore_z=ignore_z, ignore_order=ignore_order
     )
-
     # Check length
     assert len(geom_1) == len(geom_2), (
         f"Non equal geometry lengths!\n{len(geom_1)} != {len(geom_2)}"
@@ -545,6 +544,15 @@ def assert_geom_almost_equal(
     assert geom_1.crs == geom_2.crs, (
         f"Non equal geometry CRS!\n{geom_1.crs} != {geom_2.crs}"
     )
+
+    # Manage decimals
+    if decimal == "auto":
+        if geom_1.crs.is_projected:
+            decimal = 3
+            LOGGER.debug(f"CRS is projected, using {decimal} decimals")
+        else:
+            decimal = 9
+            LOGGER.debug(f"CRS is geographic, using {decimal} decimals")
 
     # Loop on geometries
     for idx in range(len(geom_1)):
