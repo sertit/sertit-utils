@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
@@ -80,7 +80,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "sertit"
-copyright = "Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/"
+copyright = "Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/"
 author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for

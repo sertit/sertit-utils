@@ -1,4 +1,4 @@
-# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of sertit-utils project
 #     https://github.com/sertit/sertit-utils
 #
