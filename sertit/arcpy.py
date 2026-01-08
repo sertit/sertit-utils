@@ -164,7 +164,7 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):  # pragma: no cover
         super(ArcPyLogHandler, self).emit(record)
 
 
-def init_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
+def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
     """
     Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
     This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
