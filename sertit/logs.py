@@ -26,8 +26,7 @@ LOGGING_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
 SU_NAME = "sertit"
 
 
-def init_logger(*args, **kwargs
-) -> None:
+def init_logger(*args, **kwargs) -> None:
     """
     Init the right logger according the SERTIT_LOGGER_TYPE environment:
     - if SERTIT_LOGGER_TYPE == "STDOUT_BASIC", it creates a logger which outputs to STDOUT. Convenient for CLI tools
