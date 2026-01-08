@@ -20,11 +20,33 @@ import logging.config
 import os
 from datetime import datetime
 
+from sertit.arcpy import init_json_logger
+
 LOGGING_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
 SU_NAME = "sertit"
 
 
-def init_logger(
+def init_logger(*args, **kwargs
+) -> None:
+    """
+    Init the right logger according the SERTIT_LOGGER_TYPE environment:
+    - if SERTIT_LOGGER_TYPE == "STDOUT_BASIC", it creates a logger which outputs to STDOUT. Convenient for CLI tools
+    - if SERTIT_LOGGER_TYPE == "STDOUT_JSON", logs are printed as JSON object to STDOUT. Convenient if you want to stream logs
+      to another process via STDOUT. For example, a process running in the arcgispro-eo backend environment.
+    - if SERTIT_LOGGER_TYPE == "STDOUT_FILE_ADVANCED", same as "STDOUT_BASIC" but logs are also recorded in a file.
+    Returns:
+
+    """
+    logger_type = os.environ.get("SERTIT_LOGGER_TYPE")
+    if logger_type is None or logger_type == "STDOUT_BASIC":
+        init_basic_logger(*args, **kwargs)
+    elif logger_type == "STDOUT_JSON":
+        init_json_logger(*args, **kwargs)
+    elif logger_type == "STDOUT_FILE_ADVANCED":
+        create_logger(*args, **kwargs)
+
+
+def init_basic_logger(
     curr_logger: logging.Logger,
     log_lvl: int = logging.DEBUG,
     log_format: str = LOGGING_FORMAT,
