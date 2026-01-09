@@ -85,6 +85,8 @@ def get_gpt_cli(
     Get GPT command line with system OK optimizations.
     To see options, type this command line with --diag (but it won't run the graph)
 
+    See https://senbox.atlassian.net/wiki/spaces/SNAP/pages/15269950/SNAP+Configuration
+
     Example:
         >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
         SNAP Release version 8.0
@@ -139,6 +141,7 @@ def get_gpt_cli(
         "-J-Dsnap.dataio.bigtiff.tiling.width=512",
         "-J-Dsnap.dataio.bigtiff.tiling.height=512",
         "-J-Dsnap.jai.prefetchTiles=true",
+        "-J-Dplugin.manager.check.interval=NEVER",  # Don't check for updates
         f"-c {bytes2snap(int(0.5 * max_mem))}",  # Tile cache set to 50% of max memory (up to 75%)
         # '-x',
         *other_args,
