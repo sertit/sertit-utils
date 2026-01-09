@@ -95,7 +95,7 @@ def scale_to_uint8(array: AnyNumpyArray, perc: int = 2) -> AnyNumpyArray:
         numpy array: Rescaled array from 0 to 255 saved in uint8
     """
     # Convert it to uint8
-    scaled_arr = (scale(array) * 254 + 1).astype(np.uint8)
+    scaled_arr = (scale(array, perc=perc) * 254 + 1).astype(np.uint8)
 
     if isinstance(array, np.ma.masked_array):
         scaled_arr = np.where(array.mask, 0, scaled_arr)
