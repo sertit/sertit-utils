@@ -111,7 +111,7 @@ def test_raise_compute():
     with dask.raise_if_dask_computes(force_synchronous=True, max_computes=1):
         da.compute()
 
-    # Ensure computing don't raise id specified
+    # Ensure computing don't raise if specified
     with dask.raise_if_dask_computes(force_synchronous=True, dont_raise=True):
         da.compute()
 
