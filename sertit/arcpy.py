@@ -164,6 +164,59 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):  # pragma: no cover
         super(ArcPyLogHandler, self).emit(record)
 
 
+def init_arcgis_logger(
+    curr_logger: logging.Logger, log_lvl: int = logging.INFO
+) -> None:
+    """
+    Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
+    This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
+    print it properly to the user in ArcGis.
+
+    Args:
+        curr_logger (logging.Logger): Logger to be initialize
+        log_lvl (int): Logging level to be set
+
+    Example:
+        >>> logger = logging.getLogger("logger_test")
+        >>> init_logger(logger, logging.INFO)
+        >>> logger.info("MESSAGE")
+    """
+    f = tempfile.NamedTemporaryFile(prefix="atools_", delete=False)
+    max_file_size = 1024 * 1024 * 2  # 2MB log files
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "fmt": {
+                    "format": "%(levelname)-8s %(message)s",
+                }
+            },
+            "handlers": {
+                "arcgis": {
+                    "()": "sertit.arcpy.ArcPyLogHandler",
+                    "filename": f.name,
+                    "maxBytes": max_file_size,
+                    "backupCount": 10,
+                    "encoding": "utf-8",
+                    "level": logging.getLevelName(log_lvl),
+                    "formatter": "fmt",
+                },
+            },
+            "loggers": {
+                curr_logger.name: {
+                    "handlers": ["arcgis"],
+                    "propagate": False,
+                    "level": logging.getLevelName(log_lvl),
+                }
+            },
+        }
+    )
+
+    curr_logger.info("You can read logs in the file: " + f.name)
+
+
 def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
     """
     Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
@@ -404,6 +457,7 @@ def run_in_conda_env(
     clean_env["PYTHONPATH"] = python_path
     # Add env_extend allowing to overwrite
     clean_env = clean_env | extend_env
+    clean_env["SERTIT_LOGGER_TYPE"] = "BACKEND_SUBPROCESS"
 
     with subprocess.Popen(
         cmd_line,

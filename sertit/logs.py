@@ -20,8 +20,6 @@ import logging.config
 import os
 from datetime import datetime
 
-from sertit.arcpy import init_json_logger
-
 LOGGING_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
 SU_NAME = "sertit"
 
@@ -37,12 +35,18 @@ def init_logger(*args, **kwargs) -> None:
 
     """
     logger_type = os.environ.get("SERTIT_LOGGER_TYPE")
-    if logger_type is None or logger_type == "STDOUT_BASIC":
+    if logger_type is None or logger_type == "TERMINAL_BASIC":
         init_basic_logger(*args, **kwargs)
-    elif logger_type == "STDOUT_JSON":
+    elif logger_type == "BACKEND_SUBPROCESS":
+        from sertit.arcpy import init_json_logger
+
         init_json_logger(*args, **kwargs)
-    elif logger_type == "STDOUT_FILE_ADVANCED":
+    elif logger_type == "TERMINAL_ADVANCED":
         create_logger(*args, **kwargs)
+    elif logger_type == "ARCGIS":
+        from sertit.arcpy import init_arcgis_logger
+
+        init_arcgis_logger(*args, **kwargs)
 
 
 def init_basic_logger(
