@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import logging.config
 import pickle
 import tempfile
 from functools import wraps
@@ -161,6 +162,102 @@ class ArcPyLogHandler(logging.handlers.RotatingFileHandler):  # pragma: no cover
             arcpy.AddMessage(msg)
 
         super(ArcPyLogHandler, self).emit(record)
+
+
+def init_arcgis_logger(
+    curr_logger: logging.Logger, log_lvl: int = logging.INFO
+) -> None:
+    """
+    Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
+    This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
+    print it properly to the user in ArcGis.
+
+    Args:
+        curr_logger (logging.Logger): Logger to be initialize
+        log_lvl (int): Logging level to be set
+
+    Example:
+        >>> logger = logging.getLogger("logger_test")
+        >>> init_logger(logger, logging.INFO)
+        >>> logger.info("MESSAGE")
+    """
+    f = tempfile.NamedTemporaryFile(prefix="atools_", delete=False)
+    max_file_size = 1024 * 1024 * 2  # 2MB log files
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "fmt": {
+                    "format": "%(levelname)-8s %(message)s",
+                }
+            },
+            "handlers": {
+                "arcgis": {
+                    "()": "sertit.arcpy.ArcPyLogHandler",
+                    "filename": f.name,
+                    "maxBytes": max_file_size,
+                    "backupCount": 10,
+                    "encoding": "utf-8",
+                    "level": logging.getLevelName(log_lvl),
+                    "formatter": "fmt",
+                },
+            },
+            "loggers": {
+                curr_logger.name: {
+                    "handlers": ["arcgis"],
+                    "propagate": False,
+                    "level": logging.getLevelName(log_lvl),
+                }
+            },
+        }
+    )
+
+    curr_logger.info("You can read logs in the file: " + f.name)
+
+
+def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
+    """
+    Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
+    This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
+    print it properly to the user in ArcGis.
+
+    Args:
+        curr_logger (logging.Logger): Logger to be initialize
+        log_lvl (int): Logging level to be set
+
+    Example:
+        >>> logger = logging.getLogger("logger_test")
+        >>> init_logger(logger, logging.INFO)
+        >>> logger.info("MESSAGE")
+    """
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "fmt": {
+                    "()": "pythonjsonlogger.json.JsonFormatter",
+                    "fmt": ["message", "asctime", "exc_info", "levelname"],
+                }
+            },
+            "handlers": {
+                "stream": {
+                    "level": logging.getLevelName(log_lvl),
+                    "class": "logging.StreamHandler",
+                    "formatter": "fmt",
+                },
+            },
+            "loggers": {
+                curr_logger.name: {
+                    "handlers": ["stream"],
+                    "propagate": False,
+                    "level": logging.getLevelName(log_lvl),
+                }
+            },
+        }
+    )
 
 
 def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
@@ -360,6 +457,7 @@ def run_in_conda_env(
     clean_env["PYTHONPATH"] = python_path
     # Add env_extend allowing to overwrite
     clean_env = clean_env | extend_env
+    clean_env["SERTIT_LOGGER_TYPE"] = "BACKEND_SUBPROCESS"
 
     with subprocess.Popen(
         cmd_line,
@@ -374,7 +472,21 @@ def run_in_conda_env(
                 encoding=sys.stdout.encoding,
                 errors=("replace" if sys.version_info < (3, 5) else "backslashreplace"),
             ).rstrip()
-            logger.info(line)
+            try:
+                line_json = json.loads(line)
+                message = line_json.get("message")
+                exc_info = line_json.get("exc_info")
+                if exc_info and line_json.get("levelname") == "ERROR":
+                    logger.error(exc_info)
+                elif line_json.get("levelname") == "ERROR":
+                    logger.error(message)
+                elif line_json.get("levelname") == "WARNING":
+                    logger.warning(message)
+                else:
+                    logger.info(message)
+
+            except Exception as e:
+                logger.info(line)
 
         # Get return value
         retval = process.wait(timeout=None)
