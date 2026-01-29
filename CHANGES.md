@@ -1,8 +1,9 @@
 # Release History
 
-## 1.50.3 (2026-mm-dd)
+## 1.51.0 (2026-01-29)
 
-- ENH: Add `auto` option to `decimal` in `ci.assert_geom_almost_equal` to better manage decimals with projected CRS (auto sets 9 decimals for degrees, only 3 for meters)
+- **ENH: Add `auto` option to `decimal` in `ci.assert_geom_almost_equal` to better manage decimals with projected CRS (auto sets 9 decimals for degrees, only 3 for meters)**
+- **ENH: Add a unified `init_logger` function for all loggers**
 - FIX: Fix legacy KML reading with `fiona` engine
 - FIX: Correctly propagate the percentage value in `display.scale_to_uint8`
 - OPTIM: Don't check for updates when running GPT

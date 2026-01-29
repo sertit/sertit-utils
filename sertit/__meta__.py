@@ -17,4 +17,4 @@
 Sertit Utils library
 """
 
-__version__ = "1.50.2"
+__version__ = "1.51.0"
