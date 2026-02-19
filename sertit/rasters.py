@@ -997,7 +997,8 @@ def _3d_to_2d(function):
             xda = xda.squeeze(dim="band")
         out_xda = function(xda, *_args, **_kwargs)
         if expand_dim:
-            out_xda = out_xda.expand_dims(dim="band")
+            with contextlib.suppress(ValueError):
+                out_xda = out_xda.expand_dims(dim="band")
 
         return out_xda
 
@@ -2182,6 +2183,7 @@ def hillshade(
             "'Hillshade' not computed with Dask as 'xarray-spatial' is not installed."
         )
         # Use classic option
+        xds = xds.expand_dims(dim="band")  # it has been reduced to 2 dims
         arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
 
         xds = xds.copy(data=arr)
@@ -2225,6 +2227,7 @@ def slope(
         )
 
         # Use classic option
+        xds = xds.expand_dims(dim="band")  # it has been reduced to 2 dims
         arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
 
         xds = xds.copy(data=arr)

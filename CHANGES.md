@@ -1,5 +1,9 @@
 # Release History
 
+## 1.51.1 (2026-mm-dd)
+
+- FIX: Fix expand dim in case `xarray-spatial` is not usable
+
 ## 1.51.0 (2026-01-29)
 
 - **ENH: Add `auto` option to `decimal` in `ci.assert_geom_almost_equal` to better manage decimals with projected CRS (auto sets 9 decimals for degrees, only 3 for meters)**
