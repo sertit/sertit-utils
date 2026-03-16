@@ -3,6 +3,7 @@
 ## 1.51.1 (2026-mm-dd)
 
 - FIX: Fix expand dim in case `xarray-spatial` is not usable
+- FIX: Don't force rasterio's presence in env in types.py
 
 ## 1.51.0 (2026-01-29)
 

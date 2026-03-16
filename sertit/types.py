@@ -1,3 +1,4 @@
+import contextlib
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -6,8 +7,10 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 from cloudpathlib import CloudPath
-from rasterio.io import DatasetReader, DatasetWriter
 from shapely import MultiPolygon, Polygon
+
+with contextlib.suppress(ModuleNotFoundError):
+    from rasterio.io import DatasetReader, DatasetWriter
 
 AnyPathType = CloudPath | Path
 """Any Path Type (derived from Pathlib and CloudpathLib)"""
