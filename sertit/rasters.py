@@ -1154,7 +1154,8 @@ def read(
                     LOGGER.debug(
                         f"Resampling by reprojection (with odc.geo): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
                     )
-                    use_dask = True
+                    # Force dask only if chunks is not None
+                    use_dask = chunks is not None
 
                 # Manage nodata
                 xda = reproject(

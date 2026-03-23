@@ -2,6 +2,7 @@
 
 ## 1.51.1 (2026-mm-dd)
 
+- FIX: Force dask in `rasters.read`'s reprojection only if `chunks` is not None
 - FIX: Fix expand dim in case `xarray-spatial` is not usable
 - FIX: Don't force rasterio's presence in env in types.py
 
