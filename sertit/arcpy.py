@@ -7,7 +7,9 @@ from functools import wraps
 from typing import Any
 
 import click
+from cloudpathlib import AnyPath
 
+from sertit import path
 
 # Arcpy types from inside a schema
 SHORT = "int32:4"
@@ -260,7 +262,7 @@ def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -
     )
 
 
-def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
+def gp_layer_to_path(layer) -> str:  # pragma: no cover
     """
     Convert a GP layer to its source path.
 
@@ -269,7 +271,7 @@ def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
     drag and drop from the Windows explorer.
 
     Args:
-        feature_layer: Feature layer or Raster layer
+        layer: Feature layer or Raster layer
 
     Returns:
         str: Path to the feature or raster layer source
@@ -318,12 +320,27 @@ def gp_layer_to_path(feature_layer) -> str:  # pragma: no cover
 
     """
     # Get path
-    if hasattr(feature_layer, "dataSource"):
-        path = feature_layer.dataSource
+    if hasattr(layer, "dataSource"):
+        path = layer.dataSource
     else:
-        path = str(feature_layer)
+        path = str(layer)
+
+    # In case we have a raster, convert the path to one compatible with rasterio
+    if layer.isRasterLayer:
+        path = from_gdb_raster_to_rio_path(path)
 
     return path
+
+
+def from_gdb_raster_to_rio_path(path_in_gdb: str) -> str:
+    """Convert a raster stored in a gdb into a path readable by rasterio"""
+    path_obj = AnyPath(path_in_gdb)
+    if ".gdb" in str(path_obj.parent):
+        rio_path = rf"OpenFileGDB:{str(path_obj.parent)}:{path_obj.name}"
+    else:
+        rio_path = path_in_gdb
+
+    return rio_path
 
 
 def run_in_conda_env(

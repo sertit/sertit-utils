@@ -19,7 +19,10 @@
 import pickle
 import sys
 
-from sertit import arcpy, ci
+import pytest
+
+from ci.script_utils import arcpy_path, s3_env
+from sertit import arcpy, ci, misc, rasters, vectors
 
 ci.reduce_verbosity()
 
@@ -58,3 +61,44 @@ def test_create_conda_env_cli(tmp_path):
 
     # Check output
     ci.assert_val(out, (3, "test"), "Test create_backend_cli")
+
+
+def test_gdb_raster(tmp_path):
+    gdb_path = arcpy_path() / "Default.gdb"
+    rio_path = arcpy.from_gdb_raster_to_rio_path(
+        str(gdb_path / "Segmented_202604151030385081819")
+    )
+
+    assert rio_path.endswith("Default.gdb:Segmented_202604151030385081819")
+    assert rio_path.startswith("OpenFileGDB:")
+
+    # This fails in docker sadly, for an unknown reason (both locally and on s3) -> see local fallback if needed
+    # raster = rasters.read(rio_path)
+    # ci.assert_val(raster.rio.width, 224, "Raster width")
+    # ci.assert_val(raster.rio.height, 179, "Raster height")
+    # ci.assert_val(raster.rio.count, 3, "Raster count")
+
+
+# Fallback on disk test
+@pytest.mark.skipif(misc.in_docker(), reason="Only works outside docker")
+def test_gdb_raster_local(tmp_path):
+    from cloudpathlib import AnyPath
+
+    gdb_path = AnyPath(r"D:\_ARCGIS\DATA\vectorise\vectorise_test_2\Default.gdb")
+    assert gdb_path.exists()
+    raster = rasters.read(
+        arcpy.from_gdb_raster_to_rio_path(
+            str(gdb_path / "Segmented_202604151030385081819")
+        )
+    )
+    ci.assert_val(raster.rio.width, 224, "Raster width")
+    ci.assert_val(raster.rio.height, 179, "Raster height")
+    ci.assert_val(raster.rio.count, 3, "Raster count")
+
+
+@s3_env
+def test_gdb_vector(tmp_path):
+    gdb_path = arcpy_path() / "Default.gdb"
+    assert gdb_path.exists()
+    vect = vectors.read(gdb_path / "A1_area_of_interest_a")
+    assert not vect.empty

@@ -517,7 +517,7 @@ def assert_geom_almost_equal(
     Args:
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
-        decimal (int): Number of decimals. Set it to :code:`auto` for managing automatically the deccimals in projected or geographiic CRS. 9 deccimals for degrees, 3 for meters.
+        decimal (int): Number of decimals. Set it to :code:`auto` for managing automatically the decimals in projected or geographiic CRS. 9 decimals for degrees, 3 for meters.
         ignore_z (bool): Ignore Z coordinate
         ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
 

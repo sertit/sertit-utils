@@ -487,10 +487,21 @@ def read(
 
     # Check existence of the file (here and not before to handle fsspec cases with '!')
     if not AnyPath(vector).exists():
-        raise FileNotFoundError(f"Non existing vector: {vector}")
-
-    # Read vector
-    vect = _read_vector_core(gpd_vect_path, vector, arch_path, crs, **kwargs)
+        # Handle vectors as a GDB layer
+        if ".gdb" in str(vector.parent):
+            try:
+                vect = _read_vector_core(
+                    str(vector.parent), vector.parent, arch_path, crs, layer=vector.name
+                )
+            except Exception as ex:
+                raise FileNotFoundError(
+                    f"Impossible to retrieve AOI ({vector.name}) saved into the gdb: {str(vector.parent)}. Please save it on disk first."
+                ) from ex
+        else:
+            raise FileNotFoundError(f"Non-existing vector: {vector}")
+    else:
+        # Read vector
+        vect = _read_vector_core(gpd_vect_path, vector, arch_path, crs, **kwargs)
 
     # Add some attributes
     vect.attrs["path"] = str(vector)

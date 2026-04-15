@@ -182,6 +182,10 @@ def xml_path():
     return get_ci_data_path().joinpath("xml")
 
 
+def arcpy_path():
+    return get_ci_data_path().joinpath("arcpy")
+
+
 def s3_env(*args, **kwargs):
     return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026
 
