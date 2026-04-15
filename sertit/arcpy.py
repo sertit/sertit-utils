@@ -7,9 +7,7 @@ from functools import wraps
 from typing import Any
 
 import click
-from cloudpathlib import AnyPath
-
-from sertit import path
+from sertit import AnyPath
 
 # Arcpy types from inside a schema
 SHORT = "int32:4"
