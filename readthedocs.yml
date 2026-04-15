@@ -1,9 +1,11 @@
+---
 version: 2
 
 # Build from the docs/ directory with Sphinx
 sphinx:
   configuration: docs/conf.py
-  # Equivalent to -W and --keep-going => turn warnings into errors, keep going anyway but return an exit code 1
+  # Equivalent to -W and --keep-going
+  # => turn warnings into errors, keep going anyway but return an exit code 1
   fail_on_warning: false
 
 # Explicitly set the version of Python and its requirements

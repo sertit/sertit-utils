@@ -12,7 +12,8 @@ jobs:
     environment:
       name: release
     permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
     steps:
       - name: Checkout source
         uses: actions/checkout@v6
