@@ -1,6 +1,6 @@
 # Release History
 
-## 1.52.0 (2026-mm-dd)
+## 1.52.0 (2026-04-15)
 
 - **ENH: Add the possibility to read a feature layer from a GDB in `vectors`**
 - **ENH: Add the possibility to get the rasterio-compatible path from a raster layer stored in a GDB**
@@ -8,6 +8,7 @@
 - FIX: Force dask in `rasters.read`'s reprojection only if `chunks` is not None
 - FIX: Fix expand dim in case `xarray-spatial` is not usable
 - FIX: Don't force rasterio's presence in env in types.py
+- LINT: Lint YAML files
 
 ## 1.51.0 (2026-01-29)
 
