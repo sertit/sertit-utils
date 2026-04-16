@@ -80,7 +80,7 @@ def test_gdb_raster(tmp_path):
 
 
 # Fallback on disk test
-@pytest.mark.skipif(misc.in_docker(), reason="Only works outside docker")
+@pytest.mark.skipif(sys.platform != "win32", reason="Only works outside docker")
 def test_gdb_raster_local(tmp_path):
     from cloudpathlib import AnyPath
 
