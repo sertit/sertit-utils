@@ -264,7 +264,7 @@ def test_json(tmp_path):
         "U": 3.1415,
     }
 
-    json_file = os.path.join(tmp_path, "test.json")
+    json_file = tmp_path / "test.json"
 
     # Save JSON
     files.save_json(test_dict, json_file)

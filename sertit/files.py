@@ -500,7 +500,7 @@ class CustomDecoder(JSONDecoder):
 
     # Override the default method
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, *args, object_hook=self.object_hook, **kwargs)
+        super().__init__(*args, object_hook=self.object_hook, **kwargs)
 
     def object_hook(self, obj: Any):
         """
@@ -536,7 +536,7 @@ class CustomDecoder(JSONDecoder):
 
 
 # subclass JSONEncoder
-class CustomEncoder(JSONEncoder):
+class CustomJsonEncoder(JSONEncoder):
     """Encoder for JSON with methods for datetimes and np.int64"""
 
     # pylint: disable=W0221
@@ -579,7 +579,7 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
             LOGGER.debug(
                 "Configuration file %s contains:\n%s",
                 json_file,
-                json.dumps(data, indent=3, cls=CustomEncoder),
+                json.dumps(data, indent=3, cls=CustomJsonEncoder),
             )
     return data
 
@@ -602,7 +602,7 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
         >>> save_json(output_json, json_dict)
     """
     kwargs["indent"] = kwargs.get("indent", 3)
-    kwargs["cls"] = kwargs.get("cls", CustomEncoder)
+    kwargs["cls"] = kwargs.get("cls", CustomJsonEncoder)
 
     with open(output_json, "w") as output_file:
         json.dump(json_dict, output_file, **kwargs)
