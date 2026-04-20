@@ -32,6 +32,8 @@ from typing import Any
 
 import dill
 import numpy as np
+import yaml
+from cloudpathlib import CloudPath
 from lxml import etree, html
 from tqdm import tqdm
 
@@ -604,6 +606,81 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
 
     with open(output_json, "w") as output_file:
         json.dump(json_dict, output_file, **kwargs)
+
+
+def _represent_paths(dumper, data):
+    return dumper.represent_str(str(data))
+
+
+def _represent_np_types(dumper, data):
+    if isinstance(data, (np.integer, np.floating, np.bool_)):
+        # Use .item() to convert to Python scalar
+        return dumper.represent_data(data.item())
+    else:
+        # Fallback for other NumPy types (e.g., complex)
+        return dumper.represent_str(str(data))
+
+
+def _represent_enums(dumper, data):
+    return dumper.represent_str(str(data.value))
+
+
+class CustomYamlDumper(yaml.SafeDumper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Register representers
+        self.add_multi_representer(Path, _represent_paths)
+        self.add_multi_representer(CloudPath, _represent_paths)
+        self.add_multi_representer(np.number, _represent_np_types)
+        self.add_multi_representer(Enum, _represent_enums)
+
+
+def read_yaml(yaml_file: AnyPathStrType, print_file: bool = True) -> dict:
+    """
+    Read a YAML file
+
+    Args:
+        yaml_file (AnyPathStrType): Path to YAML file
+        print_file (bool):  Print the configuration file
+
+    Returns:
+        dict: YAML data
+
+    Example:
+        >>> json_path = 'D:/path/to/json.json'
+        >>> read_json(json_path, print_file=False)
+        {"A": 1, "B": 2}
+    """
+    with open(yaml_file) as f:
+        data = yaml.safe_load(f)
+        if print_file:
+            LOGGER.debug(
+                "Configuration file %s contains:\n%s",
+                yaml_file,
+                yaml.dump(data, indent=2, Dumper=CustomYamlDumper),
+            )
+    return data
+
+
+def save_yaml(yaml_dict: dict, output_yaml: AnyPathStrType, **kwargs) -> None:
+    """
+    Save a YAML file
+
+    Args:
+        yaml_dict (dict): YAML dictionary
+        output_yaml (AnyPathStrType): Output file
+        **kwargs: Other arguments
+
+    Example:
+        >>> output_yaml = 'D:/path/to/yaml.yaml'
+        >>> yaml_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
+        >>> save_yaml(output_yaml, json_dict)
+    """
+    kwargs["indent"] = kwargs.get("indent", 2)
+    kwargs["Dumper"] = kwargs.get("Dumper", CustomYamlDumper)
+
+    with open(output_yaml, "w") as output_file:
+        yaml.dump(yaml_dict, output_file, **kwargs)
 
 
 def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:

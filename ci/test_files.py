@@ -282,6 +282,42 @@ def test_json(tmp_path):
     assert obj == test_dict
 
 
+def test_yaml(tmp_path):
+    """Test yaml functions"""
+
+    test_dict = {
+        "A": 3,
+        "C": "m2",  # Can be parsed as a date, we do not want that !
+        "D": datetime.today(),
+        "Dbis": date.today(),
+        "E": np.int64(15),
+        "Eb": np.int32(15),
+        "Ec": np.float64(15.5),
+        "Ed": np.float32(15.5),
+        "F": Polarization.vv,
+        "G": True,
+        "H": AnyPath("/home/data"),
+        "U": 3.1415,
+    }
+
+    yaml_file = tmp_path / "test.yaml"
+
+    # Save JSON
+    files.save_yaml(test_dict, yaml_file)
+
+    # Load JSON
+    obj = files.read_yaml(yaml_file)
+
+    assert (
+        obj.pop("F") == test_dict.pop("F").value
+    )  # Enum are stored following their value
+
+    assert obj.pop("H") == str(
+        test_dict.pop("H")
+    )  # Enum are stored following their value
+    assert obj == test_dict
+
+
 def test_pickle(tmp_path):
     """Test pickle functions"""
 

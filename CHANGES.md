@@ -1,5 +1,9 @@
 # Release History
 
+## 1.53.0 (2026-mm-dd)
+
+- **ENH: Add a YAML save and read on JSON's model (with custom dumper)**
+
 ## 1.52.0 (2026-04-15)
 
 - **ENH: Add the possibility to read a feature layer from a GDB in `vectors`**
