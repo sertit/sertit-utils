@@ -1,10 +1,11 @@
 # Release History
 
-## 1.53.0 (2026-mm-dd)
+## 1.53.0 (2026-05-05)
 
 - **BREAKING CHANGE: Rename `CustomEncoder` into `CustomJsonEncoder` (shouldn't affect anyone)**
 - **ENH: Add a YAML save and read on JSON's model (with custom dumper)**
 - **ENH: Propagate `rasters_rio.get_window` into `rasters`**
+- FIX: Remove `xdem` deprecation warning (`save` -> `to_file`)
 
 ## 1.52.0 (2026-04-15)
 

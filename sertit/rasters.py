@@ -2933,7 +2933,7 @@ def __preprocess_dem(
             dem.to_vcrs("Ellipsoid", inplace=True)
 
             # Save back on disk
-            dem.save(ellipsoid_dem_path)
+            dem.to_file(ellipsoid_dem_path)
 
     # Cache DEM in the end only if needed (i.e. not needed if vertically reprojected)
     if path.is_cloud_path(ellipsoid_dem_path):
