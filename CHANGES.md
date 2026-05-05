@@ -1,5 +1,9 @@
 # Release History
 
+## 1.53.1 (2026-mm-dd)
+
+- FIX: Fix raster layer check in `arcpy.gp_layer_to_path`
+
 ## 1.53.0 (2026-05-05)
 
 - **BREAKING CHANGE: Rename `CustomEncoder` into `CustomJsonEncoder` (shouldn't affect anyone)**

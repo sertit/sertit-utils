@@ -324,7 +324,7 @@ def gp_layer_to_path(layer) -> str:  # pragma: no cover
         path = str(layer)
 
     # In case we have a raster, convert the path to one compatible with rasterio
-    if layer.isRasterLayer:
+    if hasattr(layer, "isRasterLayer") and layer.isRasterLayer:
         path = from_gdb_raster_to_rio_path(path)
 
     return path
