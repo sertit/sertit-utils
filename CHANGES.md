@@ -1,6 +1,6 @@
 # Release History
 
-## 1.53.1 (2026-mm-dd)
+## 1.53.1 (2026-05-05)
 
 - FIX: Fix raster layer check in `arcpy.gp_layer_to_path`
 
