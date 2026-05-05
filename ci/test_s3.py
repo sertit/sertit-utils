@@ -32,6 +32,8 @@ from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
 
 LOGGER = logging.getLogger(SU_NAME)
 
+ci.reduce_verbosity()
+
 
 def base_fct(value):
     raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
