@@ -748,7 +748,7 @@ def ogr2gpkg(
 
     vect_path_gpkg = os.path.join(
         out_dir,
-        os.path.basename(vect_path).replace(path.get_ext(vect_path), "gpkg"),
+        os.path.basename(vect_path).replace(path.get_ext(vect_path), ".gpkg"),
     )
     cmd_line = [
         "ogr2ogr",

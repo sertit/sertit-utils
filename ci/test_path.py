@@ -21,7 +21,7 @@ import tempfile
 
 import pytest
 
-from ci.script_utils import LANDSAT_NAME, get_s3_ci_path, s3_env
+from ci.script_utils import LANDSAT_NAME, files_path, get_s3_ci_path, s3_env
 from sertit import AnyPath, ci, files, misc, path, vectors
 
 ci.reduce_verbosity()
@@ -148,36 +148,113 @@ def test_archived_files_errors(landsat_prod, landsat_zip, landsat_tar_gz, landsa
         path.get_archived_rio_path(landsat_tar_gz, tif_regex)
 
 
+@s3_env
 def test_get_file_name():
     """Test get_file_name"""
     file_name = path.get_filename(__file__)
-    assert file_name == "test_path"
+    ci.assert_val(file_name, "test_path", "__file__")
     file_name = path.get_filename(__file__ + "\\")
-    assert file_name == "test_path"
+    ci.assert_val(file_name, "test_path", "__file__ + \\")
     file_name = path.get_filename(__file__ + "/")
-    assert file_name == "test_path"
+    ci.assert_val(file_name, "test_path", "__file__ + /")
 
+    # random
+    file = r"/test/vector.gpkg"
+    ci.assert_val("vector", path.get_filename(file), "gpkg name")
+    ci.assert_val(".gpkg", path.get_ext(file, start_with_point=True), "gpkg extension")
+
+    # SAFE
+    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE"
+    ci.assert_val(
+        path.get_filename(fn),
+        "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432",
+        "SAFE filename",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True), ".SAFE", "SAFE dir extension"
+    )
+
+    # tar gz
     file = "/fkjzeh-r_éfertg.tar.gz"
-    assert file[1:] == path.get_filename(file) + "." + path.get_ext(file)
+    ci.assert_val("fkjzeh-r_éfertg", path.get_filename(file), "tar.gz name")
+    ci.assert_val(
+        ".tar.gz", path.get_ext(file, start_with_point=True), "tar.gz extension"
+    )
 
     # Multi point files
-    fn = r"/test/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif"
-    file_name = path.get_filename(fn)
-    assert file_name == "HLS.L30.T42RVR.2022240T055634.v2.0.B01"
-
-    fn = (
-        r"/test/S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004.SEN3.zip"
+    fn = "/test/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif"
+    ci.assert_val(
+        path.get_filename(fn),
+        "HLS.L30.T42RVR.2022240T055634.v2.0.B01",
+        "Multi-point file name",
     )
-    file_name = path.get_filename(fn)
-    assert file_name == "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004"
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True), ".tif", "Multi-point file extension"
+    )
+
+    # Multi point directory (existing)
+    fn = files_path() / "HLS.L30.T42RVR.2022240T055634.v2.0"
+    ci.assert_val(
+        path.get_filename(fn),
+        "HLS.L30.T42RVR.2022240T055634.v2.0",
+        "Multi-point directory name (existing)",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        "",
+        "Multi-point folder extension (existing)",
+    )
+
+    # Multi point directory (non-existing) -> faulty behaviour...
+    fn = files_path() / "HLS.L30.T42RVR.2022240T055634.v2.1"
+    ci.assert_val(
+        path.get_filename(fn),
+        "HLS.L30.T42RVR.2022240T055634.v2",
+        "Multi-point directory name (non-existing)",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        ".1",
+        "Multi-point folder extension (non-existing)",
+    )
+
+    # Chained extensions
+    fn = "/test/S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004.SEN3.zip"
+    ci.assert_val(
+        path.get_filename(fn),
+        "S3B_SL_1_RBT____20200909T104016_0179_043_165_2340_LN2_O_NT_004",
+        "Chained extensions (.SEN3.zip) filename",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        ".zip",
+        "Chained extensions (.SEN3.zip) extension",
+    )
 
     fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.zip"
-    file_name = path.get_filename(fn)
-    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
+    ci.assert_val(
+        path.get_filename(fn),
+        "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432",
+        "Chained extensions (.SAFE.zip) filename",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        ".zip",
+        "Chained extensions (.SAFE.zip) extension",
+    )
 
     fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE.tar.gz.zip"
     file_name = path.get_filename(fn, other_exts=".gz.zip")
-    assert file_name == "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432"
+    ci.assert_val(
+        file_name,
+        "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432",
+        "Chained extensions (made-up ext) filename",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        ".zip",
+        "Chained extensions (made-up ext) extension",
+    )
 
 
 def test_find_files():

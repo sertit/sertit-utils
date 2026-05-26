@@ -1,5 +1,12 @@
 # Release History
 
+## 1.54.0 (2026-mm-dd)
+
+- **ENH: Filter directory extensions (if wanted) in `path.get_ext` with `curate_dir_extensions` keyword**
+- DEPR: In a next release, `path.get_ext` will return the extensions with a starting point to follow pathlib' suffix behaviour. Set `start_with_point` to `True` to get the new behaviour.
+- FIX: Handle correctly chained extensions finishing by `gz` in `path.get_ext`
+- FIX: Handle correctly point-based folders in `path.get_ext` and `path.get_filename`
+
 ## 1.53.1 (2026-05-05)
 
 - FIX: Fix raster layer check in `arcpy.gp_layer_to_path`

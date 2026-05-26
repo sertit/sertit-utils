@@ -26,7 +26,7 @@ import zipfile
 from typing import Any
 
 from sertit import AnyPath
-from sertit.logs import SU_NAME
+from sertit.logs import SU_NAME, deprecation_warning
 from sertit.types import AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -290,7 +290,7 @@ def get_archived_rio_path(
 
     if ext.split(".")[-1] in ["tar", "zip"]:
         prefix = archive_path.suffix[-3:]
-    elif ext == "tar.gz":
+    elif ext == ".tar.gz":
         raise TypeError(
             ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
         )
@@ -324,7 +324,11 @@ def get_archived_rio_path(
 
 def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> str:
     """
-    Get file name (without extension) from file path, ie:
+    Get file name (without extension) from file path.
+
+    .. WARNING::
+        - Never returns SAFE or SEN.3 extensions as part of the filename
+        - To correctly handle '.' based directory names (such as :code:`HLS.L30.T42RVR.2022240T055634.v2.0`), the folder must exist! Otherwise it'll remove the ending :code:`.0`...)
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
@@ -337,6 +341,26 @@ def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> st
         >>> file_path = 'D:/path/to/filename.zip'
         >>> get_file_name(file_path)
         'filename'
+
+        >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif'
+        >>> get_file_name(file_path)
+        'HLS.L30.T42RVR.2022240T055634.v2.0.B01'
+
+        >>> file_path = 'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE.zip'
+        >>> get_file_name(file_path)
+        'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE'
+
+        >>> folder_path = 'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE'
+        >>> get_file_name(folder_path)
+        'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE'
+
+        >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0'  # Must exist
+        >>> get_file_name(file_path)
+        'HLS.L30.T42RVR.2022240T055634.v2.0'
+
+        >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0'  # If not existing...
+        >>> get_file_name(file_path)
+        'HLS.L30.T42RVR.2022240T055634.v2'
     """
     file_path = AnyPath(file_path)
 
@@ -352,8 +376,8 @@ def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> st
     if any([str(file_path).endswith(ext) for ext in multi_exts]):
         filename = file_path.name.split(".")[0]
     else:
-        # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
-        filename = file_path.stem
+        # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0 folders or HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
+        filename = file_path.name if file_path.is_dir() else file_path.stem
 
     # get_archived_rio_path returns zip+file://{zip_path}!{file_name}
     if ".zip!" in filename:
@@ -362,28 +386,80 @@ def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> st
     return filename
 
 
-def get_ext(file_path: AnyPathStrType) -> str:
+def get_ext(
+    file_path: AnyPathStrType, curate_dir_extensions=True, start_with_point: bool = True
+) -> str:
     """
     Get file extension from file path.
 
     .. WARNING::
-        Extension is given WITHOUT THE FIRST POINT
+        - Extension is given WITHOUT THE FIRST POINT if :code:`start_with_point` is set to False
+        - Handle chained extensions with :code:`gz` only.
+        - Therefore zipped directory extensions such as :code:`SAFE` or :code:`SEN3` will be ignored (:code:`.SAFE.zip` will return :code:`.zip`). This is wanted.
+        - Only accept :code:`SAFE`, :code:`SEN3`, :code:`data` in **existing** directory extensions if :code:`curate_dir_extensions` is True
 
     Args:
         file_path (AnyPathStrType): Absolute or relative file path (the file doesn't need to exist)
+        curate_dir_extensions (bool): If True, only accept :code:`SAFE`, :code:`SEN3`, :code:`data` in **existing** directory extensions
+        start_with_point (bool): Extensions starts with a point to follow pathlib's logic. Set it to False to get back to older behaviour
 
     Returns:
-        str: File name (without extension)
+        str: File or directory extension
 
-    Example:
-        >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_ext(file_path)
+    Examples:
+        >>> path = = 'D:/path/to/filename.zip'
+        >>> get_ext(path)
+        '.zip'
+
+        >>> path = = 'D:/path/to/filename.zip'
+        >>> get_ext(path, start_with_point=False)
         'zip'
+
+        >>> path = = 'D:/path/to/filename.tar.gz'
+        >>> get_ext(path)
+        '.tar.gz'
+
+        >>> path = = 'D:/S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE.zip'
+        >>> get_ext(path)
+        '.zip'
+
+        >>> path = 'D:/S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE'
+        >>> get_ext(path)
+        '.SAFE'
+
+        >>> path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0' # Has to truly exist
+        >>> get_ext(path)
+        ''
+
+        >>> path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0'
+        >>> get_ext(path, curate_dir_extensions=False)
+        '.0'
+
+        >>> path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif' # Has to truly exist
+        >>> get_ext(path)
+        '.tif'
     """
     file_path = AnyPath(file_path)
+    exts = file_path.suffixes
+    ending_ext = file_path.suffix
 
-    # We need to avoid splitext because of nested extensions such as .tar.gz
-    return ".".join(file_path.name.split(".")[1:])
+    # Handle only  chained extensions with .gz at the end (i.e .tar.gz)
+    ext = "".join(exts) if len(exts) > 1 and ending_ext == ".gz" else ending_ext
+
+    # Curate directory extensions.
+    # WARNING: using is_dir() makes it work only if the directory is existing.
+    if file_path.is_dir() and curate_dir_extensions:
+        curated_dir_exts = [".SAFE", ".SEN3", ".data"]
+        ext = ending_ext if ending_ext in curated_dir_exts else ""
+
+    # Legacy reasons
+    if not start_with_point:
+        deprecation_warning(
+            "In a next release, 'get_ext' will return the starting point by default to follow pathlib's logic."
+        )
+        ext = ext[1:]
+
+    return ext
 
 
 def find_files(
