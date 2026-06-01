@@ -412,11 +412,14 @@ def run_in_conda_env(
     env_list = json.loads(env_list.stdout)
     current_env = env_list["default_prefix"]
     current_env_name = pathlib.Path(current_env).name
-    env_path_list = env_list["envs"]
 
-    if conda_env_name is None:
+    if not conda_env_name:
         available_env = []
         available_prefix = []
+        env_path_list = env_list["envs"]
+
+        if env_path_list is None:
+            raise FileNotFoundError(f"No env found on your conda installation!")
 
         # Find available environments
         for env in env_path_list:
@@ -448,6 +451,9 @@ def run_in_conda_env(
 
     else:
         conda_path = conda_env_name
+
+    if conda_path is None:
+        raise FileNotFoundError(f"Impossible to find your conda env!")
 
     cmd_line = [
         "conda",

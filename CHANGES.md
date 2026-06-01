@@ -6,6 +6,7 @@
 - DEPR: In a next release, `path.get_ext` will return the extensions with a starting point to follow pathlib' suffix behaviour. Set `start_with_point` to `True` to get the new behaviour.
 - FIX: Handle correctly chained extensions finishing by `gz` in `path.get_ext`
 - FIX: Handle correctly point-based folders in `path.get_ext` and `path.get_filename`
+- FIX: Fix `arcpy.run_in_conda_env`
 
 ## 1.53.1 (2026-05-05)
 
