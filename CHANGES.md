@@ -1,6 +1,6 @@
 # Release History
 
-## 1.54.0 (2026-mm-dd)
+## 1.54.0 (2026-06-01)
 
 - **ENH: Filter directory extensions (if wanted) in `path.get_ext` with `curate_dir_extensions` keyword**
 - DEPR: In a next release, `path.get_ext` will return the extensions with a starting point to follow pathlib' suffix behaviour. Set `start_with_point` to `True` to get the new behaviour.
