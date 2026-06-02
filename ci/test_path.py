@@ -159,19 +159,37 @@ def test_get_file_name():
     ci.assert_val(file_name, "test_path", "__file__ + /")
 
     # random
-    file = r"/test/vector.gpkg"
+    file = "/test/vector.gpkg"
     ci.assert_val("vector", path.get_filename(file), "gpkg name")
     ci.assert_val(".gpkg", path.get_ext(file, start_with_point=True), "gpkg extension")
 
-    # SAFE
-    fn = r"/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE"
+    # SAFE (existing)
+    fn = (
+        files_path()
+        / "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE"
+    )
     ci.assert_val(
         path.get_filename(fn),
         "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432",
-        "SAFE filename",
+        "SAFE filename (existing)",
     )
     ci.assert_val(
-        path.get_ext(fn, start_with_point=True), ".SAFE", "SAFE dir extension"
+        path.get_ext(fn, start_with_point=True),
+        ".SAFE",
+        "SAFE dir extension (existing)",
+    )
+
+    # SAFE (non-existing)
+    fn = "/test/S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432.SAFE"
+    ci.assert_val(
+        path.get_filename(fn),
+        "S2A_MSIL1C_20200824T110631_N0209_R137_T30TTK_20200824T150432",
+        "SAFE filename (non-existing)",
+    )
+    ci.assert_val(
+        path.get_ext(fn, start_with_point=True),
+        ".SAFE",
+        "SAFE dir extension  (non-existing)",
     )
 
     # tar gz

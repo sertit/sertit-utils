@@ -31,6 +31,8 @@ from sertit.types import AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
 
+REMOVED_DIR_EXTS = [".SAFE", ".SEN3", ".data"]
+
 
 def get_root_path() -> AnyPathType:
     """
@@ -376,8 +378,18 @@ def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> st
     if any([str(file_path).endswith(ext) for ext in multi_exts]):
         filename = file_path.name.split(".")[0]
     else:
-        # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0 folders or HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
-        filename = file_path.name if file_path.is_dir() else file_path.stem
+        if file_path.is_dir():
+            # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0 folders (keep the last .0)
+            filename = file_path.name
+
+            # Remove SAFE, SEN, etc in case of existing dir
+            for ext in REMOVED_DIR_EXTS:
+                if ext in filename:
+                    filename = filename.replace(ext, "")
+
+        else:
+            # Manage correctly the cases like HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif files...
+            filename = file_path.stem
 
     # get_archived_rio_path returns zip+file://{zip_path}!{file_name}
     if ".zip!" in filename:
@@ -449,8 +461,7 @@ def get_ext(
     # Curate directory extensions.
     # WARNING: using is_dir() makes it work only if the directory is existing.
     if file_path.is_dir() and curate_dir_extensions:
-        curated_dir_exts = [".SAFE", ".SEN3", ".data"]
-        ext = ending_ext if ending_ext in curated_dir_exts else ""
+        ext = ending_ext if ending_ext in REMOVED_DIR_EXTS else ""
 
     # Legacy reasons
     if not start_with_point:

@@ -1,5 +1,9 @@
 # Release History
 
+## 1.54.1 (2026-06-02)
+
+- FIX: Fix regression with `path.get_filename` for .SAFE and .SEN3 directories
+
 ## 1.54.0 (2026-06-01)
 
 - **ENH: Filter directory extensions (if wanted) in `path.get_ext` with `curate_dir_extensions` keyword**
