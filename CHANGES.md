@@ -1,5 +1,9 @@
 # Release History
 
+## 1.54.2 (2026-mm-dd)
+
+- DEPS: Add an `arcpy` optional dependency to install `python-json-logger` needed for the backend logger
+
 ## 1.54.1 (2026-06-02)
 
 - FIX: Fix regression with `path.get_filename` for .SAFE and .SEN3 directories
