@@ -425,3 +425,8 @@ def test_read_idx():
     _test_idx([1])
     _test_idx([1, 2])
     _test_idx(1)
+
+
+def test_none_window(raster_path):
+    with rasterio.open(str(raster_path)) as ds:
+        ci.assert_val(rasters_rio.get_window(ds, None), None, "None window")

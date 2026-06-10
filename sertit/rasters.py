@@ -1005,20 +1005,19 @@ def _3d_to_2d(function):
     return wrapper
 
 
-@__read__any_raster_to_rio_ds
-def get_window(ds: AnyRasterType, window: Any):
+def get_window(xda: AnyRasterType, window: Any):
     """
     Get a window from any type of input
 
     Args:
-        ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        xda (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
 
     Returns:
         Window: Rasterio window
 
     """
-    return rasters_rio.get_window(ds, window)
+    return rasters_rio.get_window(xda, window)
 
 
 @__read__any_raster_to_rio_ds

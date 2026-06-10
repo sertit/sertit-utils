@@ -1535,3 +1535,8 @@ def test_reproject(tmp_path, raster_path):
     ci.assert_val(shape_arr.rio.count, 1, "Reprojected count")
     with pytest.raises(AssertionError):
         ci.assert_val(xda.rio.shape, (1, 161, 232), "Native shape")
+
+
+def test_none_window(raster_path):
+    ds = get_xda(raster_path)
+    ci.assert_val(rasters.get_window(ds, window=None), None, "None window")
