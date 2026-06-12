@@ -1379,16 +1379,19 @@ def test_classify(tmp_path):
     sev_out = get_output(tmp_path, "fire_sev_ndvi.tif", DEBUG, dask_folders=True)
 
     name = "Classif"
-
-    sev = rasters.classify(
-        rasters.read(d_ndvi_path), bins=[0.2, 0.55], values=[2, 3, 4], new_name=name
-    )
+    d_ndvi = rasters.read(d_ndvi_path)
+    sev = rasters.classify(d_ndvi, bins=[0.2, 0.55], values=[2, 3, 4], new_name=name)
 
     ci.assert_val(sev.attrs.pop("long_name"), name, "name")
 
     assert_chunked_computed(sev, "Classify DataArray")
     rasters.write(sev, sev_out, dtype=np.uint8, nodata=255)
     ci.assert_raster_equal(sev_truth, sev_out)
+
+    with pytest.raises(AssertionError):
+        rasters.classify(
+            d_ndvi, bins=[0.2, None, 0.55], values=[2, 3, 4, 5], new_name=name
+        )
 
 
 @s3_env

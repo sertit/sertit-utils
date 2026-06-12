@@ -3,6 +3,7 @@
 ## 1.54.2 (2026-mm-dd)
 
 - FIX: Fix `rasters(_rio).get_window` function (with `None` and with xarray input)
+- FIX: Disallow `None` in bins in `rasters.classify`
 - DEPS: Add an `arcpy` optional dependency to install `python-json-logger` needed for the backend logger
 
 ## 1.54.1 (2026-06-02)

@@ -2369,6 +2369,8 @@ def classify(
         "The number of values should equal the number of bins plus one."
     )
 
+    assert None not in bins, f"'None' cannot be a bin: {bins}"
+
     if dask.is_chunked(raster):
         import dask.array as da
 
