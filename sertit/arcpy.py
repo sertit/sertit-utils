@@ -459,8 +459,8 @@ def run_in_conda_env(
         "conda",
         "run",
         "--live-stream",
-        "-p",
-        conda_path,
+        "-n",
+        conda_env_name,
     ] + executable
 
     # Copy and clean the environment
@@ -475,10 +475,38 @@ def run_in_conda_env(
             value_as_str = ";".join(value_as_list_filtered)
             clean_env[key] = value_as_str
 
+    # Remove any ArcGis leak in the environment variables on strategic variables
+    for key in [
+        "GDAL_DATA",
+        "GDAL_DRIVER_PATH",
+        "GDAL_CONFIG_FILE",
+        "PROJ_DATA",
+        "PROJ_LIB",
+    ]:
+        clean_env.pop(key, None)
+
+    # Clean the path (remove any ArcGis Pro leak in the PATH)
+    # i.e. C:\Program Files\ArcGIS\Pro\bin\Python\Scripts or C:\Program Files\ArcGIS\Pro\bin
+    clean_env["PATH"] = ";".join(
+        env_path
+        for env_path in clean_env["PATH"].split(";")
+        if "ArcGIS" not in env_path
+    )
+
+    # Override PYTHONPATH
     clean_env["PYTHONPATH"] = python_path
+
     # Add env_extend allowing to overwrite
     clean_env = clean_env | extend_env
     clean_env["SERTIT_LOGGER_TYPE"] = "BACKEND_SUBPROCESS"
+
+    # Log things in debug, just in case there are other ArcGis leaks in the subprocess
+    logger.debug("Before subprocess: ")
+    logger.debug("Command line: ")
+    logger.debug(" ".join(cmd_line))
+    logger.debug("")
+    logger.debug("Env: ")
+    logger.debug(clean_env)
 
     with subprocess.Popen(
         cmd_line,

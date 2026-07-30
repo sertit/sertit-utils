@@ -1,5 +1,9 @@
 # Release History
 
+## 1.54.3 (2026-mm-dd)
+
+- FIX: Correctly prune any ArcGis leaks the environment in `arcpy.run_in_conda_env`, preventing any retrieval of GDAL DLLs
+
 ## 1.54.2 (2026-06-29)
 
 - FIX: Fix `rasters(_rio).get_window` function (with `None` and with xarray input)
