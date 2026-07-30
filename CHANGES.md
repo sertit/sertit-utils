@@ -1,6 +1,6 @@
 # Release History
 
-## 1.54.3 (2026-mm-dd)
+## 1.54.3 (2026-07-30)
 
 - FIX: Correctly prune any ArcGis leaks the environment in `arcpy.run_in_conda_env`, preventing any retrieval of GDAL DLLs
 
