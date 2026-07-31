@@ -29,8 +29,10 @@ TEXT = "str:255"
 DATE = "datetime"
 """ 'Date' type for ArcGis GDB """
 
-AGP_EO_ENV = "arcgispro-eo-backend"
-AGP_EO_ENV_TEST = "arcgispro-eo-backend-testing"
+BASE_ENV = "arcgispro-eo"
+SEP = "-"
+AGP_EO_ENV = f"{BASE_ENV}{SEP}backend"
+AGP_EO_ENV_TEST = f"{BASE_ENV}{SEP}backend{SEP}testing"
 AGP_ENVS = [AGP_EO_ENV, AGP_EO_ENV_TEST]
 """ ArcGis Pro environments """
 
@@ -419,6 +421,7 @@ def run_in_conda_env(
     env_list = json.loads(env_list.stdout)
     current_env = env_list["default_prefix"]
     current_env_name = pathlib.Path(current_env).name
+    current_is_testing = f"{SEP}{AGP_EO_ENV_TEST.split(SEP)[-1]}" in current_env_name
 
     if not conda_env_name:
         available_env = []
@@ -438,10 +441,16 @@ def run_in_conda_env(
 
         # Choose the most appropriate environment to run the command line
         if len(available_env) > 0:
-            # AGP_EO_ENV has priority over AGP_EO_ENV_TEST
-            conda_env_name = (
-                AGP_EO_ENV if AGP_EO_ENV in available_env else AGP_EO_ENV_TEST
-            )
+            # AGP_EO_ENV_TEST has priority over AGP_EO_ENV if testing is present in "current_env_name"
+            if current_is_testing:
+                conda_env_name = (
+                    AGP_EO_ENV_TEST if AGP_EO_ENV_TEST in available_env else AGP_EO_ENV
+                )
+            # AGP_EO_ENV has priority over AGP_EO_ENV_TEST if testing is absent in "current_env_name"
+            else:
+                conda_env_name = (
+                    AGP_EO_ENV if AGP_EO_ENV in available_env else AGP_EO_ENV_TEST
+                )
             conda_env_prefix = available_prefix[available_env.index(conda_env_name)]
         else:
             # Default to the current environment if no backend environment is found
@@ -508,6 +517,9 @@ def run_in_conda_env(
     clean_env["SERTIT_LOGGER_TYPE"] = "BACKEND_SUBPROCESS"
 
     # Log things in debug, just in case there are other ArcGis leaks in the subprocess
+    logger.info(
+        f"['{current_env_name}' will delegate the process run to '{conda_env_name}']"
+    )
     logger.debug("Before subprocess: ")
     logger.debug("Command line: ")
     logger.debug(" ".join(cmd_line))
