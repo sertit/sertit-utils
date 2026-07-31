@@ -1,6 +1,6 @@
 # Release History
 
-## 1.54.4 (2026-07-dd)
+## 1.54.4 (2026-07-31)
 
 - FIX: Correctly select the backend-testing env in case we are currently in the testing env in `arcpy.run_in_conda_env`
 - FIX: Force `GDAL_MEM_ENABLE_OPEN` to `YES` in `arcpy.init_conda_arcpy_env` to solve the removal of this variable by ArcGis
