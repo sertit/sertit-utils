@@ -1,5 +1,9 @@
 # Release History
 
+## 1.54.4 (2026-07-dd)
+
+- FIX: Force `GDAL_MEM_ENABLE_OPEN` to `YES` in `init_conda_arcpy_env` to solve the removal of this variable by ArcGis
+
 ## 1.54.3 (2026-07-30)
 
 - FIX: Correctly prune any ArcGis leaks the environment in `arcpy.run_in_conda_env`, preventing any retrieval of GDAL DLLs

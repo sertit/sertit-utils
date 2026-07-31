@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import logging.config
+import os
 import pickle
 import tempfile
 from functools import wraps
@@ -58,6 +59,12 @@ def init_conda_arcpy_env():
             gpd.options.io_engine = "pyogrio"
     except (ModuleNotFoundError, ImportError):  # pragma: no cover
         pass
+
+    # Solve this missing env variable (removed from env in ArcGis):
+    # rasterio._err.CPLE_AppDefinedError:
+    # Opening a MEM dataset with the MEM:::DATAPOINTER= syntax is no longer supported by default for security reasons.
+    # If you want to allow it, define the GDAL_MEM_ENABLE_OPEN configuration option to YES, or build GDAL with the GDAL_MEM_ENABLE_OPEN compilation definition
+    os.environ["GDAL_MEM_ENABLE_OPEN"] = "YES"
 
 
 class ArcPyLogger:  # pragma: no cover
