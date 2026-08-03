@@ -64,12 +64,22 @@ def is_geopandas_1_0():
     return misc.compare_version("geopandas", "1.0.0", ">=")
 
 
-if is_geopandas_1_0():
+def use_pyogrio():
+    has_pyogrio = False
+    with contextlib.suppress(Exception):
+        has_pyogrio = True
+
+    return is_geopandas_1_0() and has_pyogrio
+
+
+if use_pyogrio():
+    gpd.options.io_engine = "pyogrio"
     from pyogrio.errors import DataSourceError
     from shapely.errors import GEOSException
 
     CPLE_AppDefinedError = Exception
 else:  # pragma: no cover
+    gpd.options.io_engine = "fiona"
     from fiona._err import CPLE_AppDefinedError
     from fiona.errors import DriverError as DataSourceError
     from fiona.errors import UnsupportedGeometryTypeError as GEOSException
@@ -568,7 +578,7 @@ def _read_vector_core(
         vect = gpd.GeoDataFrame(geometry=[], crs=crs)
     except CPLE_AppDefinedError as ex:
         # CPLE_AppDefinedError is not a pyogrio exception and this is therefore too broad
-        if is_geopandas_1_0() and kwargs.get("engine") != "fiona":
+        if use_pyogrio() and kwargs.get("engine") != "fiona":
             raise ex
 
         # Last try to read this vector
@@ -617,18 +627,17 @@ def _read_kml(
     driver = "KML" if gpd_vect_path.endswith(".kml") else "KMZ"
     engine = kwargs.pop("engine", None)
 
-    use_pyogrio = is_geopandas_1_0() and engine != "fiona"
-
     # Errors reading KML and KMZ with pyogrio until v0.12.0
     # https://github.com/geopandas/pyogrio/issues/543
     # https://github.com/geopandas/pyogrio/issues/444
     from importlib.metadata import version
 
+    use_pyogrio_here = use_pyogrio()
     if misc.compare_version("pyogrio", "0.12.0", "<"):
         engine = "fiona"
-        use_pyogrio = False
+        use_pyogrio_here = False
 
-    if use_pyogrio:
+    if use_pyogrio_here and engine != "fiona":
         try:
             import pyogrio
 

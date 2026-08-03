@@ -1,5 +1,9 @@
 # Release History
 
+## 1.54.5 (2026-mm-dd)
+
+- FIX: Handle correctly the case `geopandas >= 1` is installed but `pyogrio` is missing (cf. ArcGis Pro)
+
 ## 1.54.4 (2026-07-31)
 
 - FIX: Correctly select the backend-testing env in case we are currently in the testing env in `arcpy.run_in_conda_env`
