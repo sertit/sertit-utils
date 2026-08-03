@@ -2,6 +2,7 @@
 
 ## 1.54.5 (2026-mm-dd)
 
+- FIX: Handle correctly `odc` nodata in `rasters.__save_cog_with_dask`
 - FIX: Handle correctly the case `geopandas >= 1` is installed but `pyogrio` is missing (cf. ArcGis Pro)
 
 ## 1.54.4 (2026-07-31)

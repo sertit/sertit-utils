@@ -1210,12 +1210,22 @@ def __save_cog_with_dask(
 ):
     from odc.geo import cog, xr  # noqa
 
+    # Fill the nodata to the destination value (instead of NaN)
+    # Convert to the wanted dtype
+    # Set the nodata value in the array
+    xds = xds.fillna(nodata).astype(dtype).rio.set_nodata(nodata, inplace=False)
+
+    # Set nodata also for odc, otherwise it can throw an overflow error
+    xds.odc.nodata = nodata
+
+    # Save the COG as a delayed object
     delayed = cog.save_cog_with_dask(
-        xds.copy(data=xds.fillna(nodata).astype(dtype)).rio.set_nodata(nodata),
+        xds,
         str(output_path),
         **kwargs,
     )
 
+    # Compute the delayed object if needed
     if compute:
         LOGGER.debug(f"Writing your COG '{path.get_filename(output_path)}' with Dask.")
         delayed.compute(optimize_graph=True)
