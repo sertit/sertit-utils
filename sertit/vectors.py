@@ -67,6 +67,8 @@ def is_geopandas_1_0():
 def use_pyogrio():
     has_pyogrio = False
     with contextlib.suppress(Exception):
+        import pyogrio  # noqa
+
         has_pyogrio = True
 
     return is_geopandas_1_0() and has_pyogrio
