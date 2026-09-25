@@ -177,5 +177,7 @@ def test_compare_versions():
     assert compare_version("geopandas", "5.0.0", "<")
     assert compare_version(__version__, "5.0.0", "<")
     assert compare_version(__version__, "1.0.0", ">")
-    with pytest.raises(TypeError):
+    from packaging.version import InvalidVersion
+
+    with pytest.raises((TypeError, InvalidVersion)):
         assert compare_version(__version__, 1, ">")

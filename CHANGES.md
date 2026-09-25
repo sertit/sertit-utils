@@ -4,6 +4,7 @@
 
 - ENH: Add France's RGF93 EPSG code in vectors
 - FIX: Handle correctly the case `geopandas >= 1` is installed but `pyogrio` is missing (cf. ArcGis Pro)
+- CI: Manage `InvalidVersion` exception from `packaging.version`
 
 ## 1.54.5 (2026-08-03)
 
