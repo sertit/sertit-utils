@@ -45,6 +45,7 @@ from sertit.types import AnyPathStrType, AnyPathType, AnyVectorType
 LOGGER = logging.getLogger(SU_NAME)
 
 EPSG_4326 = "EPSG:4326"
+RGF_93 = "EPSG:2154"
 WGS84 = EPSG_4326
 
 EXT_TO_DRIVER = {
