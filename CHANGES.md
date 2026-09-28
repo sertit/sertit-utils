@@ -1,10 +1,11 @@
 # Release History
 
-## 1.54.6 (2026-08-dd)
+## 1.54.6 (2026-09-dd)
 
 - ENH: Add France's RGF93 EPSG code in vectors
 - FIX: Handle correctly the case `geopandas >= 1` is installed but `pyogrio` is missing (cf. ArcGis Pro)
 - CI: Manage `InvalidVersion` exception from `packaging.version`
+- DEPS: Drop Python 3.10 support
 
 ## 1.54.5 (2026-08-03)
 
