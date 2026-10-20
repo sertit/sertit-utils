@@ -1,5 +1,9 @@
 # Release History
 
+## 2.0.0 (20xx-xx-xx)
+
+- DOC: DOC: Update rioxarray's home repo
+
 ## 1.54.6 (2026-09-28)
 
 - ENH: Add France's RGF93 EPSG code in vectors

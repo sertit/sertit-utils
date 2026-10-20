@@ -115,7 +115,7 @@ def get_or_create_dask_client(processes=False, env_vars=None):
 def get_dask_lock(name):
     """
     Get a dask lock with given name.
-    This lock is used in rioxarray.to_raster (see https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html)
+    This lock is used in rioxarray.to_raster (see https://vylor.github.io/rioxarray/stable/examples/dask_read_write.html)
 
     If a Multiple worker client exists: returns a distributed.Lock()
     Elif a Multithreaded client exists: returns a threading.Lock()

@@ -84,7 +84,7 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     Retrieve the nodata from a xarray structure.
 
     Follow process as described here:
-    https://corteva.github.io/rioxarray/stable/getting_started/nodata_management.html#Search-order-for-nodata-(DataArray-only):
+    https://vylor.github.io/rioxarray/stable/getting_started/nodata_management.html#Search-order-for-nodata-(DataArray-only):
 
     Args:
         xds (AnyXrDataStructure): Xarray structure to retrieve data from
@@ -92,6 +92,13 @@ def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
     Returns:
         float: nodata
     """
+
+    try:
+        nodata = xds.rst.nodata
+    except AttributeError:
+        nodata = None
+
+    # Fallback on rioxarray
     try:
         nodata = xds.rio.encoded_nodata
     except AttributeError:
@@ -1046,7 +1053,7 @@ def read(
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
 
-    Uses `rioxarray.open_rasterio <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
+    Uses `rioxarray.open_rasterio <https://vylor.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
 
     .. WARNING::
         With dask usage, this function is not lazy (yet) when downsampling! (becaise of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
