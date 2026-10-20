@@ -33,7 +33,6 @@ from typing import Any
 import dill
 import numpy as np
 import yaml
-from cloudpathlib import CloudPath
 from lxml import etree, html
 from tqdm import tqdm
 
@@ -630,7 +629,7 @@ class CustomYamlDumper(yaml.SafeDumper):
         super().__init__(*args, **kwargs)
         # Register representers
         self.add_multi_representer(Path, _represent_paths)
-        self.add_multi_representer(CloudPath, _represent_paths)
+        self.add_multi_representer(AnyPath, _represent_paths)
         self.add_multi_representer(np.number, _represent_np_types)
         self.add_multi_representer(Enum, _represent_enums)
 

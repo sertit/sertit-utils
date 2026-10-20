@@ -30,13 +30,13 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 from affine import Affine
+from rasterio.windows import Window
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
 from sertit.vectors import EPSG_4326
 
 try:
-    import rasterio
     import rioxarray
     from rasterio import CRS, control, features, rpc, warp
     from rasterio.enums import Resampling
@@ -47,7 +47,19 @@ except ModuleNotFoundError as ex:  # pragma: no cover
     ) from ex
 
 
-from sertit import AnyPath, dask, geometry, logs, misc, path, perf, rasters_rio, vectors
+from sertit import (
+    AnyPath,
+    dask,
+    geometry,
+    logs,
+    misc,
+    path,
+    perf,
+    rasters_rio,
+    use_cloudpathlib,
+    use_universal_pathlib,
+    vectors,
+)
 from sertit.types import (
     AnyPathStrType,
     AnyPathType,
@@ -74,7 +86,10 @@ FLOAT_NODATA = rasters_rio.FLOAT_NODATA
 """ :code:`float` nodata """
 
 DEG_LAT_TO_M = 111_120.0
+
+# Aliases
 DEG_2_RAD = rasters_rio.DEG_2_RAD
+open_rasterio = rasters_rio.open_rasterio
 
 # https://wiki.openstreetmap.org/wiki/Precision_of_coordinates#Precision_of_latitudes
 
@@ -938,11 +953,14 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
         Returns:
             Any: regular output
         """
+        out = None
+        if path.is_cloud_path(any_raster_type):
+            out = function(any_raster_type, *args, **kwargs)
         # Input is a path: open it with rasterio
-        if path.is_path(any_raster_type):
+        elif path.is_path(any_raster_type):
             # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
             # This is really not ideal, so use the string conversion instead
-            with rasterio.open(str(any_raster_type)) as ds:
+            with rasters_rio.open_rasterio(any_raster_type) as ds:
                 out = function(ds, *args, **kwargs)
         # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict
         elif isinstance(any_raster_type, tuple):
@@ -1020,9 +1038,102 @@ def get_window(xda: AnyRasterType, window: Any):
     return rasters_rio.get_window(xda, window)
 
 
+def get_new_shape(
+    xda: AnyRasterType,
+    resolution: tuple | list | float,
+    size: tuple | list,
+    window: Window = None,
+) -> (int, int, bool):
+    """
+    Get the new shape (height, width) of a resampled raster.
+
+    Size overrides resolution
+
+    Args:
+        ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
+        size (tuple | list): Size of the array (width, height). Not used if resolution is provided.
+        window (Window): Window to be read
+
+    Returns:
+        (int, int, bool): Height, width, do resampling
+
+    """
+    # By default, do a resampling
+    do_resampling = True
+
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -> (int, bool):
+        """
+        Get the new dimension in pixels
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            (int, bool): New dimension, do resampling
+        """
+        new_dim = int(np.round(dim * res_old / res_new))
+        do_res = dim != new_dim
+        return new_dim, do_res
+
+    # By default keep original shape
+    if window is None:
+        new_height = xda.rio.height
+        new_width = xda.rio.width
+    else:
+        new_height = window.height
+        new_width = window.width
+
+    # Compute new shape
+    if size is not None:
+        try:
+            if new_height == size[1] and new_width == size[0]:
+                do_resampling = False
+            else:
+                new_height = size[1]
+                new_width = size[0]
+        except (TypeError, KeyError) as exc:
+            raise ValueError(
+                f"Size should be None or a 2 digits iterable: {size}"
+            ) from exc
+    elif resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height, do_resampling = _get_new_dim(
+                new_height, xda.rio.resolution()[1], resolution
+            )
+            new_width, do_resampling = _get_new_dim(
+                new_width, xda.rio.resolution()[0], resolution
+            )
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError(
+                        "We should have a resolution for X and Y dimensions"
+                    )
+
+                if resolution[0] is not None:
+                    new_width, do_resampling = _get_new_dim(
+                        new_width, xda.rio.resolution()[0], resolution[0]
+                    )
+
+                if resolution[1] is not None:
+                    new_height, do_resampling = _get_new_dim(
+                        new_height, xda.rio.resolution()[1], resolution[1]
+                    )
+            except (TypeError, KeyError) as exc:
+                raise ValueError(
+                    f"Resolution should be None or a 2 digits iterable: {resolution}"
+                ) from exc
+    else:
+        do_resampling = False
+
+    return new_height, new_width, do_resampling
+
+
 @__read__any_raster_to_rio_ds
 def read(
-    ds: AnyRasterType,
+    raster_path: AnyRasterType,
     resolution: tuple | list | float = None,
     size: tuple | list = None,
     window: Any = None,
@@ -1052,7 +1163,7 @@ def read(
         With dask usage, this function is not lazy (yet) when downsampling! (becaise of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
 
     Args:
-        ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
+        raster_path (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (tuple | list): Size of the array (width, height). Overrides resolution.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
@@ -1082,27 +1193,46 @@ def read(
     # Manage chunks
     chunks = kwargs.pop("chunks", dask.get_default_chunks())
 
-    # Manage window
-    if window is not None:
-        window = get_window(ds, window)
+    if use_cloudpathlib():
+        rasterio_path = str(raster_path)
 
-    # Get new height and width
-    new_height, new_width, do_resampling = rasters_rio.get_new_shape(
-        ds, resolution, size, window
-    )
+    # 1
+    elif (
+        use_universal_pathlib()
+        and path.is_path(raster_path)
+        and not isinstance(raster_path, str)
+    ):
+        kwargs["opener"] = raster_path.fs
+        rasterio_path = raster_path.as_uri()
+
+    else:
+        rasterio_path = raster_path
 
     # Read data (and load it to discard lock)
+    try:
+        name = raster_path.name
+    except Exception:
+        name = path.get_filename(raster_path)
     with (
         xr.set_options(keep_attrs=True),
         rioxarray.set_options(export_grid_mapping=False),
         rioxarray.open_rasterio(
-            ds,
-            default_name=path.get_filename(ds.name),
+            rasterio_path,
+            default_name=name,
             chunks=chunks,
             masked=masked,
             **kwargs,
         ) as xda,
     ):
+        # Manage window
+        if window is not None:
+            window = get_window(xda, window)
+
+        # Get new height and width
+        new_height, new_width, do_resampling = get_new_shape(
+            xda, resolution, size, window
+        )
+
         orig_encoding = xda.encoding
         orig_dtype = orig_encoding.get(
             "rasterio_dtype", orig_encoding.get("dtype", xda.dtype)
@@ -1128,7 +1258,7 @@ def read(
             ok_indexes = np.isin(indexes, xda.band)
             if any(~ok_indexes):
                 LOGGER.warning(
-                    f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
+                    f"Non-available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {name}"
                 )
 
             xda = xda.isel(
@@ -1190,7 +1320,7 @@ def read(
         # Mask if necessary
         if masked:
             # Set nodata not in opening due to some performance issues
-            xda = set_nodata(xda, ds.meta["nodata"])
+            xda = set_nodata(xda, xda.rio.nodata)
 
         # Set back attributes and encoding
         xda.rio.update_encoding(orig_encoding, inplace=True)
@@ -1199,8 +1329,10 @@ def read(
         xda.encoding["dtype"] = orig_dtype
 
         # Save path in attrs
-        if AnyPath(ds.name).exists():
-            xda.attrs["path"] = str(ds.name)
+        if path.is_path(raster_path):
+            xda.attrs["path"] = str(raster_path)
+        else:
+            xda.attrs["path"] = name
 
     return xda
 
@@ -3000,7 +3132,7 @@ def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
     # We are using RPC_DEM so it should be fine
 
     # DEM nodata
-    with rasterio.open(dem_path) as src:
+    with rasters_rio.open_rasterio(dem_path) as src:
         dem_nodata = src.nodata
 
     if dem_nodata is not None:

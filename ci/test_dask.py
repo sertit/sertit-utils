@@ -66,6 +66,7 @@ def test_computed_lazy():
     ci.assert_computed(da_arr.compute())
 
 
+@s3_env
 def test_raise_compute():
     raster_path = rasters_path().joinpath("raster.tif")
 

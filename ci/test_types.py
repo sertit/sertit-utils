@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-from cloudpathlib import CloudPath
 
 from sertit import AnyPath
 from sertit.types import AnyPathType, is_iterable, make_iterable
@@ -9,7 +8,7 @@ from sertit.types import AnyPathType, is_iterable, make_iterable
 
 def test_types():
     """Test some type aliases"""
-    assert AnyPathType == Path | CloudPath
+    assert AnyPathType == Path | AnyPath
 
 
 def test_is_iterable():

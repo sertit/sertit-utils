@@ -15,13 +15,12 @@
 # limitations under the License.
 import logging
 import os
-import sys
 from enum import unique
 from functools import wraps
 
 import tempenv
 
-from sertit import AnyPath, ci, dask, unistra
+from sertit import AnyPath, ci, dask, unistra, use_universal_pathlib
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 
@@ -66,13 +65,36 @@ class Polarization(ListEnum):
 
 def get_s3_ci_path():
     """Get S3 CI path"""
-    unistra.define_s3_client()
-    return AnyPath("s3://sertit-ci/sertit_utils")
+
+    from sertit.unistra import UNISTRA_S3_ENDPOINT
+
+    bucket_url = "s3://sertit-ci/sertit_utils"
+
+    if use_universal_pathlib():
+        # from freezebase.s3 import make_s3_upath
+        # ci_path = make_s3_upath(
+        #     bucket_url,
+        #     endpoint_url=f"https://{UNISTRA_S3_ENDPOINT}",
+        #     key=os.environ["AWS_ACCESS_KEY_ID"],
+        #     secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+        # )
+        ci_path = AnyPath(
+            bucket_url,
+            endpoint_url=f"https://{UNISTRA_S3_ENDPOINT}",
+            key=os.environ["AWS_ACCESS_KEY_ID"],
+            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+        )
+    else:
+        unistra.define_s3_client()
+        ci_path = AnyPath(bucket_url)
+
+    assert ci_path.exists()
+    return ci_path
 
 
 def get_ci_data_path():
     """Get CI DATA path"""
-    if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
+    if int(os.getenv(CI_SERTIT_S3, 1)):
         return get_s3_ci_path() / "DATA"
     else:
         return AnyPath(unistra.get_db3_path()) / "CI" / "sertit_utils" / "DATA"
@@ -187,7 +209,20 @@ def arcpy_path():
 
 
 def s3_env(*args, **kwargs):
-    return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026
+    if use_universal_pathlib():
+
+        def decorator(function):
+            @wraps(function)
+            def s3_env_wrapper(*_args, **_kwargs):
+                """S3 environment wrapper"""
+                return function(*_args, **_kwargs)
+
+            return s3_env_wrapper
+
+        return decorator(*args, **kwargs)
+
+    else:
+        return unistra.s3_env(use_s3_env_var=CI_SERTIT_S3, *args, **kwargs)  # noqa: B026
 
 
 def get_output(tmp, file, debug=False, dask_folders=False):

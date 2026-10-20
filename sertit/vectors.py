@@ -34,7 +34,6 @@ from typing import Any
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 from shapely.geometry.base import BaseGeometry
 
@@ -495,8 +494,8 @@ def read(
             raise TypeError(
                 ".tar.gz files are too slow to be read from inside the archive. Please extract them instead."
             )
-    except AnyPathTypeError:
-        pass
+    except Exception as ex:
+        LOGGER.warning(ex)
 
     # Check existence of the file (here and not before to handle fsspec cases with '!')
     if not AnyPath(vector).exists():

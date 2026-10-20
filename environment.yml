@@ -1,9 +1,9 @@
 ---
-name: sertit
+name: sertit_v2
 channels:
   - conda-forge
 dependencies:         # everything under this, installed by conda
-  - python=3.11
+  - python=3.12
   - pip
   - pip:                # everything under this, installed by pip
       - -r requirements.txt

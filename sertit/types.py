@@ -5,8 +5,9 @@ from typing import Any
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from cloudpathlib import CloudPath
 from shapely import MultiPolygon, Polygon
+
+from sertit import use_cloudpathlib
 
 try:
     from rasterio.io import DatasetReader, DatasetWriter
@@ -14,10 +15,20 @@ except ModuleNotFoundError:  # pragma: no cover
     DatasetReader = Any
     DatasetWriter = Any
 
-AnyPathType = CloudPath | Path
-"""Any Path Type (derived from Pathlib and CloudpathLib)"""
+if use_cloudpathlib():
+    from cloudpathlib import CloudPath
 
-AnyPathStrType = str | CloudPath | Path
+    CLOUD_TYPE = CloudPath
+else:
+    from upath.implementations.cloud import CloudPath
+
+    CLOUD_TYPE = CloudPath
+
+
+AnyPathType = CLOUD_TYPE | Path
+"""Any Path Type (derived from Pathlib and Universal Pathlib / CloudpathLib)"""
+
+AnyPathStrType = str | CLOUD_TYPE | Path
 """Same as :code:`AnyPathType` but appened with :code:`str`"""
 
 AnyXrDataStructure = xr.DataArray | xr.Dataset

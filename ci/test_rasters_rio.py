@@ -20,7 +20,6 @@ import shutil
 
 import numpy as np
 import pytest
-import rasterio
 import shapely
 from rasterio.windows import Window
 
@@ -51,7 +50,7 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
 
     # Read
     raster, meta = raster_meta
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         raster_1, meta1 = rasters_rio.read(ds, resolution=20)
         raster_2, _ = rasters_rio.read(ds, resolution=[20, 20])
         raster_3, _ = rasters_rio.read(ds, size=(meta1["width"], meta1["height"]))
@@ -154,7 +153,7 @@ def test_mask(tmp_path, raster_path, mask):
     raster_masked_path = rasters_path().joinpath("raster_masked.tif")
     raster_masked_out = os.path.join(tmp_path, "test_mask.tif")
 
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         mask_arr, mask_meta = rasters_rio.mask(ds, mask.geometry)
 
     rasters_rio.write(mask_arr, mask_meta, raster_masked_out)
@@ -168,7 +167,7 @@ def test_crop(tmp_path, raster_path, mask):
     raster_cropped_path = rasters_path().joinpath("raster_cropped.tif")
     raster_cropped_out = os.path.join(tmp_path, "test_crop.tif")
 
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         crop_arr, crop_meta = rasters_rio.crop(ds, mask)
 
     rasters_rio.write(crop_arr, crop_meta, raster_cropped_out)
@@ -358,7 +357,10 @@ def test_reproj(tmp_path, raster_path):
     )
     reproj_path = rasters_path().joinpath("reproj_out.tif")
 
-    with rasterio.open(str(dem_path)) as src, rasterio.open(str(raster_path)) as ds:
+    with (
+        rasters_rio.open_rasterio(dem_path) as src,
+        rasters_rio.open_rasterio(raster_path) as ds,
+    ):
         dst_arr, dst_meta = rasters_rio.reproject_match(
             ds.meta, src.read(), src.meta, **KAPUT_KWARGS
         )
@@ -428,5 +430,5 @@ def test_read_idx():
 
 
 def test_none_window(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         ci.assert_val(rasters_rio.get_window(ds, None), None, "None window")

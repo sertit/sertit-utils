@@ -31,7 +31,7 @@ from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, dask, files, rasters, s3
+from sertit import AnyPath, dask, files, s3
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyVectorType, AnyXrDataStructure
 
@@ -150,13 +150,13 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         >>> # Raises AssertionError if sth goes wrong
     """
     try:
-        import rasterio
+        from sertit import rasters
     except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+    with rasters.open_rasterio(path_1) as ds_1, rasters.open_rasterio(path_2) as ds_2:
         # Metadata
         assert_meta(ds_1.meta, ds_2.meta)
 
@@ -187,13 +187,13 @@ def assert_raster_almost_equal(
         >>> # Raises AssertionError if sth goes wrong
     """
     try:
-        import rasterio
+        from sertit import rasters
     except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+    with rasters.open_rasterio(path_1) as ds_1, rasters.open_rasterio(path_2) as ds_2:
         # Metadata
         assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
@@ -246,13 +246,13 @@ def assert_raster_almost_equal_magnitude(
         >>> # Raises AssertionError if sth goes wrong
     """
     try:
-        import rasterio
+        from sertit import rasters
     except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_almost_equal."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+    with rasters.open_rasterio(path_1) as ds_1, rasters.open_rasterio(path_2) as ds_2:
         # Metadata
         assert_meta(ds_1.meta, ds_2.meta, tf_precision=10**-decimal)
 
@@ -349,13 +349,13 @@ def assert_raster_max_mismatch(
         >>> # Raises AssertionError if sth goes wrong
     """
     try:
-        import rasterio
+        from sertit import rasters
     except ModuleNotFoundError as ex:  # pragma: no cover
         raise ModuleNotFoundError(
             "Please install 'rasterio' to use assert_raster_max_mismatch."
         ) from ex
 
-    with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
+    with rasters.open_rasterio(path_1) as ds_1, rasters.open_rasterio(path_2) as ds_2:
         # Metadata
         assert_meta(ds_1.meta, ds_2.meta)
 
@@ -593,6 +593,13 @@ def assert_dim_file_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> Non
         >>> assert_dim_file_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
     """
+    try:
+        from sertit import rasters
+    except ModuleNotFoundError as ex:  # pragma: no cover
+        raise ModuleNotFoundError(
+            "Please install 'rasterio' to use assert_dim_file_equal."
+        ) from ex
+
     # TODO : Add Checking if .dim
     list_img_path_1 = rasters.get_dim_img_path(path_1, get_list=True)
     list_img_path_2 = rasters.get_dim_img_path(path_2, get_list=True)
@@ -754,6 +761,9 @@ def reduce_verbosity(other_loggers: list = None) -> None:
         "distributed.core",
         "distributed.http.proxy",
         "distributed.batched",
+        "s3fs",
+        "aiobotocore",
+        "fsspec",
     ]
     if other_loggers:
         loggers += other_loggers

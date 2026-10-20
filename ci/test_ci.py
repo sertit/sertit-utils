@@ -23,7 +23,7 @@ import pytest
 from lxml import etree
 
 from ci.script_utils import files_path, rasters_path, s3_env, vectors_path
-from sertit import ci, files, path, rasters, rasters_rio, vectors
+from sertit import ci, files, path, rasters, rasters_rio, use_cloudpathlib, vectors
 
 # Test another logger
 ci.reduce_verbosity(["other_logger"])
@@ -95,7 +95,12 @@ def test_assert_files():
     false_path = files_path().joinpath("false.html")
 
     ci.assert_files_equal(ok_path, ok_path)
-    ci.assert_files_equal(str(ok_path), str(ok_path))
+    if use_cloudpathlib():
+        ci.assert_files_equal(str(ok_path), str(ok_path))
+    else:
+        with pytest.raises(PermissionError):
+            ci.assert_files_equal(str(ok_path), str(ok_path))
+
     with pytest.raises(AssertionError):
         ci.assert_files_equal(ok_path, false_path)
 

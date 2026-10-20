@@ -53,6 +53,8 @@ from sertit import (
     path,
     perf,
     strings,
+    use_cloudpathlib,
+    use_universal_pathlib,
     vectors,
     xml,
 )
@@ -62,6 +64,7 @@ from sertit.types import (
     AnyPathStrType,
     AnyPathType,
     AnyRasterType,
+    AnyRioDatasetType,
     AnyVectorType,
 )
 
@@ -199,7 +202,7 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
         if path.is_path(any_raster_type):
             # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
             # This is really not ideal, so use the string conversion instead
-            with rasterio.open(str(any_raster_type)) as ds:
+            with open_rasterio(any_raster_type) as ds:
                 out = function(ds, *args, **kwargs)
         # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict
         elif isinstance(any_raster_type, tuple):
@@ -1149,7 +1152,7 @@ def write(
         raster_out = np.expand_dims(raster_out, axis=0)
 
     # Write product
-    with rasterio.open(str(output_path), "w", **out_meta) as ds:
+    with rasterio.open(str(output_path), mode="w", **out_meta) as ds:
         ds.write(raster_out)
         if tags is not None:
             ds.update_tags(**tags)
@@ -1429,7 +1432,7 @@ def merge_vrt(
         if path.is_cloud_path(crs_path):
             crs_path = crs_path.download_to(merged_path.parent)
 
-        with rasterio.open(str(crs_path)) as src:
+        with open_rasterio(crs_path) as src:
             if first_crs is None:
                 first_crs = src.crs
             else:
@@ -1541,28 +1544,29 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     # Open datasets for merging
     tmp_dir = None
     crs_datasets = []
+    merged_meta = None
     try:
         first_crs = kwargs.get("crs")
         for tile_path in paths:
-            src = rasterio.open(str(tile_path))
-            if first_crs is None:
-                first_crs = src.crs
-            else:
-                # Reproject bands if needed
-                if first_crs != src.crs:
-                    tmp_dir = tempfile.TemporaryDirectory()
-                    with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
-                        # At this point 'vrt' is a full dataset with dimensions,
-                        # CRS, and spatial extent matching 'vrt_options'.
-                        tile_path = os.path.join(
-                            tmp_dir.name, path.get_filename(tile_path) + ".vrt"
-                        )
-                        rio_shutil.copy(vrt, tile_path, driver="vrt")
+            with open_rasterio(tile_path) as src:
+                if merged_meta is None:
+                    merged_meta = src.meta.copy()
 
-                    src.close()
-                    src = rasterio.open(str(tile_path))
+                if first_crs is None:
+                    first_crs = src.crs
+                else:
+                    # Reproject bands if needed
+                    if first_crs != src.crs:
+                        tmp_dir = tempfile.TemporaryDirectory()
+                        with WarpedVRT(src, **{"crs": first_crs.to_epsg()}) as vrt:
+                            # At this point 'vrt' is a full dataset with dimensions,
+                            # CRS, and spatial extent matching 'vrt_options'.
+                            tile_path = os.path.join(
+                                tmp_dir.name, path.get_filename(tile_path) + ".vrt"
+                            )
+                            rio_shutil.copy(vrt, tile_path, driver="vrt")
 
-            crs_datasets.append(src)
+            crs_datasets.append(str(tile_path))
 
         # Merge all datasets
         merge_args = [
@@ -1584,7 +1588,6 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
         write_kwargs = misc.prune_dict(kwargs, merge_args)
 
         merged_array, merged_transform = merge.merge(crs_datasets, **merge_kwargs)
-        merged_meta = crs_datasets[0].meta.copy()
         merged_meta.update(
             {
                 "driver": "GTiff",
@@ -1596,8 +1599,6 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     finally:
         # Close all datasets
         src = None
-        for dataset in crs_datasets:
-            dataset.close()
 
         if tmp_dir is not None:
             tmp_dir.cleanup()
@@ -1872,3 +1873,42 @@ def reproject_match(
     meta["driver"] = "GTiff"  # Force GTiff
 
     return dst_arr, meta
+
+
+@contextlib.contextmanager
+def open_rasterio(raster_path: AnyPathStrType, **kwargs) -> AnyRioDatasetType:
+    """Open rasterio, managing different path structures"""
+
+    LOGGER.info("1")
+    if use_cloudpathlib():
+        rasterio_path = str(raster_path)
+        LOGGER.info("2a")
+
+    # 1
+    elif use_universal_pathlib() and not isinstance(raster_path, str):
+        kwargs["opener"] = raster_path.fs
+        rasterio_path = raster_path.as_uri()
+        LOGGER.info("2b")
+
+    else:
+        rasterio_path = raster_path
+        LOGGER.info("2c")
+
+    LOGGER.info("3")
+    # try:
+    with rasterio.open(rasterio_path, **kwargs) as ds:
+        LOGGER.info("4")
+        yield ds
+        LOGGER.info("5")
+    # except SystemError as ex:
+    #     LOGGER.warning(ex)
+
+    # 2
+    # with raster_path.open("rb") as fobj, rasterio.open(fobj, **kwargs) as ds:
+    #     yield ds
+
+    # 3
+    # from freezebase.raster import rasterio_open
+    #
+    # with rasterio_open(raster_path, **kwargs) as ds:
+    #     yield ds

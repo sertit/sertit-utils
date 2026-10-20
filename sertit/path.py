@@ -27,7 +27,7 @@ from typing import Any
 
 from sertit import AnyPath
 from sertit.logs import SU_NAME, deprecation_warning
-from sertit.types import AnyPathStrType, AnyPathType
+from sertit.types import CLOUD_TYPE, AnyPathStrType, AnyPathType
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -678,9 +678,7 @@ def is_cloud_path(path: AnyPathStrType):
         bool: True if the file is store on the cloud.
     """
     try:
-        from cloudpathlib import CloudPath
-
-        return isinstance(AnyPath(path), CloudPath)
+        return isinstance(AnyPath(path), CLOUD_TYPE)
     except Exception:
         return False
 
@@ -697,6 +695,4 @@ def is_path(path: Any) -> bool:
     """
     from pathlib import Path
 
-    from cloudpathlib import CloudPath
-
-    return isinstance(path, (str, Path, CloudPath))
+    return isinstance(path, (str, Path, CLOUD_TYPE))

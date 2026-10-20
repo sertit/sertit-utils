@@ -17,13 +17,14 @@
 S3 tools
 """
 
+import contextlib
 import logging
 import os
 from contextlib import contextmanager
 from functools import wraps
+from io import BytesIO
 
-from cloudpathlib import S3Client
-
+from sertit import AnyPath, path, use_cloudpathlib
 from sertit.logs import SU_NAME
 
 LOGGER = logging.getLogger(SU_NAME)
@@ -48,12 +49,17 @@ USE_S3_STORAGE = "USE_S3_STORAGE"
 Environment variable created to use Unistra's S3 bucket.
 """
 
+# Keys
+CLOUD_PATH_ARGS = "cloud_paths"
+VECTORS_ARGS = "pyogrio"
+RASTERS_ARGS = "rasterio"
+
 
 def in_house_s3_configs():
     """
-    This function declares in-house S3 configurations for rasterio, pyogrio and cloudpathlib.
+    This function declares in-house S3 configurations for rasters, vectors and cloud paths.
 
-    You can control how rasterio, pyogrio and cloudpathlib connects to S3 server by changing the input configurations bellow.
+    You can control how rasters (via rasterio), vectors (via pyogrio) and cloud path (via cloudpathlib or universal_pathlib) connects to S3 server by changing the input configurations bellow.
     Then, configuration files are translated for each library into their own configuration system.
 
     To get more information read the docstring of the function args_dict.
@@ -112,9 +118,9 @@ def in_house_s3_configs():
         {"kwargs": "extra_args"},
     ]
     return {
-        "cloudpathlib": s3_client_args_l,
-        "pyogrio": args_pyogrio_l,
-        "rasterio": args_rasterio_l,
+        CLOUD_PATH_ARGS: s3_client_args_l,
+        VECTORS_ARGS: args_pyogrio_l,
+        RASTERS_ARGS: args_rasterio_l,
     }
 
 
@@ -151,8 +157,8 @@ def s3_env(*args, **kwargs):
 
     use_s3 = kwargs.get("use_s3_env_var", USE_S3_STORAGE)
     args = s3_args(*args, **kwargs)
-    args_rasterio = args["rasterio"]
-    args_pyogrio = args["pyogrio"]
+    args_rasterio = args[RASTERS_ARGS]
+    args_pyogrio = args[VECTORS_ARGS]
 
     def decorator(function):
         @wraps(function)
@@ -225,8 +231,8 @@ def temp_s3(
     kwargs_cp["requester_pays"] = requester_pays
     kwargs_cp["no_sign_request"] = no_sign_request
     args = s3_args(**kwargs_cp)
-    args_rasterio = args["rasterio"]
-    args_pyogrio = args["pyogrio"]
+    args_rasterio = args[RASTERS_ARGS]
+    args_pyogrio = args[VECTORS_ARGS]
 
     # Define S3 client for S3 paths
     try:
@@ -241,7 +247,10 @@ def temp_s3(
             )
     finally:
         # Clean env
-        S3Client().set_as_default_client()
+        if use_cloudpathlib():
+            from cloudpathlib import S3Client
+
+            S3Client().set_as_default_client()
 
 
 def define_s3_client(
@@ -268,6 +277,11 @@ def define_s3_client(
         requester_pays (bool): True if the endpoint says 'requester pays'
         no_sign_request (bool): True if the endpoint is open access
     """
+    if not use_cloudpathlib():
+        return
+
+    from cloudpathlib import S3Client
+
     kwargs_cp = kwargs.copy()
     kwargs_cp["endpoint"] = endpoint
     kwargs_cp["profile_name"] = profile_name
@@ -275,7 +289,7 @@ def define_s3_client(
     kwargs_cp["no_sign_request"] = no_sign_request
 
     args = s3_args(**kwargs_cp)
-    args_s3_client = args["cloudpathlib"]
+    args_s3_client = args["cloud_paths"]
     client = S3Client(**args_s3_client)
 
     client.set_as_default_client()
@@ -283,7 +297,7 @@ def define_s3_client(
 
 def s3_args(*args, **kwargs) -> dict:
     """
-    This function returns ready to use configurations for rasterio, pyogrio and cloudpathlib.
+    This function returns ready to use configurations for rasterio, pyogrio and universal_pathlib and cloudpathlib.
     For each in-house input configurations, it applies the function args_dict.
 
     Args:
@@ -297,9 +311,9 @@ def s3_args(*args, **kwargs) -> dict:
 
     in_house_configs = in_house_s3_configs()
 
-    s3_client_args_l = in_house_configs["cloudpathlib"]
-    args_pyogrio_l = in_house_configs["pyogrio"]
-    args_rasterio_l = in_house_configs["rasterio"]
+    s3_client_args_l = in_house_configs[CLOUD_PATH_ARGS]
+    args_pyogrio_l = in_house_configs[VECTORS_ARGS]
+    args_rasterio_l = in_house_configs[RASTERS_ARGS]
 
     s3_client_args = args_dict(s3_client_args_l, kwargs)
     args_pyogrio = args_dict(args_pyogrio_l, kwargs)
@@ -309,9 +323,9 @@ def s3_args(*args, **kwargs) -> dict:
     args_rasterio_env.update(args_rasterio)
 
     return {
-        "cloudpathlib": s3_client_args,
-        "pyogrio": args_pyogrio,
-        "rasterio": args_rasterio,
+        CLOUD_PATH_ARGS: s3_client_args,
+        VECTORS_ARGS: args_pyogrio,
+        RASTERS_ARGS: args_rasterio,
     }
 
 
@@ -379,3 +393,55 @@ def args_dict(args_l: list[dict], kwargs) -> dict:
             ret["extra_args"] = {"RequestPayer": "requester"}
         ret.pop("requester_pays")
     return ret
+
+
+def download(src, dst):
+    # By default, use the src path
+    downloaded_path = src
+
+    # Universal pathlib
+    if path.is_cloud_path(src):
+        import shutil
+
+        with contextlib.suppress(ImportError):
+            from upath import UPath
+
+            if isinstance(src, UPath):
+                dst = AnyPath(dst)
+                if dst.is_dir() and src.name != dst.name:
+                    downloaded_path = dst / src.name
+                else:
+                    downloaded_path = dst
+
+                if src.is_file():
+                    with src.open("rb") as f0, downloaded_path.open("wb") as f1:
+                        shutil.copyfileobj(f0, f1)
+                else:
+                    downloaded_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    for f in src.glob("**"):
+                        dst_file = downloaded_path / f.name
+                        if f.is_file():
+                            dst_file.parent.mkdir(parents=True, exist_ok=True)
+                            with f.open("rb") as f0, dst_file.open("wb") as f1:
+                                shutil.copyfileobj(f0, f1)
+
+        # cloudpathlib
+        with contextlib.suppress(ImportError):
+            from cloudpathlib import CloudPath
+
+            if isinstance(src, CloudPath):
+                downloaded_path = src.fspath if dst is None else src.download_to(dst)
+
+    return downloaded_path
+
+
+def read(src):
+    src = AnyPath(src)
+    try:
+        b = src.read_bytes()
+    except Exception:
+        with src.open("rb") as f:
+            b = f.read()
+
+    return BytesIO(b)

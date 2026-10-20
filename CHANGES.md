@@ -1,5 +1,9 @@
 # Release History
 
+## 2.0.0 (20xx-xx-xx)
+
+- **ENH: Use `universal_pathlib` instead of `cloudpathlib` (keeping compatibility with `cloudpathlib`)** ([#4](https://github.com/sertit/sertit-utils/issues/4))
+
 ## 1.54.6 (2026-09-28)
 
 - ENH: Add France's RGF93 EPSG code in vectors

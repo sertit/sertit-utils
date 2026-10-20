@@ -21,7 +21,6 @@ import shutil
 
 import numpy as np
 import pytest
-import rasterio
 import shapely
 import xarray as xr
 
@@ -43,6 +42,7 @@ from sertit.rasters import (
     UINT8_NODATA,
     UINT16_NODATA,
     get_nodata_value_from_xr,
+    open_rasterio,
 )
 from sertit.vectors import EPSG_4326
 
@@ -92,7 +92,7 @@ def get_xda(raster_path, **kwargs):
 
 
 def get_xds(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
+    with open_rasterio(raster_path) as ds:
         ds_name = path.get_filename(ds.name)
     return xr.Dataset({ds_name: get_xda(raster_path)})
 
@@ -186,7 +186,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
     xda = get_xda(raster_path)
     xds = get_xds(raster_path)
 
-    with rasterio.open(str(raster_path)) as ds:
+    with open_rasterio(raster_path) as ds:
         # -- Read and test laziness
         assert_chunked_computed(xda, "Native xda")
 
@@ -324,7 +324,7 @@ def test_very_big_file(tmp_path, mask_path):
     """Test read with big files function (should be fast, if not there is something going on...)"""
     dem_path = unistra.get_geodatastore() / "GLOBAL" / "EUDEM_v2" / "eudem_wgs84.tif"
     aoi_path = rasters_path() / "DAX.shp"
-    with rasterio.open(dem_path) as ds:
+    with open_rasterio(dem_path) as ds:
         dem_res = ds.res[0]  # noqa
         dem_crs = ds.crs  # noqa
 
@@ -960,7 +960,7 @@ def test_merge_different_crs_gtiff(tmp_path):
 
 
 def _test_raster_after_write(test_path, dtype, nodata_val):
-    with rasterio.open(str(test_path)) as ds:
+    with open_rasterio(test_path) as ds:
         assert ds.meta["dtype"] == dtype or ds.meta["dtype"] == dtype.__name__
         assert ds.meta["nodata"] == nodata_val
         assert ds.read()[:, 0, 0] == nodata_val  # Check value
@@ -1404,7 +1404,7 @@ def test_reproject_rpcs(tmp_path):
         / "DIM_SPOT7_MS_201602150257025_SEN_1671661101.XML"
     )
     copdem_path = rasters_path() / "Copernicus_DSM_10_S07_00_E106_00_DEM.tif"
-    with rasterio.open(str(spot_path)) as ds:
+    with open_rasterio(spot_path) as ds:
         rpc_reproj = rasters.reproject(
             spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0
         )
@@ -1427,7 +1427,7 @@ def test_reproject_rpcs_no_crs(tmp_path):
         / "SV1-04_20200607_L1B0001022989_0032100150001_01-MUX.tiff"
     )
     copdem_path = rasters_path() / "Copernicus_DSM_10_S07_00_E106_00_DEM.tif"
-    with rasterio.open(str(spot_path)) as ds:
+    with open_rasterio(spot_path) as ds:
         arr = rasters.read(spot_path)
         assert arr.rio.crs is None
         rpc_reproj = rasters.reproject(
@@ -1448,7 +1448,7 @@ def test_reproject_gcps(tmp_path):
     """Test reproject with GCPs"""
     spot_path = rasters_path() / "SPOT-5" / "METADATA.DIM"
 
-    with rasterio.open(str(spot_path)) as ds:
+    with open_rasterio(spot_path) as ds:
         gcps_reproj = rasters.reproject(
             rasters.read(ds.name, indexes=1),
             gcps=ds.gcps[0],

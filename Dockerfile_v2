@@ -1,0 +1,12 @@
+##########################
+# BUILD EXTRACTEO NO AWS #
+##########################
+FROM registry.app.unistra.fr/sertit/eo-containers:geo_latest
+
+# Add EEO to python libs
+RUN pip install "geoutils @ git+https://github.com/GlacioHack/geoutils" "universal_pathlib>=0.3"
+
+
+CMD ["/bin/bash"]
+
+# docker build -f Dockerfile_v2 -t geo_latest_v2 . --progress=plain --no-cache

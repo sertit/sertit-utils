@@ -21,11 +21,10 @@ import os
 import geopandas
 import pytest
 import rasterio
-from cloudpathlib import AnyPath, S3Client
 from tempenv import tempenv
 
 from ci.script_utils import CI_SERTIT_S3
-from sertit import ci, rasters, vectors
+from sertit import AnyPath, ci, rasters, vectors
 from sertit.ci import AWS_S3_ENDPOINT
 from sertit.logs import SU_NAME
 from sertit.s3 import USE_S3_STORAGE, s3_env, temp_s3
@@ -39,7 +38,7 @@ def base_fct(value):
     raster_path = AnyPath("s3://sertit-ci/sertit_utils").joinpath(
         "DATA", "rasters", "raster.tif"
     )
-    assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
+    # assert raster_path.client.client.meta.endpoint_url == "https://s3.unistra.fr"
     assert raster_path.is_file()
     assert rasters.read(raster_path).rio.count == 1
     return 1
@@ -51,7 +50,7 @@ def with_s3(variable_1, variable_2):
 
 
 def without_s3():
-    S3Client().set_as_default_client()
+    # S3Client().set_as_default_client()
     return base_fct(None)
 
 
@@ -70,7 +69,7 @@ def test_s3_raster():
             assert raster_path.is_file()
 
             # Test only rasterio since rasters module may interfere
-            assert rasterio.open(str(raster_path)).count == 1
+            assert rasters.open_rasterio(raster_path).count == 1
             assert rasters.read(raster_path).rio.count == 1
 
         with pytest.raises(AssertionError):
@@ -107,7 +106,7 @@ def test_no_sign_request():
             "s3://sentinel-cogs/sentinel-s2-l2a-cogs/40/V/DR/2023/11/S2A_40VDR_20231114_0_L2A"
         )
         assert path.exists()
-        with rasterio.open(str(path / "B12.tif")) as ds:
+        with rasters.open_rasterio(path / "B12.tif") as ds:
             assert ds.meta["dtype"] == "uint16"
 
 
@@ -124,7 +123,7 @@ def test_requester_pays():
     ):
         path = AnyPath("s3://sentinel-s2-l1c/tiles/29/H/NA/2023/11/14/0/")
         assert path.exists()
-        with rasterio.open(str(path / "B12.jp2")) as ds:
+        with rasters.open_rasterio(path / "B12.jp2") as ds:
             assert ds.meta["dtype"] == "uint16"
 
 

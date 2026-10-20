@@ -18,12 +18,33 @@
 **Source Code**: https://github.com/sertit/sertit-utils
 """
 
-try:
-    from cloudpathlib import AnyPath
+U_PATHLIB = "universal_pathlib"
+CLD_PATHLIB = "cloudpathlib"
 
-    AnyPath = AnyPath
+# Try first with Universal Pathlib
+try:
+    from upath import UPath
+
+    AnyPath = UPath
+    CLD_LB = U_PATHLIB
+
 except ImportError:
-    pass
+    # If not found, try with cloudpathlib
+    try:
+        from cloudpathlib import AnyPath
+
+        AnyPath = AnyPath
+    except ImportError:
+        CLD_LB = None
+
+
+def use_universal_pathlib():
+    return CLD_LB == U_PATHLIB
+
+
+def use_cloudpathlib():
+    return CLD_LB == CLD_PATHLIB
+
 
 # flake8: noqa
 from .__meta__ import (

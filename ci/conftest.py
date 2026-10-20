@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import rasterio
 
 from ci.script_utils import KAPUT_KWARGS, LANDSAT_NAME, files_path, rasters_path
 from sertit import path, rasters_rio, vectors
@@ -58,13 +57,13 @@ def mask(mask_path):
 
 @pytest.fixture
 def ds_name(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         return path.get_filename(ds.name)
 
 
 @pytest.fixture
 def ds_dtype(raster_path):
-    with rasterio.open(str(raster_path)) as ds:
+    with rasters_rio.open_rasterio(raster_path) as ds:
         return getattr(np, ds.meta["dtype"])
 
 
