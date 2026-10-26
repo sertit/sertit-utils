@@ -669,10 +669,30 @@ def assert_xr_encoding_attrs(
         xda_2 (AnyXrDataStructure): Second xarray
         unchecked_attr (list | str): Don't check this list of attributes
     """
+
+    def __check_key(dict_base, dict_other, key, unchecked_attr, other_dict_name):
+        try:
+            if not key.startswith("_") and key not in unchecked_attr:
+                assert dict_base[key] == dict_other[key], (
+                    f"{dict_base[key]=} != {dict_other[key]=}"
+                )
+        except KeyError as exc:
+            raise AssertionError(f"Missing {exc} key in {other_dict_name}.") from exc
+
     if unchecked_attr is None:
         unchecked_attr = []
     elif not isinstance(unchecked_attr, list):
         unchecked_attr = [unchecked_attr]
+
+    try:
+        name_1 = xda_1.attrs.get("path", xda_1.name)
+    except AttributeError:
+        name_1 = "Dataset 1"
+
+    try:
+        name_2 = xda_2.attrs.get("path", xda_2.name)
+    except AttributeError:
+        name_1 = "Dataset 2"
 
     # Attributes
     try:
@@ -681,22 +701,23 @@ def assert_xr_encoding_attrs(
         )
         assert xda_1.attrs == xda_2.attrs
     except AssertionError:
-        try:
-            for key, _ in xda_1.attrs.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.attrs[key] == xda_2.attrs[key], (
-                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-                    )
+        for key, _ in xda_1.attrs.items():
+            __check_key(
+                dict_base=xda_1.attrs,
+                dict_other=xda_2.attrs,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_2}'s attributes",
+            )
 
-            for key, _ in xda_2.attrs.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.attrs[key] == xda_2.attrs[key], (
-                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-                    )
-        except KeyError as exc:
-            raise AssertionError(
-                f"Missing '{exc}' in attributes of one DataArray/Dataset"
-            ) from exc
+        for key, _ in xda_2.attrs.items():
+            __check_key(
+                dict_base=xda_2.attrs,
+                dict_other=xda_1.attrs,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_1}'s attributes",
+            )
 
     # Encoding
     try:
@@ -705,22 +726,23 @@ def assert_xr_encoding_attrs(
         )
         assert xda_1.encoding == xda_2.encoding
     except AssertionError:
-        try:
-            for key, _ in xda_1.encoding.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.encoding[key] == xda_2.encoding[key], (
-                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-                    )
+        for key, _ in xda_1.encoding.items():
+            __check_key(
+                dict_base=xda_1.encoding,
+                dict_other=xda_2.encoding,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_2}'s encoding",
+            )
 
-            for key, _ in xda_2.encoding.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.encoding[key] == xda_2.encoding[key], (
-                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-                    )
-        except KeyError as exc:
-            raise AssertionError(
-                f"Missing '{exc}' in encoding of one DataArray/Dataset"
-            ) from exc
+        for key, _ in xda_2.encoding.items():
+            __check_key(
+                dict_base=xda_2.encoding,
+                dict_other=xda_1.encoding,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_1}'s encoding",
+            )
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:

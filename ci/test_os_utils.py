@@ -15,6 +15,10 @@
 # limitations under the License.
 """Script testing the os_utils module"""
 
+import sys
+
+import pytest
+
 from sertit import ci, os_utils
 
 ci.reduce_verbosity()
@@ -39,12 +43,18 @@ def test_str_containing_version():
     )
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32", reason="'QGIS' may not be reachable on Windows"
+)
 def test_qgis_bin():
     """Test qgis_bin function"""
     # We are on linux, this fct returns nothing
     ci.assert_val(os_utils.qgis_bin(), None, "Empty qgis_bin")
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32", reason="'gdalbuildvrt' may not be reachable on Windows"
+)
 def test_gdalbuildvrt():
     """Test gdalbuildvrt function"""
     # We are on linux, this fct returns the name of the exe only

@@ -221,9 +221,7 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
-            from sertit.rasters import get_nodata_value_from_xr
-
-            nodata = get_nodata_value_from_xr(any_raster_type)
+            nodata = any_raster_type.rst.nodata
 
             meta = {
                 "driver": "GTiff",
@@ -917,16 +915,20 @@ def get_window(ds: AnyRasterType, window: Any):
         Window: Rasterio window
 
     """
+    return _get_col_row_window(window, ds.crs, ds.transform)
+
+
+def _get_col_row_window(window: Any, crs, transform):
     if window is not None and not isinstance(window, Window):
         if isinstance(window, gpd.GeoDataFrame):
-            bounds = window.to_crs(ds.crs).total_bounds
+            bounds = window.to_crs(crs).total_bounds
         elif path.is_path(window):
-            bounds = vectors.read(window).to_crs(ds.crs).total_bounds
+            bounds = vectors.read(window).to_crs(crs).total_bounds
         else:
             bounds = window
 
         try:
-            window = from_bounds(*bounds, ds.transform)
+            window = from_bounds(*bounds, transform)
         except Exception as exc:
             raise TypeError(
                 "Window should either be a GeoDataFrame, tuple, list, Window, readable as a vector or set to None"
