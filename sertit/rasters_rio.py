@@ -19,7 +19,6 @@ Raster tools
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 
-import contextlib
 import logging
 import os
 import tempfile
@@ -111,17 +110,15 @@ def get_nodata_value_from_dtype(dtype) -> float:
         >>> rasters_rio.get_nodata_value_from_dtype("float")
         -9999
     """
-    # Convert type to numpy if needed
-    with contextlib.suppress(AttributeError, TypeError):
-        dtype = getattr(np, dtype)
+    dtype = np.dtype(dtype)
 
     if dtype == np.uint8:
         nodata = UINT8_NODATA
     elif dtype == np.int8:
         nodata = INT8_NODATA
-    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int, "int"]:
+    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
         nodata = UINT16_NODATA
-    elif dtype in [np.int16, np.float32, np.float64, float, "float"]:
+    elif dtype in [np.int16, np.float32, np.float64]:
         nodata = FLOAT_NODATA
     else:
         LOGGER.warning(f"Not recognized dtype: {dtype}. Setting -9999 by default.")

@@ -212,8 +212,8 @@ def assert_raster_almost_equal(
                 marr_1 = np.where(marr_1.mask, np.nan, marr_1)
                 marr_2 = np.where(marr_2.mask, np.nan, marr_2)
                 np.testing.assert_array_almost_equal(marr_1, marr_2, decimal=decimal)
-            except AssertionError:
-                text = f"Band {i + 1}{desc} failed"
+            except AssertionError as ex:
+                text = f"Band {i + 1}{desc} failed; {ex}"
                 errors.append(text)
                 LOGGER.error(text, exc_info=True)
 
@@ -673,16 +673,34 @@ def assert_xr_encoding_attrs(
     def __check_key(dict_base, dict_other, key, unchecked_attr, other_dict_name):
         try:
             if not key.startswith("_") and key not in unchecked_attr:
-                assert dict_base[key] == dict_other[key], (
-                    f"{dict_base[key]=} != {dict_other[key]=}"
+                base_val = dict_base[key]
+                other_val = dict_other[key]
+
+                # Remove warpedVRT from source, i.e.:
+                # AssertionError: source is different!
+                # dict_base[key]='s3://sertit-ci/sertit_utils/DATA/rasters/raster.tif'
+                # != dict_other[key]='WarpedVRT(s3://sertit-ci/sertit_utils/DATA/rasters/raster.tif)'
+                if key == "source":
+                    if "WarpedVRT" in base_val:
+                        base_val = base_val.replace("WarpedVRT", "")[1:-1]
+                    if "WarpedVRT" in other_val:
+                        other_val = other_val.replace("WarpedVRT", "")[1:-1]
+
+                assert base_val == other_val, (
+                    f"{key} is different! {dict_base[key]=} != {dict_other[key]=}"
                 )
         except KeyError as exc:
-            raise AssertionError(f"Missing {exc} key in {other_dict_name}.") from exc
+            raise AssertionError(
+                f"Missing {exc} key in {other_dict_name}. Value should be: {dict_base[key]}."
+            ) from exc
 
     if unchecked_attr is None:
         unchecked_attr = []
     elif not isinstance(unchecked_attr, list):
         unchecked_attr = [unchecked_attr]
+
+    if dask.is_chunked(xda_1) or dask.is_computed(xda_2):
+        unchecked_attr.append("preferred_chunks")
 
     try:
         name_1 = xda_1.attrs.get("path", xda_1.name)

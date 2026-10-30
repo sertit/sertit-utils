@@ -335,20 +335,50 @@ def vectorize(
     Returns:
         gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
     """
+    if dask.is_chunked(xda):
+        LOGGER.warning("'_vectorize' function is not lazy yet. Computing the raster.")
+        xda = xda.compute()
+
     # Manage values
+    wanted_values = None
+
+    # Handle all types of values
+    # For now, geoutils doesn't handle a list of values
     if values is not None:
-        if not keep_values:
-            if not isinstance(values, list):
-                values = [values]
-            target_values = tuple(
+        # We want to keep the values given as input
+        if keep_values:
+            if is_iterable(values):
+                target_values = "all"
+                wanted_values = values
+            else:
+                target_values = values
+
+            if not is_iterable(values):
+                target_values = values
+            else:
+                target_values = "all"
+                wanted_values = tuple(
+                    i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
+                )
+        # We want to discard the values given as input
+        else:
+            if not is_iterable(values):
+                values = (values,)
+
+            target_values = "all"
+            wanted_values = tuple(
                 i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
             )
-        else:
-            target_values = tuple(values) if is_iterable(values) else values
     else:
         target_values = "all"
 
+    LOGGER.debug(f"Vectorizing with {target_values=}")
+
     gdf = xda.rst.polygonize(target_values=target_values)
+
+    # Keep only selected values
+    if wanted_values is not None:
+        gdf = gdf.loc[np.isin(gdf["raster_value"], wanted_values)]
 
     # Return valid geometries
     gdf = geometry.make_valid(gdf)
@@ -366,7 +396,7 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
     """
     Get the valid data of a raster, returned as a vector.
 
-    Pay attention that every nodata pixel will appear too.
+    Pay attention that multiple polygons can be returned.
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     .. WARNING::
@@ -391,7 +421,7 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
         >>> nodata1 == nodata2
         True
     """
-    return vectorize(xda, values=None, default_nodata=default_nodata)
+    return vectorize(xda, values=None, dissolve=True, default_nodata=default_nodata)
 
 
 @any_raster_to_xr_ds
@@ -544,7 +574,7 @@ def crop(
     """
     all_touched = kwargs.get("all_touched")
     crop_xda = xds.rst.clip(mask=shapes, all_touched=all_touched).rst.crop(shapes)
-    crop_xda = set_metadata(crop_xda, xds, f"Cropped {xds.name}")
+    crop_xda = set_metadata(crop_xda, xds)
     return crop_xda
 
 
@@ -904,8 +934,11 @@ def read(
 
         # Convert to wanted type
         if as_type:
-            # Modify the type as wanted by the user
-            # TODO: manage nodata and uint/int numbers
+            if np.dtype(as_type).kind in "ui":
+                LOGGER.warning(
+                    "You asked for integer arrays. Please note that this kind of dtypes is not handled by GeoUtils and may fail silently."
+                )
+                xda = xda.fillna(xda.rst.nodata)
             xda = xda.astype(as_type)
 
         # Set back attributes and encoding
@@ -1199,7 +1232,14 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
-        collocated_xda = other.rst.reproject(ref=reference, resampling=resampling)
+        collocated_xda = other.rst.reproject(
+            ref=reference, resampling=resampling, **kwargs
+        )
+
+        if len(collocated_xda.shape) == 2:
+            with contextlib.suppress(ValueError):
+                collocated_xda = collocated_xda.expand_dims(dim="band")
+
     return collocated_xda
 
 
@@ -1251,29 +1291,25 @@ def collocate(
                     ref = reference
                 else:
                     # assert we have the same spatial dimensions in ref and other
-                    ref = reference[var].rio.set_spatial_dims(
-                        x_dim=x_dim, y_dim=y_dim, inplace=True
-                    )
+                    ref = reference[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
 
                 # Colocate dataarray by dataarray
                 collocated_xds[var] = _collocate_dataarray(
-                    other=other[var].rio.set_spatial_dims(
-                        x_dim=x_dim, y_dim=y_dim, inplace=True
-                    ),
+                    other=other[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim),
                     reference=ref,
                     resampling=resampling,
                     **kwargs,
                 )
             collocated_xds = collocated_xds.rio.set_spatial_dims(
-                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim, inplace=True
+                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim
             )
         except Exception:  # pragma: no cover
             # For datasets, maybe the code here over is a bit much, so use the reproject match function as a backup (just in case)
-            collocated_xds = other.rio.reproject_match(
-                reference, resampling=resampling, **kwargs
+            collocated_xds = _collocate_dataarray(
+                reference=reference, other=other, resampling=resampling, **kwargs
             )
 
-    # Assign directly the coordinates to correct tiny differences in coordinates du to float precision
+    # Assign directly the coordinates to correct tiny differences in coordinates due to float precision
 
     # From odc-geo
     STANDARD_SPATIAL_DIMS = [
@@ -1336,6 +1372,13 @@ def sieve(
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
     """
+    if xds.dtype.kind not in "biu":
+        LOGGER.warning(
+            "Sieving takes classified rasters. Converting the raster to uint8."
+        )
+        # Preserve attributes and encodings
+        xds = xds.copy(data=xds.astype("uint8"))
+
     return xds.rst.sieve(size=sieve_thresh, connectivity=connectivity)
 
 
@@ -1502,7 +1545,8 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
         ),
     ).to_xarray("Merged")
     if merged_path:
-        write(merged_raster, merged_path, **kwargs)
+        dtype = kwargs.pop("dtype", rasters[0].dtype)
+        write(merged_raster, merged_path, dtype=dtype, **kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
