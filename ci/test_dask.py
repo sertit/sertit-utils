@@ -147,6 +147,25 @@ def test_raise_compute():
     #     ]
 
 
+def test_address():
+    address = "127.0.0.1:8785"  # default is 8785
+    with dask.get_or_create_dask_client(
+        processes=True, dashboard_address=address
+    ) as client:
+        assert address in client.dashboard_link, (
+            f"Custom dashboard link failed: {address} not in {client.dashboard_link}"
+        )
+
+    # Error with default address
+    with (
+        pytest.raises(AssertionError),
+        dask.get_or_create_dask_client(processes=True) as client_default,
+    ):
+        assert address in client_default.dashboard_link, (
+            f"Custom dashboard link failed: {address} not in {client_default.dashboard_link}"
+        )
+
+
 def test_env_var(capfd):
     with dask.get_or_create_dask_client(
         processes=True, env_vars={"PROCESSES": "True"}

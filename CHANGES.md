@@ -1,5 +1,9 @@
 # Release History
 
+## Unreleased
+
+- FIX: Better argument handling in `dask.get_or_create_dask_client`
+
 ## 1.54.6 (2026-09-28)
 
 - ENH: Add France's RGF93 EPSG code in vectors
