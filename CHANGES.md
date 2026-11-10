@@ -2,7 +2,8 @@
 
 ## 2.0.0 (20xx-xx-xx)
 
-- DOC: DOC: Update rioxarray's home repo
+- **BREAKING CHANGES**: Switch from `rioxarray` / `odc-geo` raster backend to `geoutils`  ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- DOC: Update rioxarray's home repo
 
 ## 1.54.6 (2026-09-28)
 
