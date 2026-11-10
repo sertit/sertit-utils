@@ -17,6 +17,10 @@
 Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters]
+
+Functions that are not lazy yet:
+- vectorize -> get_valid_vector -> get_footprint
+- sieve
 """
 
 import contextlib
@@ -182,39 +186,8 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
     return wrapper
 
 
-@any_raster_to_xr_ds
-def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
-    """
-    Get nodata mask from a xarray.
-
-    .. WARNING::
-        Sets 1 where the data is valid and 0 where it is not!
-
-    Args:
-        xds (AnyXrDataStructure): Array to evaluate
-
-    Returns:
-        np.ndarray: Pixelwise nodata array
-
-    Example:
-        >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
-        >>> diag_arr.rio.write_nodata(0, inplace=True)
-        <xarray.DataArray (dim_0: 3, dim_1: 3)>
-        array([[1, 0, 0],
-               [0, 2, 0],
-               [0, 0, 3]])
-        Dimensions without coordinates: dim_0, dim_1
-        >>>
-        >>> # Get the data mask from this array
-        >>> get_data_mask(diag_arr)
-        array([[1, 0, 0],
-               [0, 1, 0],
-               [0, 0, 1]], dtype=uint8)
-
-    """
-    return np.where(np.isnan(xds.data), 0, 1).astype(np.uint8)
-
-
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def rasterize(
     xda: xr.DataArray,
@@ -302,6 +275,8 @@ def _works_on_xds(function):
     return wrapper
 
 
+# Is not lazy yet in GeoUtils
+@dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
 @_works_on_xds
 def vectorize(
@@ -424,6 +399,8 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
     return vectorize(xda, values=None, dissolve=True, default_nodata=default_nodata)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def mask(
     xda: AnyRasterType,
@@ -469,6 +446,8 @@ def mask(
     return xda.copy(data=xda.rst.clip(shapes, all_touched=all_touched).data)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def paint(
     xds: AnyRasterType,
@@ -536,6 +515,8 @@ def paint(
     return painted_xds
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def crop(
     xds: AnyRasterType,
@@ -656,9 +637,8 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
                     )
                     out = function(ds, *args, **kwargs, chunks=None)
 
-                    if dask.is_chunked(out):  # pragma: no cover
-                        with contextlib.suppress(AttributeError):
-                            out = out.compute()
+                    with contextlib.suppress(AttributeError):
+                        out = out.compute()
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
@@ -672,6 +652,8 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
     return wrapper
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def get_window(xda: AnyRasterType, window: Any):
     """
     Get a window from any type of input
@@ -802,6 +784,7 @@ def read(
     size: tuple | list = None,
     window: Any = None,
     resampling: Resampling = Resampling.nearest,
+    masked: bool = True,
     indexes: int | list = None,
     as_type: Any = None,
     **kwargs,
@@ -875,18 +858,11 @@ def read(
         ds.name,
         downsample=downsampling_factor,
         default_name=path.get_filename(ds.name),
+        masked=masked,
+        squeeze=False,
         chunks=chunks,
         **kwargs,
     ) as xda:
-        orig_encoding = xda.encoding
-        orig_dtype = orig_encoding.get(
-            "rasterio_dtype", orig_encoding.get("dtype", xda.dtype)
-        )
-
-        if isinstance(orig_dtype, str):
-            with contextlib.suppress(AttributeError):
-                orig_dtype = getattr(np, orig_dtype)
-
         # Windows
         if window is not None:
             xda = xda.rio.isel_window(window)
@@ -940,20 +916,6 @@ def read(
                 )
                 xda = xda.fillna(xda.rst.nodata)
             xda = xda.astype(as_type)
-
-        # Set back attributes and encoding
-        xda.rio.update_encoding(orig_encoding, inplace=True)
-
-        # Set original dtype
-        xda.encoding["dtype"] = orig_dtype
-
-        # Save path in attrs
-        if AnyPath(ds.name).exists():
-            xda.attrs["path"] = str(ds.name)
-
-        if len(xda.shape) == 2:
-            with contextlib.suppress(ValueError):
-                xda = xda.expand_dims(dim="band")
 
     return xda
 
@@ -1049,12 +1011,8 @@ def write(
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     # Manage dtype
-    dtype = kwargs.get("dtype", xds.dtype)
-
-    if isinstance(dtype, str):
-        # Convert to numpy dtype
-        dtype = getattr(np, dtype)
-    xds.encoding["dtype"] = dtype
+    dtype = np.dtype(kwargs.get("dtype", xds.encoding.get("dtype", xds.dtype)))
+    xds.encoding["dtype"] = dtype.name
 
     # Write nodata
     nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
@@ -1106,7 +1064,7 @@ def write(
         and kwargs.get("compress", "").lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs
     ):
-        if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
+        if dtype.kind == "f":
             kwargs["predictor"] = "3"
         else:
             kwargs["predictor"] = "2"
@@ -1212,6 +1170,8 @@ def write(
     return delayed
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def _collocate_dataarray(
     reference: xr.DataArray,
     other: AnyXrDataStructure,
@@ -1236,13 +1196,11 @@ def _collocate_dataarray(
             ref=reference, resampling=resampling, **kwargs
         )
 
-        if len(collocated_xda.shape) == 2:
-            with contextlib.suppress(ValueError):
-                collocated_xda = collocated_xda.expand_dims(dim="band")
-
     return collocated_xda
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def collocate(
     reference: AnyXrDataStructure,
     other: AnyXrDataStructure,
@@ -1341,6 +1299,8 @@ def collocate(
     return collocated_xds
 
 
+# Is not lazy yet in GeoUtils
+@dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
 def sieve(
     xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4
@@ -1409,6 +1369,8 @@ def get_dim_img_path(
     return rasters_rio.get_dim_img_path(dim_path, img_name, get_list)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
@@ -1466,6 +1428,8 @@ def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     return geometry.get_wider_exterior(footprint)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def merge_vrt(
     crs_paths: list,
     crs_merged_path: AnyPathStrType,
@@ -1503,6 +1467,8 @@ def merge_vrt(
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, abs_path, **kwargs)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
     Merge rasters as a GeoTiff.
@@ -1582,6 +1548,8 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return rasters_rio.unpackbits(array, nof_bits)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def read_bit_array(
     bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
 ) -> np.ndarray | list:
@@ -1625,6 +1593,8 @@ def read_bit_array(
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def read_uint8_array(
     bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
 ) -> np.ndarray | list:
@@ -1657,6 +1627,8 @@ def read_uint8_array(
     return read_bit_array(bit_mask.astype(np.uint8), bit_id)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def set_metadata(
     naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
 ) -> AnyXrDataStructure:
@@ -1721,7 +1693,7 @@ def set_metadata(
     from rioxarray.exceptions import MissingCRS
 
     with contextlib.suppress(MissingCRS):
-        naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+        naked_xda.rst.set_crs(mtd_xda.rst.crs)
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
@@ -1734,6 +1706,8 @@ def set_metadata(
     return naked_xda
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
     Set nodata to a xarray that have no default nodata value.
@@ -1778,6 +1752,8 @@ def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     return xda
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def where(
     cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
 ) -> xr.DataArray:
@@ -1835,33 +1811,36 @@ def where(
     return where_xda
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def hillshade(
-    xds: AnyRasterType, azimuth: float = 315, zenith: float = 45, **kwargs
+    xds: AnyRasterType, azimuth: float = 315, altitude: float = 45, **kwargs
 ) -> AnyXrDataStructure:
     """
     Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
 
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
-    NB: altitude = zenith
-
-    References:
-
-    - `1 <https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py>`_
-    - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
+    NB: altitude = 90 - zenith
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
-        zenith (float): Zenith angle in degrees
+        zenith (float): Zenith angle in degrees (90 is the top, zenith = 90 - altitude)
 
     Returns:
         AnyXrDataStructure: Hillshade
     """
+    if "zenith" in kwargs:
+        logs.deprecation_warning(
+            "'zenith' is deprecated. Use 'altitude' instead (altitude = 90-zenith)."
+        )
+        altitude = 90 - kwargs.pop("zenith")
+
     import xdem  # noqa
 
-    hillshade = xds.dem.hillshade(azimuth=azimuth, altitude=90 - zenith, **kwargs)
+    hillshade = xds.dem.hillshade(azimuth=azimuth, altitude=altitude, **kwargs)
 
     hillshade = hillshade.rename(kwargs.get("name", "hillshade"))
     hillshade.attrs["long_name"] = "hillshade"
@@ -1869,6 +1848,8 @@ def hillshade(
     return hillshade
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def slope(
     xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False, **kwargs
@@ -1901,6 +1882,8 @@ def slope(
     return slope
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     """
@@ -1983,6 +1966,8 @@ def from_meters_to_deg(
     return np.round(dist, decimals)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def classify(
     raster: xr.DataArray,
     bins: list,
@@ -2044,6 +2029,8 @@ def classify(
     return classified_raster
 
 
+# Is lazy (even if DEM is cached?)
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def reproject(
     src_xda: AnyRasterType,
@@ -2055,8 +2042,6 @@ def reproject(
     # gcps: control.GroundControlPoint = None,
     nodata: float = None,
     num_threads: int = None,
-    # use_dask: bool = None,
-    ortho_path: AnyPathStrType = None,
     name: str = None,
     # under this, arguments only for reprojecting with RPCs
     # rpcs: rpc.RPC = None,
@@ -2183,7 +2168,7 @@ def reproject(
         dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
 
         # Update GDAL parameters
-        transformer_options = __rpc_gdal_options(dem_path, kwargs)
+        transformer_options = __rpc_gdal_options(dem_path)
 
     reprojected_xda = src_xda.rst.reproject(
         crs=dst_crs,
@@ -2197,26 +2182,10 @@ def reproject(
         memory_limit=64,
     )
 
-    if len(reprojected_xda.shape) == 2:
-        with contextlib.suppress(ValueError):
-            reprojected_xda = reprojected_xda.expand_dims(dim="band")
-
     # Rename DataArray
     if name:
         reprojected_xda = reprojected_xda.rename(name)
         reprojected_xda.attrs["long_name"] = name
-
-    if ortho_path is not None:
-        write(
-            reprojected_xda,
-            ortho_path,
-            dtype=kwargs.pop("dtype", np.float32),
-            nodata=nodata,
-            tags=kwargs.pop("tags", None),
-            predictor=kwargs.pop("predictor", None),
-            driver=kwargs.pop("driver", None),
-            **kwargs,
-        )
 
     if tmp_caching_folder is not None:
         tmp_caching_folder.cleanup()
@@ -2261,7 +2230,8 @@ def __preprocess_dem(
         if not windowed_dem_path.is_file():
             LOGGER.debug("Subset the DEM to the extent of your data")
             write(
-                read(dem_path, window=src_extent),
+                # Don't chunk on reading if it's to write on disk directly
+                read(dem_path, window=src_extent, chunks=None),
                 windowed_dem_path,
                 dtype=np.float32,
                 driver="GTiff",
@@ -2310,7 +2280,8 @@ def __preprocess_dem(
             )
 
             write(
-                read(ellipsoid_dem_path, window=src_extent),
+                # Don't chunk on reading if it's to write on disk directly
+                read(ellipsoid_dem_path, window=src_extent, chunks=None),
                 cached_dem_path,
                 dtype=np.float32,
                 driver="GTiff",

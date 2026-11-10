@@ -59,6 +59,7 @@ dask =  [
     # rasters libraries leveraging dask
     "odc-geo[tiff]>=0.5.0",
     "xarray-spatial>=0.3.6",
+    "dask-geopandas",
 ]
 arcpy = ["python-json-logger"]
 full = ["sertit[arcpy,colorlog,dask,nearest_neighbors]"]

@@ -703,12 +703,12 @@ def assert_xr_encoding_attrs(
         unchecked_attr.append("preferred_chunks")
 
     try:
-        name_1 = xda_1.attrs.get("path", xda_1.name)
+        name_1 = xda_1.attrs.get("source", xda_1.name)
     except AttributeError:
         name_1 = "Dataset 1"
 
     try:
-        name_2 = xda_2.attrs.get("path", xda_2.name)
+        name_2 = xda_2.attrs.get("source", xda_2.name)
     except AttributeError:
         name_1 = "Dataset 2"
 

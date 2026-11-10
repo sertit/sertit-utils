@@ -53,7 +53,7 @@ DEBUG = False
 
 def test_indexes(caplog):
     @s3_env
-    @dask_env(nof_computes=1)  # np.testing.assert_equal (and not xr))
+    @dask_env()
     def test_core():
         l1_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
         xda_raw = rasters.read(l1_path, **KAPUT_KWARGS)
@@ -167,7 +167,7 @@ def test_rasters_extent(tmp_path, raster_path, ds_name, ds_dtype):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Vectorize is not lazy
+@dask_env()
 def test_rasters_footprint(tmp_path, raster_path, ds_name, ds_dtype):
     # Get Footprint
     footprint_path = rasters_path().joinpath("footprint.geojson")
@@ -177,7 +177,7 @@ def test_rasters_footprint(tmp_path, raster_path, ds_name, ds_dtype):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # 1x comparing loaded and unloaded data
+@dask_env()
 def test_read(tmp_path, raster_path, ds_name, ds_dtype):
     """Test read function"""
     # xda, xds
@@ -213,9 +213,8 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert_chunked_computed(xda_6, "Read with downsampling")
 
         # Downsampling (reproject)
-        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 10.1)  # Compute #1
-        # TODO: remove when https://github.com/opendatacube/odc-geo/issues/236 is fixed
-        # assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
+        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 10.1)
+        assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
         xda_8 = rasters.read(rasters_rio.read(ds))
         ci.assert_val(dask.is_computed(xda_8), True, "Read with tuple")
@@ -240,7 +239,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
 
         # Test dataset integrity
         assert xda.shape == (ds.count, ds.height, ds.width)
-        assert xda.encoding["dtype"] == ds_dtype
+        assert np.dtype(xda.encoding["dtype"]) == ds_dtype
         assert xds[ds_name].shape == xda.shape
         assert xda_1.rst.crs == ds.crs
         assert xda_1.rst.transform == ds.transform
@@ -260,13 +259,13 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         ci.assert_xr_encoding_attrs(
             xda,
             xda_6,
-            unchecked_attr=["DataType", "AREA_OR_POINT", "preferred_chunks", "source"],
         )
         # Using overviews gives different attributes
         ci.assert_xr_encoding_attrs(
-            xda, xda_7, unchecked_attr=["DataType", "AREA_OR_POINT", "preferred_chunks"]
+            xda,
+            xda_7,
         )
-        ci.assert_val(xda_1.attrs["path"], str(raster_path), "raster path")
+        ci.assert_val(xda_1.encoding["source"], str(raster_path), "raster path")
 
         # With tuple, additional GTiff attributes are lost
         with pytest.raises(AssertionError):
@@ -287,7 +286,7 @@ def test_read_np_vs_dask(raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # Write x2
+@dask_env()
 def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     """Test read (with window) function"""
     raster_window_path = rasters_path().joinpath("window.tif")
@@ -308,14 +307,12 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     gdf = mask.to_crs(EPSG_4326)
     xda_window_20 = rasters.read(raster_path, window=gdf, resolution=20)
     ci.assert_val(round(xda_window_20.rst.res[0]), 20, "resolution")
-
-    # TODO: https://github.com/opendatacube/odc-geo/issues/236
-    # assert_chunked_computed(xda_window_20, "Read with a window with updated resolution")
+    assert_chunked_computed(xda_window_20, "Read with a window with updated resolution")
 
     rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)  # Compute #2
     ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
-    # Non existing window
+    # Non-existing window
     with pytest.raises(FileNotFoundError):
         rasters.read(
             raster_path,
@@ -340,7 +337,7 @@ def test_very_big_file(tmp_path, mask_path):
 
 
 @s3_env
-@dask_env(max_computes=3)  # Write x2 or 3
+@dask_env()
 @pytest.mark.parametrize(
     ("dtype", "nodata_val"),
     [
@@ -405,7 +402,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
 
 
 @s3_env
-# @dask_env(nof_compute=1)  # Write x1: TODO: Right now, Zarr doesn't seem to work with dask and GDAL 3.6.
+@dask_env()
 def test_write_zarr(tmp_path, raster_path):
     # test zarr
     xda = get_xda(raster_path, chunks=None)
@@ -415,7 +412,7 @@ def test_write_zarr(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # Write x2
+@dask_env()
 def test_write_basic(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
 
@@ -439,7 +436,7 @@ def test_write_basic(tmp_path, raster_path, ds_dtype):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_write_same(tmp_path, raster_path, ds_dtype):
     """Test write (same) function"""
     # xda
@@ -462,7 +459,7 @@ def test_write_same(tmp_path, raster_path, ds_dtype):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_write_png(tmp_path, raster_path):
     """Test write (PNG) function"""
 
@@ -472,7 +469,7 @@ def test_write_png(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Write x2 with dask, but only one compute!
+@dask_env()
 def test_write_dask(tmp_path, raster_path, ds_dtype):
     """Test write (basic) function"""
     # xda, xds
@@ -500,7 +497,7 @@ def test_write_dask(tmp_path, raster_path, ds_dtype):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # Write x2
+@dask_env()
 def test_mask(tmp_path, raster_path, mask):
     """Test mask function"""
     # xda, xds
@@ -537,7 +534,7 @@ def test_chunks_paths(tmp_path, raster_path, mask):
 
 
 @s3_env
-@dask_env(nof_computes=4)  # Write x4
+@dask_env()
 def test_paint(tmp_path, raster_path, mask):
     """Test paint function"""
     # xda, xds
@@ -578,7 +575,7 @@ def test_paint(tmp_path, raster_path, mask):
 
 
 @s3_env
-@dask_env(nof_computes=3)  # Write x2 + assert_equal
+@dask_env()
 def test_crop(tmp_path, raster_path, mask):
     """Test crop function"""
     # xda, xds
@@ -613,9 +610,7 @@ def test_crop(tmp_path, raster_path, mask):
 
 @s3_env
 @is_not_lazy_yet
-@dask_env(
-    nof_computes=2
-)  # Sieve x2 (write a not-chunked array, so no additional 'compute')
+@dask_env()
 def test_sieve(tmp_path, raster_path):
     """Test sieve function"""
     # TODO: not lazy
@@ -642,7 +637,7 @@ def test_sieve(tmp_path, raster_path):
 
 @s3_env
 @is_not_lazy_yet
-@dask_env(nof_computes=2)  # Sieve x2
+@dask_env()
 def test_sieve_different_dtypes(tmp_path, raster_path):
     # Test with different dtypes
 
@@ -662,9 +657,7 @@ def test_sieve_different_dtypes(tmp_path, raster_path):
 
 @s3_env
 @is_not_lazy_yet
-@dask_env(
-    nof_computes=1
-)  # Sieve x1 (write a not-chunked array, so no additional 'compute')
+@dask_env()
 def test_sieve_dataset(tmp_path, raster_path):
     # xds
     xds = get_xds(raster_path)
@@ -713,7 +706,7 @@ def __test_collocate_output(ref, other, coll, dtype):
     assert_chunked_computed(coll, f"Collocate DataArray ({dtype})")
 
     # Keeps the same attrs as the original array (attrs, encoding, dtype and name)
-    ci.assert_xr_encoding_attrs(other, coll)
+    ci.assert_xr_encoding_attrs(other, coll, unchecked_attr=["grid_mapping"])
     ci.assert_val(coll.dtype, other.dtype, f"Collocated dtype ({dtype})")
     ci.assert_val(coll.name, other.name, f"Collocated name ({float})")
 
@@ -768,7 +761,7 @@ def test_collocate(tmp_path, ref_type, other_type):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Write
+@dask_env()
 def test_collocate_different_crs(tmp_path):
     """Test collocate function (with different CRS)"""
     ref = rasters.read(rasters_path().joinpath("hand_ref.tif"))
@@ -798,7 +791,7 @@ def test_merge_gtiff(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=5)  # vectorize x5 (vectorize not lazy yet)
+@dask_env()
 def test_vectorize(tmp_path, raster_path, ds_name):
     """Test vectorize function"""
     # xda, xds
@@ -836,7 +829,7 @@ def test_vectorize(tmp_path, raster_path, ds_name):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # vectorize x2 (vectorize not lazy yet)
+@dask_env()
 def test_get_valid_vec(tmp_path, raster_path, ds_name):
     """Test get_valid_vector function"""
     # xda, xds
@@ -971,7 +964,7 @@ def test_dim():
 
 
 @s3_env
-@dask_env(nof_computes=1)  # compute x1
+@dask_env()
 @pytest.mark.parametrize(
     ("dtype", "bit_id"),
     [
@@ -1022,7 +1015,7 @@ def test_read_bit_array(dtype, bit_id):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # compute x1
+@dask_env()
 @pytest.mark.parametrize(
     ("dtype", "bit_id"),
     [
@@ -1063,7 +1056,7 @@ def test_read_uint8_array(dtype, bit_id):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # assert_equal x1
+@dask_env()
 def test_set_nodata():
     """Test xarray functions"""
     nodata_val = 0
@@ -1117,7 +1110,7 @@ def test_xarray_fct(raster_path):
     ci.assert_val(xda_sum.name, "sum", "name")
 
 
-@dask_env(nof_computes=2)  # assert_equal x2
+@dask_env()
 def test_where():
     """Test overloading of xr.where function"""
     new_name = "mask_A"
@@ -1151,7 +1144,7 @@ def test_where():
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_aspect(tmp_path, dem_path):
     """Test aspect function"""
     aspect_path = rasters_path().joinpath("aspect.tif")
@@ -1172,14 +1165,14 @@ def test_aspect(tmp_path, dem_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_hillshade(tmp_path, dem_path):
     """Test hillshade function"""
     hlsd_path = rasters_path().joinpath("hillshade.tif")
     hlsd_path_out = get_output(tmp_path, "hillshade_out.tif", DEBUG)
 
     # Hillshade
-    hlsd = rasters.hillshade(dem_path, 34.0, 45.2)
+    hlsd = rasters.hillshade(dem_path, 34.0, 45.2, surface_fit="ZevenbergThorne")
     assert_chunked_computed(hlsd, "Hillshade")
     rasters.write(hlsd, hlsd_path_out, dtype="float32")
     ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
@@ -1191,7 +1184,7 @@ def test_hillshade(tmp_path, dem_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_slope(tmp_path, dem_path):
     """Test slope function"""
     slope_path = rasters_path().joinpath("slope.tif")
@@ -1209,7 +1202,7 @@ def test_slope(tmp_path, dem_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_slope_rad(tmp_path, dem_path):
     """Test slope (radian) function"""
     slope_r_path = rasters_path().joinpath("slope_r.tif")
@@ -1228,7 +1221,7 @@ def test_slope_rad(tmp_path, dem_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(nof_computes=1)  # Write x1
+@dask_env()
 def test_slope_pct(tmp_path, dem_path):
     """Test slope (pct) function"""
     slope_p_path = rasters_path().joinpath("slope_p.tif")
@@ -1242,7 +1235,7 @@ def test_slope_pct(tmp_path, dem_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)
+@dask_env()
 def test_rasterize_binary(tmp_path, raster_path):
     """Test rasterize fct"""
     xda = get_xda(raster_path)
@@ -1261,7 +1254,7 @@ def test_rasterize_binary(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)  # Write = 1
+@dask_env()
 def test_rasterize_float(tmp_path, raster_path):
     # Binary vector with floating point raster
     vec_path = rasters_path().joinpath("vector.geojson")
@@ -1280,7 +1273,7 @@ def test_rasterize_float(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)
+@dask_env()
 def test_rasterize_value_field(tmp_path, raster_path):
     # Use value_field
     vec_path = rasters_path().joinpath("vector.geojson")
@@ -1298,7 +1291,7 @@ def test_rasterize_value_field(tmp_path, raster_path):
 
 
 @s3_env
-@dask_env(nof_computes=1)
+@dask_env()
 def test_rasterize_multi_band_raster(tmp_path, raster_path):
     xda = get_xda(raster_path)
     vec_path = rasters_path().joinpath("vector.geojson")
@@ -1384,7 +1377,7 @@ def test_deg_meters_conversion():
 
 
 @s3_env
-@dask_env(nof_computes=1)  # write x1
+@dask_env()
 def test_classify(tmp_path):
     """Test classify"""
     d_ndvi_path = rasters_path() / "20200824_S2_20200908_S2_dNDVI.tif"
@@ -1413,9 +1406,7 @@ def test_classify(tmp_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(
-    nof_computes=1
-)  # write x1 RPC is not lazy yet, no need to test it multiple times
+@dask_env()
 def test_reproject_rpcs(tmp_path):
     """Test reproject with rpc"""
     spot_path = (
@@ -1430,8 +1421,7 @@ def test_reproject_rpcs(tmp_path):
 
     ci.assert_val(rpc_reproj.rst.crs.to_epsg(), 4326, "Reprojected CRS")
     ci.assert_val(rpc_reproj.rst.count, 4, "Reprojected count")
-    ci.assert_val(rpc_reproj.rst.encoded_nodata, 0, "Reprojected encoded nodata")
-    ci.assert_val(rpc_reproj.rst.nodata, np.nan, "Reprojected nodata")
+    ci.assert_val(rpc_reproj.rst.nodata, 0, "Reprojected nodata")
     assert "x" in rpc_reproj.dims
     assert "y" in rpc_reproj.dims
 
@@ -1442,9 +1432,7 @@ def test_reproject_rpcs(tmp_path):
     reason="XDEM and GeoUtils not yet aligned",
 )
 @s3_env
-@dask_env(
-    nof_computes=1
-)  # write x1 RPC is not lazy yet, no need to test it multiple times
+@dask_env()
 def test_reproject_rpcs_no_crs(tmp_path):
     """Test reproject with rpc"""
     spot_path = (
@@ -1466,7 +1454,7 @@ def test_reproject_rpcs_no_crs(tmp_path):
 
 
 @s3_env
-@dask_env(nof_computes=2)  # write x2
+@dask_env()
 def test_reproject_gcps(tmp_path):
     """Test reproject with GCPs"""
     spot_path = rasters_path() / "SPOT-5" / "METADATA.DIM"
@@ -1511,23 +1499,33 @@ def test_reproject_gcps(tmp_path):
         ci.assert_raster_equal(gcps_out, updated_gcps_out)
 
 
+def _write_ortho_reproj(reprojected_xda, ortho_path, **kwargs):
+    rasters.write(
+        reprojected_xda,
+        ortho_path,
+        dtype=kwargs.pop("dtype", np.float32),
+        nodata=kwargs.pop("nodata", None),
+        tags=kwargs.pop("tags", None),
+        predictor=kwargs.pop("predictor", None),
+        driver=kwargs.pop("driver", None),
+        compute=dask.is_chunked(reprojected_xda) ** kwargs,
+    )
+
+
 @s3_env
-@dask_env(nof_computes=1)  # Write x1 for ortho_path
-def test_reproject(tmp_path, raster_path):
+@dask_env()
+def test_reproject(raster_path):
     """Test reproject"""
     # xda
     xda = get_xda(raster_path)
 
     # -- Reproject to a pixel_size --
-    ortho_path = tmp_path / "ortho.tif"
-    size_arr = rasters.reproject(xda, ortho_path=ortho_path, pixel_size=60)
+    size_arr = rasters.reproject(xda, pixel_size=60)
     ci.assert_val(round(size_arr.rst.res[0]), 60, "Reprojected pixel size")
     ci.assert_val(size_arr.rst.count, 1, "Reprojected count")
     ci.assert_val(size_arr.dims, xda.dims, "Reprojected dimensions")
     with pytest.raises(AssertionError):
-        ci.assert_val(round(xda.rst.res[0]), 60, "Native pixel pize")
-
-    assert ortho_path.is_file()
+        ci.assert_val(round(xda.rst.res[0]), 60, "Native pixel size")
 
     # -- Reproject to a shape --
     shape_arr = rasters.reproject(xda, shape=(161, 232))

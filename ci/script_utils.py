@@ -84,7 +84,7 @@ def set_dask_env_var():
         os.environ[dask.SERTIT_DEFAULT_CHUNKS] = "none"
 
 
-def dask_env(nof_computes=None, max_computes=0):
+def dask_env():
     """
     Create dask-using environment
 
@@ -111,22 +111,12 @@ def dask_env(nof_computes=None, max_computes=0):
 
             with (
                 dask.get_or_create_dask_client(),
-                dask.raise_if_dask_computes(
-                    nof_computes=nof_computes,
-                    max_computes=max_computes,
-                    dont_raise=False,  # os.environ[CI_SERTIT_TEST_LAZY] == "0", -> putting the right 'compute' number in nof_computes does the trick
-                ),
             ):
                 LOGGER.info("Using DASK multithreaded.")
                 function(*_args, **_kwargs)
 
             with (
                 dask.get_or_create_dask_client(processes=True),
-                dask.raise_if_dask_computes(
-                    nof_computes=nof_computes,
-                    max_computes=max_computes,
-                    dont_raise=False,  # os.environ[CI_SERTIT_TEST_LAZY] == "0", -> putting the right 'compute' number in nof_computes does the trick
-                ),
             ):
                 LOGGER.info("Using DASK with local cluster")
                 function(*_args, **_kwargs)
