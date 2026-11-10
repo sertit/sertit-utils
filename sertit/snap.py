@@ -124,7 +124,7 @@ def get_gpt_cli(
     # Overload with env variables
     max_cores = perf.get_max_cores()
     tile_size = int(os.getenv(SU_SNAP_TILE_SIZE, 512))
-    snap_log_level = os.getenv(SU_SNAP_LOG_LEVEL, "WARNING")
+    snap_log_level = os.getenv(SU_SNAP_LOG_LEVEL, "ERROR")
     max_mem = int(os.environ.get(JAVA_OPTS_XMX, 0.95 * psutil.virtual_memory().total))
 
     gpt_cli = [

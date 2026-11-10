@@ -3,6 +3,7 @@
 ## Unreleased
 
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
+- FIX: Switch SNAP default log level from `WARNING` to `ERROR`
 
 ## 1.54.6 (2026-09-28)
 
