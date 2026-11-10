@@ -3,7 +3,9 @@
 ## 2.0.0 (20xx-xx-xx)
 
 - **BREAKING CHANGES**: Switch from `rioxarray` / `odc-geo` raster backend to `geoutils`  ([#27](https://github.com/sertit/sertit-utils/issues/27))
-- DOC: Update rioxarray's home repo
+- FIX: Better argument handling in `dask.get_or_create_dask_client`
+- FIX: Switch SNAP default log level from `WARNING` to `ERROR`
+- DOC: Update `rioxarray`'s home repo
 
 ## 1.54.6 (2026-09-28)
 

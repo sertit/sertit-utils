@@ -41,7 +41,7 @@ def test_snap():
         "gpt",
         '"graph_path"',
         "-q",
-        "-J-Dsnap.log.level=WARNING",
+        "-J-Dsnap.log.level=ERROR",
         f"-J-Dsnap.jai.defaultTileSize={tile_size}",
         f"-J-Dsnap.dataio.reader.tileWidth={tile_size}",
         f"-J-Dsnap.dataio.reader.tileHeight={tile_size}",

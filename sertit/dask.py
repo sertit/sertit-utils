@@ -7,7 +7,7 @@ from functools import wraps
 import psutil
 import xarray as xr
 
-from sertit import logs
+from sertit import logs, misc
 from sertit.types import AnyXrDataStructure
 
 LOGGER = logging.getLogger(logs.SU_NAME)
@@ -53,10 +53,18 @@ def get_client():
 
 
 @contextmanager
-def get_or_create_dask_client(processes=False, env_vars=None):
+def get_or_create_dask_client(
+    processes=False,
+    env_vars: dict | None = None,
+    *,
+    # processes parameters
+    available_ram_pct: float = 0.9,
+    worker_mem: float = 16,
+    threads_per_worker: int = 4,
+    **kwargs,
+):
     """
     Return default Dask client or create a local cluster and linked  client if not existing
-    Returns:
     """
     client = None
     try:
@@ -65,19 +73,23 @@ def get_or_create_dask_client(processes=False, env_vars=None):
 
             try:
                 # Return default client
-                client = get_client()
+                client = get_client(
+                    **misc.select_dict(
+                        kwargs, ["address", "timeout", "resolve_address"]
+                    )
+                )
             except ValueError:
                 if processes:
                     # Gather information to create a client adapted to the computer
                     ram_info = psutil.virtual_memory()
                     available_ram = ram_info.available / 1024 / 1024 / 1024
-                    available_ram = 0.9 * available_ram
+                    available_ram = available_ram_pct * available_ram
 
                     n_workers = 1
                     memory_limit = f"{available_ram}Gb"
-                    if available_ram >= 16:
-                        n_workers = available_ram // 16
-                        memory_limit = f"{16}Gb"
+                    if available_ram >= worker_mem:
+                        n_workers = available_ram // worker_mem
+                        memory_limit = f"{worker_mem}Gb"
 
                     # Create a local cluster and return client
                     LOGGER.warning(
@@ -85,14 +97,16 @@ def get_or_create_dask_client(processes=False, env_vars=None):
                     )
                     client = Client(
                         n_workers=int(n_workers),
-                        threads_per_worker=4,
+                        threads_per_worker=threads_per_worker,
                         memory_limit=memory_limit,
+                        **kwargs,
                     )
                 else:
                     # Create a local cluster (threaded)
                     LOGGER.warning("Init local cluster (threaded)")
                     client = Client(
                         processes=processes,
+                        **kwargs,
                     )
             if env_vars:
                 client.run(
