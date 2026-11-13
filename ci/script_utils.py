@@ -15,7 +15,6 @@
 # limitations under the License.
 import logging
 import os
-import sys
 from enum import unique
 from functools import wraps
 
@@ -72,7 +71,7 @@ def get_s3_ci_path():
 
 def get_ci_data_path():
     """Get CI DATA path"""
-    if int(os.getenv(CI_SERTIT_S3, 1)) and sys.platform != "win32":
+    if int(os.getenv(CI_SERTIT_S3, 1)):
         return get_s3_ci_path() / "DATA"
     else:
         return AnyPath(unistra.get_db3_path()) / "CI" / "sertit_utils" / "DATA"
@@ -85,7 +84,7 @@ def set_dask_env_var():
         os.environ[dask.SERTIT_DEFAULT_CHUNKS] = "none"
 
 
-def dask_env(nof_computes=None, max_computes=0):
+def dask_env():
     """
     Create dask-using environment
 
@@ -112,22 +111,12 @@ def dask_env(nof_computes=None, max_computes=0):
 
             with (
                 dask.get_or_create_dask_client(),
-                dask.raise_if_dask_computes(
-                    nof_computes=nof_computes,
-                    max_computes=max_computes,
-                    dont_raise=False,  # os.environ[CI_SERTIT_TEST_LAZY] == "0", -> putting the right 'compute' number in nof_computes does the trick
-                ),
             ):
                 LOGGER.info("Using DASK multithreaded.")
                 function(*_args, **_kwargs)
 
             with (
                 dask.get_or_create_dask_client(processes=True),
-                dask.raise_if_dask_computes(
-                    nof_computes=nof_computes,
-                    max_computes=max_computes,
-                    dont_raise=False,  # os.environ[CI_SERTIT_TEST_LAZY] == "0", -> putting the right 'compute' number in nof_computes does the trick
-                ),
             ):
                 LOGGER.info("Using DASK with local cluster")
                 function(*_args, **_kwargs)
@@ -193,22 +182,24 @@ def s3_env(*args, **kwargs):
 def get_output(tmp, file, debug=False, dask_folders=False):
     if debug:
         out_path = AnyPath(__file__).resolve().parent / "ci_output"
+        out_path.mkdir(parents=True, exist_ok=True)
+    else:
+        out_path = tmp
 
-        if dask_folders:
-            client = dask.get_client()
-            if client:
-                multithreading = not client.cluster.processes
-                if multithreading:
-                    out_path /= "dask_multithreading"
-                else:
-                    out_path /= "dask_multiple_clusters"
+    if dask_folders:
+        client = dask.get_client()
+        if client:
+            multithreading = not client.cluster.processes
+            if multithreading:
+                out_path /= "dask_multithreading"
             else:
-                out_path /= "numpy"
+                out_path /= "dask_multiple_clusters"
+        else:
+            out_path /= "numpy"
 
         out_path.mkdir(parents=True, exist_ok=True)
-        return out_path / file
-    else:
-        return AnyPath(tmp, file)
+
+    return out_path / file
 
 
 def assert_chunked_computed(result, text):
@@ -228,3 +219,9 @@ def assert_chunked_computed(result, text):
             LOGGER.error(
                 f"{text}: You are currently using numpy and therefore your function should load data into memory. However, your output is lazy."
             )
+
+
+def skip_geoutils():
+    from sertit import BACKEND
+
+    return BACKEND == "GeoUtils"

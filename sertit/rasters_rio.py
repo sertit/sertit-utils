@@ -19,7 +19,6 @@ Raster tools
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 
-import contextlib
 import logging
 import os
 import tempfile
@@ -111,17 +110,15 @@ def get_nodata_value_from_dtype(dtype) -> float:
         >>> rasters_rio.get_nodata_value_from_dtype("float")
         -9999
     """
-    # Convert type to numpy if needed
-    with contextlib.suppress(AttributeError, TypeError):
-        dtype = getattr(np, dtype)
+    dtype = np.dtype(dtype)
 
     if dtype == np.uint8:
         nodata = UINT8_NODATA
     elif dtype == np.int8:
         nodata = INT8_NODATA
-    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64, int, "int"]:
+    elif dtype in [np.uint16, np.uint32, np.int32, np.int64, np.uint64]:
         nodata = UINT16_NODATA
-    elif dtype in [np.int16, np.float32, np.float64, float, "float"]:
+    elif dtype in [np.int16, np.float32, np.float64]:
         nodata = FLOAT_NODATA
     else:
         LOGGER.warning(f"Not recognized dtype: {dtype}. Setting -9999 by default.")
@@ -221,9 +218,7 @@ def any_raster_to_rio_ds(function: Callable) -> Callable:
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
-            from sertit.rasters import get_nodata_value_from_xr
-
-            nodata = get_nodata_value_from_xr(any_raster_type)
+            nodata = any_raster_type.rst.nodata
 
             meta = {
                 "driver": "GTiff",
@@ -917,16 +912,20 @@ def get_window(ds: AnyRasterType, window: Any):
         Window: Rasterio window
 
     """
+    return _get_col_row_window(window, ds.crs, ds.transform)
+
+
+def _get_col_row_window(window: Any, crs, transform):
     if window is not None and not isinstance(window, Window):
         if isinstance(window, gpd.GeoDataFrame):
-            bounds = window.to_crs(ds.crs).total_bounds
+            bounds = window.to_crs(crs).total_bounds
         elif path.is_path(window):
-            bounds = vectors.read(window).to_crs(ds.crs).total_bounds
+            bounds = vectors.read(window).to_crs(crs).total_bounds
         else:
             bounds = window
 
         try:
-            window = from_bounds(*bounds, ds.transform)
+            window = from_bounds(*bounds, transform)
         except Exception as exc:
             raise TypeError(
                 "Window should either be a GeoDataFrame, tuple, list, Window, readable as a vector or set to None"

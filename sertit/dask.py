@@ -2,6 +2,7 @@ import contextlib
 import logging
 import os
 from contextlib import contextmanager
+from functools import wraps
 
 import psutil
 import xarray as xr
@@ -129,7 +130,7 @@ def get_or_create_dask_client(
 def get_dask_lock(name):
     """
     Get a dask lock with given name.
-    This lock is used in rioxarray.to_raster (see https://corteva.github.io/rioxarray/stable/examples/dask_read_write.html)
+    This lock is used in rioxarray.to_raster (see https://vylor.github.io/rioxarray/stable/examples/dask_read_write.html)
 
     If a Multiple worker client exists: returns a distributed.Lock()
     Elif a Multithreaded client exists: returns a threading.Lock()
@@ -220,6 +221,7 @@ class _CountingScheduler:
         nof_computes=None,
         dont_raise=False,
         force_synchronous=False,
+        name: str = "",
     ):
         self.total_computes = 0
         self.nof_computes = nof_computes
@@ -232,6 +234,7 @@ class _CountingScheduler:
         self.max_computes = max_computes
         self.dont_raise = dont_raise
         self.debug = force_synchronous
+        self.name = name
 
         # In case of debug, use the dask basic scheduler
         if self.debug:
@@ -247,20 +250,22 @@ class _CountingScheduler:
         # Log where the compute happens
         import traceback
 
-        for tb in traceback.extract_stack()[::-1]:
+        stack = traceback.extract_stack()
+        for tb in stack[::-1]:
             # Change this condition if we are using dask elsewhere than rasters.py and we want to display the tb
             if (
-                tb.filename.lower().startswith("/home/data")
-                and "/rasters.py" in tb.filename
+                tb.filename.lower().split(os.sep)[:2]
+                == __file__.lower().split(os.sep)[:2]
+                and "rasters.py" in tb.filename
             ):  # pragma: no cover
                 LOGGER.debug(
-                    f"Computation number {self.total_computes}: {tb.line} | {tb.name} in {tb.filename} at line {tb.lineno}"
+                    f"{self.name}: Computation number {self.total_computes}: {tb.line} | {tb.name} in {tb.filename} at line {tb.lineno}"
                 )
                 break
 
         # Raise or warn if too many computes have occurred
         if self.total_computes > self.max_computes:
-            text = f"Too many computes. Total: {self.total_computes} > max: {self.max_computes}."
+            text = f"{self.name}: Too many computes. Total: {self.total_computes} > max: {self.max_computes}."
             if self.dont_raise:
                 LOGGER.warning(text)
             else:
@@ -277,7 +282,7 @@ class _CountingScheduler:
 
     def check_total_nof_computes(self):
         if self.nof_computes is not None and self.total_computes != self.nof_computes:
-            text = f"Unexpected number of computes. Total: {self.total_computes} != {self.nof_computes}."
+            text = f"{self.name}: Unexpected number of computes. Total: {self.total_computes} != Expected: {self.nof_computes}."
 
             if self.dont_raise:  # pragma: no cover
                 LOGGER.warning(text)
@@ -288,7 +293,11 @@ class _CountingScheduler:
 
 @contextmanager
 def raise_if_dask_computes(
-    max_computes=0, nof_computes=None, dont_raise=False, force_synchronous=False
+    max_computes=0,
+    nof_computes=None,
+    dont_raise=False,
+    force_synchronous=False,
+    name: str = "",
 ):
     # return a dummy context manager so that this can be used for non-dask objects
     if not is_dask_installed():  # pragma: no cover
@@ -301,6 +310,7 @@ def raise_if_dask_computes(
         nof_computes=nof_computes,
         dont_raise=dont_raise,
         force_synchronous=force_synchronous,
+        name=name if name else "Dask Context manager",
     )
     try:
         yield dask.config.set(scheduler=scheduler)
@@ -308,3 +318,42 @@ def raise_if_dask_computes(
         scheduler.check_total_nof_computes()
         # Make sure the counting scheduler is removed
         dask.config.set(scheduler=None)
+
+
+def guard_compute(
+    max_computes=0,
+    nof_computes=0,
+):
+    """
+    Guard the function against unexpected computes
+
+    Args:
+        max_computes:
+        guard_if:
+        raise_on_compute:
+    """
+
+    def guard_compute_decorator(function):
+
+        @wraps(function)
+        def guard_compute_wrapper(*_args, **_kwargs):
+            """Guard compute wrapper"""
+            raise_on_compute = os.getenv("CI_SERTIT_USE_DASK", "1") == "1"
+
+            if raise_on_compute:
+                LOGGER.info(
+                    f"Guarding '{function.__name__}' against dask computes. Maximum number of computes allowed is 0."
+                )
+                with raise_if_dask_computes(
+                    max_computes=max_computes,
+                    nof_computes=nof_computes,
+                    dont_raise=not raise_on_compute,
+                    name=function.__name__,
+                ):
+                    return function(*_args, **_kwargs)
+            else:
+                return function(*_args, **_kwargs)
+
+        return guard_compute_wrapper
+
+    return guard_compute_decorator

@@ -11,6 +11,7 @@ twine
 
 # -- Libs for all platforms
 # Base
+semver
 tqdm
 lxml
 dill
@@ -19,9 +20,6 @@ geopandas>=0.14.4
 cloudpathlib[s3]>=0.15.0
 xarray>=2024.06.0
 shapely>=2.0.0
-odc-geo[tiff]>=0.5.0
-xarray-spatial>=0.3.6
-xdem
 
 # Colorlog
 colorlog
@@ -31,8 +29,14 @@ rasterio>=1.3.10
 
 # rasters
 rioxarray>=0.15.0
+xdem
 
 # dask
 dask[distributed]>=2024.5.1
 s3fs
 cytoolz
+odc-geo[tiff]>=0.5.0
+xarray-spatial>=0.3.6
+
+# nearest-neighbor
+scikit-learn>=1.4.2

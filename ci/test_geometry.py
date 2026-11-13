@@ -199,6 +199,7 @@ def test_nearest_neighbors():
     )
 
 
+@s3_env
 def test_force_2_or_3d():
     """Force 2D or 3D"""
     aoi_kml = vectors.read(vectors_path().joinpath("aoi.kml"))
