@@ -624,21 +624,17 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
                     "Input tuple should be composed of a numpy array of your data and the corresponding metadata dictionary, is rasterio's sense."
                 ) from exc
 
-            from rasterio import MemoryFile
+            from geoutils import DataArrayRasterAccessor
 
-            with MemoryFile() as memfile:
-                #  Open in write mode
-                with memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds:
-                    ds.write(arr)
-                # Open in read mode (otherwise rioxarray will fail)
-                with memfile.open() as ds:
-                    LOGGER.warning(
-                        "Giving a tuple as the function's input makes you load the result in memory. Consider using an xarray structure, a path or a rasterio Dataset instead."
-                    )
-                    out = function(ds, *args, **kwargs, chunks=None)
-
-                    with contextlib.suppress(AttributeError):
-                        out = out.compute()
+            if arr.ndim == 2:
+                arr = np.expand_dims(arr, 0)
+            out = DataArrayRasterAccessor.from_array(
+                arr,
+                transform=meta["transform"],
+                crs=meta["crs"],
+                nodata=meta["nodata"],
+                squeeze=False,
+            )
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
@@ -942,7 +938,9 @@ def __save_cog_with_dask(
 
     # Compute the delayed object if needed
     if compute:
-        LOGGER.debug(f"Writing your COG '{path.get_filename(output_path)}' with Dask.")
+        LOGGER.debug(
+            f"Writing your COG '{path.get_filename(output_path)}' with Dask (h: {xds.rio.height} x w: {xds.rio.width})."
+        )
         delayed.compute(optimize_graph=True)
 
     return delayed
