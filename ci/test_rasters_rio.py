@@ -24,7 +24,7 @@ import rasterio
 import shapely
 from rasterio.windows import Window
 
-from ci.script_utils import KAPUT_KWARGS, rasters_path, s3_env
+from ci.script_utils import KAPUT_KWARGS, rasters_rio_path, s3_env
 from sertit import ci, rasters_rio, vectors
 from sertit.vectors import EPSG_4326
 
@@ -34,10 +34,10 @@ ci.reduce_verbosity()
 @s3_env
 def test_read(tmp_path, raster_path, mask_path, raster_meta):
     """Test read functions"""
-    raster_window_path = rasters_path().joinpath("window.tif")
-    raster_window_20_path = rasters_path().joinpath("window_20.tif")
-    extent_path = rasters_path().joinpath("extent.geojson")
-    footprint_path = rasters_path().joinpath("footprint.geojson")
+    raster_window_path = rasters_rio_path().joinpath("window.tif")
+    raster_window_20_path = rasters_rio_path().joinpath("window_20.tif")
+    extent_path = rasters_rio_path().joinpath("extent.geojson")
+    footprint_path = rasters_rio_path().joinpath("footprint.geojson")
 
     # Get Extent
     extent = rasters_rio.get_extent(raster_path)
@@ -121,7 +121,7 @@ def test_read(tmp_path, raster_path, mask_path, raster_meta):
         with pytest.raises(FileNotFoundError):
             rasters_rio.read(
                 raster_path,
-                window=rasters_path().joinpath("non_existing_window.kml"),
+                window=rasters_rio_path().joinpath("non_existing_window.kml"),
             )
 
         with pytest.raises(TypeError):
@@ -151,7 +151,7 @@ def test_write(tmp_path, raster_path, raster_meta):
 @s3_env
 def test_mask(tmp_path, raster_path, mask):
     """Test mask function"""
-    raster_masked_path = rasters_path().joinpath("raster_masked.tif")
+    raster_masked_path = rasters_rio_path().joinpath("raster_masked.tif")
     raster_masked_out = os.path.join(tmp_path, "test_mask.tif")
 
     with rasterio.open(str(raster_path)) as ds:
@@ -165,7 +165,7 @@ def test_mask(tmp_path, raster_path, mask):
 def test_crop(tmp_path, raster_path, mask):
     """Test crop function"""
     # Crop
-    raster_cropped_path = rasters_path().joinpath("raster_cropped.tif")
+    raster_cropped_path = rasters_rio_path().joinpath("raster_cropped.tif")
     raster_cropped_out = os.path.join(tmp_path, "test_crop.tif")
 
     with rasterio.open(str(raster_path)) as ds:
@@ -178,7 +178,7 @@ def test_crop(tmp_path, raster_path, mask):
 @s3_env
 def test_sieve(tmp_path, raster_meta):
     """Test sieve function"""
-    raster_sieved_path = rasters_path().joinpath("raster_sieved.tif")
+    raster_sieved_path = rasters_rio_path().joinpath("raster_sieved.tif")
 
     # Sieve
     raster, meta = raster_meta
@@ -207,8 +207,8 @@ def test_collocate(raster_meta):
 @s3_env
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
-    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
-    raster_merged_gtiff_path = rasters_path().joinpath("raster_merged.tif")
+    raster_to_merge_path = rasters_rio_path().joinpath("raster_to_merge.tif")
+    raster_merged_gtiff_path = rasters_rio_path().joinpath("raster_merged.tif")
     raster_merged_gtiff_out = os.path.join(tmp_path, "test_merged.tif")
 
     rasters_rio.merge_gtiff(
@@ -226,12 +226,12 @@ def test_merge_gtiff(tmp_path, raster_path):
 def test_vectorize(raster_path):
     """Test vectorize function"""
     if shapely.__version__ >= "1.8a1":
-        vect_truth_path = rasters_path().joinpath("vector.geojson")
-        diss_truth_path = rasters_path().joinpath("dissolved.geojson")
+        vect_truth_path = rasters_rio_path().joinpath("vector.geojson")
+        diss_truth_path = rasters_rio_path().joinpath("dissolved.geojson")
     else:
         print("USING OLD VECTORS")
-        vect_truth_path = rasters_path().joinpath("vector_old.geojson")
-        diss_truth_path = rasters_path().joinpath("dissolved_old.geojson")
+        vect_truth_path = rasters_rio_path().joinpath("vector_old.geojson")
+        diss_truth_path = rasters_rio_path().joinpath("dissolved_old.geojson")
 
     # Vectorize
     val = 2
@@ -252,7 +252,7 @@ def test_vectorize(raster_path):
 @s3_env
 def test_get_valid_vector(raster_path):
     """Test get_valid_vector function"""
-    valid_truth_path = rasters_path().joinpath("valid.geojson")
+    valid_truth_path = rasters_rio_path().joinpath("valid.geojson")
 
     valid_vec = rasters_rio.get_valid_vector(raster_path)
 
@@ -263,7 +263,7 @@ def test_get_valid_vector(raster_path):
 @s3_env
 def test_nodata_vec(raster_path):
     """Test get_nodata_vector function"""
-    nodata_truth_path = rasters_path().joinpath("nodata.geojson")
+    nodata_truth_path = rasters_rio_path().joinpath("nodata.geojson")
 
     nodata_vec = rasters_rio.get_nodata_vector(raster_path)
 
@@ -277,8 +277,8 @@ def test_nodata_vec(raster_path):
     reason="Only works if gdalbuildvrt can be found.",
 )
 def test_vrt(tmp_path, raster_path):
-    raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
-    raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
+    raster_merged_vrt_path = rasters_rio_path().joinpath("raster_merged.vrt")
+    raster_to_merge_path = rasters_rio_path().joinpath("raster_to_merge.tif")
 
     # Merge VRT
     raster_merged_vrt_out = os.path.join(tmp_path, "test_merged.vrt")
@@ -298,10 +298,10 @@ def test_vrt(tmp_path, raster_path):
 
 def test_dim():
     """Test on BEAM-DIMAP function"""
-    dim_path = rasters_path().joinpath("DIM.dim")
+    dim_path = rasters_rio_path().joinpath("DIM.dim")
     dim_img_path = rasters_rio.get_dim_img_path(dim_path)
     assert dim_img_path.is_file(), f"{dim_img_path} is not a file!"
-    assert dim_img_path == rasters_path().joinpath("DIM.data", "dim.img")
+    assert dim_img_path == rasters_rio_path().joinpath("DIM.data", "dim.img")
 
 
 def test_bit():
@@ -318,11 +318,11 @@ def test_bit():
 def test_dem_fct(tmp_path):
     """Test DEM fct, i.e. slope and hillshade"""
     # Paths IN
-    dem_path = rasters_path().joinpath("dem.tif")
-    hlsd_path = rasters_path().joinpath("hillshade_rio.tif")
-    slope_path = rasters_path().joinpath("slope_rio.tif")
-    slope_r_path = rasters_path().joinpath("slope_r_rio.tif")
-    slope_p_path = rasters_path().joinpath("slope_p_rio.tif")
+    dem_path = rasters_rio_path().joinpath("dem.tif")
+    hlsd_path = rasters_rio_path().joinpath("hillshade_rio.tif")
+    slope_path = rasters_rio_path().joinpath("slope_rio.tif")
+    slope_r_path = rasters_rio_path().joinpath("slope_r_rio.tif")
+    slope_p_path = rasters_rio_path().joinpath("slope_p_rio.tif")
 
     # Path OUT
     hlsd_path_out = os.path.join(tmp_path, "hillshade_out_rio.tif")
@@ -353,10 +353,10 @@ def test_dem_fct(tmp_path):
 @s3_env
 def test_reproj(tmp_path, raster_path):
     """Test reproject fct"""
-    dem_path = rasters_path().joinpath(
+    dem_path = rasters_rio_path().joinpath(
         "Copernicus_DSM_10_N43_00_W003_00_DEM_resampled.tif"
     )
-    reproj_path = rasters_path().joinpath("reproj_out.tif")
+    reproj_path = rasters_rio_path().joinpath("reproj_out.tif")
 
     with rasterio.open(str(dem_path)) as src, rasterio.open(str(raster_path)) as ds:
         dst_arr, dst_meta = rasters_rio.reproject_match(
@@ -383,9 +383,9 @@ def test_reproj(tmp_path, raster_path):
 @s3_env
 def test_rasterize(tmp_path, raster_path):
     """Test rasterize fct"""
-    vec_path = rasters_path().joinpath("vector.geojson")
-    raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    raster_true_path = rasters_path().joinpath("rasterized.tif")
+    vec_path = rasters_rio_path().joinpath("vector.geojson")
+    raster_true_bin_path = rasters_rio_path().joinpath("rasterized_bin.tif")
+    raster_true_path = rasters_rio_path().joinpath("rasterized.tif")
 
     # Binary vector
     out_bin_path = os.path.join(tmp_path, "out_bin.tif")
@@ -406,7 +406,7 @@ def test_rasterize(tmp_path, raster_path):
 
 def test_read_idx():
     """Test mtd after reading with index"""
-    l1_path = rasters_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
+    l1_path = rasters_rio_path().joinpath("19760712T093233_L1_215030_MSS_stack.tif")
 
     def _test_idx(idx_list):
         raster, meta = rasters_rio.read(l1_path, indexes=idx_list)

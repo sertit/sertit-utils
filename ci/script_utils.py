@@ -151,6 +151,10 @@ def rasters_path():
     return get_ci_data_path().joinpath("rasters")
 
 
+def rasters_rio_path():
+    return get_ci_data_path().joinpath("rasters_rio")
+
+
 def vectors_path():
     return get_ci_data_path().joinpath("vectors")
 
