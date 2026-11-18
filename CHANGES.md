@@ -7,6 +7,7 @@
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
 - DOC: Update `rioxarray`'s home repo
 - CI: De-duplicate CI files between `rasters` and `rasters_rio`
+- CI: Allow the use of s3 storage as long as `CI_SERTIT_S3` is set to 1
 
 ## 1.54.6 (2026-09-28)
 

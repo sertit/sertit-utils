@@ -20,7 +20,7 @@ from functools import wraps
 
 import tempenv
 
-from sertit import AnyPath, ci, dask, unistra
+from sertit import AnyPath, ci, dask, s3, unistra
 from sertit.logs import SU_NAME
 from sertit.misc import ListEnum
 
@@ -72,6 +72,7 @@ def get_s3_ci_path():
 def get_ci_data_path():
     """Get CI DATA path"""
     if int(os.getenv(CI_SERTIT_S3, 1)):
+        os.environ[s3.USE_S3_STORAGE] = "1"
         return get_s3_ci_path() / "DATA"
     else:
         return AnyPath(unistra.get_db3_path()) / "CI" / "sertit_utils" / "DATA"
