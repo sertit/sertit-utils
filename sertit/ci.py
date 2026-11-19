@@ -66,6 +66,11 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
                 assert np.isnan(val_1).all() and np.isnan(val_2).all(), desc
                 test_done = True
 
+        if not test_done and isinstance(val_1, (str, type)):
+            with contextlib.suppress(Exception):
+                assert np.dtype(val_1) == np.dtype(val_2), desc
+                test_done = True
+
         if not test_done:
             with contextlib.suppress(ValueError):
                 assert val_1 == val_2, desc

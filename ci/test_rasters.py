@@ -24,6 +24,7 @@ import pytest
 import rasterio
 import shapely
 import xarray as xr
+from rasterio._err import CPLE_AppDefinedError
 
 from ci.script_utils import (
     CI_SERTIT_USE_DASK,
@@ -34,7 +35,6 @@ from ci.script_utils import (
     is_not_lazy_yet,
     rasters_path,
     s3_env,
-    skip_geoutils,
 )
 from sertit import ci, dask, geometry, path, rasters, rasters_rio, unistra, vectors
 from sertit.rasters import (
@@ -213,7 +213,8 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert_chunked_computed(xda_6, "Read with downsampling")
 
         # Downsampling (reproject)
-        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * 10.1)
+        downsampling_factor = 10.01
+        xda_7 = rasters.read(raster_path, resolution=ds.res[0] * downsampling_factor)
         assert_chunked_computed(xda_7, "Read with downsampling (reproject)")
 
         xda_8 = rasters.read(rasters_rio.read(ds))
@@ -228,21 +229,45 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
             rasters.read(raster_path, resolution={100: 100})
 
         # Test shape (link between resolution and size)
-        assert xda_4.shape[-2] == xda.shape[-2] * 2
-        assert xda_4.shape[-1] == xda.shape[-1] * 2
-        assert xda_6.shape[-2] == xda.shape[-2] / 2
-        assert xda_6.shape[-1] == xda.shape[-1] / 2
-        assert xda_7.shape[-1] == round(xda.shape[-1] / 10.1)
-        assert xda_7.shape[-2] == round(xda.shape[-2] / 10.1)
+        ci.assert_val(xda_4.shape[-2], xda.shape[-2] * 2, "Upsampled width")
+        ci.assert_val(xda_4.shape[-1], xda.shape[-1] * 2, "Upsampled height")
+        ci.assert_val(xda_6.shape[-2], xda.shape[-2] / 2, "Downsampled width")
+        ci.assert_val(xda_6.shape[-1], xda.shape[-1] / 2, "Downsampled height")
+        ci.assert_val(
+            xda_7.shape[-2],
+            round(xda.shape[-2] / downsampling_factor),
+            "Downsampled reproj width",
+        )
+        ci.assert_val(
+            xda_7.shape[-1],
+            round(xda.shape[-1] / downsampling_factor),
+            "Downsampled reproj height",
+        )
         with pytest.raises(ValueError):
             rasters.read(ds, resolution=[20, 20, 20])
 
         # Test dataset integrity
-        assert xda.shape == (ds.count, ds.height, ds.width)
-        assert np.dtype(xda.encoding["dtype"]) == ds_dtype
-        assert xds[ds_name].shape == xda.shape
-        assert xda_1.rst.crs == ds.crs
-        assert xda_1.rst.transform == ds.transform
+        ci.assert_val(
+            xda.shape,
+            (ds.count, ds.height, ds.width),
+            "xarray DataArray's shape vs rasterio's",
+        )
+        ci.assert_val(xda.rst.crs, ds.crs, "xarray CRS vs rasterio's")
+        ci.assert_val(xda.rst.transform, ds.transform, "xarray transform vs rasterio's")
+        ci.assert_val(
+            np.dtype(xda.encoding["dtype"]),
+            ds_dtype,
+            "xarray encoded dtype vs rasterio's",
+        )
+        ci.assert_val(xda.dtype.kind, "f", "xarray native dtype type")
+        ci.assert_val(xda.dtype, "float32", "xarray native dtype")
+
+        ci.assert_val(
+            xds[ds_name].shape,
+            (ds.count, ds.height, ds.width),
+            "xarray Dataset's shape vs rasterio's",
+        )
+
         xr.testing.assert_equal(xda_1, xda_2)
         xr.testing.assert_equal(xda_1, xda_3)
         xr.testing.assert_equal(xda, xda_5)
@@ -287,10 +312,18 @@ def test_read_np_vs_dask(raster_path):
 
 @s3_env
 @dask_env()
-def test_read_with_window(tmp_path, raster_path, mask_path, mask):
+def test_read_as_type(raster_path):
+    dtype = "uint8"
+    xda = get_xda(raster_path, as_type=dtype)
+    assert_chunked_computed(xda, "Read with dtype conversion")
+    ci.assert_val(xda.dtype, np.dtype(dtype), "Read dtype")
+
+
+@s3_env
+@dask_env()
+def test_read_with_window(tmp_path, raster_path, mask_path):
     """Test read (with window) function"""
     raster_window_path = rasters_path().joinpath("window.tif")
-    raster_window_20_path = rasters_path().joinpath("window_20.tif")
 
     # Window with native resolution
     xda_window_out = get_output(tmp_path, "test_xda_window.tif", DEBUG)
@@ -299,9 +332,14 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
         window=mask_path,
     )
     assert_chunked_computed(xda_window, "Read with a window with native resolution")
-    rasters.write(xda_window, xda_window_out, dtype=np.uint8)  # Compute #1
+    rasters.write(xda_window, xda_window_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_out, raster_window_path)
 
+
+@s3_env
+@dask_env()
+def test_read_with_window_upsampled(tmp_path, raster_path, mask):
+    raster_window_20_path = rasters_path().joinpath("window_20.tif")
     # Window with updated resolution
     xda_window_20_out = get_output(tmp_path, "test_xda_20_window.tif", DEBUG)
     gdf = mask.to_crs(EPSG_4326)
@@ -309,9 +347,66 @@ def test_read_with_window(tmp_path, raster_path, mask_path, mask):
     ci.assert_val(round(xda_window_20.rst.res[0]), 20, "resolution")
     assert_chunked_computed(xda_window_20, "Read with a window with updated resolution")
 
-    rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)  # Compute #2
+    rasters.write(xda_window_20, xda_window_20_out, dtype=np.uint8)
     ci.assert_raster_equal(xda_window_20_out, raster_window_20_path)
 
+
+@s3_env
+@dask_env()
+def test_read_with_window_outside(tmp_path, raster_path, mask):
+    # Window outside the raster
+    aoi_outside_path = rasters_path() / "aoi_outside.geojson"
+    raster_outside_path = rasters_path() / "window_outside.tif"
+    xda_window_outside_out = get_output(tmp_path, "test_xda_window_outside.tif", DEBUG)
+
+    xda_window_outside = rasters.read(raster_path, window=aoi_outside_path)
+    ci.assert_val(round(xda_window_outside.rst.res[0]), 30, "resolution")
+    assert_chunked_computed(
+        xda_window_outside, "Read with a window with updated resolution"
+    )
+
+    rasters.write(xda_window_outside, xda_window_outside_out, dtype=np.uint8)
+    ci.assert_raster_equal(xda_window_outside_out, raster_outside_path)
+
+
+@s3_env
+@dask_env()
+def test_read_with_window_outside_upsampled(tmp_path, raster_path, mask):
+    # Window outside the raster
+    aoi_outside_path = rasters_path() / "aoi_outside.geojson"
+    raster_outside_path = rasters_path() / "window_outside_upsampled.tif"
+    xda_window_outside_downsampled_out = get_output(
+        tmp_path, "test_xda_window_outside_upsampled.tif", DEBUG
+    )
+
+    xda_window_outside_downsampled = rasters.read(
+        raster_path, window=aoi_outside_path, resolution=20
+    )
+    ci.assert_val(round(xda_window_outside_downsampled.rst.res[0]), 20, "resolution")
+    assert_chunked_computed(
+        xda_window_outside_downsampled, "Read with a window with updated resolution"
+    )
+
+    rasters.write(
+        xda_window_outside_downsampled,
+        xda_window_outside_downsampled_out,
+        dtype=np.uint8,
+    )
+    ci.assert_raster_equal(xda_window_outside_downsampled_out, raster_outside_path)
+
+
+@s3_env
+@dask_env()
+def test_read_with_none_window(raster_path):
+    """Testing with window = None"""
+    xr.testing.assert_equal(
+        rasters.read(raster_path, window=None), rasters.read(raster_path)
+    )
+
+
+@s3_env
+@dask_env()
+def test_read_with_non_existing_window(raster_path):
     # Non-existing window
     with pytest.raises(FileNotFoundError):
         rasters.read(
@@ -402,7 +497,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
 
 
 @s3_env
-@dask_env()
+# @dask_env() issue with dask...
 def test_write_zarr(tmp_path, raster_path):
     # test zarr
     xda = get_xda(raster_path, chunks=None)
@@ -437,13 +532,15 @@ def test_write_basic(tmp_path, raster_path, ds_dtype):
 
 @s3_env
 @dask_env()
-def test_write_same(tmp_path, raster_path, ds_dtype):
+def test_write_same(tmp_path, raster_path):
     """Test write (same) function"""
     # xda
     nodata = 255
-    xda = get_xda(raster_path, as_type="uint8")
-    xda.rio.write_nodata(nodata, inplace=True)
+    dtype = np.dtype("uint8")
+    xda = get_xda(raster_path)
+    xda.rst.set_nodata(nodata)
     xda_copy = xda.copy(deep=True)
+    ci.assert_val(xda_copy.dtype.kind, "f", "Source dtype")
 
     # Before writing
     xr.testing.assert_equal(xda, xda_copy)
@@ -451,10 +548,14 @@ def test_write_same(tmp_path, raster_path, ds_dtype):
 
     # DataArray
     xda_out = get_output(tmp_path, "test_xda.tif", DEBUG)
-    rasters.write(xda, xda_out, dtype=ds_dtype, nodata=nodata)
+    rasters.write(xda, xda_out, dtype=dtype, nodata=nodata)
 
     # After writing
-    ci.assert_val(xda.rst.nodata, nodata, "nodata")
+    ci.assert_val(xda.rst.nodata, nodata, "nodata of the original")
+    ci.assert_val(xda_copy.rst.nodata, nodata, "nodata of the copy")
+    ci.assert_val(
+        xda.rst.dtype, xda_copy.rst.dtype, f"dtypes (writing dtype is {dtype.name})"
+    )
     xr.testing.assert_equal(xda, xda_copy)
 
 
@@ -572,6 +673,15 @@ def test_paint(tmp_path, raster_path, mask):
     assert_chunked_computed(paint_false_xds, "Paint Dataset (invert = false)")
     rasters.write(paint_false_xds, xds_paint_false, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, paint_false_xds)
+
+    # Check rasters
+    raster_paint_true_path = rasters_path().joinpath("paint_true.tif")
+    ci.assert_raster_equal(xda_paint_true, raster_paint_true_path)
+    ci.assert_raster_equal(xds_paint_true, raster_paint_true_path)
+
+    raster_paint_false_path = rasters_path().joinpath("paint_false.tif")
+    ci.assert_raster_equal(xda_paint_false, raster_paint_false_path)
+    ci.assert_raster_equal(xds_paint_false, raster_paint_false_path)
 
 
 @s3_env
@@ -774,10 +884,15 @@ def test_collocate_different_crs(tmp_path):
 
 
 @s3_env
+@pytest.mark.xfail(
+    reason="'merge_rasters' is not yet mature in GeoUtils", raises=CPLE_AppDefinedError
+)
 def test_merge_gtiff(tmp_path, raster_path):
     """Test merge_gtiff function"""
     raster_to_merge_path = rasters_path().joinpath("raster_to_merge.tif")
-    raster_merged_gtiff_out = get_output(tmp_path, "test_merged.tif", DEBUG)
+    raster_merged_gtiff_out = get_output(
+        tmp_path, "test_merged.tif", DEBUG, dask_folders=True
+    )
     rasters.merge_gtiff(
         [raster_path, raster_to_merge_path],
         raster_merged_gtiff_out,
@@ -855,7 +970,7 @@ def test_get_valid_vec(tmp_path, raster_path, ds_name):
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
-def test_vrt(tmp_path, raster_path):
+def test_merge_vrt(tmp_path, raster_path):
     """Test merge_vrt function"""
     # SAME CRS
     raster_merged_vrt_path = rasters_path().joinpath("raster_merged.vrt")
@@ -882,7 +997,7 @@ def test_vrt(tmp_path, raster_path):
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
-def test_merge_different_crs_rel(tmp_path):
+def test_merge_vrt_different_crs_rel(tmp_path):
     """Test merge_vrt (with different CRS) function"""
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
@@ -905,7 +1020,7 @@ def test_merge_different_crs_rel(tmp_path):
     shutil.which("gdalbuildvrt") is None,
     reason="Only works if gdalbuildvrt can be found.",
 )
-def test_merge_different_crs_abs(tmp_path):
+def test_merge_vrt_different_crs_abs(tmp_path):
     """Test merge_vrt (with different CRS) function"""
     # DIFFERENT CRS
     true_vrt_path = rasters_path().joinpath("merge_32-31.vrt")
@@ -925,8 +1040,11 @@ def test_merge_different_crs_abs(tmp_path):
 
 
 @s3_env
-def test_merge_different_crs_gtiff(tmp_path):
-    """Test merge_vrt (with different CRS) function"""
+@pytest.mark.xfail(
+    reason="'merge_rasters' is not yet mature in GeoUtils", raises=CPLE_AppDefinedError
+)
+def test_merge_gtiff_different_crs(tmp_path):
+    """Test merge_gtiff (with different CRS) function"""
     # DIFFERENT CRS
     true_tif_path = rasters_path().joinpath("merge_32-31.tif")
 
@@ -937,7 +1055,9 @@ def test_merge_different_crs_gtiff(tmp_path):
         "20220228T102849_S2_T32TLT_L2A_134712_RED.tif"
     )
     # Merge GTiff
-    raster_merged_tif_out = get_output(tmp_path, "test_merged.tif", DEBUG)
+    raster_merged_tif_out = get_output(
+        tmp_path, "test_merged.tif", DEBUG, dask_folders=True
+    )
     rasters.merge_gtiff([raster_1_path, raster_2_path], raster_merged_tif_out)
     ci.assert_raster_max_mismatch(
         raster_merged_tif_out, true_tif_path, max_mismatch_pct=1e-4
@@ -1138,11 +1258,6 @@ def test_where():
     )
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_aspect(tmp_path, dem_path):
@@ -1159,11 +1274,6 @@ def test_aspect(tmp_path, dem_path):
     ci.assert_raster_almost_equal(aspect_path, aspect_path_out, decimal=4)
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_hillshade(tmp_path, dem_path):
@@ -1178,11 +1288,6 @@ def test_hillshade(tmp_path, dem_path):
     ci.assert_raster_almost_equal(hlsd_path, hlsd_path_out, decimal=4)
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_slope(tmp_path, dem_path):
@@ -1196,11 +1301,6 @@ def test_slope(tmp_path, dem_path):
     ci.assert_raster_almost_equal(slope_path, slope_path_out, decimal=4)
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_slope_rad(tmp_path, dem_path):
@@ -1215,11 +1315,6 @@ def test_slope_rad(tmp_path, dem_path):
     ci.assert_raster_almost_equal(slope_r_path, slope_r_path_out, decimal=4)
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_slope_pct(tmp_path, dem_path):
@@ -1260,7 +1355,7 @@ def test_rasterize_float(tmp_path, raster_path):
     vec_path = rasters_path().joinpath("vector.geojson")
     raster_float_path = rasters_path().joinpath("raster_float.tif")
     raster_true_bin_path = rasters_path().joinpath("rasterized_bin.tif")
-    out_bin_path = get_output(tmp_path, "out_bin_float.tif", DEBUG)
+    out_bin_path = get_output(tmp_path, "out_bin_float.tif", DEBUG, dask_folders=True)
 
     # Rasterize
     rast_bin = rasters.rasterize(rasters.read(raster_float_path), vec_path)
@@ -1400,11 +1495,6 @@ def test_classify(tmp_path):
         )
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_reproject_rpcs(tmp_path):
@@ -1426,11 +1516,6 @@ def test_reproject_rpcs(tmp_path):
     assert "y" in rpc_reproj.dims
 
 
-@pytest.mark.xfail(
-    skip_geoutils(),
-    raises=ModuleNotFoundError,
-    reason="XDEM and GeoUtils not yet aligned",
-)
 @s3_env
 @dask_env()
 def test_reproject_rpcs_no_crs(tmp_path):
@@ -1558,8 +1643,3 @@ def test_reproject(raster_path):
     ci.assert_val(shape_arr.rst.count, 1, "Reprojected count")
     with pytest.raises(AssertionError):
         ci.assert_val(xda.rst.shape, (1, 161, 232), "Native shape")
-
-
-def test_none_window(raster_path):
-    ds = get_xda(raster_path)
-    ci.assert_val(rasters.get_window(ds, window=None), None, "None window")

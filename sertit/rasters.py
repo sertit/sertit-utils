@@ -34,6 +34,7 @@ import geopandas as gpd
 import geoutils as gu
 import numpy as np
 import xarray as xr
+from rasterio.errors import RasterBlockError
 from shapely.geometry.base import BaseGeometry
 
 from sertit.vectors import EPSG_4326
@@ -244,10 +245,11 @@ def rasterize(
 
     # Rasterize vector
     rasterized_xds = vector.vct.rasterize(
-        xda,
+        ref=xda,
         in_value=value,
         out_value=nodata,
-        out_dtype=np.uint8,
+        nodata=nodata,
+        out_dtype=xda.rst.dtype,
         all_touched=kwargs.get("all_touched", True),
         dask=dask.is_chunked(xda),
         **kwargs,
@@ -497,7 +499,9 @@ def paint(
     xds_fill = xds.fillna(nodata) if nodata is not None else xds
 
     # Use classic option
-    arr = mask(xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs)
+    arr = mask(xds_fill, shapes=shapes, **kwargs)
+    if not invert:
+        arr = xds_fill.where(np.isnan(arr))
 
     # Create and fill na values created by the mask to the wanted value
     painted_xds = xds.copy(data=arr)
@@ -648,30 +652,12 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
     return wrapper
 
 
-# Is lazy
-@dask.guard_compute(max_computes=0)
-def get_window(xda: AnyRasterType, window: Any):
-    """
-    Get a window from any type of input
-
-    Args:
-        xda (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
-
-    Returns:
-        Window: Rasterio window
-
-    """
-    return rasters_rio._get_col_row_window(window, xda.rst.crs, xda.rst.transform)
-
-
 def get_new_shape(
     src_width,
     src_height,
     src_res,
     resolution: tuple | list | float = None,
     size: tuple | list = None,
-    window: Window = None,
 ) -> (int, int, bool):
     """
     Get the new shape (height, width) of a resampled raster.
@@ -712,12 +698,8 @@ def get_new_shape(
         return new_dim, res_new / res_old
 
     # By default keep original shape
-    if window is None:
-        new_height = src_height
-        new_width = src_width
-    else:
-        new_height = window.height
-        new_width = window.width
+    new_height = src_height
+    new_width = src_width
 
     # Compute new shape
     if size is not None:
@@ -773,6 +755,94 @@ def get_new_shape(
     return new_height, new_width, downsampling_factor
 
 
+def __handle_window(xda: xr.DataArray, window) -> xr.DataArray:
+    if window is not None:
+        if isinstance(window, Window):
+            (row_start, row_stop), (col_start, col_stop) = window.toranges()
+            # Bounding box based on indices of the raster array (colmin, rowmin, colmax, rowmax).
+            xda = xda.rst.icrop((col_start, row_start, col_stop, row_stop))
+        else:
+            if path.is_path(window):
+                window = vectors.read(window)
+
+            if isinstance(window, gpd.GeoDataFrame):
+                # Intersect the window with the raster extent before converting the window to its total bounds, otherwise it can produce border effects
+                bounds = (
+                    window.to_crs(xda.rst.crs)
+                    .overlay(get_extent(xda), how="intersection")
+                    .total_bounds
+                )
+            else:
+                bounds = window
+            xda = xda.rst.crop(tuple(bounds))
+    return xda
+
+
+def __handle_indexes(xda: xr.DataArray, indexes) -> xr.DataArray:
+    if indexes is not None:
+        if not isinstance(indexes, list):
+            indexes = [indexes]
+
+        # Open only wanted bands
+        if 0 in indexes:
+            raise ValueError("Indexes should start at 1.")
+
+        ok_indexes = np.isin(indexes, xda.band)
+        if any(~ok_indexes):
+            LOGGER.warning(
+                f"Non-available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {xda.name}"
+            )
+
+        xda = xda.isel(
+            band=[idx - 1 for ok, idx in zip(ok_indexes, indexes, strict=True) if ok]
+        )
+
+        with contextlib.suppress(AttributeError):
+            # Set new long name: Bands nb are idx + 1
+            xda.long_name = tuple(
+                name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+            )
+
+    return xda
+
+
+def __handle_reproj(
+    xda: xr.DataArray, resolution, size, resampling, chunks
+) -> xr.DataArray:
+    # Manage dst fixed size
+    LOGGER.debug("Forcing the correct shape or resolution by reprojecting the data.")
+    new_height, new_width, downsampling_factor = get_new_shape(
+        src_width=xda.rst.width,
+        src_height=xda.rst.height,
+        src_res=xda.rst.res,
+        resolution=resolution,
+        size=size,
+    )
+
+    # Reproject raster to wanted resolution / size / resampling...
+    xda = reproject(
+        xda,
+        shape=(new_height, new_width),
+        resampling=resampling,
+        dst_crs=xda.rst.crs,
+        use_dask=chunks is not None,
+    )
+
+    return xda
+
+
+def __handle_dtype(xda: xr.DataArray, as_type) -> xr.DataArray:
+    if as_type:
+        if np.dtype(as_type).kind in "ui":
+            LOGGER.warning(
+                "You asked for integer arrays. Please note that this kind of dtypes is not handled by GeoUtils and may fail silently."
+            )
+            xda = xda.fillna(xda.rst.nodata)
+        xda = xda.astype(as_type)
+
+    return xda
+
+
 @__read__any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
@@ -799,10 +869,12 @@ def read(
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
 
-    Uses `rioxarray.open_rasterio <https://vylor.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
+
+
+    Uses `gu.open_raster <https://geoutils.readthedocs.io/en/latest/gen_modules/geoutils.open_raster.html>`_.
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) when downsampling! (becaise of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
+        With dask usage, this function is not lazy (yet) when downsampling! (because of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -836,82 +908,60 @@ def read(
     # Manage chunks
     chunks = kwargs.pop("chunks", dask.get_default_chunks())
 
-    # Manage window
-    if window is not None:
-        window = rasters_rio.get_window(ds, window)
+    # By default, give the downsampling
+    need_reproj = False
+    downsample = 1
+    if resampling == Resampling.nearest:
+        if size is not None:
+            # height, width = shape
+            downsample = {"shape": size}
+        elif resolution is not None:
+            # GeoUtils handles X/Y resolution
+            # xres, yres = _check_resolution(options["res"])
+            downsample = {"res": resolution}
+    else:
+        need_reproj = True
 
-    # Get new height and width
-    new_height, new_width, downsampling_factor = get_new_shape(
-        src_width=ds.width,
-        src_height=ds.height,
-        src_res=ds.res,
-        resolution=resolution,
-        size=size,
-        window=window,
-    )
-
-    with gu.open_raster(
-        ds.name,
-        downsample=downsampling_factor,
-        default_name=path.get_filename(ds.name),
-        masked=masked,
-        squeeze=False,
-        chunks=chunks,
-        **kwargs,
-    ) as xda:
-        # Windows
-        if window is not None:
-            xda = xda.rio.isel_window(window)
-
-        # Indexes
-        if indexes is not None:
-            if not isinstance(indexes, list):
-                indexes = [indexes]
-
-            # Open only wanted bands
-            if 0 in indexes:
-                raise ValueError("Indexes should start at 1.")
-
-            ok_indexes = np.isin(indexes, xda.band)
-            if any(~ok_indexes):
-                LOGGER.warning(
-                    f"Non-available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
+    with contextlib.ExitStack() as es:
+        try:
+            xda = es.enter_context(
+                gu.open_raster(
+                    ds.name,
+                    downsample=downsample,
+                    data_name=path.get_filename(ds.name),
+                    masked=masked,
+                    squeeze=False,
+                    chunks=chunks,
+                    **kwargs,
                 )
-
-            xda = xda.isel(
-                band=[
-                    idx - 1 for ok, idx in zip(ok_indexes, indexes, strict=True) if ok
-                ]
+            )
+        except ValueError:
+            # Handle upsampling through reprojection (without assessing shape or resolution in the first place)
+            # -> downsample is only for downsampling
+            need_reproj = True
+            xda = es.enter_context(
+                gu.open_raster(
+                    ds.name,
+                    data_name=path.get_filename(ds.name),
+                    masked=masked,
+                    squeeze=False,
+                    chunks=chunks,
+                    **kwargs,
+                )
             )
 
-            with contextlib.suppress(AttributeError):
-                # Set new long name: Bands nb are idx + 1
-                xda.long_name = tuple(
-                    name for i, name in enumerate(xda.long_name) if i + 1 in indexes
-                )
+        # Handle window
+        xda = __handle_window(xda, window)
 
-        # Manage dst fixed size
-        if xda.rst.height != new_height or xda.rst.width != new_width:
-            LOGGER.debug(
-                "Forcing the correct shape or resolution by reprojecting the data."
-            )
-            # Manage nodata
-            xda = reproject(
-                xda,
-                shape=(new_height, new_width),
-                resampling=resampling,
-                dst_crs=xda.rst.crs,
-                use_dask=chunks is not None,
-            )
+        # Handle indexes
+        xda = __handle_indexes(xda, indexes)
 
-        # Convert to wanted type
-        if as_type:
-            if np.dtype(as_type).kind in "ui":
-                LOGGER.warning(
-                    "You asked for integer arrays. Please note that this kind of dtypes is not handled by GeoUtils and may fail silently."
-                )
-                xda = xda.fillna(xda.rst.nodata)
-            xda = xda.astype(as_type)
+        # Reproject raster if needed
+        if need_reproj:
+            xda = __handle_reproj(xda, resolution, size, resampling, chunks)
+
+        # Convert to dst dtype if needed
+        xda = __handle_dtype(xda, as_type)
 
     return xda
 
@@ -939,7 +989,7 @@ def __save_cog_with_dask(
     # Compute the delayed object if needed
     if compute:
         LOGGER.debug(
-            f"Writing your COG '{path.get_filename(output_path)}' with Dask (h: {xds.rio.height} x w: {xds.rio.width})."
+            f"Writing your COG '{path.get_filename(output_path)}' with Dask (h: {xds.rst.height} x w: {xds.rst.width})."
         )
         delayed.compute(optimize_graph=True)
 
@@ -1001,6 +1051,8 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
+    orig_dtype = xds.dtype
+
     delayed = None
     use_dask = dask.is_chunked(xds)
     compute = compute and use_dask
@@ -1011,10 +1063,14 @@ def write(
     # Manage dtype
     dtype = np.dtype(kwargs.get("dtype", xds.encoding.get("dtype", xds.dtype)))
     xds.encoding["dtype"] = dtype.name
+    kwargs["dtype"] = dtype
 
     # Write nodata
     nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
-    xds = xds.rio.write_nodata(nodata, encoded=True)
+    assert xds.dtype == orig_dtype, "2"
+    xds.rst.set_nodata(nodata)
+    assert xds.dtype == orig_dtype, "3"
+    kwargs["nodata"] = nodata
 
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
@@ -1073,7 +1129,7 @@ def write(
     # Write COGs
     blocksize = None
     if is_cog:
-        blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else 512
+        blocksize = 128 if (xds.rst.height < 1000 or xds.rst.width < 1000) else 512
 
         if use_dask and write_cogs_with_dask:
             try:
@@ -1138,17 +1194,17 @@ def write(
         if not use_dask and not is_written:
             # Write with windows as we don't want to_raster to blow up the RAM (only if dask is not used)
             # Does nothing if writing with dask
-            use_windowed = xds.rio.height * xds.rio.width > 20000 * 20000
+            use_windowed = xds.rst.height * xds.rst.width > 20000 * 20000
             if use_windowed:
                 LOGGER.debug(
-                    f"Writing '{path.get_filename(output_path)}' big file (h: {xds.rio.height} x w: {xds.rio.width}) with rioxarray's 'windowed' method to avoid memory issues."
+                    f"Writing '{path.get_filename(output_path)}' big file (h: {xds.rst.height} x w: {xds.rst.width}) with rioxarray's 'windowed' method to avoid memory issues."
                 )
             kwargs["windowed"] = use_windowed
 
     # Default write on disk
     if not is_written:
         LOGGER.debug(
-            f"Writing '{path.get_filename(output_path)}' (h: {xds.rio.height} x w: {xds.rio.width}) to disk."
+            f"Writing '{path.get_filename(output_path)}' (h: {xds.rst.height} x w: {xds.rst.width}) to disk."
         )
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
@@ -1176,7 +1232,7 @@ def _collocate_dataarray(
     resampling: Resampling = Resampling.nearest,
     **kwargs,
 ) -> xr.DataArray:
-    if other.rio.shape == reference.rio.shape and other.rio.crs == reference.rio.crs:
+    if other.rst.shape == reference.rst.shape and other.rst.crs == reference.rst.crs:
         LOGGER.debug(
             "Collocating equivalent rasters by aligning the coordinates onto the reference's ones."
         )
@@ -1496,21 +1552,27 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
         >>> merge_gtiff(paths_utm32630, mosaic_32630)
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
     """
-    rasters = [
-        gu.Raster(str(rasters_path)) if path.is_path(rasters_path) else rasters_path
-        for rasters_path in rasters_paths
-    ]
-
-    merged_raster = gu.raster.merge_rasters(
-        rasters=rasters,
-        **misc.select_dict(
-            kwargs,
-            ["reference", "merge_algorithm", "resampling_method", "use_ref_bounds"],
-        ),
-    ).to_xarray("Merged")
-    if merged_path:
-        dtype = kwargs.pop("dtype", rasters[0].dtype)
-        write(merged_raster, merged_path, dtype=dtype, **kwargs)
+    try:
+        rasters_to_merge = [
+            gu.Raster(raster_path) if path.is_path(raster_path) else raster_path
+            for raster_path in rasters_paths
+        ]
+        merged_raster = gu.raster.merge_rasters(
+            rasters=rasters_to_merge,
+            **misc.select_dict(
+                kwargs,
+                ["reference", "merge_algorithm", "resampling_method", "use_ref_bounds"],
+            ),
+        ).to_xarray("Merged")
+        if merged_path:
+            dtype = kwargs.pop("dtype", rasters_to_merge[0].dtype)
+            try:
+                write(merged_raster, merged_path, dtype=dtype, **kwargs)
+            except RasterBlockError as ex:
+                LOGGER.warning(f"Error with blocks! {ex}")
+                write(merged_raster, merged_path, dtype=dtype, blocksize=512, **kwargs)
+    except Exception:
+        return rasters_rio.merge_gtiff(rasters_paths, merged_path, **kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
@@ -1746,7 +1808,7 @@ def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     xda.rio.update_encoding(encoding, inplace=True)
 
     # Set nodata in the attributes and encoding
-    xda.rio.write_nodata(nodata_val, encoded=True, inplace=True)
+    xda.rst.set_nodata(nodata_val)
     return xda
 
 
@@ -2153,14 +2215,14 @@ def reproject(
             caching_folder = AnyPath(tmp_caching_folder.name)
 
         # Get src crs (check that)
-        src_crs = src_xda.rio.crs
+        src_crs = src_xda.rst.crs
         if not src_crs:
             # RPCs are always in 4326 by convention
             # https://rasterio.readthedocs.io/en/latest/topics/reproject.html#reprojecting-with-other-georeferencing-metadata
             src_crs = EPSG_4326
 
             # CRS has to be set for rioxarray
-            src_xda.rio.write_crs(src_crs, inplace=True)
+            src_xda.rst.set_crs(src_crs)
 
         # RPC_DEM doesn't work with cloud-based DEM
         dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
@@ -2321,7 +2383,7 @@ def __rpc_gdal_options(dem_path: AnyPathStrType):
     # DEM nodata
     import rasterio
 
-    with rasterio.open(dem_path) as src:
+    with rasterio.open(str(dem_path)) as src:
         dem_nodata = src.nodata
 
     if dem_nodata is not None:
