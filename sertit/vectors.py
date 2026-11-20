@@ -20,7 +20,6 @@ You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
 import contextlib
-import functools
 import logging
 import os
 import re
@@ -33,16 +32,20 @@ from contextlib import contextmanager
 from typing import Any
 
 import geopandas as gpd
-import geoutils as gu
 import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
 from shapely import Polygon, wkt
 from shapely.geometry.base import BaseGeometry
 
-from sertit import AnyPath, files, geometry, logs, misc, path, strings
+from sertit import AnyPath, files, geometry, logs, misc, path, strings, utils
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType, AnyVectorType
+
+try:
+    import geoutils as gu
+except ModuleNotFoundError:  # pragma: no cover
+    gu = None
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -531,9 +534,21 @@ def read(
     return vect
 
 
-# Change load behaviour in open_vector
-_open_vector = functools.partial(gu.open_vector, load=True)
-""" Convenient function to change default behaviour of gu.open_vector. load: False -> True"""
+@utils.requires(("geoutils", "rasters"))
+def _open_vector(gpd_vect_path: str, **kwargs) -> gpd.GeoDataFrame:
+    """
+    Open a vector with geoutils, changing the default behaviour of
+    :code:`geoutils.open_vector` from :code:`load=False` to :code:`load=True`
+    (i.e. returning the data as a :code:`GeoDataFrame` instead of an open vector resource).
+
+    Args:
+        gpd_vect_path (str): Resolved vector path (readable by geopandas)
+        **kwargs: Other arguments passed to :code:`geoutils.open_vector`
+
+    Returns:
+        gpd.GeoDataFrame: The opened vector
+    """
+    return gu.open_vector(gpd_vect_path, load=True, **kwargs)
 
 
 def _read_vector_core(

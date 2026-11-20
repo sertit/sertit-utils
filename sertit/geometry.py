@@ -31,7 +31,7 @@ from shapely.errors import GeometryTypeError
 from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from sertit import misc, vectors
+from sertit import misc, utils, vectors
 from sertit.logs import SU_NAME
 from sertit.types import AnyPolygonType
 
@@ -618,6 +618,7 @@ def nearest_neighbors(
     return closest_samples, distances
 
 
+@utils.requires(("sklearn", "nearest_neighbors"))
 def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwargs):
     """
     For each point in src_gdf, find the nearest k points in candidates_gdf and return them with their distance.
@@ -631,12 +632,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
     """
-    try:
-        from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
-        ) from ex
+    from sklearn.neighbors import BallTree
 
     # Create tree from the candidate points
     tree = BallTree(candidates, leaf_size=15)
@@ -650,6 +646,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     return closest, closest_dist
 
 
+@utils.requires(("sklearn", "nearest_neighbors"))
 def _get_radius_nearest(
     src_points: list, candidates: list, radius: float, **kwargs
 ) -> (np.ndarray, np.ndarray):
@@ -665,12 +662,7 @@ def _get_radius_nearest(
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
     """
-    try:
-        from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
-        ) from ex
+    from sklearn.neighbors import BallTree
 
     # Create tree from the candidate points
     tree = BallTree(candidates, leaf_size=15)

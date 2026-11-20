@@ -31,7 +31,7 @@ from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
 from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, dask, files, rasters, s3
+from sertit import AnyPath, dask, files, rasters, s3, utils
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyVectorType, AnyXrDataStructure
 
@@ -139,6 +139,7 @@ def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
     ), f"transform incoherent:\n{meta_1['transform']}\n!=\n{meta_2['transform']}"
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two rasters are equal.
@@ -154,12 +155,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         >>> assert_raster_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -169,6 +165,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         np.testing.assert_array_equal(ds_1.read(), ds_2.read())
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_almost_equal(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=7
 ) -> None:
@@ -191,12 +188,7 @@ def assert_raster_almost_equal(
         >>> assert_raster_almost_equal(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_almost_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -226,6 +218,7 @@ def assert_raster_almost_equal(
             raise AssertionError(errors)
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_almost_equal_magnitude(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=2
 ) -> None:
@@ -250,12 +243,7 @@ def assert_raster_almost_equal_magnitude(
         >>> assert_raster_almost_equal_magnitude(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_almost_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -328,6 +316,7 @@ def assert_raster_almost_equal_magnitude(
             raise AssertionError(errors)
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_max_mismatch(
     path_1: AnyPathStrType,
     path_2: AnyPathStrType,
@@ -353,12 +342,7 @@ def assert_raster_max_mismatch(
         >>> assert_raster_max_mismatch(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_max_mismatch."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata

@@ -31,7 +31,6 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 import geopandas as gpd
-import geoutils as gu
 import numpy as np
 import xarray as xr
 from rasterio.errors import RasterBlockError
@@ -40,16 +39,32 @@ from shapely.geometry.base import BaseGeometry
 from sertit.vectors import EPSG_4326
 
 try:
+    import geoutils as gu
+except ModuleNotFoundError:  # pragma: no cover
+    gu = None
+
+try:
     from rasterio import CRS
     from rasterio.enums import Resampling
     from rasterio.windows import Window
 except ModuleNotFoundError as ex:  # pragma: no cover
     raise ModuleNotFoundError(
-        "Please install 'geoutils' to use the 'rasters' package."
+        "Please install 'rasterio' to use the 'rasters' package."
     ) from ex
 
 
-from sertit import AnyPath, dask, geometry, logs, misc, path, perf, rasters_rio, vectors
+from sertit import (
+    AnyPath,
+    dask,
+    geometry,
+    logs,
+    misc,
+    path,
+    perf,
+    rasters_rio,
+    utils,
+    vectors,
+)
 from sertit.types import (
     AnyPathStrType,
     AnyPathType,
@@ -188,6 +203,7 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def rasterize(
@@ -272,6 +288,7 @@ def _works_on_xds(function):
 
 
 # Is not lazy yet in GeoUtils
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
 @_works_on_xds
@@ -359,6 +376,7 @@ def vectorize(
     return gdf
 
 
+@utils.requires(("geoutils", "rasters"))
 @any_raster_to_xr_ds
 @_works_on_xds
 def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
@@ -394,6 +412,7 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def mask(
@@ -439,6 +458,7 @@ def mask(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def paint(
@@ -510,6 +530,7 @@ def paint(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def crop(
@@ -833,6 +854,7 @@ def __handle_dtype(xda: xr.DataArray, as_type) -> xr.DataArray:
     return xda
 
 
+@utils.requires(("geoutils", "rasters"))
 @__read__any_raster_to_rio_ds
 def read(
     ds: AnyRasterType,
@@ -986,6 +1008,7 @@ def __save_cog_with_dask(
     return delayed
 
 
+@utils.requires(("geoutils", "rasters"))
 @any_raster_to_xr_ds
 def write(
     xds: AnyXrDataStructure,
@@ -1244,6 +1267,7 @@ def _collocate_dataarray(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("rioxarray", "rasters"))
 @dask.guard_compute(max_computes=0)
 def collocate(
     reference: AnyXrDataStructure,
@@ -1341,6 +1365,7 @@ def collocate(
 
 
 # Is not lazy yet in GeoUtils
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
 def sieve(
@@ -1412,6 +1437,7 @@ def get_dim_img_path(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
@@ -1440,6 +1466,7 @@ def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
     return vectors.get_geodf(geom=[*xds.rst.bounds], crs=xds.rst.crs)
 
 
+@utils.requires(("geoutils", "rasters"))
 @any_raster_to_xr_ds
 def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
@@ -1510,6 +1537,7 @@ def merge_vrt(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"))
 @dask.guard_compute(max_computes=0)
 def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
@@ -1672,6 +1700,7 @@ def read_uint8_array(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("rioxarray", "rasters"))
 @dask.guard_compute(max_computes=0)
 def set_metadata(
     naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
@@ -1751,6 +1780,7 @@ def set_metadata(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("rioxarray", "rasters"))
 @dask.guard_compute(max_computes=0)
 def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
@@ -1856,6 +1886,7 @@ def where(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("xdem", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def hillshade(
@@ -1892,6 +1923,7 @@ def hillshade(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("xdem", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def slope(
@@ -1926,6 +1958,7 @@ def slope(
 
 
 # Is lazy
+@utils.requires(("geoutils", "rasters"), ("xdem", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
@@ -2073,6 +2106,7 @@ def classify(
 
 
 # Is lazy (even if DEM is cached?)
+@utils.requires(("geoutils", "rasters"), ("xdem", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def reproject(

@@ -10,6 +10,7 @@
    - Use `altitude` instead of `zenith` in `rasters.hillshade` to conform to GDAL
    - Remove kwargs in `geometry.buffer`
 - **BREAKING CHANGES**: Drop `rasters.reproject`'s `ortho_path` to better comply with dask workflows (writing parts should be kept outside of functions) ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- ENH: Factorise optional requirements through a decorator
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
 - DOC: Update `rioxarray`'s home repo
