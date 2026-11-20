@@ -325,12 +325,15 @@ def guard_compute(
     nof_computes=0,
 ):
     """
-    Guard the function against unexpected computes
+    Decorator that guards a function against unexpected (and usually unintended) dask computes.
+
+    When the :code:`CI_SERTIT_USE_DASK` environment variable is set to :code:`"1"` (the default),
+    the wrapped function is run inside a :func:`raise_if_dask_computes` context so that every
+    compute it triggers is tracked and bounded. Otherwise, it runs unchanged.
 
     Args:
-        max_computes:
-        guard_if:
-        raise_on_compute:
+        max_computes (int): Maximum number of computes allowed before an error is raised.
+        nof_computes (int): Exact number of computes expected, checked once the function returns.
     """
 
     def guard_compute_decorator(function):

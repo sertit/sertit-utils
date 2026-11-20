@@ -200,16 +200,10 @@ def rasterize(
     **kwargs,
 ) -> AnyXrDataStructure:
     """
-    Rasterize a vector into raster format.
+    Rasterize a vector onto a raster, following the raster's extent, resolution and CRS.
 
-    Note that passing :code:`merge_alg = MergeAlg.add` will add the vector values to the given raster
-
-    See: https://pygis.io/docs/e_raster_rasterize.html
-
-    Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the raster will be binary.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet)!
+    Use :code:`value_field` to burn the values of a given vector field onto the raster.
+    If set to :code:`None`, the raster is filled with :code:`default_value` (i.e. binary).
 
     Args:
         xda (xr.DataArray): Path to the raster or a rasterio dataset or a xarray.DataArray, used as base for the vector's rasterization data (shape, etc.)
@@ -289,31 +283,29 @@ def vectorize(
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
-    Vectorize a xarray, both to get classes or nodata.
+    Vectorize a raster into class polygons.
 
-    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
-    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
+    When :code:`dissolve` is :code:`False`, it returns a GeoDataFrame with one geometry per
+    cluster of identical pixel value, the value being stored as an attribute. When
+    :code:`dissolve` is :code:`True`, all polygons are merged into a single one.
 
     .. WARNING::
-        - If :code:`get_nodata` is set to False:
-            - Your data is casted by force into np.uint8, so be sure that your data is classified.
-            - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-                Please be careful.
-        Else:
-            - You will get a classified polygon with data (value=0)/nodata pixels.
+        This function is not lazy yet: with chunked (dask) data the raster is computed before
+        being vectorized. The number of polygons to build also drives the computing time,
+        so be careful on large rasters.
 
     Args:
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (None | int | list): Get only the polygons concerning this/these particular values
-        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
-        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
-        default_nodata (int): Default values for nodata in case of non existing in file
+        values (None | int | tuple): Only vectorize the polygon(s) corresponding to this/these value(s)
+        keep_values (bool): If True, keep the given values; if False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one. Only used when :code:`values` is given.
+        default_nodata (int): Default nodata value to use when the raster has none.
 
     Returns:
-        gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
+        gpd.GeoDataFrame: Vector with the raster values (unless :code:`dissolve` is set)
     """
     if dask.is_chunked(xda):
-        LOGGER.warning("'_vectorize' function is not lazy yet. Computing the raster.")
+        LOGGER.warning("'vectorize' function is not lazy yet. Computing the raster.")
         xda = xda.compute()
 
     # Manage values
@@ -377,25 +369,25 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+        With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
 
     Args:
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         default_nodata (int): Default values for nodata in case of non-existing in file
 
     Returns:
-        gpd.GeoDataFrame: Nodata Vector
+        gpd.GeoDataFrame: Vector of the valid data
 
     Example:
         >>> raster_path = "path/to/raster.tif"
-        >>> nodata1 = get_nodata_vec(raster_path)
+        >>> valid1 = get_valid_vector(raster_path)
         >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
-        >>>     nodata2 = get_nodata_vec(ds)
+        >>>     valid2 = get_valid_vector(ds)
         >>>
         >>> # Assert those two approaches give the same result
-        >>> nodata1 == nodata2
+        >>> valid1 == valid2
         True
     """
     return vectorize(xda, values=None, dissolve=True, default_nodata=default_nodata)
@@ -413,18 +405,16 @@ def mask(
     Masking a dataset:
     setting nodata outside the given shapes, but without cropping the raster to the shapes extent.
 
-    The original nodata is kept and completed with the nodata provided by the shapes.
+    The original nodata is kept.
 
-    Overload of rasterio mask function in order to create a :code:`xarray`.
-
-    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
-    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
+    Wraps geoutils' clipping feature so that any :code:`AnyRasterType` can be masked and the
+    result returned as a :code:`xarray`.
 
     Args:
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        **kwargs: Other geoutils.clip options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Masked array as a xarray
@@ -466,8 +456,8 @@ def paint(
     This means if your shapes intersects the original nodata,
     the value of the pixel will be set to nodata rather than to the wanted value.
 
-    Overload of rasterio mask function in order to create a :code:`xarray`.
-    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
+    Wraps geoutils' clipping feature (through :func:`mask`) so that any :code:`AnyRasterType`
+    can be painted and the result returned as a :code:`xarray`.
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -475,7 +465,7 @@ def paint(
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
-        **kwargs: Other rasterio.mask options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Painted array as a xarray
@@ -526,19 +516,19 @@ def crop(
     xds: AnyRasterType,
     shapes: gpd.GeoDataFrame | BaseGeometry | list,
     **kwargs,
-) -> (np.ma.masked_array, dict):
+) -> AnyXrDataStructure:
     """
     Cropping a dataset:
     setting nodata outside the given shapes AND cropping the raster to the shapes extent.
 
-    Overload of :py:func:`rioxarray.clip` or :py:func:`xds.odc.crop` in case of a dask array
+    Wraps geoutils' clipping feature (through :func:`mask`) so that any :code:`AnyRasterType`
+    can be cropped and the result returned as a :code:`xarray`.
 
     Args:
-        xds (:any:`AnyRasterType`): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
-        **kwargs: Other :code:`rioxarray.clip` options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Cropped array as a xarray
@@ -547,14 +537,14 @@ def crop(
         >>> raster_path = "path/to/raster.tif"
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
-        >>> xds2 = crop(raster_path, shapes)
+        >>> cropped1 = crop(raster_path, shapes)
         >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
-        >>>     xds2 = crop(ds, shapes)
+        >>>     cropped2 = crop(ds, shapes)
         >>>
         >>> # Assert those two approaches give the same result
-        >>> xds1 == xds2
+        >>> cropped1 == cropped2
         True
     """
     all_touched = kwargs.get("all_touched")
@@ -660,20 +650,20 @@ def get_new_shape(
     size: tuple | list = None,
 ) -> (int, int, bool):
     """
-    Get the new shape (height, width) of a resampled raster.
-    Get also the downsampling_factor to select properly which overview to use. (>=1)
+    Get the new shape (height, width) of a resampled raster, along with the downsampling
+    factor to select which overview to use (always >= 1).
 
-    Size overrides resolution
+    :code:`size` overrides :code:`resolution` when both are given.
 
     Args:
-        ds (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (tuple | list): Size of the array (width, height). Not used if resolution is provided.
-        window (Window): Window to be read
+        src_width (int): Width of the source raster, in pixels.
+        src_height (int): Height of the source raster, in pixels.
+        src_res (tuple): Resolution of the source raster (X, Y).
+        resolution (tuple | list | float): Resolution of the wanted band, in the source resolution unit (X, Y).
+        size (tuple | list): Size of the array (width, height). Overrides :code:`resolution`.
 
     Returns:
-        (int, int, bool): Height, width, downsampling_factor
-
+        (int, int, int): Height, width and downsampling factor.
     """
     # By default, set downsampling_factor to 1
     downsampling_factor = 1
@@ -871,10 +861,10 @@ def read(
 
 
 
-    Uses `gu.open_raster <https://geoutils.readthedocs.io/en/latest/gen_modules/geoutils.open_raster.html>`_.
+    Uses `geoutils.open_raster <https://geoutils.readthedocs.io/en/latest/gen_modules/geoutils.open_raster.html>`_.
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) when downsampling! (because of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
+        With dask usage, this function is not lazy (yet) when downsampling!
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -887,7 +877,7 @@ def read(
         masked (bool): Get a masked array
         indexes (int | list): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
         as_type (Any): Type in which to load the array
-        **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
+        **kwargs: Optional keyword arguments to pass into :code:`geoutils.open_raster` (i.e. :code:`chunks`).
 
     Returns:
         AnyXrDataStructure: Masked xarray corresponding to the raster data and its metadata
@@ -1007,9 +997,9 @@ def write(
 ) -> None:
     """
     Write raster to disk.
-    (encapsulation of :code:`rasterio`'s function, because for now :code:`rioxarray` to_raster doesn't work as expected)
 
-    Metadata will be created with the :code:`xarray` metadata (i.e. width, height, count, type...)
+    The file is written with geoutils' :code:`to_file`, and its metadata are created from the
+    :code:`xarray` metadata (i.e. width, height, count, type...).
     The driver is :code:`GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
@@ -1265,9 +1255,6 @@ def collocate(
     Collocate two georeferenced arrays:
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
-    .. WARNING::
-        With dask usage, this function is only lazy if odc.geo is installed
-
     Args:
         reference (:any:`AnyXrDataStructure`): Reference xarray
         other (:any:`AnyXrDataStructure`): Other xarray
@@ -1360,10 +1347,11 @@ def sieve(
     xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4
 ) -> AnyXrDataStructure:
     """
-    Sieving, overloads rasterio function with raster shaped like an image: :code:`(1, h, w)`.
+    Sieve a classified raster, removing small objects smaller than the given threshold.
 
     .. WARNING::
-        Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
+        Non-integer rasters are cast to :code:`np.uint8` before sieving, so be sure that
+        your data is classified.
 
     .. WARNING::
         With dask usage, this function is not lazy (yet)!
@@ -1458,7 +1446,7 @@ def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     Get real footprint of the product (without nodata, *in french == emprise utile*)
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+        With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -1525,21 +1513,17 @@ def merge_vrt(
 @dask.guard_compute(max_computes=0)
 def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
-    Merge rasters as a GeoTiff.
+    Merge a list of rasters into a single GeoTiff.
 
-    This function handles files of different projection by creating intermediate VRT used for warping.
-
-    Using :code:`rasterio.merge` with default arguments behind the hood so you can provide any valid argument into the kwargs.
-    For example, to modify the merging method, you can pass :code:`method="max"`
-
-    .. WARNING::
-        With dask usage, this function is not lazy
+    The rasters are merged with geoutils' :code:`merge_rasters` using its default arguments,
+    so you can pass the relevant arguments through :code:`kwargs`.
+    For example, to modify the merging method, you can pass :code:`merge_algorithm="max"`.
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (AnyPathStrType): Path to the merged raster
-        kwargs: Other rasterio.merge arguments.
-            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
+        rasters_paths (list): Paths of the rasters to be merged
+        merged_path (AnyPathStrType): Path to the merged raster
+        **kwargs: Other :code:`geoutils.merge_rasters` arguments
+            (i.e. :code:`reference`, :code:`merge_algorithm`, :code:`resampling_method`, :code:`use_ref_bounds`)
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1693,7 +1677,7 @@ def set_metadata(
     naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
 ) -> AnyXrDataStructure:
     """
-    Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
+    Set metadata from a :code:`xr.DataArray` to another (including CRS, nodata and encoding).
 
     Useful when performing operations on xarray that result in metadata loss such as sums.
 
@@ -1772,8 +1756,8 @@ def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
     Set nodata to a xarray that have no default nodata value.
 
-    In the data array, the no data will be set to :code:`np.nan`.
-    The encoded value can be retrieved with :code:`get_nodata_value_from_xr`.
+    In the data array, the no-data pixels are set to :code:`np.nan`.
+    The encoded value is kept in the geoutils metadata.
 
     Args:
         xda (xr.DataArray): DataArray
@@ -1878,16 +1862,15 @@ def hillshade(
     xds: AnyRasterType, azimuth: float = 315, altitude: float = 45, **kwargs
 ) -> AnyXrDataStructure:
     """
-    Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
+    Compute the hillshade of a DEM from an azimuth and an altitude angle (in degrees).
 
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
-
-    NB: altitude = 90 - zenith
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
-        zenith (float): Zenith angle in degrees (90 is the top, zenith = 90 - altitude)
+        altitude (float): Altitude angle of the light, in degrees (90 is directly overhead).
+            The deprecated :code:`zenith` keyword can still be used, in which case :code:`altitude = 90 - zenith`.
 
     Returns:
         AnyXrDataStructure: Hillshade
@@ -2112,46 +2095,42 @@ def reproject(
     **kwargs,
 ) -> xr.DataArray:
     """
-    Function handling all cases of reprojection, with and without RPCS, with and without dask or chunked arrays.
+    Function handling all cases of reprojection, with and without RPCs, for both plain and
+    chunked (dask) arrays.
 
-    Wrappers around:
-    - odc.geo.xr_reproject for chunked arrays (in a dask-backed way)
-    - rioxarray.reprjoect for xarray data
-    - rasterio.reproject as a fallback (especially for Python 3.9)
+    Wraps geoutils' :code:`reproject` (:code:`xr.rst.reproject`) so that any
+    :code:`AnyRasterType` can be reprojected and the result returned as a :code:`xarray`.
 
     .. WARNING::
-        RPC management is much more complex and necessits more arguments.
+        RPC management is much more complex and necessitates more arguments.
 
-        RPC reprojection is not daskified yet. See this `issue<https://github.com/opendatacube/odc-geo/issues/193>`_.
+        Cloud-stored DEM cannot be used as is. They will be cached and then used.
+        Performance can be affected.
 
-        Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
-
-        Orthorectifying data with RPC is using a DEM. This DEM should have its height based on the ellispoid.
-        If your DEM doesn't have a vertical CRS set, please provide it with vcrs.
+        Orthorectifying data with RPC uses a DEM. This DEM should have its height based on
+        the ellipsoid. If your DEM doesn't have a vertical CRS set, please provide it with
+        :code:`vcrs`.
 
         Note that in some cases, the vertical CRS is set by default.
-        This library recognizes files with :code:`Copernicus` or :code:`COPDEM` in it (based on :code:`EGM08`).
-        :code:`xdem` may recognize other files. See `the documentation<https://xdem.readthedocs.io/en/stable/vertical_ref.html>`_ for more insights.
+        This library recognizes files with :code:`Copernicus` or :code:`COPDEM` in their name
+        (based on :code:`EGM08`). :code:`xdem` may recognize other files. See
+        `the documentation <https://xdem.readthedocs.io/en/stable/vertical_ref.html>`_ for
+        more insights.
 
     Args:
         src_xda (AnyRasterType): Raster to be reprojected
         pixel_size (float): Destination pixel size (in the destination CRS units). If not provided, the pixel size will be deducted from other parameters.
-        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes pixel_size.
-        resampling (Resampling): Resampling method. Defaults to Resampling.bilinear.
-        dst_crs (CRS): Destination CRS. If not provided, the CRS will be retrieved from the source raster.
-        dst_transform (Affine): Destination transfgorm. If not provided, the transform will be computed from other parameters.
-        gcps ((control.GroundControlPoint, CRS)): Ground Control Points
+        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes :code:`pixel_size`.
+        resampling (Resampling): Resampling method. Defaults to :code:`Resampling.bilinear`.
+        dst_crs (CRS): Destination CRS. If not provided, the source CRS will be used.
         nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
         num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
-        use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.
-        ortho_path (AnyPathStrType): Path to the orthorectified array
         name (str): Name of the output DataArray.
-        rpcs (rpc.RPC): RPC to orthorectify some raster
-        dem_path (AnyPathStrType): Path to the DEM, only used if rpcs is given.
-        extent (gpd.GeoDataFrame): GeoDataFrame containing extent of the raster to extract the DEM, only used if rpcs is given.
-        vcrs (str | int): Vertical CRS of the DEM, only used if rpcs is given. Can be automatically deducted in some cases (COPDEM, etc.). Better to set it tu be sure.
-        caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted in the end of the process. Only used if rpcs is given.
-        **kwargs: Other arguments to pass to reproject or write
+        dem_path (AnyPathStrType): Path to the DEM, only used if the raster carries RPCs.
+        extent (gpd.GeoDataFrame): Extent used to subset the DEM, only used if the raster carries RPCs.
+        vcrs (str | int): Vertical CRS of the DEM, only used if the raster carries RPCs. Can be automatically deduced in some cases (COPDEM, etc.). Better to set it to be sure.
+        caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted at the end of the process. Only used if the raster carries RPCs.
+        **kwargs: Other arguments to pass to the reprojection.
 
     Returns:
         xr.DataArray: Reprojected raster
@@ -2160,21 +2139,19 @@ def reproject(
         Example with RPCs
         >>> # Imports
         >>> import logging
-        >>> from sertit import AnyPath, logs, rasters, vectors
+        >>> from sertit import AnyPath, logs, rasters
         >>> logs.init_logger(logging.getLogger("sertit"))
         >>>
-        >>> # Data
+        >>> # Data (a raster that carries RPCs)
         >>> spot_path = AnyPath("IMG_SPOT7_MS_001_A", "DIM_SPOT7_MS_201602150257025_SEN_1671661101.XML")
         >>> copdem_path = AnyPath("Copernicus_DSM_10_S07_00_E106_00_DEM.tif")
         >>>
-        >>> # Reproject
-        >>> with rasterio.open(spot_path) as ds:
-        >>>     rpc_reproj = rasters.reproject(spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0)
-        [WARNING] - Reprojection with RPCs doesn't work with Dask. Computing the raster.
+        >>> # Reproject (the RPCs are read from the raster itself)
+        >>> rpc_reproj = rasters.reproject(spot_path, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0)
         [DEBUG] - Orthorectifying data with Copernicus_DSM_10_S07_00_E106_00_DEM.tif
         >>>
         >>> # See if we have a CRS
-        >>> rpc_reproj.rio.crs.to_epsg()
+        >>> rpc_reproj.rst.crs.to_epsg()
         4326
         >>>
         >>> # See if the corrdinates are correctly set (lon = 106,x, lat = -6,x)
