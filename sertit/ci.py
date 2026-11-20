@@ -17,6 +17,8 @@
 CI tools
 """
 
+from __future__ import annotations
+
 import contextlib
 import filecmp
 import logging
@@ -24,12 +26,18 @@ import pprint
 from doctest import Example
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
-from geopandas.testing import assert_geoseries_equal
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
-from shapely.testing import assert_geometries_equal
+
+try:
+    import geopandas as gpd
+    from geopandas.testing import assert_geoseries_equal
+    from shapely.testing import assert_geometries_equal
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    assert_geoseries_equal = None
+    assert_geometries_equal = None
 
 from sertit import AnyPath, dask, files, rasters, s3, utils
 from sertit.logs import SU_NAME
@@ -455,6 +463,7 @@ def _prepare_geoms(
     return geom_1, geom_2
 
 
+@utils.requires(("geopandas", "vectors"))
 def assert_geom_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
@@ -490,6 +499,7 @@ def assert_geom_equal(
     assert_geoseries_equal(geom_1.geometry, geom_2.geometry, normalize=True)
 
 
+@utils.requires(("geopandas", "vectors"))
 def assert_geom_almost_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,

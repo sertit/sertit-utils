@@ -37,7 +37,6 @@ dependencies = [
     "dill",
     "psutil",
     "pyyaml",
-    "geopandas>=0.14.4",
     "cloudpathlib[s3]>=0.15.0",
     "xarray>=2024.06.0",
 ]
@@ -49,7 +48,8 @@ version = {attr = "sertit.__version__"}
 
 [project.optional-dependencies]
 colorlog = ["colorlog"]
-rasters = ["rasterio>=1.3.10", "rioxarray>=0.15.0", "geoutils", "xdem>=0.2.0"]
+vectors = ["geopandas>=0.14.4", "geoutils"]
+rasters = ["sertit[vectors]", "rasterio>=1.3.10", "rioxarray>=0.15.0", "xdem>=0.2.0"]
 nearest_neighbors = ["scikit-learn>=1.4.2"]
 dask =  [
     "sertit[rasters]",
@@ -58,10 +58,9 @@ dask =  [
     "s3fs",
     # rasters libraries leveraging dask
     "odc-geo[tiff]>=0.5.0",
-    "xarray-spatial>=0.3.6",
     "dask-geopandas",
 ]
-arcpy = ["python-json-logger"]
+arcpy = ["python-json-logger", "click"]
 full = ["sertit[arcpy,colorlog,dask,nearest_neighbors]"]
 dev = [
     "sertit[full]",

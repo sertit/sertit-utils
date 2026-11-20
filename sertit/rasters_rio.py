@@ -19,6 +19,8 @@ Raster tools
 You can use this only if you have installed sertit[full] or sertit[rasters_rio]
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import tempfile
@@ -26,10 +28,15 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import xarray as xr
-from shapely.geometry.base import BaseGeometry
+
+try:
+    import geopandas as gpd
+    from shapely.geometry.base import BaseGeometry
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    BaseGeometry = Any
 
 try:
     import rasterio
@@ -52,6 +59,7 @@ from sertit import (
     path,
     perf,
     strings,
+    utils,
     vectors,
     xml,
 )
@@ -468,6 +476,7 @@ def get_data_mask(
     return nodata_mask
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def rasterize(
     ds: AnyRasterType,
@@ -636,6 +645,7 @@ def _vectorize(
     return gdf
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def vectorize(
     ds: AnyRasterType,
@@ -686,6 +696,7 @@ def vectorize(
     )
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def get_valid_vector(ds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
@@ -720,6 +731,7 @@ def get_valid_vector(ds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataF
     ]  # 0 is the values of not nodata put there by rasterio
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def get_nodata_vector(ds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
@@ -809,6 +821,7 @@ def _mask(
     return mask_array, out_meta
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def mask(
     ds: AnyRasterType,
@@ -853,6 +866,7 @@ def mask(
     return _mask(ds, shapes=shapes, nodata=nodata, do_crop=False, **kwargs)
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def crop(
     ds: AnyRasterType,
@@ -899,6 +913,7 @@ def crop(
     return _mask(ds, shapes=shapes, nodata=nodata, do_crop=True, **kwargs)
 
 
+@utils.requires(("geopandas", "rasters"))
 @any_raster_to_rio_ds
 def get_window(ds: AnyRasterType, window: Any):
     """

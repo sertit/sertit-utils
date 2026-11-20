@@ -23,6 +23,8 @@ Functions that are not lazy yet:
 - sieve
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 from collections.abc import Callable
@@ -30,11 +32,15 @@ from functools import wraps
 from tempfile import TemporaryDirectory
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import xarray as xr
-from rasterio.errors import RasterBlockError
-from shapely.geometry.base import BaseGeometry
+
+try:
+    import geopandas as gpd
+    from shapely.geometry.base import BaseGeometry
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    BaseGeometry = Any
 
 from sertit.vectors import EPSG_4326
 
@@ -881,12 +887,7 @@ def read(
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
 
-
-
     Uses `geoutils.open_raster <https://geoutils.readthedocs.io/en/latest/gen_modules/geoutils.open_raster.html>`_.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet) when downsampling!
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -1437,7 +1438,7 @@ def get_dim_img_path(
 
 
 # Is lazy
-@utils.requires(("geoutils", "rasters"))
+@utils.requires(("geoutils", "rasters"), ("geopandas", "rasters"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
@@ -1578,6 +1579,8 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
         ).to_xarray("Merged")
         if merged_path:
             dtype = kwargs.pop("dtype", rasters_to_merge[0].dtype)
+            from rasterio.errors import RasterBlockError
+
             try:
                 write(merged_raster, merged_path, dtype=dtype, **kwargs)
             except RasterBlockError as ex:

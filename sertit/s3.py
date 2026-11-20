@@ -120,7 +120,7 @@ def in_house_s3_configs():
     }
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "rasters"), ("pyogrio", "rasters"))
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
@@ -181,7 +181,7 @@ def s3_env(*args, **kwargs):
     return decorator
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "rasters"), ("pyogrio", "rasters"))
 @contextmanager
 def temp_s3(
     endpoint: str = None,

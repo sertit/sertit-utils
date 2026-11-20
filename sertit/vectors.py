@@ -19,6 +19,8 @@ Vectors tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import os
@@ -31,12 +33,19 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
-from shapely import Polygon, wkt
-from shapely.geometry.base import BaseGeometry
+
+try:
+    import geopandas as gpd
+    from shapely import Polygon, wkt
+    from shapely.geometry.base import BaseGeometry
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    Polygon = Any
+    wkt = Any
+    BaseGeometry = Any
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings, utils
 from sertit.logs import SU_NAME
@@ -67,6 +76,8 @@ SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 def is_geopandas_1_0():
     """Is geopandas over 1.0.0. Default engine changes, from fiona to pyogrio"""
+    if gpd is None:
+        return False
     return misc.compare_version("geopandas", "1.0.0", ">=")
 
 
@@ -80,7 +91,11 @@ def use_pyogrio():
     return is_geopandas_1_0() and has_pyogrio
 
 
-if use_pyogrio():
+if gpd is None:  # pragma: no cover
+    DataSourceError = Exception
+    GEOSException = Exception
+    CPLE_AppDefinedError = Exception
+elif use_pyogrio():
     gpd.options.io_engine = "pyogrio"
     from pyogrio.errors import DataSourceError
     from shapely.errors import GEOSException
@@ -88,9 +103,14 @@ if use_pyogrio():
     CPLE_AppDefinedError = Exception
 else:  # pragma: no cover
     gpd.options.io_engine = "fiona"
-    from fiona._err import CPLE_AppDefinedError
-    from fiona.errors import DriverError as DataSourceError
-    from fiona.errors import UnsupportedGeometryTypeError as GEOSException
+    try:
+        from fiona._err import CPLE_AppDefinedError
+        from fiona.errors import DriverError as DataSourceError
+        from fiona.errors import UnsupportedGeometryTypeError as GEOSException
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'pyogrio' or 'fiona' to use the 'vectors' package."
+        ) from ex
 
 # Handle errors changing from fiona to pyogrio
 DataSourceError = DataSourceError
@@ -98,7 +118,8 @@ GEOSException = GEOSException
 CPLE_AppDefinedError = CPLE_AppDefinedError
 
 
-def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
+@utils.requires(("geopandas", "vectors"))
+def to_utm_crs(lon: float, lat: float) -> CRS:  # noqa: F821
     """
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
@@ -135,6 +156,7 @@ def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
     return gpd.GeoDataFrame(geometry=point, crs=EPSG_4326).estimate_utm_crs()
 
 
+@utils.requires(("geopandas", "vectors"))
 def get_geodf(geom: BaseGeometry | list | gpd.GeoSeries, crs: str) -> gpd.GeoDataFrame:
     """
     Get a GeoDataFrame from a geometry and a crs
@@ -204,6 +226,7 @@ def set_kml_driver() -> None:
         pass
 
 
+@utils.requires(("geopandas", "vectors"))
 def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
@@ -270,6 +293,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Po
     return aoi
 
 
+@utils.requires(("geopandas", "vectors"))
 def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     """
     Convert rasterio shapes to geodataframe
@@ -317,6 +341,7 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     return gdf
 
 
+@utils.requires(("geopandas", "vectors"))
 def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
     """
     Write vector to disk, managing the common drivers automatically.
@@ -377,6 +402,7 @@ def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
     return dst_path
 
 
+@utils.requires(("geopandas", "vectors"))
 def read(
     vector: AnyVectorType | gpd.GeoSeries = None,
     crs: Any = None,
@@ -534,7 +560,7 @@ def read(
     return vect
 
 
-@utils.requires(("geoutils", "rasters"))
+@utils.requires(("geopandas", "rasters"), ("geoutils", "rasters"))
 def _open_vector(gpd_vect_path: str, **kwargs) -> gpd.GeoDataFrame:
     """
     Open a vector with geoutils, changing the default behaviour of
@@ -801,6 +827,7 @@ def ogr2gpkg(
     return vect_path_gpkg
 
 
+@utils.requires(("geopandas", "vectors"))
 @contextmanager
 def utm_crs(gdf: gpd.GeoDataFrame) -> None:
     """

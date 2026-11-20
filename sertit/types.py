@@ -2,11 +2,19 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import xarray as xr
 from cloudpathlib import CloudPath
-from shapely import MultiPolygon, Polygon
+
+try:
+    import geopandas as gpd
+    from geopandas import GeoDataFrame
+    from shapely import MultiPolygon, Polygon
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    GeoDataFrame = Any
+    Polygon = Any
+    MultiPolygon = Any
 
 try:
     from rasterio.io import DatasetReader, DatasetWriter
@@ -45,7 +53,7 @@ Any object potentially describing a raster:
 - or its array + metadata (``np.ndarray`` + dict)
 """
 
-AnyVectorType = AnyPathStrType | gpd.GeoDataFrame
+AnyVectorType = AnyPathStrType | GeoDataFrame
 """
 Any object potentially describing a vector:
 

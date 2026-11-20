@@ -19,17 +19,29 @@ Geometry tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
-import geopandas as gpd
 import numpy as np
-import shapely
-from shapely import ops
-from shapely.errors import GeometryTypeError
-from shapely.geometry import Polygon, box
 from tqdm import tqdm
+
+try:
+    import geopandas as gpd
+    import shapely
+    from shapely import ops
+    from shapely.errors import GeometryTypeError
+    from shapely.geometry import Polygon, box
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    shapely = None
+    ops = None
+    GeometryTypeError = Exception
+    Polygon = Any
+    box = Any
 
 from sertit import misc, utils, vectors
 from sertit.logs import SU_NAME
@@ -38,6 +50,7 @@ from sertit.types import AnyPolygonType
 LOGGER = logging.getLogger(SU_NAME)
 
 
+@utils.requires(("geopandas", "vectors"))
 def to_gdf(any_gpd_type: gpd.GeoDataFrame | gpd.GeoSeries) -> gpd.GeoDataFrame:
     """
     Converts a GeoPandas object to a GeoDataFrame.
@@ -102,6 +115,7 @@ def ensure_gdf(function: Callable) -> Callable:
     return wrapper
 
 
+@utils.requires(("geopandas", "vectors"))
 def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, float):
     """
     Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
@@ -128,6 +142,7 @@ def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, flo
     return left, bottom, right, top
 
 
+@utils.requires(("geopandas", "vectors"))
 def from_bounds_to_polygon(
     left: float, bottom: float, right: float, top: float
 ) -> Polygon:
@@ -152,6 +167,7 @@ def from_bounds_to_polygon(
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
@@ -192,6 +208,7 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return wider
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
     """
@@ -248,6 +265,7 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
     return gdf
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def simplify_footprint(
     footprint: gpd.GeoDataFrame, resolution: float, max_nof_vertices: int = 50
@@ -314,6 +332,7 @@ def simplify_footprint(
     return footprint
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def fill_polygon_holes(
     gpd_results: gpd.GeoDataFrame, threshold: float = None
@@ -382,6 +401,7 @@ def fill_polygon_holes(
     return gpd_results
 
 
+@utils.requires(("geopandas", "vectors"))
 def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     """
     :code:`shapely.line_merge` algorithm applied to a GeoDataFrame.
@@ -419,6 +439,7 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     )
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     """
@@ -472,6 +493,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     return gpd.GeoDataFrame(geometry=out.explode(), crs=polygons.crs)
 
 
+@utils.requires(("geopandas", "vectors"))
 def intersects(
     input: gpd.GeoDataFrame, other: gpd.GeoDataFrame, buffer_on_input: float = None
 ) -> gpd.GeoDataFrame:
@@ -524,6 +546,7 @@ def intersects(
     ]
 
 
+@utils.requires(("geopandas", "rasters"), ("geoutils", "rasters"))
 @ensure_gdf
 def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     """
@@ -555,6 +578,7 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     return vector.vct.buffer_metric(buffer_size=buffer_m)
 
 
+@utils.requires(("geopandas", "vectors"))
 def nearest_neighbors(
     src_gdf: gpd.GeoDataFrame,
     candidates_gdf: gpd.GeoDataFrame,
@@ -679,6 +703,7 @@ def _get_radius_nearest(
     return closest, closest_dist
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_2d function even with geopandas < 1.0.0"""
@@ -690,6 +715,7 @@ def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return vect
 
 
+@utils.requires(("geopandas", "vectors"))
 @ensure_gdf
 def force_3d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Have the force_3d function even with geopandas < 1.0.0"""
