@@ -525,7 +525,7 @@ def intersects(
 
 
 @ensure_gdf
-def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
+def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     """
     Add a buffer on a vector.
 
@@ -552,9 +552,7 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFr
         dtype: float64
 
     """
-    vector_bfd = vector.copy()
-    vector_bfd.geometry = vector.buffer(buffer_m, **kwargs)
-    return vector_bfd
+    return vector.vct.buffer_metric(buffer_size=buffer_m)
 
 
 def nearest_neighbors(
