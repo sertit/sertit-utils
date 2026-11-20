@@ -39,6 +39,28 @@ pytest:
     - linux
     - low_memory
 
+# Base install only (no optional extras): verifies that every sertit
+# module still imports and that guarded functions fail with their
+# friendly messages. Runs on a bare Python image instead of the geo
+# container, so the environment is truly minimal (no geo stack to
+# clean up); the template installs the package without extras when
+# EXTRA_DEPENDENCIES is empty. --noconftest (via PYTEST_ADDOPTS) is
+# needed because ci/conftest.py imports rasterio at module level.
+pytest_minimal:
+  extends:
+    - .pytest
+    - .rules_pytest
+  image: python:3.12
+  variables:
+    CI_SERTIT_USE_S3: "0"
+    EXTRA_DEPENDENCIES: ""
+    PATH_TO_TEST: ci/minimal
+    PYTEST_ADDOPTS: --noconftest
+  tags:
+    - sertit
+    - linux
+    - low_memory
+
 pytest_s3:
   extends:
     - .pytest

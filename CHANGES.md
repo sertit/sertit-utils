@@ -15,6 +15,7 @@
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
 - DOC: Update `rioxarray`'s home repo
+- CI: Test correctly minimal and optional deps
 - CI: Test dask laziness at function level rather than test level ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - CI: De-duplicate CI files between `rasters` and `rasters_rio`
 - CI: Allow the use of s3 storage as long as `CI_SERTIT_S3` is set to 1
