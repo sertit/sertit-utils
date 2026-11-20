@@ -70,9 +70,23 @@ class _BlockFinder:
         self.blocked = blocked
 
     def find_spec(self, name, path=None, target=None):
-        if name in self.blocked or any(name.startswith(f"{b}.") for b in self.blocked):
-            raise ModuleNotFoundError(f"No module named '{name}'", name=name)
-        return None
+        if name not in self.blocked and not any(
+            name.startswith(f"{b}.") for b in self.blocked
+        ):
+            return None
+        # importlib.util.find_spec probes (xarray checks optional deps
+        # this way at import time) get None for a missing module, not
+        # an error; only raise for the real import machinery.
+        frame = sys._getframe(1)
+        while frame is not None:
+            code = frame.f_code
+            if code.co_name == "find_spec" and (
+                code.co_filename.replace(os.sep, "/").endswith("importlib/util.py")
+                or code.co_filename == "<frozen importlib.util>"
+            ):
+                return None
+            frame = frame.f_back
+        raise ModuleNotFoundError(f"No module named '{name}'", name=name)
 
 
 def _expected_guard(deps: list[tuple[str, str]]) -> str:

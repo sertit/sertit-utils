@@ -22,14 +22,19 @@ import pytest
 
 from ci import expected_imports, import_check
 
-# scenario -> imports to block
+# scenario -> imports to block (one scenario per optional dependency)
 SCENARIOS = {
     "no_click": ("click",),
+    "no_colorlog": ("colorlog",),
+    "no_dask": ("dask",),
+    "no_dask_geopandas": ("dask_geopandas",),
     "no_geopandas": ("geopandas",),
     "no_geoutils": ("geoutils",),
+    "no_odc_geo": ("odc_geo",),
     "no_pythonjsonlogger": ("pythonjsonlogger",),
     "no_rasterio": ("rasterio",),
     "no_rioxarray": ("rioxarray",),
+    "no_s3fs": ("s3fs",),
     "no_sklearn": ("sklearn",),
     "no_xdem": ("xdem",),
 }
@@ -39,6 +44,9 @@ SCENARIOS = {
 # must import cleanly.
 IMPORT_RULES = {
     "no_rasterio": expected_imports.NO_RASTERIO,
+    "no_rioxarray": expected_imports.NO_RIOXARRAY,
+    "no_geopandas": expected_imports.NO_GEOPANDAS,
+    "no_geoutils": expected_imports.NO_GEOUTILS,
     "no_click": expected_imports.NO_CLICK,
 }
 
