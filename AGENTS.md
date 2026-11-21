@@ -71,16 +71,15 @@ An agent must NEVER report a test as passing if it was not run.
 Before presenting the change to the human, re-read the diff and answer each question below.
 Every "no" must be fixed, or explicitly flagged to the human with a reason.
 
-| # | Question |
-|---|---|
-| 1 | No hallucinated functions, keyword arguments, or dependencies (verified against the existing modules)? |
+| # | Question                                                                                                            |
+|---|---------------------------------------------------------------------------------------------------------------------|
+| 1 | No hallucinated functions, keyword arguments, or dependencies (verified against the existing modules)?              |
 | 2 | Base-only install still imports cleanly, optional needs guarded with `@requires`, `ci/expected_imports.py` in sync? |
-| 3 | A new raster function exists in both `rasters` and `rasters_rio`, with matching behaviour? |
-| 4 | The change stays lazy (no forced computation, numpy and dask paths both checked)? |
-| 5 | No hardcoded paths or credentials, errors raised as `SertitException` subtypes with useful messages? |
-| 6 | Diff is minimal (no drive-by cleanups, no unrelated refactors)? |
-| 7 | Docstring, `CHANGES.md` entry, and copyright header present? |
-| 8 | Tests cover the reported behaviour, including the edge cases? |
+| 3 | The change stays lazy (no forced computation, numpy and dask paths both checked)?                                   |
+| 4 | No hardcoded paths or credentials, errors raised as `SertitException` subtypes with useful messages?                |
+| 5 | Diff is minimal (no drive-by cleanups, no unrelated refactors)?                                                     |
+| 6 | Docstring, `CHANGES.md` entry, and copyright header present?                                                        |
+| 7 | Tests cover the reported behaviour, including the edge cases?                                                       |
 
 Report the result in the *AI-assisted review* section of the [pull request template](.github/pull_request_template.md)
 (one short line per finding, plus which checks were run).

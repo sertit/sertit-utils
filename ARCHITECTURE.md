@@ -44,11 +44,10 @@ that the higher-level libraries such as [EOReader](https://github.com/sertit/eor
 
 1. **Flat package**: one module per domain (paths, rasters, vectors, files, XML...), no class hierarchy. The `sertit/` directory is the source of truth for the module list.
 2. **Optional-dependency contract**: with a base-only install (`pip install sertit`), every module imports, and every guarded function fails fast with a friendly `ImportError` naming the pip extra to install. Guards are declared with `@requires(("module", "extra"))` (`sertit/utils.py`); `ci/import_check.py` discovers them through the `_sertit_requires` marker, so a new guard is tested automatically.
-3. **Two raster backends**: `rasters` (geoutils, the default, `BACKEND = "GeoUtils"`) and `rasters_rio` (rasterio). New raster functions land in both, with the same signature and behaviour.
-4. **Lazy by default**: with dask enabled, raster functions keep the arrays chunked until the user computes. Tests enforce this with `CI_SERTIT_TEST_LAZY` and `assert_chunked_computed` (`ci/script_utils.py`); not-yet-lazy functions are marked with `is_not_lazy_yet`.
-5. **Environment variables as configuration**: no config file. Behaviour-changing variables are declared with docstrings in the module that uses them; the docstrings are the source of truth and are rendered in the API docs.
-6. **Cloud-ready paths**: anything that may point to S3 goes through `AnyPath` (re-exported from `sertit/__init__.py`). Never use raw `os.path` on such paths.
-7. **Errors**: user-facing errors derive from `SertitException` (`sertit/exception.py`).
+3. **Lazy by default**: with dask enabled, raster functions keep the arrays chunked until the user computes. Tests enforce this with `CI_SERTIT_TEST_LAZY` and `assert_chunked_computed` (`ci/script_utils.py`); not-yet-lazy functions are marked with `is_not_lazy_yet`.
+4. **Environment variables as configuration**: no config file. Behaviour-changing variables are declared with docstrings in the module that uses them; the docstrings are the source of truth and are rendered in the API docs.
+5. **Cloud-ready paths**: anything that may point to S3 goes through `AnyPath` (re-exported from `sertit/__init__.py`). Never use raw `os.path` on such paths.
+6. **Errors**: user-facing errors derive from `SertitException` (`sertit/exception.py`).
 
 ---
 
@@ -167,11 +166,6 @@ from sertit import path  # sertit submodules
 3. Update `ci/expected_imports.py` if an import-failure message changes (asserted verbatim).
 4. Run `python -m pytest ci/test_optional_imports.py` and `python -m pytest ci/minimal --noconftest`.
 
-### Adding a Raster Function
-
-Add it to both `rasters.py` and `rasters_rio.py` with the same signature and behaviour, and cover both in their test files.
-The 2.0.0 migration is moving the backend to `rasters`; check with the maintainers whether a new function goes in both or in `rasters` only.
-
 ### Adding an Environment Variable
 
 Declare it with a docstring (name, default, behaviour; part of the API docs) in the module that uses it, then read it from `os.environ` with a default.
@@ -206,12 +200,11 @@ conda-forge packaging follows automatically.
 
 1. **Optional-dependency cascade**: geoutils imports rasterio and rioxarray at module level, so a missing one fails the geoutils import too. `ci/expected_imports.py` encodes these cascades; update it when a message changes.
 2. **Base install**: `pytest_minimal` runs on a bare Python image. A module-level hard import of an optional dependency breaks it; the import suites catch it, the regular tests do not.
-3. **Dual backends**: `rasters` and `rasters_rio` expose the same functions; a change on one side only is an inconsistency.
-4. **Dask laziness**: never force materialisation in a function that must stay lazy; use `is_not_lazy_yet` for the exceptions, and keep them few.
-5. **Cloud paths**: always `AnyPath`; S3 objects are byte-ranged, so reading a whole file from S3 when a window suffices is a bug.
-6. **Test data**: do NOT commit test rasters, products, stacks, or derived outputs. `check-added-large-files` (1600 kB) is a backstop, not a license.
-7. **SNAP**: changes touching `snap.py` need the `gpt` executable; without it, state so in the PR description and let CI validate.
-8. **Copyright year**: updated project-wide at release time (`DOC:` commit), never as a side effect.
+3. **Dask laziness**: never force materialisation in a function that must stay lazy; use `is_not_lazy_yet` for the exceptions, and keep them few.
+4. **Cloud paths**: always `AnyPath`; S3 objects are byte-ranged, so reading a whole file from S3 when a window suffices is a bug.
+5. **Test data**: do NOT commit test rasters, products, stacks, or derived outputs. `check-added-large-files` (1600 kB) is a backstop, not a license.
+6. **SNAP**: changes touching `snap.py` need the `gpt` executable; without it, state so in the PR description and let CI validate.
+7. **Copyright year**: updated project-wide at release time (`DOC:` commit), never as a side effect.
 
 ---
 
