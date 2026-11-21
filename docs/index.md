@@ -34,6 +34,9 @@ notebooks/01_getting_started.ipynb
    :caption: For Contributors
    :hidden:
 
+   contributing
+   ai_policy
+   architecture
    history
    GitHub Repository <https://github.com/sertit/sertit-utils>
 ```

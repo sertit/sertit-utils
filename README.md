@@ -32,6 +32,15 @@ You can install it via conda (but you will automatically have the full version):
 
 `conda install -c conda-forge sertit`
 
+## 🚀 Contributing
+
+Sertit-Utils welcomes contributions, human-written or carefully reviewed AI-assisted:
+
+- **Humans**: [CONTRIBUTING.md](https://github.com/sertit/sertit-utils/blob/main/CONTRIBUTING.md): quick start, test suite, PR conventions
+- **Coding agents**: [AGENTS.md](https://github.com/sertit/sertit-utils/blob/main/AGENTS.md): hard limits, task navigation, verification & self-review
+- **Technical reference**: [ARCHITECTURE.md](https://github.com/sertit/sertit-utils/blob/main/ARCHITECTURE.md): modules, build & test, pitfalls
+- **AI-assisted contribution policy**: [AI_POLICY.md](https://github.com/sertit/sertit-utils/blob/main/AI_POLICY.md)
+
 ## 📝 License
 
 **Sertit-Utils** is licensed under Apache License v2.0. See LICENSE file for details.
