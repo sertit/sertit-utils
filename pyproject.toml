@@ -48,11 +48,13 @@ version = {attr = "sertit.__version__"}
 
 [project.optional-dependencies]
 colorlog = ["colorlog"]
-vectors = ["geopandas>=0.14.4", "geoutils"]
-rasters = ["sertit[vectors]", "rasterio>=1.3.10", "rioxarray>=0.15.0", "xdem>=0.2.0"]
+# geoutils already pulls in geopandas and rasterio (see
+# https://github.com/GlacioHack/geoutils/issues/1026), but they are listed
+# explicitly so this extra keeps working if geoutils ever drops a dep.
+geo = ["geopandas>=0.14.4", "geoutils", "rasterio>=1.3.10", "rioxarray>=0.15.0", "xdem>=0.2.0"]
 nearest_neighbors = ["scikit-learn>=1.4.2"]
 dask =  [
-    "sertit[rasters]",
+    "sertit[geo]",
     # dask related libraries (to not use dask[complete])
     "dask[distributed]>=2024.5.1",
     "s3fs",

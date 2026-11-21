@@ -147,7 +147,7 @@ def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
     ), f"transform incoherent:\n{meta_1['transform']}\n!=\n{meta_2['transform']}"
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two rasters are equal.
@@ -173,7 +173,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         np.testing.assert_array_equal(ds_1.read(), ds_2.read())
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def assert_raster_almost_equal(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=7
 ) -> None:
@@ -226,7 +226,7 @@ def assert_raster_almost_equal(
             raise AssertionError(errors)
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def assert_raster_almost_equal_magnitude(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=2
 ) -> None:
@@ -324,7 +324,7 @@ def assert_raster_almost_equal_magnitude(
             raise AssertionError(errors)
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def assert_raster_max_mismatch(
     path_1: AnyPathStrType,
     path_2: AnyPathStrType,
@@ -463,7 +463,7 @@ def _prepare_geoms(
     return geom_1, geom_2
 
 
-@utils.requires(("geopandas", "vectors"))
+@utils.requires(("geopandas", "geo"))
 def assert_geom_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
@@ -499,7 +499,7 @@ def assert_geom_equal(
     assert_geoseries_equal(geom_1.geometry, geom_2.geometry, normalize=True)
 
 
-@utils.requires(("geopandas", "vectors"))
+@utils.requires(("geopandas", "geo"))
 def assert_geom_almost_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,

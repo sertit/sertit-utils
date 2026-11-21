@@ -50,7 +50,7 @@ Environment variable created to use Unistra's S3 bucket.
 """
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def in_house_s3_configs():
     """
     This function declares in-house S3 configurations for rasterio, pyogrio and cloudpathlib.
@@ -120,7 +120,7 @@ def in_house_s3_configs():
     }
 
 
-@utils.requires(("rasterio", "rasters"), ("pyogrio", "rasters"))
+@utils.requires(("rasterio", "geo"), ("pyogrio", "geo"))
 def s3_env(*args, **kwargs):
     """
     Create S3 compatible storage environment
@@ -181,7 +181,7 @@ def s3_env(*args, **kwargs):
     return decorator
 
 
-@utils.requires(("rasterio", "rasters"), ("pyogrio", "rasters"))
+@utils.requires(("rasterio", "geo"), ("pyogrio", "geo"))
 @contextmanager
 def temp_s3(
     endpoint: str = None,
@@ -285,7 +285,7 @@ def define_s3_client(
     client.set_as_default_client()
 
 
-@utils.requires(("rasterio", "rasters"))
+@utils.requires(("rasterio", "geo"))
 def s3_args(*args, **kwargs) -> dict:
     """
     This function returns ready to use configurations for rasterio, pyogrio and cloudpathlib.

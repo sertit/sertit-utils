@@ -21,9 +21,8 @@ For installing this library to your environment, please type this: `pip install 
 
 However, if you do not need everything, you can type instead:
 
-- `pip install sertit`, if you don't any optional libraries 
-- `pip install sertit[rasters_rio]`, and you won't need `rioxarray`
-- `pip install sertit[rasters]`
+- `pip install sertit`, if you don't need any optional libraries
+- `pip install sertit[geo]` to have the geospatial stack (`geopandas`, `geoutils`, `rasterio`, `rioxarray`, `xdem`) installed
 - `pip install sertit[colorlog]` to have `colorlog` installed
 - `pip install sertit[dask]` to have `dask` installed
 

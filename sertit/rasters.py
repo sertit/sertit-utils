@@ -16,7 +16,7 @@
 """
 Raster tools
 
-You can use this only if you have installed sertit[full] or sertit[rasters]
+You can use this only if you have installed sertit[full] or sertit[geo]
 
 Functions that are not lazy yet:
 - vectorize -> get_valid_vector -> get_footprint
@@ -1265,7 +1265,7 @@ def _collocate_dataarray(
 
 
 # Is lazy
-@utils.requires(("rioxarray", "rasters"))
+@utils.requires(("rioxarray", "geo"))
 @dask.guard_compute(max_computes=0)
 def collocate(
     reference: AnyXrDataStructure,
@@ -1696,7 +1696,7 @@ def read_uint8_array(
 
 
 # Is lazy
-@utils.requires(("rioxarray", "rasters"))
+@utils.requires(("rioxarray", "geo"))
 @dask.guard_compute(max_computes=0)
 def set_metadata(
     naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
@@ -1776,7 +1776,7 @@ def set_metadata(
 
 
 # Is lazy
-@utils.requires(("rioxarray", "rasters"))
+@utils.requires(("rioxarray", "geo"))
 @dask.guard_compute(max_computes=0)
 def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
@@ -1882,7 +1882,7 @@ def where(
 
 
 # Is lazy
-@utils.requires(("xdem", "rasters"))
+@utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def hillshade(
@@ -1919,7 +1919,7 @@ def hillshade(
 
 
 # Is lazy
-@utils.requires(("xdem", "rasters"))
+@utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def slope(
@@ -1954,7 +1954,7 @@ def slope(
 
 
 # Is lazy
-@utils.requires(("xdem", "rasters"))
+@utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
@@ -2102,7 +2102,7 @@ def classify(
 
 
 # Is lazy (even if DEM is cached?)
-@utils.requires(("xdem", "rasters"))
+@utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def reproject(

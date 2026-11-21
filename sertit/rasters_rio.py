@@ -16,7 +16,7 @@
 """
 Raster tools
 
-You can use this only if you have installed sertit[full] or sertit[rasters_rio]
+You can use this only if you have installed sertit[full] or sertit[geo]
 """
 
 from __future__ import annotations

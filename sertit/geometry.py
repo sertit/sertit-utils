@@ -16,7 +16,7 @@
 """
 Geometry tools
 
-You can use this only if you have installed sertit[full] or sertit[vectors]
+You can use this only if you have installed sertit[full] or sertit[geo]
 """
 
 from __future__ import annotations

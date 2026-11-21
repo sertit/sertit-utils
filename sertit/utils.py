@@ -36,14 +36,14 @@ def requires(*deps: tuple[str, str]):
     Args:
         *deps (tuple[str, str]): One or more :code:`(module, extra)` pairs. :code:`module`
             is the import name to check (e.g. :code:`"geoutils"`) and :code:`extra` is the
-            pip extra to install if the import fails (e.g. :code:`"rasters"`).
+            pip extra to install if the import fails (e.g. :code:`"geo"`).
 
     The wrapped function records the required dependencies, in check order, as the
     :code:`_sertit_requires` attribute. The CI import check (``ci/import_check.py``)
     discovers guarded functions through it, so new guards are tested automatically.
 
     Example:
-        >>> @requires(("geoutils", "rasters"))
+        >>> @requires(("geoutils", "geo"))
         ... def process(raster):
         ...     import geoutils as gu
         ...     return gu.open_raster(raster)
