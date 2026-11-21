@@ -1509,7 +1509,7 @@ def merge_vrt(
 
     # CLI options are the ones starting with a dash; the others are warned and dropped
     for k in [k for k in kwargs if not k.startswith("-")]:
-        LOGGER.warning("'%s' is not a gdalbuildvrt option and will be ignored.", k)
+        LOGGER.warning(f"'{k}' is not a gdalbuildvrt option and will be ignored.")
         del kwargs[k]
 
     arg_list = [val for item in kwargs.items() for val in item]

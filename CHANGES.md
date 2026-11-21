@@ -17,7 +17,7 @@
     - New `misc.strip_kwargs` decorator: keyword arguments rejected by the engine are warned and dropped (instead of raising)
     - Options of the GDAL and pyogrio engines are passed through as-is: unsupported options are warned by the engine itself, as in the rest of the ecosystem
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
-- DOC: Update `rioxarray`'s home repo
+- DOC: Various updates and corrections
 - CI: Test correctly minimal and optional deps
 - CI: Test dask laziness at function level rather than test level ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - CI: De-duplicate CI files between `rasters` and `rasters_rio`

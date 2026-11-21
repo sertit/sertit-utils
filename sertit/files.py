@@ -82,8 +82,7 @@ def extract_file(
     # In case not overwrite and the extracted directory already exists
     if not overwrite and archive_output.exists():
         LOGGER.debug(
-            "Already existing extracted %s. It won't be overwritten.",
-            archive_output,
+            f"Already existing extracted {archive_output}. It won't be overwritten."
         )
         return archive_output
 
@@ -142,7 +141,7 @@ def extract_files(
     Returns:
         list: Extracted files (even pre-existing ones)
     """
-    LOGGER.info("Extracting products in %s", output)
+    LOGGER.info(f"Extracting products in {output}")
     progress_bar = tqdm(archives)
     extracts = []
     for arch in progress_bar:
@@ -401,19 +400,19 @@ def remove(path: AnyPathStrType) -> None:
     """
     path = AnyPath(path)
     if not path.exists():
-        LOGGER.debug("Non existing %s", path)
+        LOGGER.debug(f"Non existing {path}")
 
     elif path.is_dir():
         try:
             shutil.rmtree(path)
         except OSError:  # pragma: no cover
-            LOGGER.debug("Impossible to remove the directory %s", path, exc_info=True)
+            LOGGER.debug(f"Impossible to remove the directory {path}", exc_info=True)
 
     elif path.is_file():
         try:
             path.unlink()
         except OSError:  # pragma: no cover
-            LOGGER.debug("Impossible to remove the file %s", path, exc_info=True)
+            LOGGER.debug(f"Impossible to remove the file {path}", exc_info=True)
 
 
 def remove_by_pattern(
@@ -577,9 +576,7 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
         data = json.load(file, cls=CustomDecoder)
         if print_file:
             LOGGER.debug(
-                "Configuration file %s contains:\n%s",
-                json_file,
-                json.dumps(data, indent=3, cls=CustomJsonEncoder),
+                f"Configuration file {json_file} contains:\n{json.dumps(data, indent=3, cls=CustomJsonEncoder)}"
             )
     return data
 
@@ -658,9 +655,7 @@ def read_yaml(yaml_file: AnyPathStrType, print_file: bool = True) -> dict:
         data = yaml.safe_load(f)
         if print_file:
             LOGGER.debug(
-                "Configuration file %s contains:\n%s",
-                yaml_file,
-                yaml.dump(data, indent=2, Dumper=CustomYamlDumper),
+                f"Configuration file {yaml_file} contains:\n{yaml.dump(data, indent=2, Dumper=CustomYamlDumper)}"
             )
     return data
 
