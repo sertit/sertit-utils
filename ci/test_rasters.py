@@ -25,6 +25,7 @@ import rasterio
 import shapely
 import xarray as xr
 from rasterio._err import CPLE_AppDefinedError
+from rasterio.enums import Resampling
 
 from ci.script_utils import (
     CI_SERTIT_USE_DASK,
@@ -413,6 +414,35 @@ def test_read_with_non_existing_window(raster_path):
             raster_path,
             window=rasters_path().joinpath("non_existing_window.kml"),
         )
+
+
+@s3_env
+@dask_env()
+def test_read_resampling(raster_path, mask):
+    """Test read with different resamplings"""
+    nearest = rasters.read(
+        raster_path, window=mask, resolution=20, resampling=Resampling.nearest
+    )
+    bilin = rasters.read(
+        raster_path, window=mask, resolution=20, resampling=Resampling.bilinear
+    )
+    bilin2 = rasters.read(
+        raster_path, window=mask, resolution=20, resampling=Resampling.bilinear
+    )
+    cubic = rasters.read(
+        raster_path, window=mask, resolution=20, resampling=Resampling.cubic
+    )
+
+    xr.testing.assert_equal(bilin, bilin2)
+
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(nearest, bilin)
+
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(nearest, cubic)
+
+    with pytest.raises(AssertionError):
+        xr.testing.assert_equal(cubic, bilin)
 
 
 @s3_env

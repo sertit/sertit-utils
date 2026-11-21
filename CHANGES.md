@@ -19,6 +19,7 @@
 - CI: Test dask laziness at function level rather than test level ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - CI: De-duplicate CI files between `rasters` and `rasters_rio`
 - CI: Allow the use of s3 storage as long as `CI_SERTIT_S3` is set to 1
+- CI: Add test to guarantee resampling is taken into account in read ([#77](https://github.com/sertit/sertit-utils/issues/77))
 
 ## 1.54.6 (2026-09-28)
 
