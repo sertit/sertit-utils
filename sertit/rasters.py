@@ -440,7 +440,7 @@ def mask(
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
+        **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
          AnyXrDataStructure: Masked array as a xarray
@@ -491,7 +491,7 @@ def paint(
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
-        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
+        **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
          AnyXrDataStructure: Painted array as a xarray
@@ -554,7 +554,7 @@ def crop(
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
+        **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
          AnyXrDataStructure: Cropped array as a xarray
@@ -899,6 +899,7 @@ def read(
         indexes (int | list): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
         as_type (Any): Type in which to load the array
         **kwargs: Optional keyword arguments to pass into :code:`geoutils.open_raster` (i.e. :code:`chunks`).
+            Open options the driver doesn't support are warned by GDAL.
 
     Returns:
         AnyXrDataStructure: Masked xarray corresponding to the raster data and its metadata
@@ -1050,7 +1051,10 @@ def write(
         compute (bool): If True (default) and data is a dask array, then compute and save the data immediately.
             If False, return a dask Delayed object. Call ".compute()" on the Delayed object to compute the result later.
             Call ``dask.compute(delayed1, delayed2)`` to save multiple delayed files at once. Only useful with chunked data.
-        **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`
+        **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`.
+            Other arguments are passed to :code:`to_file` (i.e. :code:`compress` or :code:`tiled`)
+            and then as creation options to the GDAL driver
+            (which will warn about the ones it doesn't support).
 
     Examples:
         >>> raster_path = "path/to/raster.tif"
@@ -1257,8 +1261,11 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
+        # Arguments reproject doesn't accept are handled by 'strip_kwargs'
         collocated_xda = other.rst.reproject(
-            ref=reference, resampling=resampling, **kwargs
+            ref=reference,
+            resampling=resampling,
+            **kwargs,
         )
 
     return collocated_xda
@@ -1267,6 +1274,7 @@ def _collocate_dataarray(
 # Is lazy
 @utils.requires(("rioxarray", "geo"))
 @dask.guard_compute(max_computes=0)
+@misc.strip_kwargs
 def collocate(
     reference: AnyXrDataStructure,
     other: AnyXrDataStructure,
@@ -1281,6 +1289,8 @@ def collocate(
         reference (:any:`AnyXrDataStructure`): Reference xarray
         other (:any:`AnyXrDataStructure`): Other xarray
         resampling (:class:`rasterio:rasterio.enums.Resampling`): Resampling method
+        **kwargs: Other arguments passed to :code:`reproject`
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         AnyXrDataStructure: Collocated xarray
@@ -1533,6 +1543,7 @@ def merge_vrt(
 
 # Is lazy
 @dask.guard_compute(max_computes=0)
+@misc.strip_kwargs
 def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
     Merge a list of rasters into a single GeoTiff.
@@ -1545,7 +1556,8 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
         rasters_paths (list): Paths of the rasters to be merged
         merged_path (AnyPathStrType): Path to the merged raster
         **kwargs: Other :code:`geoutils.merge_rasters` arguments
-            (i.e. :code:`reference`, :code:`merge_algorithm`, :code:`resampling_method`, :code:`use_ref_bounds`)
+            (i.e. :code:`reference`, :code:`merge_algorithm`, :code:`resampling_method`, :code:`use_ref_bounds`).
+            Arguments :code:`merge_rasters` doesn't accept are warned and dropped.
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1563,12 +1575,10 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
             gu.Raster(raster_path) if path.is_path(raster_path) else raster_path
             for raster_path in rasters_paths
         ]
+        # Arguments merge_rasters doesn't accept are handled by 'strip_kwargs'
         merged_raster = gu.raster.merge_rasters(
             rasters=rasters_to_merge,
-            **misc.select_dict(
-                kwargs,
-                ["reference", "merge_algorithm", "resampling_method", "use_ref_bounds"],
-            ),
+            **kwargs,
         ).to_xarray("Merged")
         if merged_path:
             dtype = kwargs.pop("dtype", rasters_to_merge[0].dtype)
@@ -1885,6 +1895,7 @@ def where(
 @utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
+@misc.strip_kwargs
 def hillshade(
     xds: AnyRasterType, azimuth: float = 315, altitude: float = 45, **kwargs
 ) -> AnyXrDataStructure:
@@ -1898,6 +1909,8 @@ def hillshade(
         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
         altitude (float): Altitude angle of the light, in degrees (90 is directly overhead).
             The deprecated :code:`zenith` keyword can still be used, in which case :code:`altitude = 90 - zenith`.
+        **kwargs: Other :code:`xdem.dem.hillshade` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         AnyXrDataStructure: Hillshade
@@ -1908,11 +1921,15 @@ def hillshade(
         )
         altitude = 90 - kwargs.pop("zenith")
 
+    # 'name' is an internal option, not an xdem one
+    name = kwargs.pop("name", "hillshade")
+
     import xdem  # noqa
 
+    # Arguments xdem doesn't accept are handled by 'strip_kwargs'
     hillshade = xds.dem.hillshade(azimuth=azimuth, altitude=altitude, **kwargs)
 
-    hillshade = hillshade.rename(kwargs.get("name", "hillshade"))
+    hillshade = hillshade.rename(name)
     hillshade.attrs["long_name"] = "hillshade"
 
     return hillshade
@@ -1922,6 +1939,7 @@ def hillshade(
 @utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
+@misc.strip_kwargs
 def slope(
     xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False, **kwargs
 ) -> AnyXrDataStructure:
@@ -1934,12 +1952,18 @@ def slope(
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         in_pct (bool): Outputs slope in percents
         in_rad (bool): Outputs slope in radians. Not taken into account if :code:`in_pct == True`
+        **kwargs: Other :code:`xdem.dem.slope` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         AnyXrDataStructure: Slope
     """
+    # 'name' is an internal option, not an xdem one
+    name = kwargs.pop("name", "slope")
+
     import xdem  # noqa
 
+    # Arguments xdem doesn't accept are handled by 'strip_kwargs'
     slope = xds.dem.slope(degrees=not in_rad, **kwargs)
 
     if in_pct:
@@ -1947,7 +1971,7 @@ def slope(
             slope *= DEG_2_RAD
         slope = 100 * np.tan(xds)
 
-    slope = slope.rename(kwargs.get("name", "slope"))
+    slope = slope.rename(name)
     slope.attrs["long_name"] = "slope"
 
     return slope
@@ -1957,21 +1981,28 @@ def slope(
 @utils.requires(("xdem", "geo"))
 @dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
+@misc.strip_kwargs
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     """
     Compute the aspect of a DEM.
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
+        **kwargs: Other :code:`xdem.dem.aspect` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         AnyXrDataStructure: Aspect
     """
+    # 'name' is an internal option, not an xdem one
+    name = kwargs.pop("name", "aspect")
+
     import xdem  # noqa
 
+    # Arguments xdem doesn't accept are handled by 'strip_kwargs'
     aspect = xds.dem.aspect(**kwargs)
 
-    aspect = aspect.rename(kwargs.get("name", "aspect"))
+    aspect = aspect.rename(name)
     aspect.attrs["long_name"] = "aspect"
 
     return aspect
@@ -2160,7 +2191,7 @@ def reproject(
         extent (gpd.GeoDataFrame): Extent used to subset the DEM, only used if the raster carries RPCs.
         vcrs (str | int): Vertical CRS of the DEM, only used if the raster carries RPCs. Can be automatically deduced in some cases (COPDEM, etc.). Better to set it to be sure.
         caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted at the end of the process. Only used if the raster carries RPCs.
-        **kwargs: Other arguments to pass to the reprojection.
+        **kwargs: Other arguments passed to the DEM preprocessing (only used when the raster carries RPCs).
 
     Returns:
         xr.DataArray: Reprojected raster

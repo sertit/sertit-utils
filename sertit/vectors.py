@@ -332,13 +332,17 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
     return gdf
 
 
+@misc.strip_kwargs
 def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
     """
     Write vector to disk, managing the common drivers automatically.
 
     Args:
         gdf (gpd.GeoDataFrame): GeoDataFrame to write on disk
-        path (AnyPathStrType): Where to write on disk.
+        path (AnyPathStrType): Where to write on disk
+        **kwargs: Other arguments passed to :code:`geopandas.GeoDataFrame.to_file`
+            (i.e. :code:`encoding`).
+            Options the driver doesn't support are warned and dropped.
 
     Example:
         >>> write(my_vector, path="my_vector.kml")
@@ -353,6 +357,7 @@ def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
         elif driver == "KMZ":
             raise NotImplementedError("Impossible to write a KMZ for now.")
 
+    # Driver options it doesn't support are warned and dropped (by 'strip_kwargs')
     gdf.to_file(str(path), driver=driver, **misc.prune_dict(kwargs, ["window"]))
 
 
@@ -427,6 +432,7 @@ def read(
         window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
             In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
         **kwargs: Additional arguments used in gu.open_vector.
+            Open options the driver doesn't support are warned by pyogrio.
             You can also give :code:`file_list`, the list of files of the archive to get the vector from, as this operation is expensive when done with large archives stored on the cloud.
             You can also set :code:`compute_sindex=False` to avoid computing the spatial index of the vector.
 
@@ -462,6 +468,10 @@ def read(
         else:
             raise ValueError("No vector is given.")
 
+    # Internal kwargs (not engine open options)
+    compute_sindex = kwargs.pop("compute_sindex", True)
+    file_list = kwargs.pop("file_list", None)
+
     # Take care of vector objects
     if isinstance(vector, (gpd.GeoDataFrame, gpd.GeoSeries)):
         vect = geometry.to_gdf(vector)
@@ -496,7 +506,8 @@ def read(
         # Manage archive case
         if vector.suffix in [".tar", ".zip"]:
             prefix = vector.suffix[-3:]
-            file_list = kwargs.pop("file_list", path.get_archived_file_list(vector))
+            if file_list is None:
+                file_list = path.get_archived_file_list(vector)
 
             try:
                 regex = re.compile(archive_regex)
@@ -543,7 +554,7 @@ def read(
 
     # Generate spatial index for optimization
     with contextlib.suppress(AttributeError):
-        if kwargs.get("compute_sindex", True) and not vect.has_sindex:
+        if compute_sindex and not vect.has_sindex:
             vect.sindex  # noqa
 
     return vect
@@ -578,7 +589,7 @@ def _read_vector_core(
         raw_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         arch_path (str): If archived vector, path to the vector file inside the archive (from the root of the archive)
         crs: Wanted CRS of the vector. If None, using naive or origin CRS.
-        **kwargs: Other arguments
+        **kwargs: Other arguments passed to :code:`gu.open_vector`
 
     Returns:
         gpd.GeoDataFrame: Read vector as a GeoDataFrame

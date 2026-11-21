@@ -477,6 +477,7 @@ def get_data_mask(
 
 
 @any_raster_to_rio_ds
+@misc.strip_kwargs
 def rasterize(
     ds: AnyRasterType,
     vector: AnyVectorType,
@@ -498,6 +499,8 @@ def rasterize(
         value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary (`default_nodata`, `default_value`).
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
         default_value (int): Used as value for all geometries, if `value_field` not provided
+        **kwargs: Other rasterio.features.rasterize options
+            Options it doesn't accept are warned and dropped
 
     Returns:
         np.ma.masked_array, dict: Rasterized vector and its metadata
@@ -556,7 +559,7 @@ def rasterize(
         transform=ds.transform,
         dtype=dtype,
         all_touched=kwargs.get("all_touched", True),
-        **misc.select_dict(kwargs, ["merge_alg"]),
+        **kwargs,
     )
 
     meta = ds.meta.copy()
@@ -796,14 +799,13 @@ def _mask(
     if not nodata:
         nodata = ds.nodata if ds.nodata else 0
 
-    # Crop dataset
-    possible_kwargs = ["all_touched", "invert", "filled", "pad", "pad_width", "indexes"]
+    # Crop dataset (options rasterio.mask doesn't accept are handled by 'strip_kwargs')
     msk, trf = rio_mask.mask(
         ds,
         shapes,
         nodata=nodata,
         crop=do_crop,
-        **misc.select_dict(kwargs, possible_kwargs),
+        **kwargs,
     )
 
     # Create masked array
@@ -818,6 +820,7 @@ def _mask(
 
 
 @any_raster_to_rio_ds
+@misc.strip_kwargs
 def mask(
     ds: AnyRasterType,
     shapes: gpd.GeoDataFrame | BaseGeometry | list,
@@ -839,6 +842,7 @@ def mask(
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted.
         nodata (int): Nodata value. If not set, uses the ds.nodata. If doesnt exist, set to 0.
         **kwargs: Other rasterio.mask options
+            Options rasterio.mask doesn't accept are warned and dropped
 
     Returns:
          (np.ma.masked_array, dict): Masked array as a masked array and its metadata
@@ -862,6 +866,7 @@ def mask(
 
 
 @any_raster_to_rio_ds
+@misc.strip_kwargs
 def crop(
     ds: AnyRasterType,
     shapes: gpd.GeoDataFrame | BaseGeometry | list,
@@ -964,6 +969,7 @@ def _get_col_row_window(window: Any, crs, transform):
 
 
 @any_raster_to_rio_ds
+@misc.strip_kwargs
 def read(
     ds: AnyRasterType,
     resolution: tuple | list | float = None,
@@ -995,6 +1001,7 @@ def read(
         resampling (Resampling): Resampling method (nearest by default)
         masked (bool): Get a masked array, :code:`True` by default (whereas it is False by default in rasterio)
         **kwargs: Other ds.read() arguments such as indexes.
+            Arguments ds.read() doesn't accept are warned and dropped.
 
     Returns:
         np.ma.masked_array, dict: Masked array corresponding to the raster data and its metadata
@@ -1033,13 +1040,13 @@ def read(
         new_count = ds.count
         out_shape = (new_count, new_height, new_width)
 
-    # Read data
+    # Read data (options ds.read doesn't accept are handled by 'strip_kwargs')
     array = ds.read(
         out_shape=out_shape,
         resampling=resampling,
         masked=masked,
         window=window,
-        **misc.select_dict(kwargs, ["indexes", "out_dtype", "boundless", "fill_value"]),
+        **kwargs,
     )
 
     # Get destination transform
@@ -1086,7 +1093,9 @@ def write(
         raster (AnyRasterType): Raster to save on disk
         output_path (AnyPathStrType): Path where to save it (directories should be existing)
         tags (dict): Tags to write to the GeoTiff
-        **kwargs: Overloading metadata, ie :code:`nodata=255`
+        **kwargs: Overloading metadata, ie :code:`nodata=255`.
+            Passed as creation options to :code:`rasterio.open` (GDAL,
+            which will warn about the ones it doesn't support)
 
     Example:
         >>> raster_path = "path/to/raster.tif"
@@ -1155,7 +1164,7 @@ def write(
     if len(raster_out.shape) == 2:
         raster_out = np.expand_dims(raster_out, axis=0)
 
-    # Write product
+    # Write product (GDAL will warn about the creation options it doesn't support)
     with rasterio.open(str(output_path), "w", **out_meta) as ds:
         ds.write(raster_out)
         if tags is not None:
@@ -1410,7 +1419,9 @@ def merge_vrt(
         paths (list): Path of the rasters to be merged with the same CRS)
         merged_path (AnyPathStrType): Path to the merged raster
         abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
-        kwargs: Other :code:`gdalbuildvrt` arguments
+        kwargs: Other :code:`gdalbuildvrt` arguments (dashed CLI options, i.e. :code:`{"-srcnodata": 255}`)
+            Non-dashed options are warned and dropped;
+            unsupported dashed options are rejected by :code:`gdalbuildvrt`
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1429,7 +1440,8 @@ def merge_vrt(
     # Manage cloud paths (gdalbuildvrt needs url or true filepaths)
     merged_path = AnyPath(merged_path)
 
-    first_crs = kwargs.get("crs")
+    # 'crs' is an internal option (used for the intermediate warping), not a CLI option
+    first_crs = kwargs.pop("crs", None)
     for i, crs_path in enumerate(crs_paths_cp):
         crs_path = AnyPath(crs_path)
         # Download file if VRT is needed
@@ -1494,6 +1506,12 @@ def merge_vrt(
 
     # Run cmd
     gdal_build_vrt_exe = os_utils.gdalbuildvrt_exe()
+
+    # CLI options are the ones starting with a dash; the others are warned and dropped
+    for k in [k for k in kwargs if not k.startswith("-")]:
+        LOGGER.warning("'%s' is not a gdalbuildvrt option and will be ignored.", k)
+        del kwargs[k]
+
     arg_list = [val for item in kwargs.items() for val in item]
     try:
         vrt_cmd = [gdal_build_vrt_exe, merged_path, *paths, *arg_list]
@@ -1533,6 +1551,8 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
         merged_path (AnyPathStrType): Path to the merged raster
         kwargs: Other rasterio.merge arguments
             More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
+            Arguments :code:`merge` doesn't accept are given to :code:`write` instead,
+            (GDAL will warn in :code:`write` about the unsupported ones)
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1572,6 +1592,9 @@ def merge_gtiff(paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
             crs_datasets.append(src)
 
         # Merge all datasets
+        # Split kwargs between rasterio.merge (its arguments) and write
+        # (the rest: GDAL will warn in write about the creation options
+        # it doesn't support)
         merge_args = [
             "bounds",
             "res",
@@ -1836,7 +1859,8 @@ def reproject_match(
         src_arr (AnyNumpyArray): Source raster's array
         src_meta (dict): Source metadata
         resampling (Resampling): Resampling method
-        **kwargs: Passing other kwargs to `calculate_default_transform` and `reproject`
+        **kwargs: Other arguments passed to :code:`rasterio.warp.reproject`
+            Options the warp engine doesn't support are warned by GDAL
 
     Returns:
         AnyNumpyArray, dict: Reprojected array and its metadata
@@ -1852,7 +1876,7 @@ def reproject_match(
     dst_crs = dst_meta["crs"]
     meta = dst_meta.copy()
 
-    # Reproject data
+    # Reproject data (GDAL will warn about the warp options it doesn't support)
     dst_arr = np.empty(
         (src_count, dst_meta["height"], dst_meta["width"]), dtype=src_dtype
     )

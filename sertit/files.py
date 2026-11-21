@@ -37,7 +37,7 @@ from cloudpathlib import CloudPath
 from lxml import etree, html
 from tqdm import tqdm
 
-from sertit import AnyPath, path
+from sertit import AnyPath, misc, path
 from sertit.logs import SU_NAME
 from sertit.strings import DATE_FORMAT
 from sertit.types import AnyPathStrType, AnyPathType
@@ -584,6 +584,7 @@ def read_json(json_file: AnyPathStrType, print_file: bool = True) -> dict:
     return data
 
 
+@misc.strip_kwargs
 def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     """
     .. versionchanged:: 1.32.0
@@ -594,7 +595,8 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     Args:
         json_dict (dict): Json dictionary
         output_json (AnyPathStrType): Output file
-        **kwargs: Other arguments
+        **kwargs: Other :code:`json.dump` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Example:
         >>> output_json = 'D:/path/to/json.json'
@@ -605,6 +607,7 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     kwargs["cls"] = kwargs.get("cls", CustomJsonEncoder)
 
     with open(output_json, "w") as output_file:
+        # Options json.dump doesn't accept are handled by 'strip_kwargs'
         json.dump(json_dict, output_file, **kwargs)
 
 
@@ -662,6 +665,7 @@ def read_yaml(yaml_file: AnyPathStrType, print_file: bool = True) -> dict:
     return data
 
 
+@misc.strip_kwargs
 def save_yaml(yaml_dict: dict, output_yaml: AnyPathStrType, **kwargs) -> None:
     """
     Save a YAML file
@@ -669,7 +673,8 @@ def save_yaml(yaml_dict: dict, output_yaml: AnyPathStrType, **kwargs) -> None:
     Args:
         yaml_dict (dict): YAML dictionary
         output_yaml (AnyPathStrType): Output file
-        **kwargs: Other arguments
+        **kwargs: Other :code:`yaml.dump` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Example:
         >>> output_yaml = 'D:/path/to/yaml.yaml'
@@ -680,9 +685,11 @@ def save_yaml(yaml_dict: dict, output_yaml: AnyPathStrType, **kwargs) -> None:
     kwargs["Dumper"] = kwargs.get("Dumper", CustomYamlDumper)
 
     with open(output_yaml, "w") as output_file:
+        # Options yaml.dump doesn't accept are handled by 'strip_kwargs'
         yaml.dump(yaml_dict, output_file, **kwargs)
 
 
+@misc.strip_kwargs
 def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
     """
     Save an object as a pickle (can save any Python objects).
@@ -690,6 +697,8 @@ def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
     Args:
         obj (Any): Any object serializable
         path (AnyPathStrType): Path where to write the pickle
+        **kwargs: Other :code:`dill.dump` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Example:
         >>> output_pkl = 'D:/path/to/pickle.pkl'
@@ -699,6 +708,7 @@ def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
         >>> save_json(output_pkl, pkl_dict)
     """
     with open(path, "wb+") as file:
+        # Options dill.dump doesn't accept are handled by 'strip_kwargs'
         dill.dump(obj, file, **kwargs)
 
 
