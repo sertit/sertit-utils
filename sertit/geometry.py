@@ -19,19 +19,27 @@ Geometry tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
 from functools import wraps
 
-import geopandas as gpd
 import numpy as np
-import shapely
-from shapely import ops
-from shapely.errors import GeometryTypeError
-from shapely.geometry import Polygon, box
 from tqdm import tqdm
 
-from sertit import misc, vectors
+try:
+    import geopandas as gpd
+    import shapely
+    from shapely import ops
+    from shapely.errors import GeometryTypeError
+    from shapely.geometry import Polygon, box
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'geopandas' to use the 'vectors' package."
+    ) from ex
+
+from sertit import misc, utils, vectors
 from sertit.logs import SU_NAME
 from sertit.types import AnyPolygonType
 
@@ -525,7 +533,7 @@ def intersects(
 
 
 @ensure_gdf
-def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
+def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     """
     Add a buffer on a vector.
 
@@ -552,9 +560,7 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFr
         dtype: float64
 
     """
-    vector_bfd = vector.copy()
-    vector_bfd.geometry = vector.buffer(buffer_m, **kwargs)
-    return vector_bfd
+    return vector.vct.buffer_metric(buffer_size=buffer_m)
 
 
 def nearest_neighbors(
@@ -620,6 +626,7 @@ def nearest_neighbors(
     return closest_samples, distances
 
 
+@utils.requires(("sklearn", "nearest_neighbors"))
 def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwargs):
     """
     For each point in src_gdf, find the nearest k points in candidates_gdf and return them with their distance.
@@ -633,12 +640,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
     """
-    try:
-        from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
-        ) from ex
+    from sklearn.neighbors import BallTree
 
     # Create tree from the candidate points
     tree = BallTree(candidates, leaf_size=15)
@@ -652,6 +654,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     return closest, closest_dist
 
 
+@utils.requires(("sklearn", "nearest_neighbors"))
 def _get_radius_nearest(
     src_points: list, candidates: list, radius: float, **kwargs
 ) -> (np.ndarray, np.ndarray):
@@ -667,12 +670,7 @@ def _get_radius_nearest(
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
     """
-    try:
-        from sklearn.neighbors import BallTree
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'sklearn' the 'geometry.nearest_neighbors' function."
-        ) from ex
+    from sklearn.neighbors import BallTree
 
     # Create tree from the candidate points
     tree = BallTree(candidates, leaf_size=15)

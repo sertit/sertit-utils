@@ -1,9 +1,24 @@
 # Release History
 
-## Unreleased
+## 2.0.0 (20xx-xx-xx)
 
+- **BREAKING CHANGES**: Switch from `rioxarray` / `odc-geo` raster backend to `geoutils`  ([#87](https://github.com/sertit/sertit-utils/issues/87), ([#27](https://github.com/sertit/sertit-utils/issues/27)))
+   - Drop `rasters.get_nodata_value_from_xr()` as the nodata is easier to access with GeoUtils
+   - Drop nodata argument in `rasters.mask`, `rasters.crop`
+   - Drop `dst_transform`, `gcps`, `rpcs`, `use_dask` in `rasters.reproject`, as these arguments are derived from the DataArray itself with GeoUtils
+   - Rename `crs_paths`, `crs_merged_path` into `rasters_paths`, `merged_path` in `rasters.merge_gtiff`
+   - Use `altitude` instead of `zenith` in `rasters.hillshade` to conform to GDAL
+   - Remove kwargs in `geometry.buffer`
+- **BREAKING CHANGES**: Drop `rasters.reproject`'s `ortho_path` to better comply with dask workflows (writing parts should be kept outside of functions) ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- **ENH: Make geopandas optional (through sertit[vectors] requirements)** ([#88](https://github.com/sertit/sertit-utils/issues/88))
+- **ENH: Factorise optional requirements through a decorator**
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
+- DOC: Update `rioxarray`'s home repo
+- CI: Test correctly minimal and optional deps
+- CI: Test dask laziness at function level rather than test level ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- CI: De-duplicate CI files between `rasters` and `rasters_rio`
+- CI: Allow the use of s3 storage as long as `CI_SERTIT_S3` is set to 1
 
 ## 1.54.6 (2026-09-28)
 

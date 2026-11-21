@@ -17,6 +17,7 @@
 
 import logging
 import os
+import sys
 import tempfile
 import warnings
 
@@ -178,6 +179,10 @@ def test_kmz():
     )
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="KMZ are badly managed in regular Windows environments",
+)
 @s3_env
 def test_kmz_crs():
     """Test KMZ files with CRS"""
@@ -333,6 +338,7 @@ def test_utm_context_manager():
     assert vect["centroid_utm"].equals(c2)
 
 
+@s3_env
 def test_read_archived(landsat_prod, landsat_zip, landsat_tar):
     """Test archived vectors"""
     map_overlay = "map-overlay.kml"
@@ -361,6 +367,7 @@ def test_read_archived(landsat_prod, landsat_zip, landsat_tar):
     )
 
 
+@s3_env
 def test_window():
     """Test read with window"""
     aoi_path = vectors_path() / "areaOfInterestA.geojson"
@@ -403,6 +410,7 @@ def test_window():
         vectors.read(vect_path, bbox=aoi.total_bounds)
 
 
+@s3_env
 def test_read_gdb():
     """Test read from GDB"""
     gdb_path = vectors_path() / "EMSR712_04WESERRIVERSOUTH_DelineationMap_MONIT_06.gdb"
@@ -415,6 +423,7 @@ def test_read_gdb():
     _assert_attributes(sertit_gdb, gdb_path)
 
 
+@s3_env
 def test_read_deprecated():
     """Test read with deprecated arguments"""
     path = vectors_path().joinpath("aoi.shp")
@@ -423,6 +432,7 @@ def test_read_deprecated():
         vectors.read(vector_path=path)
 
 
+@s3_env
 def test_read_dbf():
     """Test read from GDB"""
     # DataFrame DBF (just check it works)
@@ -437,13 +447,16 @@ def test_read_dbf():
 
     # Fiona may not be installed
     try:
-        fiona = vectors.read(dbf_path, engine="fiona")
-        ci.assert_geom_equal(fiona, pyogrio)
-        _assert_attributes(fiona, dbf_path)
+        import fiona  # noqa
+
+        fiona_vec = vectors.read(dbf_path, engine="fiona")
+        ci.assert_geom_equal(fiona_vec, pyogrio)
+        _assert_attributes(fiona_vec, dbf_path)
     except ImportError:
         pass
 
 
+@s3_env
 def test_to_utm_crs():
     """Test to_utm_crs function"""
     kml_path = vectors_path().joinpath("aoi.kml")

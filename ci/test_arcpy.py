@@ -84,7 +84,7 @@ def test_gdb_raster(tmp_path):
 def test_gdb_raster_local(tmp_path):
     from cloudpathlib import AnyPath
 
-    gdb_path = AnyPath(r"D:\_ARCGIS\DATA\vectorise\vectorise_test_2\Default.gdb")
+    gdb_path = AnyPath(r"D:\DATA\CI\sertit_utils\windows\Default.gdb")
     assert gdb_path.exists()
     raster = rasters.read(
         arcpy.from_gdb_raster_to_rio_path(

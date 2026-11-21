@@ -7,8 +7,14 @@ import tempfile
 from functools import wraps
 from typing import Any
 
-import click
-from sertit import AnyPath
+try:
+    import click
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'click' to use the 'arcpy' package."
+    ) from ex
+
+from sertit import AnyPath, utils
 
 # Arcpy types from inside a schema
 SHORT = "int32:4"
@@ -226,6 +232,7 @@ def init_arcgis_logger(
     curr_logger.info("You can read logs in the file: " + f.name)
 
 
+@utils.requires(("pythonjsonlogger", "arcpy"))
 def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
     """
     Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.

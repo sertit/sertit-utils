@@ -17,7 +17,13 @@
 Raster tools
 
 You can use this only if you have installed sertit[full] or sertit[rasters]
+
+Functions that are not lazy yet:
+- vectorize -> get_valid_vector -> get_footprint
+- sieve
 """
+
+from __future__ import annotations
 
 import contextlib
 import logging
@@ -26,35 +32,58 @@ from functools import wraps
 from tempfile import TemporaryDirectory
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import xarray as xr
-from affine import Affine
-from shapely.geometry import Polygon
-from shapely.geometry.base import BaseGeometry
-
-from sertit.vectors import EPSG_4326
 
 try:
-    import rasterio
-    import rioxarray
-    from rasterio import CRS, control, features, rpc, warp
-    from rasterio.enums import Resampling
-    from rioxarray.exceptions import MissingCRS
+    import geopandas as gpd
+    from shapely.geometry.base import BaseGeometry
 except ModuleNotFoundError as ex:  # pragma: no cover
     raise ModuleNotFoundError(
-        "Please install 'rioxarray' to use the 'rasters' package."
+        "Please install 'geopandas' to use the 'rasters' package."
+    ) from ex
+
+# rasterio is checked before geoutils: geoutils itself imports
+# rasterio, so when rasterio is missing the geoutils import fails
+# too, and the more direct dependency should be reported.
+try:
+    from rasterio import CRS
+    from rasterio.enums import Resampling
+    from rasterio.windows import Window
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'rasterio' to use the 'rasters' package."
+    ) from ex
+
+try:
+    import geoutils as gu
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'geoutils' to use the 'rasters' package."
     ) from ex
 
 
-from sertit import AnyPath, dask, geometry, logs, misc, path, perf, rasters_rio, vectors
+from sertit import (
+    AnyPath,
+    dask,
+    geometry,
+    logs,
+    misc,
+    path,
+    perf,
+    rasters_rio,
+    utils,
+    vectors,
+)
 from sertit.types import (
     AnyPathStrType,
     AnyPathType,
     AnyRasterType,
     AnyVectorType,
     AnyXrDataStructure,
+    is_iterable,
 )
+from sertit.vectors import EPSG_4326
 
 MAX_CORES = perf.MAX_CORES
 PATH_XARR_DS = AnyRasterType
@@ -77,42 +106,6 @@ DEG_LAT_TO_M = 111_120.0
 DEG_2_RAD = rasters_rio.DEG_2_RAD
 
 # https://wiki.openstreetmap.org/wiki/Precision_of_coordinates#Precision_of_latitudes
-
-
-def get_nodata_value_from_xr(xds: AnyXrDataStructure) -> float:
-    """
-    Retrieve the nodata from a xarray structure.
-
-    Follow process as described here:
-    https://corteva.github.io/rioxarray/stable/getting_started/nodata_management.html#Search-order-for-nodata-(DataArray-only):
-
-    Args:
-        xds (AnyXrDataStructure): Xarray structure to retrieve data from
-
-    Returns:
-        float: nodata
-    """
-    try:
-        nodata = xds.rio.encoded_nodata
-    except AttributeError:
-        nodata = None
-
-    if nodata is None:
-        nodata = xds.attrs.get("_FillValue")
-
-    if nodata is None:
-        nodata = xds.attrs.get("missing_value")
-
-    if nodata is None:
-        nodata = xds.attrs.get("fill_value")
-
-    try:
-        if nodata is None:
-            nodata = xds.rio.nodata
-    except AttributeError:
-        pass
-
-    return nodata
 
 
 def get_nodata_value_from_dtype(dtype) -> float:
@@ -187,13 +180,12 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
         if any_raster_type is None:
             raise ValueError("'any_raster_type' shouldn't be None!")
 
-        masked = kwargs.get("masked", True)
         chunks = kwargs.get("chunks", dask.get_default_chunks())
 
         # By default, try with the read fct: this fct returns the xr data structure as is and manages other input types such as tuple, rasterio datasets, paths...
         try:
             out = function(
-                read(any_raster_type, chunks=chunks, masked=masked),
+                read(any_raster_type, chunks=chunks),
                 *args,
                 **kwargs,
             )
@@ -221,49 +213,8 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
     return wrapper
 
 
-@any_raster_to_xr_ds
-def get_data_mask(xds: AnyXrDataStructure) -> np.ndarray:
-    """
-    Get nodata mask from a xarray.
-
-    .. WARNING::
-        Sets 1 where the data is valid and 0 where it is not!
-
-    Args:
-        xds (AnyXrDataStructure): Array to evaluate
-
-    Returns:
-        np.ndarray: Pixelwise nodata array
-
-    Example:
-        >>> diag_arr = xr.DataArray(data=np.diag([1, 2, 3]))
-        >>> diag_arr.rio.write_nodata(0, inplace=True)
-        <xarray.DataArray (dim_0: 3, dim_1: 3)>
-        array([[1, 0, 0],
-               [0, 2, 0],
-               [0, 0, 3]])
-        Dimensions without coordinates: dim_0, dim_1
-        >>>
-        >>> # Get the data mask from this array
-        >>> get_data_mask(diag_arr)
-        array([[1, 0, 0],
-               [0, 1, 0],
-               [0, 0, 1]], dtype=uint8)
-
-    """
-    # Get the nodata (as encoded in pixel value)
-    nodata = xds.rio.nodata
-
-    try:
-        is_nan = np.isnan(nodata)
-    except TypeError:  # pragma: no cover
-        is_nan = False
-
-    nodata_pos = np.isnan(xds.data) if is_nan else xds.data == nodata
-
-    return np.where(nodata_pos, 0, 1).astype(np.uint8)
-
-
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def rasterize(
     xda: xr.DataArray,
@@ -275,16 +226,10 @@ def rasterize(
     **kwargs,
 ) -> AnyXrDataStructure:
     """
-    Rasterize a vector into raster format.
+    Rasterize a vector onto a raster, following the raster's extent, resolution and CRS.
 
-    Note that passing :code:`merge_alg = MergeAlg.add` will add the vector values to the given raster
-
-    See: https://pygis.io/docs/e_raster_rasterize.html
-
-    Use :code:`value_field` to create a raster with multiple values. If set to :code:`None`, the raster will be binary.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet)!
+    Use :code:`value_field` to burn the values of a given vector field onto the raster.
+    If set to :code:`None`, the raster is filled with :code:`default_value` (i.e. binary).
 
     Args:
         xda (xr.DataArray): Path to the raster or a rasterio dataset or a xarray.DataArray, used as base for the vector's rasterization data (shape, etc.)
@@ -304,73 +249,13 @@ def rasterize(
     vector = vectors.read(vector, crs=xda.rio.crs)
 
     # Manage vector values
-    if value_field:
-        geom_value = (
-            (geom, value)
-            for geom, value in zip(vector.geometry, vector[value_field], strict=True)
-        )
-        dtype = kwargs.pop("dtype", vector[value_field].dtype)
-    else:
-        geom_value = vector.geometry
-        dtype = kwargs.pop("dtype", np.uint8)
+    value = vector[value_field] if value_field else default_value
 
     # Manage nodata
-    if "nodata" in kwargs:
-        nodata = kwargs.pop("nodata")
-    else:
-        nodata = get_nodata_value_from_xr(xda)
+    nodata = kwargs.pop("nodata") if "nodata" in kwargs else xda.rst.nodata
 
     if nodata is None:
         nodata = default_nodata
-
-    # Check if the nodata value can be cast into the new dtype
-    is_castable = np.can_cast(np.array(nodata, dtype=xda.dtype), dtype)
-
-    # Floating point values that can be converted to integers are allowed (if they respect min / max for the specific dtype)
-    min_max_dtype = np.iinfo(dtype)
-    is_valid_int = (
-        abs(nodata - int(nodata)) == 0
-        and min_max_dtype.min <= nodata <= min_max_dtype.max
-    )
-
-    if not is_castable and not is_valid_int:
-        old_nodata = nodata
-        nodata = get_nodata_value_from_dtype(dtype)
-
-        # Only throw a warning if the value is really different (we don't care about 255.0 being replaced by 255)
-        if old_nodata - nodata != 0.0:
-            LOGGER.warning(
-                f"Impossible to cast nodata value ({old_nodata}) into the wanted dtype ({str(dtype)}). "
-                f"Default nodata value for this current dtype will be used ({nodata})."
-            )
-
-    # Rasterize vector
-    mask = features.rasterize(
-        geom_value,
-        out_shape=(xda.rio.height, xda.rio.width),
-        fill=nodata,  # Outside vector
-        default_value=default_value,  # Inside vector
-        transform=xda.rio.transform(),
-        dtype=dtype,
-        all_touched=kwargs.get("all_touched", True),
-        **misc.select_dict(kwargs, ["merge_alg"]),
-    )
-
-    # Convert to dask array if input data is chunked
-    if dask.is_chunked(xda):
-        import dask.array as da
-
-        mask = da.from_array(mask, chunks=(xda.chunks[0][0], xda.chunks[1][0]))
-
-    # Expand dim to match classic rasterio pattern {count, heigh, width}
-    if len(mask.shape) != 3:
-        mask = np.expand_dims(mask, axis=0)
-
-    # Set result back in xarray (ensure copying in a one band xarray)
-    rasterized_xds = xda[0:1].copy(data=mask)
-
-    # Change nodata
-    rasterized_xds = set_nodata(rasterized_xds, nodata_val=nodata)
 
     if not name:
         try:
@@ -378,7 +263,17 @@ def rasterize(
         except AttributeError:
             name = "Rasterized vector"
 
-    rasterized_xds = rasterized_xds.rename(name)
+    # Rasterize vector
+    rasterized_xds = vector.vct.rasterize(
+        ref=xda,
+        in_value=value,
+        out_value=nodata,
+        nodata=nodata,
+        out_dtype=xda.rst.dtype,
+        all_touched=kwargs.get("all_touched", True),
+        dask=dask.is_chunked(xda),
+        **kwargs,
+    )
     rasterized_xds.attrs["long_name"] = name
 
     return rasterized_xds
@@ -402,105 +297,83 @@ def _works_on_xds(function):
     return wrapper
 
 
+# Is not lazy yet in GeoUtils
+@dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
 @_works_on_xds
-def _vectorize(
-    xds: AnyRasterType,
-    values: None | int | list = None,
+def vectorize(
+    xda: AnyRasterType,
+    values: None | int | tuple = None,
     keep_values: bool = True,
     dissolve: bool = False,
-    get_nodata: bool = False,
     default_nodata: int = 0,
 ) -> gpd.GeoDataFrame:
     """
-    Vectorize a xarray, both to get classes or nodata.
+    Vectorize a raster into class polygons.
 
-    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
-    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
-
-    .. WARNING::
-        - If :code:`get_nodata` is set to False:
-            - Your data is casted by force into np.uint8, so be sure that your data is classified.
-            - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-                Please be careful.
-        Else:
-            - You will get a classified polygon with data (value=0)/nodata pixels.
+    When :code:`dissolve` is :code:`False`, it returns a GeoDataFrame with one geometry per
+    cluster of identical pixel value, the value being stored as an attribute. When
+    :code:`dissolve` is :code:`True`, all polygons are merged into a single one.
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet)
+        This function is not lazy yet: with chunked (dask) data the raster is computed before
+        being vectorized. The number of polygons to build also drives the computing time,
+        so be careful on large rasters.
 
     Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (None | int | list): Get only the polygons concerning this/these particular values
-        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
-        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
-        get_nodata (bool): Get nodata vector (raster values are set to 0, nodata values are the other ones)
-        default_nodata (int): Default values for nodata in case of non existing in file
+        xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
+        values (None | int | tuple): Only vectorize the polygon(s) corresponding to this/these value(s)
+        keep_values (bool): If True, keep the given values; if False, discard them and keep the others.
+        dissolve (bool): Dissolve all the polygons into one. Only used when :code:`values` is given.
+        default_nodata (int): Default nodata value to use when the raster has none.
 
     Returns:
-        gpd.GeoDataFrame: Vector with the raster values (if dissolve is not set)
+        gpd.GeoDataFrame: Vector with the raster values (unless :code:`dissolve` is set)
     """
-    # Manage chunked data (function not daskified yet)
-    if dask.is_chunked(xds):
-        LOGGER.warning("'_vectorize' function is not lazy yet. Computing the raster.")
-        xds = xds.compute()
+    if dask.is_chunked(xda):
+        LOGGER.warning("'vectorize' function is not lazy yet. Computing the raster.")
+        xda = xda.compute()
 
-    # Manage nodata value
-    uint8_nodata = 255
-    if get_nodata_value_from_xr(xds) is not None:
-        nodata = uint8_nodata
-    else:
-        nodata = default_nodata
+    # Manage values
+    wanted_values = None
 
-    if get_nodata:
-        data = get_data_mask(xds)
-        nodata_arr = None
-    else:
-        xds_uint8 = xds.fillna(uint8_nodata)
-        data = xds_uint8.data.astype(np.uint8)
-
-        # Manage values
-        if values is not None:
-            if not isinstance(values, list):
-                values = [values]
-
-            # If we want a dissolved vector, just set 1instead of real values
-            arr_vals = 1 if dissolve else data
-            if keep_values:
-                true = arr_vals
-                false = nodata
+    # Handle all types of values
+    # For now, geoutils doesn't handle a list of values
+    if values is not None:
+        # We want to keep the values given as input
+        if keep_values:
+            if is_iterable(values):
+                target_values = "all"
+                wanted_values = values
             else:
-                true = nodata
-                false = arr_vals
+                target_values = values
 
-            # Update data array
-            data = np.where(np.isin(data, values), true, false).astype(np.uint8)
+            if not is_iterable(values):
+                target_values = values
+            else:
+                target_values = "all"
+                wanted_values = tuple(
+                    i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
+                )
+        # We want to discard the values given as input
+        else:
+            if not is_iterable(values):
+                values = (values,)
 
-        # Get nodata array
-        nodata_arr = rasters_rio.get_data_mask(
-            data, has_nodata=False, default_nodata=nodata
-        )
+            target_values = "all"
+            wanted_values = tuple(
+                i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
+            )
+    else:
+        target_values = "all"
 
-    # WARNING: features.shapes do NOT accept dask arrays!
-    if not isinstance(data, (np.ndarray, np.ma.masked_array)):
-        # TODO: daskify this (geoutils ?)
-        from dask import compute
+    LOGGER.debug(f"Vectorizing with {target_values=}")
 
-        to_compute = {"data": data}
+    gdf = xda.rst.polygonize(target_values=target_values)
 
-        if nodata_arr is not None:
-            to_compute["nodata_arr"] = nodata_arr
-
-        computed = compute(to_compute)[0]
-        data = computed["data"]
-        if nodata_arr is not None:
-            nodata_arr = computed["nodata_arr"]
-
-    # Get shapes (on array or on mask to get nodata vector)
-    shapes = features.shapes(data, mask=nodata_arr, transform=xds.rio.transform())
-
-    # Convert to geodataframe
-    gdf = vectors.shapes_to_gdf(shapes, xds.rio.crs)
+    # Keep only selected values
+    if wanted_values is not None:
+        gdf = gdf.loc[np.isin(gdf["raster_value"], wanted_values)]
 
     # Return valid geometries
     gdf = geometry.make_valid(gdf)
@@ -513,186 +386,61 @@ def _vectorize(
 
 
 @any_raster_to_xr_ds
-def vectorize(
-    xds: AnyRasterType,
-    values: None | int | list = None,
-    keep_values: bool = True,
-    dissolve: bool = False,
-    default_nodata: int = 0,
-) -> gpd.GeoDataFrame:
-    """
-    Vectorize a :code:`xarray` to get the class vectors.
-
-    If dissolved is False, it returns a GeoDataFrame with a GeoSeries per cluster of pixel value,
-    with the value as an attribute. Else it returns a GeoDataFrame with a unique polygon.
-
-    .. WARNING::
-        - Your data is casted by force into np.uint8, so be sure that your data is classified.
-        - This could take a while as the computing time directly depends on the number of polygons to vectorize.
-
-        Please be careful.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
-
-    Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (None | int | list): Get only the polygons concerning this/these particular values
-        keep_values (bool): Keep the passed values. If False, discard them and keep the others.
-        dissolve (bool): Dissolve all the polygons into one unique. Only works if values are given.
-        default_nodata (int): Default values for nodata in case of non existing in file
-    Returns:
-        gpd.GeoDataFrame: Classes Vector
-
-    Example:
-        >>> raster_path = "path/to/raster.tif"
-        >>> vec1 = vectorize(raster_path)
-        >>>
-        >>> # or
-        >>> with rasterio.open(raster_path) as ds:
-        >>>     vec2 = vectorize(ds)
-        >>>
-        >>> # Assert those two approaches give the same result
-        >>> vec1 == vec2
-        True
-    """
-    return _vectorize(
-        xds,
-        values=values,
-        keep_values=keep_values,
-        dissolve=dissolve,
-        get_nodata=False,
-        default_nodata=default_nodata,
-    )
-
-
-@any_raster_to_xr_ds
 @_works_on_xds
-def get_valid_vector(xds: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
+def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoDataFrame:
     """
     Get the valid data of a raster, returned as a vector.
 
-    Pay attention that every nodata pixel will appear too.
+    Pay attention that multiple polygons can be returned.
     If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+        With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
 
     Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
+        xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         default_nodata (int): Default values for nodata in case of non-existing in file
 
     Returns:
-        gpd.GeoDataFrame: Nodata Vector
+        gpd.GeoDataFrame: Vector of the valid data
 
     Example:
         >>> raster_path = "path/to/raster.tif"
-        >>> nodata1 = get_nodata_vec(raster_path)
+        >>> valid1 = get_valid_vector(raster_path)
         >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
-        >>>     nodata2 = get_nodata_vec(ds)
+        >>>     valid2 = get_valid_vector(ds)
         >>>
         >>> # Assert those two approaches give the same result
-        >>> nodata1 == nodata2
+        >>> valid1 == valid2
         True
     """
-    nodata = _vectorize(
-        xds, values=None, get_nodata=True, default_nodata=default_nodata
-    )
-    return nodata[
-        nodata.raster_val != 0
-    ]  # 0 is the values of not nodata put there by rasterio
+    return vectorize(xda, values=None, dissolve=True, default_nodata=default_nodata)
 
 
-@any_raster_to_xr_ds
-@_works_on_xds
-def get_nodata_vector(
-    xds: rasters_rio.PATH_ARR_DS, default_nodata: int = 0
-) -> gpd.GeoDataFrame:
-    """
-    Get the nodata vector of a raster as a vector.
-
-    Pay attention that every nodata pixel will appear too.
-    If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
-
-    Args:
-        xds (PATH_ARR_DS): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        default_nodata (int): Default values for nodata in case of non-existing in file
-
-    Returns:
-        gpd.GeoDataFrame: Nodata Vector
-
-    Examples:
-        >>> raster_path = "path/to/raster.tif"  # Classified raster, with no data set to 255
-        >>> nodata1 = get_nodata_vec(raster_path)
-        >>>
-        >>> # or
-        >>> with rasterio.open(raster_path) as ds:
-        >>>     nodata2 = get_nodata_vec(ds)
-        >>>
-        >>> # Assert those two approaches give the same result
-        >>> nodata1 == nodata2
-        True
-    """
-    nodata = _vectorize(
-        xds, values=None, get_nodata=True, default_nodata=default_nodata
-    )
-    return nodata[nodata.raster_val == 0]
-
-
-def _to_odc_geometry(
-    xds: AnyXrDataStructure, shapes: gpd.GeoDataFrame | BaseGeometry | list
-):
-    """"""
-    from odc.geo import geom
-
-    # Retrieve raster CRS
-    xds_crs = xds.rio.crs
-
-    # Convert input geometry in a GeoDataFrame
-    if isinstance(shapes, list):
-        shapes = gpd.GeoDataFrame(geometry=shapes, crs=xds_crs)
-    elif isinstance(shapes, Polygon):
-        shapes = gpd.GeoDataFrame(geometry=[shapes], crs=xds_crs)
-    else:
-        shapes = geometry.to_gdf(shapes)
-
-    # Dissolve to get a unique polygon
-    shapes = geom.Geometry(
-        shapes.to_crs(xds_crs).dissolve().geometry.iat[0], crs=xds_crs
-    )
-
-    return shapes
-
-
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def mask(
-    xds: AnyRasterType,
+    xda: AnyRasterType,
     shapes: gpd.GeoDataFrame | BaseGeometry | list,
-    nodata: int | None = None,
     **kwargs,
 ) -> AnyXrDataStructure:
     """
     Masking a dataset:
     setting nodata outside the given shapes, but without cropping the raster to the shapes extent.
 
-    The original nodata is kept and completed with the nodata provided by the shapes.
+    The original nodata is kept.
 
-    Overload of rasterio mask function in order to create a :code:`xarray`.
-
-    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
-    It basically masks a raster with a vector mask, with the possibility to crop the raster to the vector's extent.
+    Wraps geoutils' clipping feature so that any :code:`AnyRasterType` can be masked and the
+    result returned as a :code:`xarray`.
 
     Args:
-        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
+        xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
-        **kwargs: Other rasterio.mask options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Masked array as a xarray
@@ -711,39 +459,13 @@ def mask(
         >>> mask1 == mask2
         True
     """
-    try:
-        # Works with dask
-        from odc.geo import xr
+    all_touched = kwargs.get("all_touched")
 
-        LOGGER.debug("Using 'odc-geo' masking function")
-
-        # Get the only keyword that are existing in 'xr.mask'
-        invert = kwargs.get("invert")
-        all_touched = kwargs.get("all_touched")
-
-        # Convert input shapes to an odc.Geometry
-        shapes = _to_odc_geometry(xds, shapes)
-
-        # Mask data
-        masked_xds = xds.copy(
-            data=xr.mask(xds, poly=shapes, invert=invert, all_touched=all_touched)
-        )
-
-    except ImportError:  # pragma: no cover
-        LOGGER.debug("Using 'rasterio' masking function")
-
-        # Use classic option if odc-geo is not installed
-        arr, meta = rasters_rio.mask(xds, shapes=shapes, nodata=nodata, **kwargs)
-
-        masked_xds = xds.copy(data=arr)
-
-    if nodata:
-        masked_xds = set_nodata(masked_xds, nodata)
-
-    # Convert back to xarray
-    return masked_xds
+    return xda.copy(data=xda.rst.clip(shapes, all_touched=all_touched).data)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def paint(
     xds: AnyRasterType,
@@ -760,8 +482,8 @@ def paint(
     This means if your shapes intersects the original nodata,
     the value of the pixel will be set to nodata rather than to the wanted value.
 
-    Overload of rasterio mask function in order to create a :code:`xarray`.
-    The :code:`mask` function docs can be seen `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.mask.html>`_.
+    Wraps geoutils' clipping feature (through :func:`mask`) so that any :code:`AnyRasterType`
+    can be painted and the result returned as a :code:`xarray`.
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -769,7 +491,7 @@ def paint(
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
         value (int): Value to set on the shapes.
         invert (bool): If invert is True, set value outside the shapes.
-        **kwargs: Other rasterio.mask options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Painted array as a xarray
@@ -789,11 +511,13 @@ def paint(
         True
     """
     # Fill na values in order to not interfere with the mask function
-    nodata = get_nodata_value_from_xr(xds)
+    nodata = xds.rst.nodata
     xds_fill = xds.fillna(nodata) if nodata is not None else xds
 
     # Use classic option
-    arr = mask(xds_fill, shapes=shapes, nodata=value, invert=not invert, **kwargs)
+    arr = mask(xds_fill, shapes=shapes, **kwargs)
+    if not invert:
+        arr = xds_fill.where(np.isnan(arr))
 
     # Create and fill na values created by the mask to the wanted value
     painted_xds = xds.copy(data=arr)
@@ -804,7 +528,6 @@ def paint(
     painted_xds.rio.update_encoding(xds.encoding, inplace=True)
 
     # Set back nodata to keep the original nodata
-    nodata = get_nodata_value_from_xr(xds)
     if nodata is not None:
         painted_xds = set_nodata(painted_xds, nodata)
 
@@ -812,25 +535,26 @@ def paint(
     return painted_xds
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def crop(
     xds: AnyRasterType,
     shapes: gpd.GeoDataFrame | BaseGeometry | list,
-    nodata: int | None = None,
     **kwargs,
-) -> (np.ma.masked_array, dict):
+) -> AnyXrDataStructure:
     """
     Cropping a dataset:
     setting nodata outside the given shapes AND cropping the raster to the shapes extent.
 
-    Overload of :py:func:`rioxarray.clip` or :py:func:`xds.odc.crop` in case of a dask array
+    Wraps geoutils' clipping feature (through :func:`mask`) so that any :code:`AnyRasterType`
+    can be cropped and the result returned as a :code:`xarray`.
 
     Args:
-        xds (:any:`AnyRasterType`): Path to the raster or a rasterio dataset or a xarray
+        xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         shapes (gpd.GeoDataFrame | BaseGeometry | list): Shapes with the same CRS as the dataset
             (except if a :code:`GeoDataFrame` is passed, in which case it will automatically be converted)
-        nodata (int): Nodata value. If not set, uses the ds.nodata. If doesn't exist, set to 0.
-        **kwargs: Other :code:`rioxarray.clip` options
+        **kwargs: Other :code:`geoutils.clip` options (i.e. :code:`all_touched`)
 
     Returns:
          AnyXrDataStructure: Cropped array as a xarray
@@ -839,57 +563,20 @@ def crop(
         >>> raster_path = "path/to/raster.tif"
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
-        >>> xds2 = crop(raster_path, shapes)
+        >>> cropped1 = crop(raster_path, shapes)
         >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
-        >>>     xds2 = crop(ds, shapes)
+        >>>     cropped2 = crop(ds, shapes)
         >>>
         >>> # Assert those two approaches give the same result
-        >>> xds1 == xds2
+        >>> cropped1 == cropped2
         True
     """
-    if nodata:
-        xds = set_nodata(xds, nodata)
-
-    try:
-        from odc.geo import (
-            Geometry,
-            xr,  # noqa
-        )
-
-        # Convert the shapes in the right format
-        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-            shapes = geometry.force_2d(shapes.to_crs(xds.rio.crs))
-
-            try:
-                shapes = shapes.union_all()
-            except AttributeError:  # pragma: no cover
-                # Geopandas < 1.1.0
-                shapes = shapes.unary_union
-
-        shapes_geom = Geometry(shapes, crs=xds.rio.crs)
-
-        # Crop
-        cropped = xds.odc.crop(shapes_geom, apply_mask=True)
-
-        return set_metadata(cropped, xds)
-
-    except ImportError:  # pragma: no cover
-        if isinstance(shapes, (gpd.GeoDataFrame, gpd.GeoSeries)):
-            shapes = shapes.to_crs(xds.rio.crs).geometry
-
-        if "from_disk" not in kwargs:
-            kwargs["from_disk"] = True  # WAY FASTER
-
-        # Clip keeps encoding and attrs
-        return xds.rio.clip(
-            shapes,
-            **misc.select_dict(
-                kwargs,
-                ["crs", "all_touched", "drop", "invert", "from_disk"],
-            ),
-        )
+    all_touched = kwargs.get("all_touched")
+    crop_xda = xds.rst.clip(mask=shapes, all_touched=all_touched).rst.crop(shapes)
+    crop_xda = set_metadata(crop_xda, xds)
+    return crop_xda
 
 
 def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
@@ -942,6 +629,8 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
         if path.is_path(any_raster_type):
             # GOTCHA: rasterio and cloudpathlib are not really compatible, so passing a CloudPath directly to rasterio (without turning it into a string) with cache the file!
             # This is really not ideal, so use the string conversion instead
+            import rasterio
+
             with rasterio.open(str(any_raster_type)) as ds:
                 out = function(ds, *args, **kwargs)
         # Input is a tuple: we consider it's composed of an output of rasterio.read function, a numpy array and a metadata dict
@@ -955,22 +644,17 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
                     "Input tuple should be composed of a numpy array of your data and the corresponding metadata dictionary, is rasterio's sense."
                 ) from exc
 
-            from rasterio import MemoryFile
+            from geoutils import DataArrayRasterAccessor
 
-            with MemoryFile() as memfile:
-                #  Open in write mode
-                with memfile.open(**meta, BIGTIFF=rasters_rio.bigtiff_value(arr)) as ds:
-                    ds.write(arr)
-                # Open in read mode (otherwise rioxarray will fail)
-                with memfile.open() as ds:
-                    LOGGER.warning(
-                        "Giving a tuple as the function's input makes you load the result in memory. Consider using an xarray structure, a path or a rasterio Dataset instead."
-                    )
-                    out = function(ds, *args, **kwargs, chunks=None)
-
-                    if dask.is_chunked(out):  # pragma: no cover
-                        with contextlib.suppress(AttributeError):
-                            out = out.compute()
+            if arr.ndim == 2:
+                arr = np.expand_dims(arr, 0)
+            out = DataArrayRasterAccessor.from_array(
+                arr,
+                transform=meta["transform"],
+                crs=meta["crs"],
+                nodata=meta["nodata"],
+                squeeze=False,
+            )
 
         # Return given xarray object as is
         elif isinstance(any_raster_type, (xr.DataArray, xr.Dataset)):
@@ -984,40 +668,195 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
     return wrapper
 
 
-def _3d_to_2d(function):
+def get_new_shape(
+    src_width,
+    src_height,
+    src_res,
+    resolution: tuple | list | float = None,
+    size: tuple | list = None,
+) -> (int, int, bool):
     """
-    Change temporary the shape of a raster (as a xr.dataArray), from rasterio 3D representaion (band, x, y) to 2D, mandatory for some functions (sieving, hillshade, slope, aspect...)
-    """
+    Get the new shape (height, width) of a resampled raster, along with the downsampling
+    factor to select which overview to use (always >= 1).
 
-    @wraps(function)
-    def wrapper(xda: xr.DataArray, *_args, **_kwargs):
-        """S3 environment wrapper"""
-        expand_dim = len(xda.shape) == 3
-        if expand_dim:
-            xda = xda.squeeze(dim="band")
-        out_xda = function(xda, *_args, **_kwargs)
-        if expand_dim:
-            with contextlib.suppress(ValueError):
-                out_xda = out_xda.expand_dims(dim="band")
-
-        return out_xda
-
-    return wrapper
-
-
-def get_window(xda: AnyRasterType, window: Any):
-    """
-    Get a window from any type of input
+    :code:`size` overrides :code:`resolution` when both are given.
 
     Args:
-        xda (AnyRasterType): Path to the raster, its dataset, its :code:`xarray` or a tuple containing its array and metadata
-        window (Any): Anything that can be returned as a window. In case of iterable, assumption is made it's geographic bounds. For pixel, please provide a Window directly.
+        src_width (int): Width of the source raster, in pixels.
+        src_height (int): Height of the source raster, in pixels.
+        src_res (tuple): Resolution of the source raster (X, Y).
+        resolution (tuple | list | float): Resolution of the wanted band, in the source resolution unit (X, Y).
+        size (tuple | list): Size of the array (width, height). Overrides :code:`resolution`.
 
     Returns:
-        Window: Rasterio window
-
+        (int, int, int): Height, width and downsampling factor.
     """
-    return rasters_rio.get_window(xda, window)
+    # By default, set downsampling_factor to 1
+    downsampling_factor = 1
+
+    def _get_new_dim(dim: int, res_old: float, res_new: float) -> (int, float):
+        """
+        Get the new dimension in pixels and the downsampling_factor used in GeoUtils.
+
+        GeoUtils takes the downsample factor as a scalar with the definition downsample = new / old resolution.
+        i.e. downsample = 2 on a 10m raster means "give me the raster at a 20m resolution"
+        -> downsample = new_res / old_res = 20 / 10 = 2
+
+        Args:
+            dim (int): Old dimension
+            res_old (float): Old resolution
+            res_new (float): New resolution
+
+        Returns:
+            (int, bool): New dimension, downsampling_factor factor (new / old)
+        """
+        new_dim = int(np.round(dim * res_old / res_new))
+        return new_dim, res_new / res_old
+
+    # By default keep original shape
+    new_height = src_height
+    new_width = src_width
+
+    # Compute new shape
+    if size is not None:
+        try:
+            if new_height == size[1] and new_width == size[0]:
+                downsampling_factor = 1
+            else:
+                new_height = size[1]
+                new_width = size[0]
+                downsampling_factor = min(size[1] / new_height, size[0] / new_width)
+        except (TypeError, KeyError) as exc:
+            raise ValueError(
+                f"Size should be None or a 2 digits iterable: {size}"
+            ) from exc
+    elif resolution is not None:
+        if isinstance(resolution, (int, float)):
+            new_height, downsampling_h = _get_new_dim(
+                new_height, src_res[1], resolution
+            )
+            new_width, downsampling_w = _get_new_dim(new_width, src_res[0], resolution)
+        else:
+            try:
+                if len(resolution) != 2:
+                    raise ValueError(
+                        "We should have a resolution for X and Y dimensions"
+                    )
+
+                if resolution[0] is not None:
+                    new_width, downsampling_h = _get_new_dim(
+                        new_width, src_res[0], resolution[0]
+                    )
+                else:
+                    downsampling_h = 1
+
+                if resolution[1] is not None:
+                    new_height, downsampling_w = _get_new_dim(
+                        new_height, src_res[1], resolution[1]
+                    )
+                else:
+                    downsampling_w = 1
+            except (TypeError, KeyError) as exc:
+                raise ValueError(
+                    f"Resolution should be None or a 2 digits iterable: {resolution}"
+                ) from exc
+
+        downsampling_factor = min(downsampling_h, downsampling_w)
+    else:
+        downsampling_factor = 1
+
+    # downsampling_factor cannot be inferior to 1
+    downsampling_factor = max(1, downsampling_factor)
+
+    return new_height, new_width, downsampling_factor
+
+
+def __handle_window(xda: xr.DataArray, window) -> xr.DataArray:
+    if window is not None:
+        if isinstance(window, Window):
+            (row_start, row_stop), (col_start, col_stop) = window.toranges()
+            # Bounding box based on indices of the raster array (colmin, rowmin, colmax, rowmax).
+            xda = xda.rst.icrop((col_start, row_start, col_stop, row_stop))
+        else:
+            if path.is_path(window):
+                window = vectors.read(window)
+
+            if isinstance(window, gpd.GeoDataFrame):
+                # Intersect the window with the raster extent before converting the window to its total bounds, otherwise it can produce border effects
+                bounds = (
+                    window.to_crs(xda.rst.crs)
+                    .overlay(get_extent(xda), how="intersection")
+                    .total_bounds
+                )
+            else:
+                bounds = window
+            xda = xda.rst.crop(tuple(bounds))
+    return xda
+
+
+def __handle_indexes(xda: xr.DataArray, indexes) -> xr.DataArray:
+    if indexes is not None:
+        if not isinstance(indexes, list):
+            indexes = [indexes]
+
+        # Open only wanted bands
+        if 0 in indexes:
+            raise ValueError("Indexes should start at 1.")
+
+        ok_indexes = np.isin(indexes, xda.band)
+        if any(~ok_indexes):
+            LOGGER.warning(
+                f"Non-available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {xda.name}"
+            )
+
+        xda = xda.isel(
+            band=[idx - 1 for ok, idx in zip(ok_indexes, indexes, strict=True) if ok]
+        )
+
+        with contextlib.suppress(AttributeError):
+            # Set new long name: Bands nb are idx + 1
+            xda.long_name = tuple(
+                name for i, name in enumerate(xda.long_name) if i + 1 in indexes
+            )
+
+    return xda
+
+
+def __handle_reproj(
+    xda: xr.DataArray, resolution, size, resampling, chunks
+) -> xr.DataArray:
+    # Manage dst fixed size
+    LOGGER.debug("Forcing the correct shape or resolution by reprojecting the data.")
+    new_height, new_width, downsampling_factor = get_new_shape(
+        src_width=xda.rst.width,
+        src_height=xda.rst.height,
+        src_res=xda.rst.res,
+        resolution=resolution,
+        size=size,
+    )
+
+    # Reproject raster to wanted resolution / size / resampling...
+    xda = reproject(
+        xda,
+        shape=(new_height, new_width),
+        resampling=resampling,
+        dst_crs=xda.rst.crs,
+        use_dask=chunks is not None,
+    )
+
+    return xda
+
+
+def __handle_dtype(xda: xr.DataArray, as_type) -> xr.DataArray:
+    if as_type:
+        if np.dtype(as_type).kind in "ui":
+            LOGGER.warning(
+                "You asked for integer arrays. Please note that this kind of dtypes is not handled by GeoUtils and may fail silently."
+            )
+            xda = xda.fillna(xda.rst.nodata)
+        xda = xda.astype(as_type)
+
+    return xda
 
 
 @__read__any_raster_to_rio_ds
@@ -1046,10 +885,7 @@ def read(
     - a float, in which case X resolution = Y resolution
     - None, in which case the dataset resolution will be used
 
-    Uses `rioxarray.open_rasterio <https://corteva.github.io/rioxarray/stable/rioxarray.html#rioxarray-open-rasterio>`_.
-
-    .. WARNING::
-        With dask usage, this function is not lazy (yet) when downsampling! (becaise of a odc.geo issue: https://github.com/opendatacube/odc-geo/issues/236)
+    Uses `geoutils.open_raster <https://geoutils.readthedocs.io/en/latest/gen_modules/geoutils.open_raster.html>`_.
 
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -1062,7 +898,7 @@ def read(
         masked (bool): Get a masked array
         indexes (int | list): Indexes of the band to load. Load the whole array if None. Starts at 1 like GDAL.
         as_type (Any): Type in which to load the array
-        **kwargs: Optional keyword arguments to pass into rioxarray.open_rasterio().
+        **kwargs: Optional keyword arguments to pass into :code:`geoutils.open_raster` (i.e. :code:`chunks`).
 
     Returns:
         AnyXrDataStructure: Masked xarray corresponding to the raster data and its metadata
@@ -1079,128 +915,64 @@ def read(
         >>> xds1 == xds2
         True
     """
+
     # Manage chunks
     chunks = kwargs.pop("chunks", dask.get_default_chunks())
 
-    # Manage window
-    if window is not None:
-        window = get_window(ds, window)
+    # By default, give the downsampling
+    need_reproj = False
+    downsample = 1
+    if resampling == Resampling.nearest:
+        if size is not None:
+            # height, width = shape
+            downsample = {"shape": size}
+        elif resolution is not None:
+            # GeoUtils handles X/Y resolution
+            # xres, yres = _check_resolution(options["res"])
+            downsample = {"res": resolution}
+    else:
+        need_reproj = True
 
-    # Get new height and width
-    new_height, new_width, do_resampling = rasters_rio.get_new_shape(
-        ds, resolution, size, window
-    )
-
-    # Read data (and load it to discard lock)
-    with (
-        xr.set_options(keep_attrs=True),
-        rioxarray.set_options(export_grid_mapping=False),
-        rioxarray.open_rasterio(
-            ds,
-            default_name=path.get_filename(ds.name),
-            chunks=chunks,
-            masked=masked,
-            **kwargs,
-        ) as xda,
-    ):
-        orig_encoding = xda.encoding
-        orig_dtype = orig_encoding.get(
-            "rasterio_dtype", orig_encoding.get("dtype", xda.dtype)
-        )
-
-        if isinstance(orig_dtype, str):
-            with contextlib.suppress(AttributeError):
-                orig_dtype = getattr(np, orig_dtype)
-
-        # Windows
-        if window is not None:
-            xda = xda.rio.isel_window(window)
-
-        # Indexes
-        if indexes is not None:
-            if not isinstance(indexes, list):
-                indexes = [indexes]
-
-            # Open only wanted bands
-            if 0 in indexes:
-                raise ValueError("Indexes should start at 1.")
-
-            ok_indexes = np.isin(indexes, xda.band)
-            if any(~ok_indexes):
-                LOGGER.warning(
-                    f"Non available index: {[idx for i, idx in enumerate(indexes) if not ok_indexes[i]]} for {ds.name}"
+    with contextlib.ExitStack() as es:
+        try:
+            xda = es.enter_context(
+                gu.open_raster(
+                    ds.name,
+                    downsample=downsample,
+                    data_name=path.get_filename(ds.name),
+                    masked=masked,
+                    squeeze=False,
+                    chunks=chunks,
+                    **kwargs,
                 )
-
-            xda = xda.isel(
-                band=[
-                    idx - 1 for ok, idx in zip(ok_indexes, indexes, strict=True) if ok
-                ]
+            )
+        except ValueError:
+            # Handle upsampling through reprojection (without assessing shape or resolution in the first place)
+            # -> downsample is only for downsampling
+            need_reproj = True
+            xda = es.enter_context(
+                gu.open_raster(
+                    ds.name,
+                    data_name=path.get_filename(ds.name),
+                    masked=masked,
+                    squeeze=False,
+                    chunks=chunks,
+                    **kwargs,
+                )
             )
 
-            with contextlib.suppress(AttributeError):
-                # Set new long name: Bands nb are idx + 1
-                xda.long_name = tuple(
-                    name for i, name in enumerate(xda.long_name) if i + 1 in indexes
-                )
+        # Handle window
+        xda = __handle_window(xda, window)
 
-        # Manage resampling
-        if do_resampling:
-            factor_h = xda.rio.height / new_height
-            factor_w = xda.rio.width / new_width
+        # Handle indexes
+        xda = __handle_indexes(xda, indexes)
 
-            # Manage 2 ways of resampling, coarsen being faster than reprojection
-            # TODO: find a way to match rasterio's speed
-            if factor_h.is_integer() and factor_w.is_integer():
-                LOGGER.debug(
-                    f"Resampling with coarsen method (faster): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
-                )
-                xda = xda.coarsen(x=int(factor_w), y=int(factor_h)).mean()
+        # Reproject raster if needed
+        if need_reproj:
+            xda = __handle_reproj(xda, resolution, size, resampling, chunks)
 
-                # Force-update the transform, otherwise everything will break after that
-                xda.rio.write_transform(inplace=True)
-            else:
-                if factor_h > 10:
-                    # Workaround for highly decimated rasters: https://github.com/opendatacube/odc-geo/issues/236
-                    LOGGER.debug(
-                        f"Resampling by reprojection (with rioxarray): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
-                    )
-                    use_dask = False
-                else:
-                    LOGGER.debug(
-                        f"Resampling by reprojection (with odc.geo): size from {(xda.rio.height, xda.rio.width)} to {(new_height, new_width)}"
-                    )
-                    # Force dask only if chunks is not None
-                    use_dask = chunks is not None
-
-                # Manage nodata
-                xda = reproject(
-                    xda,
-                    shape=(new_height, new_width),
-                    resampling=resampling,
-                    dst_crs=xda.rio.crs,
-                    use_dask=use_dask,
-                )
-
-        # Convert to wanted type
-        if as_type:
-            # Modify the type as wanted by the user
-            # TODO: manage nodata and uint/int numbers
-            xda = xda.astype(as_type)
-
-        # Mask if necessary
-        if masked:
-            # Set nodata not in opening due to some performance issues
-            xda = set_nodata(xda, ds.meta["nodata"])
-
-        # Set back attributes and encoding
-        xda.rio.update_encoding(orig_encoding, inplace=True)
-
-        # Set original dtype
-        xda.encoding["dtype"] = orig_dtype
-
-        # Save path in attrs
-        if AnyPath(ds.name).exists():
-            xda.attrs["path"] = str(ds.name)
+        # Convert to dst dtype if needed
+        xda = __handle_dtype(xda, as_type)
 
     return xda
 
@@ -1227,7 +999,9 @@ def __save_cog_with_dask(
 
     # Compute the delayed object if needed
     if compute:
-        LOGGER.debug(f"Writing your COG '{path.get_filename(output_path)}' with Dask.")
+        LOGGER.debug(
+            f"Writing your COG '{path.get_filename(output_path)}' with Dask (h: {xds.rst.height} x w: {xds.rst.width})."
+        )
         delayed.compute(optimize_graph=True)
 
     return delayed
@@ -1244,9 +1018,9 @@ def write(
 ) -> None:
     """
     Write raster to disk.
-    (encapsulation of :code:`rasterio`'s function, because for now :code:`rioxarray` to_raster doesn't work as expected)
 
-    Metadata will be created with the :code:`xarray` metadata (i.e. width, height, count, type...)
+    The file is written with geoutils' :code:`to_file`, and its metadata are created from the
+    :code:`xarray` metadata (i.e. width, height, count, type...).
     The driver is :code:`GTiff` by default, and no nodata value is provided.
     The file will be compressed if the raster is a mask (saved as uint8).
 
@@ -1288,6 +1062,8 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
+    orig_dtype = xds.dtype
+
     delayed = None
     use_dask = dask.is_chunked(xds)
     compute = compute and use_dask
@@ -1296,16 +1072,16 @@ def write(
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     # Manage dtype
-    dtype = kwargs.get("dtype", xds.dtype)
-
-    if isinstance(dtype, str):
-        # Convert to numpy dtype
-        dtype = getattr(np, dtype)
-    xds.encoding["dtype"] = dtype
+    dtype = np.dtype(kwargs.get("dtype", xds.encoding.get("dtype", xds.dtype)))
+    xds.encoding["dtype"] = dtype.name
+    kwargs["dtype"] = dtype
 
     # Write nodata
     nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
-    xds = xds.rio.write_nodata(nodata, encoded=True)
+    assert xds.dtype == orig_dtype, "2"
+    xds.rst.set_nodata(nodata)
+    assert xds.dtype == orig_dtype, "3"
+    kwargs["nodata"] = nodata
 
     # Bigtiff if needed
     bigtiff = rasters_rio.bigtiff_value(xds)
@@ -1353,7 +1129,7 @@ def write(
         and kwargs.get("compress", "").lower() in ["lzw", "deflate", "zstd"]
         and "predictor" not in kwargs
     ):
-        if xds.encoding["dtype"] in [np.float16, np.float32, np.float64, float]:
+        if dtype.kind == "f":
             kwargs["predictor"] = "3"
         else:
             kwargs["predictor"] = "2"
@@ -1364,7 +1140,7 @@ def write(
     # Write COGs
     blocksize = None
     if is_cog:
-        blocksize = 128 if (xds.rio.height < 1000 or xds.rio.width < 1000) else 512
+        blocksize = 128 if (xds.rst.height < 1000 or xds.rst.width < 1000) else 512
 
         if use_dask and write_cogs_with_dask:
             try:
@@ -1429,17 +1205,17 @@ def write(
         if not use_dask and not is_written:
             # Write with windows as we don't want to_raster to blow up the RAM (only if dask is not used)
             # Does nothing if writing with dask
-            use_windowed = xds.rio.height * xds.rio.width > 20000 * 20000
+            use_windowed = xds.rst.height * xds.rst.width > 20000 * 20000
             if use_windowed:
                 LOGGER.debug(
-                    f"Writing '{path.get_filename(output_path)}' big file (h: {xds.rio.height} x w: {xds.rio.width}) with rioxarray's 'windowed' method to avoid memory issues."
+                    f"Writing '{path.get_filename(output_path)}' big file (h: {xds.rst.height} x w: {xds.rst.width}) with rioxarray's 'windowed' method to avoid memory issues."
                 )
             kwargs["windowed"] = use_windowed
 
     # Default write on disk
     if not is_written:
         LOGGER.debug(
-            f"Writing '{path.get_filename(output_path)}' (h: {xds.rio.height} x w: {xds.rio.width}) to disk."
+            f"Writing '{path.get_filename(output_path)}' (h: {xds.rst.height} x w: {xds.rst.width}) to disk."
         )
 
         # WORKAROUND: Pop _FillValue attribute (if existing)
@@ -1450,7 +1226,7 @@ def write(
             kwargs["BIGTIFF"] = bigtiff
             kwargs["NUM_THREADS"] = perf.get_max_cores()
 
-        delayed = xds.rio.to_raster(
+        delayed = xds.rst.to_file(
             str(output_path),
             tags=tags,
             compute=compute,
@@ -1459,13 +1235,15 @@ def write(
     return delayed
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def _collocate_dataarray(
     reference: xr.DataArray,
     other: AnyXrDataStructure,
     resampling: Resampling = Resampling.nearest,
     **kwargs,
 ) -> xr.DataArray:
-    if other.rio.shape == reference.rio.shape and other.rio.crs == reference.rio.crs:
+    if other.rst.shape == reference.rst.shape and other.rst.crs == reference.rst.crs:
         LOGGER.debug(
             "Collocating equivalent rasters by aligning the coordinates onto the reference's ones."
         )
@@ -1479,31 +1257,16 @@ def _collocate_dataarray(
         # )
         collocated_xda = other
     else:
-        collocated_xda = None
-        if dask.is_chunked(other):
-            try:
-                LOGGER.debug("Collocating with dask-enabled reproject")
+        collocated_xda = other.rst.reproject(
+            ref=reference, resampling=resampling, **kwargs
+        )
 
-                # Manage nodata
-                collocated_xda = reproject(
-                    other,
-                    shape=reference.rio.shape,
-                    dst_transform=reference.rio.transform(),
-                    resampling=resampling,
-                    dst_crs=reference.rio.crs,
-                    name=other.name,
-                )
-
-            except ImportError:  # pragma: no cover
-                # If odc-geo isn't installed, use rioxarray (not daskified!)
-                pass
-
-        if collocated_xda is None:
-            LOGGER.debug("Collocating with 'rioxarray.reproject_match'")
-            collocated_xda = other.rio.reproject_match(reference, resampling=resampling)
     return collocated_xda
 
 
+# Is lazy
+@utils.requires(("rioxarray", "rasters"))
+@dask.guard_compute(max_computes=0)
 def collocate(
     reference: AnyXrDataStructure,
     other: AnyXrDataStructure,
@@ -1513,9 +1276,6 @@ def collocate(
     """
     Collocate two georeferenced arrays:
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
-
-    .. WARNING::
-        With dask usage, this function is only lazy if odc.geo is installed
 
     Args:
         reference (:any:`AnyXrDataStructure`): Reference xarray
@@ -1552,29 +1312,25 @@ def collocate(
                     ref = reference
                 else:
                     # assert we have the same spatial dimensions in ref and other
-                    ref = reference[var].rio.set_spatial_dims(
-                        x_dim=x_dim, y_dim=y_dim, inplace=True
-                    )
+                    ref = reference[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
 
                 # Colocate dataarray by dataarray
                 collocated_xds[var] = _collocate_dataarray(
-                    other=other[var].rio.set_spatial_dims(
-                        x_dim=x_dim, y_dim=y_dim, inplace=True
-                    ),
+                    other=other[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim),
                     reference=ref,
                     resampling=resampling,
                     **kwargs,
                 )
             collocated_xds = collocated_xds.rio.set_spatial_dims(
-                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim, inplace=True
+                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim
             )
         except Exception:  # pragma: no cover
             # For datasets, maybe the code here over is a bit much, so use the reproject match function as a backup (just in case)
-            collocated_xds = other.rio.reproject_match(
-                reference, resampling=resampling, **kwargs
+            collocated_xds = _collocate_dataarray(
+                reference=reference, other=other, resampling=resampling, **kwargs
             )
 
-    # Assign directly the coordinates to correct tiny differences in coordinates du to float precision
+    # Assign directly the coordinates to correct tiny differences in coordinates due to float precision
 
     # From odc-geo
     STANDARD_SPATIAL_DIMS = [
@@ -1606,16 +1362,18 @@ def collocate(
     return collocated_xds
 
 
+# Is not lazy yet in GeoUtils
+@dask.guard_compute(nof_computes=1)
 @any_raster_to_xr_ds
-@_3d_to_2d
 def sieve(
     xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4
 ) -> AnyXrDataStructure:
     """
-    Sieving, overloads rasterio function with raster shaped like an image: :code:`(1, h, w)`.
+    Sieve a classified raster, removing small objects smaller than the given threshold.
 
     .. WARNING::
-        Your data is casted by force into :code:`np.uint8`, so be sure that your data is classified.
+        Non-integer rasters are cast to :code:`np.uint8` before sieving, so be sure that
+        your data is classified.
 
     .. WARNING::
         With dask usage, this function is not lazy (yet)!
@@ -1638,42 +1396,14 @@ def sieve(
         >>> raster_out = "path/to/raster_sieved.tif"
         >>> write(sieved_xds, raster_out)
     """
-    assert connectivity in [4, 8]
-
-    # Manage chunked data (function not daskified yet)
-    if dask.is_chunked(xds):
-        LOGGER.warning("Sieving function is not lazy yet. Computing the raster.")
-        xds = xds.compute()
-
-    mask = xr.where(np.isnan(xds), 0, 1).astype(np.uint8).data
-    data = xds.astype(np.uint8).data
-
-    # Sieve
-    try:
-        # Dask: 2 'compute's in xr.apply_ufunc if xds not computed before!
-        sieved_arr = xr.apply_ufunc(
-            features.sieve,
-            data,
-            kwargs={"size": sieve_thresh, "connectivity": connectivity, "mask": mask},
-            dask="allowed",
+    if xds.dtype.kind not in "biu":
+        LOGGER.warning(
+            "Sieving takes classified rasters. Converting the raster to uint8."
         )
-    except ValueError:  # pragma: no cover
-        LOGGER.debug("Impossible to use 'xr.apply_ufunc' when sieving.")
-        sieved_arr = features.sieve(
-            data, size=sieve_thresh, connectivity=connectivity, mask=mask
-        )
+        # Preserve attributes and encodings
+        xds = xds.copy(data=xds.astype("uint8"))
 
-    # Set back nodata and expand back dim
-    sieved_arr = sieved_arr.astype(xds.dtype)
-
-    # Manage integer files
-    with contextlib.suppress(ValueError):
-        # Dask: 1 more 'compute' in here if xds not computed before!
-        sieved_arr[np.isnan(np.squeeze(xds.data))] = np.nan
-
-    sieved_xds = xds.copy(data=sieved_arr)
-
-    return sieved_xds
+    return xds.rst.sieve(size=sieve_thresh, connectivity=connectivity)
 
 
 def get_dim_img_path(
@@ -1703,6 +1433,8 @@ def get_dim_img_path(
     return rasters_rio.get_dim_img_path(dim_path, img_name, get_list)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
@@ -1727,7 +1459,7 @@ def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
         >>> extent1 == extent2
         True
     """
-    return vectors.get_geodf(geom=[*xds.rio.bounds()], crs=xds.rio.crs)
+    return vectors.get_geodf(geom=[*xds.rst.bounds], crs=xds.rst.crs)
 
 
 @any_raster_to_xr_ds
@@ -1736,7 +1468,7 @@ def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     Get real footprint of the product (without nodata, *in french == emprise utile*)
 
     .. WARNING::
-        With dask usage, this function is not lazy (yet) (depending on _vectorize)
+        With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
@@ -1760,6 +1492,8 @@ def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     return geometry.get_wider_exterior(footprint)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def merge_vrt(
     crs_paths: list,
     crs_merged_path: AnyPathStrType,
@@ -1797,23 +1531,21 @@ def merge_vrt(
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, abs_path, **kwargs)
 
 
-def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> None:
+# Is lazy
+@dask.guard_compute(max_computes=0)
+def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> None:
     """
-    Merge rasters as a GeoTiff.
+    Merge a list of rasters into a single GeoTiff.
 
-    This function handles files of different projection by creating intermediate VRT used for warping.
-
-    Using :code:`rasterio.merge` with default arguments behind the hood so you can provide any valid argument into the kwargs.
-    For example, to modify the merging method, you can pass :code:`method="max"`
-
-    .. WARNING::
-        With dask usage, this function is not lazy
+    The rasters are merged with geoutils' :code:`merge_rasters` using its default arguments,
+    so you can pass the relevant arguments through :code:`kwargs`.
+    For example, to modify the merging method, you can pass :code:`merge_algorithm="max"`.
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS
-        crs_merged_path (AnyPathStrType): Path to the merged raster
-        kwargs: Other rasterio.merge arguments.
-            More info `here <https://rasterio.readthedocs.io/en/latest/api/rasterio.merge.html#rasterio.merge.merge>`_
+        rasters_paths (list): Paths of the rasters to be merged
+        merged_path (AnyPathStrType): Path to the merged raster
+        **kwargs: Other :code:`geoutils.merge_rasters` arguments
+            (i.e. :code:`reference`, :code:`merge_algorithm`, :code:`resampling_method`, :code:`use_ref_bounds`)
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1826,9 +1558,29 @@ def merge_gtiff(crs_paths: list, crs_merged_path: AnyPathStrType, **kwargs) -> N
         >>> merge_gtiff(paths_utm32630, mosaic_32630)
         >>> merge_gtiff(paths_utm32631, mosaic_32631)
     """
-    # TODO: daskify this. How?
-    # For now there is no conflicts here as we are opening the paths directly with rasterio
-    return rasters_rio.merge_gtiff(crs_paths, crs_merged_path, **kwargs)
+    try:
+        rasters_to_merge = [
+            gu.Raster(raster_path) if path.is_path(raster_path) else raster_path
+            for raster_path in rasters_paths
+        ]
+        merged_raster = gu.raster.merge_rasters(
+            rasters=rasters_to_merge,
+            **misc.select_dict(
+                kwargs,
+                ["reference", "merge_algorithm", "resampling_method", "use_ref_bounds"],
+            ),
+        ).to_xarray("Merged")
+        if merged_path:
+            dtype = kwargs.pop("dtype", rasters_to_merge[0].dtype)
+            from rasterio.errors import RasterBlockError
+
+            try:
+                write(merged_raster, merged_path, dtype=dtype, **kwargs)
+            except RasterBlockError as ex:
+                LOGGER.warning(f"Error with blocks! {ex}")
+                write(merged_raster, merged_path, dtype=dtype, blocksize=512, **kwargs)
+    except Exception:
+        return rasters_rio.merge_gtiff(rasters_paths, merged_path, **kwargs)
 
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
@@ -1864,6 +1616,8 @@ def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     return rasters_rio.unpackbits(array, nof_bits)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def read_bit_array(
     bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
 ) -> np.ndarray | list:
@@ -1907,6 +1661,8 @@ def read_bit_array(
     return rasters_rio.read_bit_array(bit_mask, bit_id)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def read_uint8_array(
     bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
 ) -> np.ndarray | list:
@@ -1939,11 +1695,14 @@ def read_uint8_array(
     return read_bit_array(bit_mask.astype(np.uint8), bit_id)
 
 
+# Is lazy
+@utils.requires(("rioxarray", "rasters"))
+@dask.guard_compute(max_computes=0)
 def set_metadata(
     naked_xda: AnyXrDataStructure, mtd_xda: AnyXrDataStructure, new_name: str = None
 ) -> AnyXrDataStructure:
     """
-    Set metadata from a :code:`xr.DataArray` to another (including :code:`rioxarray` metadata such as encoded_nodata and crs).
+    Set metadata from a :code:`xr.DataArray` to another (including CRS, nodata and encoding).
 
     Useful when performing operations on xarray that result in metadata loss such as sums.
 
@@ -2000,8 +1759,10 @@ def set_metadata(
             STATISTICS_VALID_PERCENT:  80.07
             original_dtype:            uint8
     """
+    from rioxarray.exceptions import MissingCRS
+
     with contextlib.suppress(MissingCRS):
-        naked_xda.rio.write_crs(mtd_xda.rio.crs, inplace=True)
+        naked_xda.rst.set_crs(mtd_xda.rst.crs)
 
     if new_name:
         naked_xda = naked_xda.rename(new_name)
@@ -2009,17 +1770,20 @@ def set_metadata(
 
     naked_xda.rio.update_attrs(mtd_xda.attrs, inplace=True)
     naked_xda.rio.update_encoding(mtd_xda.encoding, inplace=True)
-    naked_xda.rio.set_nodata(mtd_xda.rio.nodata, inplace=True)
+    naked_xda.rst.nodata = mtd_xda.rst.nodata
 
     return naked_xda
 
 
+# Is lazy
+@utils.requires(("rioxarray", "rasters"))
+@dask.guard_compute(max_computes=0)
 def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
     Set nodata to a xarray that have no default nodata value.
 
-    In the data array, the no data will be set to :code:`np.nan`.
-    The encoded value can be retrieved with :code:`get_nodata_value_from_xr`.
+    In the data array, the no-data pixels are set to :code:`np.nan`.
+    The encoded value is kept in the geoutils metadata.
 
     Args:
         xda (xr.DataArray): DataArray
@@ -2054,10 +1818,12 @@ def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     xda.rio.update_encoding(encoding, inplace=True)
 
     # Set nodata in the attributes and encoding
-    xda.rio.write_nodata(nodata_val, encoded=True, inplace=True)
+    xda.rst.set_nodata(nodata_val)
     return xda
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def where(
     cond, if_true, if_false, master_xda: xr.DataArray = None, new_name: str = ""
 ) -> xr.DataArray:
@@ -2115,113 +1881,47 @@ def where(
     return where_xda
 
 
-def _run_hillshade(data, az_rad, alt_rad, res):
-    """
-    Workaround function for xarray-spatial hillshade
-    TO BE REMOVED when https://github.com/makepath/xarray-spatial/issues/748 is solved
-    """
-    # Compute slope and aspect
-    dx, dy = np.gradient(data, *res)
-    x2_y2 = dx**2 + dy**2
-    aspect = np.arctan2(dx, dy)
-
-    # Compute hillshade (GDAL algo)
-    hshade = (
-        np.sin(alt_rad) + np.cos(alt_rad) * np.sqrt(x2_y2) * np.sin(aspect - az_rad)
-    ) / np.sqrt(1 + x2_y2)
-    hshade = np.where(hshade <= 0, 1.0, 254.0 * hshade + 1)
-
-    hshade[(0, -1), :] = np.nan
-    hshade[:, (0, -1)] = np.nan
-
-    return hshade
-
-
+# Is lazy
+@utils.requires(("xdem", "rasters"))
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
-@_3d_to_2d
 def hillshade(
-    xds: AnyRasterType, azimuth: float = 315, zenith: float = 45, **kwargs
+    xds: AnyRasterType, azimuth: float = 315, altitude: float = 45, **kwargs
 ) -> AnyXrDataStructure:
     """
-    Compute the hillshade of a DEM from an azimuth and zenith angle (in degrees).
+    Compute the hillshade of a DEM from an azimuth and an altitude angle (in degrees).
 
     Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
-
-    NB: altitude = zenith
-
-    References:
-
-    - `1 <https://www.neonscience.org/resources/learning-hub/tutorials/create-hillshade-py>`_
-    - `2 <http://webhelp.esri.com/arcgisdesktop/9.2/index.cfm?TopicName=How%20Hillshade%20works>`_
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
         azimuth (float): Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east, ...
-        zenith (float): Zenith angle in degrees
+        altitude (float): Altitude angle of the light, in degrees (90 is directly overhead).
+            The deprecated :code:`zenith` keyword can still be used, in which case :code:`altitude = 90 - zenith`.
 
     Returns:
         AnyXrDataStructure: Hillshade
     """
-    try:
-        issue_solved = False
-        if issue_solved:  # pragma: no cover
-            from xrspatial import hillshade
-
-            xds = hillshade(
-                xds,
-                azimuth=int(azimuth),
-                angle_altitude=90 - int(zenith),
-                name=kwargs.get("name", "hillshade"),
-                shadows=kwargs.get("shadows"),
-            )
-            # Output result is different: result = (shaded + 1) / 2; shaded = 2 * result - 1
-            xds = 2 * xds - 1
-
-            # We want: result_gdal = np.where(shaded <= 0, 1.0, 254.0 * shaded + 1)
-            xds = where(xds <= 0, 1.0, 254.0 * xds + 1, xds)
-        else:
-            # replace xarray-spatial fct with GDAL compatible one
-            from functools import partial
-
-            try:
-                _func = partial(
-                    _run_hillshade,
-                    az_rad=azimuth * DEG_2_RAD,
-                    alt_rad=(90 - zenith) * DEG_2_RAD,
-                    res=np.abs(xds.rio.resolution()),
-                )
-                out = xds.data.map_overlap(
-                    _func, depth=(1, 1), boundary=np.nan, meta=np.array(())
-                )
-            except AttributeError:
-                # Without dask
-                out = _run_hillshade(
-                    xds.data,
-                    az_rad=azimuth * DEG_2_RAD,
-                    alt_rad=(90 - zenith) * DEG_2_RAD,
-                    res=np.abs(xds.rio.resolution()),
-                )
-
-            xds = xds.copy(data=out)
-
-    except ImportError:  # pragma: no cover
-        LOGGER.debug(
-            "'Hillshade' not computed with Dask as 'xarray-spatial' is not installed."
+    if "zenith" in kwargs:
+        logs.deprecation_warning(
+            "'zenith' is deprecated. Use 'altitude' instead (altitude = 90-zenith)."
         )
-        # Use classic option
-        xds = xds.expand_dims(dim="band")  # it has been reduced to 2 dims
-        arr, _ = rasters_rio.hillshade(xds, azimuth=azimuth, zenith=zenith)
+        altitude = 90 - kwargs.pop("zenith")
 
-        xds = xds.copy(data=arr)
+    import xdem  # noqa
 
-    xds = xds.rename(kwargs.get("name", "hillshade"))
-    xds.attrs["long_name"] = "hillshade"
+    hillshade = xds.dem.hillshade(azimuth=azimuth, altitude=altitude, **kwargs)
 
-    return xds
+    hillshade = hillshade.rename(kwargs.get("name", "hillshade"))
+    hillshade.attrs["long_name"] = "hillshade"
+
+    return hillshade
 
 
+# Is lazy
+@utils.requires(("xdem", "rasters"))
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
-@_3d_to_2d
 def slope(
     xds: AnyRasterType, in_pct: bool = False, in_rad: bool = False, **kwargs
 ) -> AnyXrDataStructure:
@@ -2238,34 +1938,25 @@ def slope(
     Returns:
         AnyXrDataStructure: Slope
     """
-    try:
-        from xrspatial import slope
+    import xdem  # noqa
 
-        xds = slope(xds)
+    slope = xds.dem.slope(degrees=not in_rad, **kwargs)
 
-        if in_pct:
-            xds = 100 * np.tan(xds * DEG_2_RAD)
-        elif in_rad:
-            xds = xds * DEG_2_RAD
-    except ImportError:  # pragma: no cover
-        LOGGER.debug(
-            "'Slope' not computed with Dask as 'xarray-spatial' is not installed."
-        )
+    if in_pct:
+        if not in_rad:
+            slope *= DEG_2_RAD
+        slope = 100 * np.tan(xds)
 
-        # Use classic option
-        xds = xds.expand_dims(dim="band")  # it has been reduced to 2 dims
-        arr, _ = rasters_rio.slope(xds, in_pct=in_pct, in_rad=in_rad)
+    slope = slope.rename(kwargs.get("name", "slope"))
+    slope.attrs["long_name"] = "slope"
 
-        xds = xds.copy(data=arr)
-
-    xds = xds.rename(kwargs.get("name", "slope"))
-    xds.attrs["long_name"] = "slope"
-
-    return xds
+    return slope
 
 
+# Is lazy
+@utils.requires(("xdem", "rasters"))
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
-@_3d_to_2d
 def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     """
     Compute the aspect of a DEM.
@@ -2276,16 +1967,14 @@ def aspect(xds: AnyRasterType, **kwargs) -> AnyXrDataStructure:
     Returns:
         AnyXrDataStructure: Aspect
     """
-    try:
-        from xrspatial import aspect
+    import xdem  # noqa
 
-        xds = aspect(xds, name=kwargs.get("name", "aspect"))
-        xds.attrs["long_name"] = "aspect"
-        return xds
-    except ImportError as exc:  # pragma: no cover
-        raise NotImplementedError(
-            "'Aspect' cannot be computed when 'xarray-spatial' is not installed."
-        ) from exc
+    aspect = xds.dem.aspect(**kwargs)
+
+    aspect = aspect.rename(kwargs.get("name", "aspect"))
+    aspect.attrs["long_name"] = "aspect"
+
+    return aspect
 
 
 # TODO: add other DEM-related functions like 'curvature', etc if needed. Create a dedicated module?
@@ -2349,6 +2038,8 @@ def from_meters_to_deg(
     return np.round(dist, decimals)
 
 
+# Is lazy
+@dask.guard_compute(max_computes=0)
 def classify(
     raster: xr.DataArray,
     bins: list,
@@ -2410,6 +2101,9 @@ def classify(
     return classified_raster
 
 
+# Is lazy (even if DEM is cached?)
+@utils.requires(("xdem", "rasters"))
+@dask.guard_compute(max_computes=0)
 @any_raster_to_xr_ds
 def reproject(
     src_xda: AnyRasterType,
@@ -2417,15 +2111,13 @@ def reproject(
     shape: tuple = None,
     resampling: Resampling = Resampling.bilinear,
     dst_crs: CRS = None,
-    dst_transform: Affine = None,
-    gcps: control.GroundControlPoint = None,
+    # dst_transform: Affine = None,
+    # gcps: control.GroundControlPoint = None,
     nodata: float = None,
     num_threads: int = None,
-    use_dask: bool = None,
-    ortho_path: AnyPathStrType = None,
     name: str = None,
     # under this, arguments only for reprojecting with RPCs
-    rpcs: rpc.RPC = None,
+    # rpcs: rpc.RPC = None,
     dem_path: str = None,
     extent: gpd.GeoDataFrame = None,
     vcrs: str | int = None,
@@ -2433,46 +2125,42 @@ def reproject(
     **kwargs,
 ) -> xr.DataArray:
     """
-    Function handling all cases of reprojection, with and without RPCS, with and without dask or chunked arrays.
+    Function handling all cases of reprojection, with and without RPCs, for both plain and
+    chunked (dask) arrays.
 
-    Wrappers around:
-    - odc.geo.xr_reproject for chunked arrays (in a dask-backed way)
-    - rioxarray.reprjoect for xarray data
-    - rasterio.reproject as a fallback (especially for Python 3.9)
+    Wraps geoutils' :code:`reproject` (:code:`xr.rst.reproject`) so that any
+    :code:`AnyRasterType` can be reprojected and the result returned as a :code:`xarray`.
 
     .. WARNING::
-        RPC management is much more complex and necessits more arguments.
+        RPC management is much more complex and necessitates more arguments.
 
-        RPC reprojection is not daskified yet. See this `issue<https://github.com/opendatacube/odc-geo/issues/193>`_.
+        Cloud-stored DEM cannot be used as is. They will be cached and then used.
+        Performance can be affected.
 
-        Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
-
-        Orthorectifying data with RPC is using a DEM. This DEM should have its height based on the ellispoid.
-        If your DEM doesn't have a vertical CRS set, please provide it with vcrs.
+        Orthorectifying data with RPC uses a DEM. This DEM should have its height based on
+        the ellipsoid. If your DEM doesn't have a vertical CRS set, please provide it with
+        :code:`vcrs`.
 
         Note that in some cases, the vertical CRS is set by default.
-        This library recognizes files with :code:`Copernicus` or :code:`COPDEM` in it (based on :code:`EGM08`).
-        :code:`xdem` may recognize other files. See `the documentation<https://xdem.readthedocs.io/en/stable/vertical_ref.html>`_ for more insights.
+        This library recognizes files with :code:`Copernicus` or :code:`COPDEM` in their name
+        (based on :code:`EGM08`). :code:`xdem` may recognize other files. See
+        `the documentation <https://xdem.readthedocs.io/en/stable/vertical_ref.html>`_ for
+        more insights.
 
     Args:
         src_xda (AnyRasterType): Raster to be reprojected
         pixel_size (float): Destination pixel size (in the destination CRS units). If not provided, the pixel size will be deducted from other parameters.
-        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes pixel_size.
-        resampling (Resampling): Resampling method. Defaults to Resampling.bilinear.
-        dst_crs (CRS): Destination CRS. If not provided, the CRS will be retrieved from the source raster.
-        dst_transform (Affine): Destination transfgorm. If not provided, the transform will be computed from other parameters.
-        gcps ((control.GroundControlPoint, CRS)): Ground Control Points
+        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes :code:`pixel_size`.
+        resampling (Resampling): Resampling method. Defaults to :code:`Resampling.bilinear`.
+        dst_crs (CRS): Destination CRS. If not provided, the source CRS will be used.
         nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
         num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
-        use_dask (bool): Flag to use dask for parallel processing. If not provided, the flag will be set to None and dask used if the data is chunked.
-        ortho_path (AnyPathStrType): Path to the orthorectified array
         name (str): Name of the output DataArray.
-        rpcs (rpc.RPC): RPC to orthorectify some raster
-        dem_path (AnyPathStrType): Path to the DEM, only used if rpcs is given.
-        extent (gpd.GeoDataFrame): GeoDataFrame containing extent of the raster to extract the DEM, only used if rpcs is given.
-        vcrs (str | int): Vertical CRS of the DEM, only used if rpcs is given. Can be automatically deducted in some cases (COPDEM, etc.). Better to set it tu be sure.
-        caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted in the end of the process. Only used if rpcs is given.
-        **kwargs: Other arguments to pass to reproject or write
+        dem_path (AnyPathStrType): Path to the DEM, only used if the raster carries RPCs.
+        extent (gpd.GeoDataFrame): Extent used to subset the DEM, only used if the raster carries RPCs.
+        vcrs (str | int): Vertical CRS of the DEM, only used if the raster carries RPCs. Can be automatically deduced in some cases (COPDEM, etc.). Better to set it to be sure.
+        caching_folder (AnyPathStrType): Folder where to cache temporary files. If not provided, a temporary folder will be created and deleted at the end of the process. Only used if the raster carries RPCs.
+        **kwargs: Other arguments to pass to the reprojection.
 
     Returns:
         xr.DataArray: Reprojected raster
@@ -2481,21 +2169,19 @@ def reproject(
         Example with RPCs
         >>> # Imports
         >>> import logging
-        >>> from sertit import AnyPath, logs, rasters, vectors
+        >>> from sertit import AnyPath, logs, rasters
         >>> logs.init_logger(logging.getLogger("sertit"))
         >>>
-        >>> # Data
+        >>> # Data (a raster that carries RPCs)
         >>> spot_path = AnyPath("IMG_SPOT7_MS_001_A", "DIM_SPOT7_MS_201602150257025_SEN_1671661101.XML")
         >>> copdem_path = AnyPath("Copernicus_DSM_10_S07_00_E106_00_DEM.tif")
         >>>
-        >>> # Reproject
-        >>> with rasterio.open(spot_path) as ds:
-        >>>     rpc_reproj = rasters.reproject(spot_path, rpcs=ds.rpcs, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0)
-        [WARNING] - Reprojection with RPCs doesn't work with Dask. Computing the raster.
+        >>> # Reproject (the RPCs are read from the raster itself)
+        >>> rpc_reproj = rasters.reproject(spot_path, dem_path=copdem_path, dst_crs="epsg:4326", nodata=0)
         [DEBUG] - Orthorectifying data with Copernicus_DSM_10_S07_00_E106_00_DEM.tif
         >>>
         >>> # See if we have a CRS
-        >>> rpc_reproj.rio.crs.to_epsg()
+        >>> rpc_reproj.rst.crs.to_epsg()
         4326
         >>>
         >>> # See if the corrdinates are correctly set (lon = 106,x, lat = -6,x)
@@ -2517,354 +2203,56 @@ def reproject(
         >>> # Reproject to a specific CRS
         >>> rasters.reproject(xda, dst_crs="EPSG:4326")
     """
+
     # Get num threads
     if num_threads is None:
         num_threads = perf.get_max_cores()
 
-    if rpcs is not None:
-        reprojected_xda = _reproject_rpcs(
-            src_xda=src_xda,
-            rpcs=rpcs,
-            dem_path=dem_path,
-            ortho_path=ortho_path,
-            pixel_size=pixel_size,
-            shape=shape,
-            resampling=resampling,
-            dst_crs=dst_crs,
-            nodata=nodata,
-            num_threads=num_threads,
-            name=name,
-            extent=extent,
-            caching_folder=caching_folder,
-            vcrs=vcrs,
-            **kwargs,
-        )
-    else:
-        reprojected_xda = _reproject_without_rpcs(
-            src_xda=src_xda,
-            pixel_size=pixel_size,
-            shape=shape,
-            resampling=resampling,
-            dst_crs=dst_crs,
-            dst_transform=dst_transform,
-            gcps=gcps,
-            nodata=nodata,
-            num_threads=num_threads,
-            use_dask=use_dask,
-            **kwargs,
-        )
+    tmp_caching_folder = None
+    transformer_options = None
+    if src_xda.rst.rpcs is not None:
+        # Convert to Paths
+        dem_path = AnyPath(dem_path)
 
-    # In some cases (according to some frameworks...), nodata is not correctly set. Force it to be sure.
-    # Only for float data, as it will set nans in place of nodata value
-    if reprojected_xda.dtype.kind == "f":
-        reprojected_xda = set_nodata(reprojected_xda, nodata_val=nodata)
-    else:
-        # Else only ensure nodata is written
-        reprojected_xda.rio.write_nodata(nodata, encoded=True, inplace=True)
+        # Manage caching folder if needed
+        if caching_folder is not None:
+            caching_folder = AnyPath(caching_folder)
+        else:
+            tmp_caching_folder = TemporaryDirectory()
+            caching_folder = AnyPath(tmp_caching_folder.name)
+
+        # Get src crs (check that)
+        src_crs = src_xda.rst.crs
+        if not src_crs:
+            # RPCs are always in 4326 by convention
+            # https://rasterio.readthedocs.io/en/latest/topics/reproject.html#reprojecting-with-other-georeferencing-metadata
+            src_crs = EPSG_4326
+
+            # CRS has to be set for rioxarray
+            src_xda.rst.set_crs(src_crs)
+
+        # RPC_DEM doesn't work with cloud-based DEM
+        dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
+
+        # Update GDAL parameters
+        transformer_options = __rpc_gdal_options(dem_path)
+
+    reprojected_xda = src_xda.rst.reproject(
+        crs=dst_crs,
+        res=pixel_size,
+        grid_size=shape,
+        nodata=nodata,
+        resampling=resampling,
+        transformer_options=transformer_options,
+        silent=False,
+        n_threads=num_threads,
+        memory_limit=64,
+    )
 
     # Rename DataArray
     if name:
         reprojected_xda = reprojected_xda.rename(name)
         reprojected_xda.attrs["long_name"] = name
-
-    if ortho_path is not None:
-        write(
-            reprojected_xda,
-            ortho_path,
-            dtype=kwargs.pop("dtype", np.float32),
-            nodata=nodata,
-            tags=kwargs.pop("tags", None),
-            predictor=kwargs.pop("predictor", None),
-            driver=kwargs.pop("driver", None),
-            **kwargs,
-        )
-
-    return reprojected_xda
-
-
-def _reproject_without_rpcs(
-    src_xda: xr.DataArray,
-    pixel_size: float = None,
-    shape: tuple = None,
-    resampling: Resampling = Resampling.bilinear,
-    dst_crs: CRS = None,
-    dst_transform: Affine = None,
-    gcps: control.GroundControlPoint = None,
-    nodata: float = None,
-    num_threads: int = None,
-    use_dask: bool = True,
-    **kwargs,
-):
-    """Sub-function to reproject without RPCs."""
-    if use_dask is None:
-        # We have more confidence in rioxarray's implementation than odc.geo
-        # So, if the array is not chunked, use rioxarray
-        use_dask = dask.is_chunked(src_xda)
-
-    # Write GCPs into the DataArray if provided
-    if gcps is not None:
-        src_xda.rio.write_gcps(gcps, dst_crs, inplace=True)
-
-    # A CRS is needed
-    if dst_crs is None:
-        dst_crs = src_xda.rio.crs
-
-    # Chose reprojection function and compute it
-    reproj_fct = __reproject_odc_geo if use_dask else __reproject_rioxarray
-
-    reprojected_xda = reproj_fct(
-        src_xda=src_xda,
-        pixel_size=pixel_size,
-        shape=shape,
-        resampling=resampling,
-        dst_crs=dst_crs,
-        dst_transform=dst_transform,
-        nodata=nodata,
-        num_threads=num_threads,
-        **kwargs,
-    )
-
-    return reprojected_xda
-
-
-def __reproject_odc_geo(
-    src_xda: xr.DataArray,
-    pixel_size: float = None,
-    shape: tuple = None,
-    resampling: Resampling = Resampling.bilinear,
-    dst_crs: CRS = None,
-    dst_transform: Affine = None,
-    nodata: float = None,
-    num_threads: int = None,
-    **kwargs,
-):
-    """Wrapper around odc-geo's reproject function."""
-    from odc.geo import xr as odc_geo_xr  # noqa: F401
-
-    if pixel_size is None:
-        pixel_size = "auto"
-
-    if nodata is None:
-        nodata = get_nodata_value_from_xr(src_xda)
-
-    # Use Geobox as it seems to work better than shape directly
-    if shape is not None:
-        from affine import Affine
-        from odc.geo.geobox import GeoBox
-
-        height, width = shape
-
-        if dst_transform is None:
-            src_affine: Affine = src_xda.rio.transform()  # For typing
-
-            src_geobox = GeoBox(
-                (src_xda.rio.height, src_xda.rio.width),
-                src_affine,
-                src_xda.rio.crs,
-            )
-
-            if dst_crs == src_xda.rio.crs:
-                how = src_geobox.zoom_to(shape=(height, width))
-            else:
-                how = src_geobox.to_crs(dst_crs, shape=(height, width))
-
-        else:
-            how = GeoBox(
-                (height, width),
-                dst_transform,
-                dst_crs,
-            )
-    else:
-        how = dst_crs
-
-    # Issues https://github.com/opendatacube/odc-geo/issues/236
-    LOGGER.debug("src_xda.odc.reproject")
-    reprojected_xda = src_xda.odc.reproject(
-        how=how,
-        resolution=pixel_size,
-        resampling=resampling,
-        dst_nodata=nodata,
-        num_threads=num_threads,
-        dtype=src_xda.dtype,
-        anchor="floating",  # << closest option to what rioxarray does
-        XSCALE=None,
-        YSCALE=None,  # << turn off GDAL warp work-arounds (like rioxarray)
-        **kwargs,
-    )
-
-    # Set nodata in rioxr's way and remove odc.geo nodata in attributes
-    reprojected_xda.attrs.pop("nodata", None)
-
-    # Set back dimensions with initial names (y, x)
-    odc_dims = reprojected_xda.odc.spatial_dims
-    rio_dims = src_xda.odc.spatial_dims
-    if odc_dims != rio_dims:
-        reprojected_xda = reprojected_xda.rename(
-            {
-                odc_dim: rio_dim
-                for odc_dim, rio_dim in zip(odc_dims, rio_dims, strict=True)
-            }
-        )
-
-    return reprojected_xda
-
-
-def __reproject_rioxarray(
-    src_xda: xr.DataArray,
-    pixel_size: float = None,
-    shape: tuple = None,
-    resampling: Resampling = Resampling.bilinear,
-    dst_crs: CRS = None,
-    dst_transform: Affine = None,
-    nodata: float = None,
-    num_threads: int = None,
-    **kwargs,
-):
-    """Wrapper around rioxarray's reproject function."""
-    if dask.is_chunked(src_xda):
-        LOGGER.warning(
-            "You chose to reproject your chunked data without dask. Computing it before reprojecting."
-        )
-        src_xda = src_xda.compute()
-
-    LOGGER.debug("src_xda.rio.reproject")
-    reprojected_xda = src_xda.rio.reproject(
-        dst_crs=dst_crs,
-        resolution=pixel_size,
-        shape=shape,
-        transform=dst_transform,
-        resampling=resampling,
-        nodata=nodata,
-        num_threads=num_threads,
-        dtype=src_xda.dtype,
-        **kwargs,
-    )
-
-    return reprojected_xda
-
-
-def _reproject_rpcs(
-    src_xda: xr.DataArray,
-    rpcs: rpc.RPC,
-    dem_path: str,
-    pixel_size: float = None,
-    shape: tuple = None,
-    resampling: Resampling = Resampling.bilinear,
-    dst_crs: CRS = None,
-    nodata: float = None,
-    num_threads: int = None,
-    name: str = None,
-    extent: gpd.GeoDataFrame = None,
-    caching_folder: AnyPathStrType = None,
-    vcrs: str | int = None,
-    **kwargs,
-) -> xr.DataArray:
-    """
-    Reproject using RPCs (cannot use another pixel size than src to ensure RPCs are valid).
-    Using rioxarray's reproject method, with a fallback onto rasterio for old versions of rioxarray (and Python 3.9).
-
-    .. WARNING::
-        RPC reprojection is not daskified yet. See https://github.com/opendatacube/odc-geo/issues/193
-
-    .. WARNING::
-       Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
-
-    Args:
-        src_xda (xr.DataArray): Source DataArray to be reprojected. Will be computed if needed.
-        rpcs (rpc.RPC): Corresponding RPCs
-        dem_path (str): Path to the DEM that will be used to reproject. Cloud-stored DEM cannot be used as is. They will be cached and then use. Performance can be affected.
-        pixel_size (float): Destination pixel size in the dst CRS. If None, using the default one computed from the reprojection.
-        shape (tuple): Shape of the destination raster. If None, using the default one computed from the reprojection. Superseeds pixel_size.
-        resampling (Resampling): Resampling method
-        dst_crs (CRS): Destination CRS. If None, the source CRS will be used.
-        nodata (float): Nodata to use
-        num_threads (int): Number of threads to use. If None, use the number given by perf.get_max_cores
-        name (str): Name of the reprojected DataArray
-        extent (gpd.GeoDataFrame): Extent used to cache the DEM if needed. If not needed, caching the whole DEM.
-        caching_folder (AnyPathStrType): Folder where to cache the DEM if needed. If not provided, a temporary folder will be used.
-        vcrs (str | int): Vertical CRS to use. "Ellipsoid", "EGM08", "EGM96" or EPSG code
-        **kwargs: Other arguments, mainly for reprojection itself and writing ('dtype', 'tags', 'predictor', 'driver')
-
-    Returns:
-        xr.DataArray: Reprojected DataArray
-    """
-    try:
-        import xdem  # noqa
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "RPC reprojection requires the 'xdem' package to ensure vertical CRS validity."
-        ) from ex
-
-    # Convert to Paths
-    dem_path = AnyPath(dem_path)
-
-    # Manage caching folder if needed
-    tmp_caching_folder = None
-    if caching_folder is not None:
-        caching_folder = AnyPath(caching_folder)
-    else:
-        tmp_caching_folder = TemporaryDirectory()
-        caching_folder = AnyPath(tmp_caching_folder.name)
-
-    # Get src crs (check that)
-    src_crs = src_xda.rio.crs
-    if not src_crs:
-        # RPCs are always in 4326 by convention
-        # https://rasterio.readthedocs.io/en/latest/topics/reproject.html#reprojecting-with-other-georeferencing-metadata
-        src_crs = EPSG_4326
-
-        # CRS has to be set for rioxarray
-        src_xda.rio.write_crs(src_crs, inplace=True)
-
-    # RPC_DEM doesn't work with cloud-based DEM
-    dem_path = __preprocess_dem(dem_path, extent, caching_folder, vcrs, **kwargs)
-
-    # Update GDAL parameters
-    kwargs = __rpc_gdal_options(dem_path, kwargs)
-
-    ####
-    # Daskified reproject doesn't seem to work with RPC
-    # See https://github.com/opendatacube/odc-geo/issues/193
-    ####
-    # Manage chunked data (function not daskified yet)
-    if dask.is_chunked(src_xda):
-        LOGGER.warning(
-            "Reprojection with RPCs doesn't work with Dask. Computing the raster."
-        )
-        src_xda = src_xda.compute()
-
-    # Reproject with rioxarray
-    # Seems to handle the resolution well on the contrary to rasterio's reproject...
-    try:
-        reprojected_xda = src_xda.rio.reproject(
-            dst_crs=dst_crs,
-            resolution=pixel_size,
-            shape=shape,
-            resampling=resampling,
-            nodata=nodata,
-            num_threads=num_threads,
-            rpcs=rpcs,
-            dtype=src_xda.dtype,
-            **kwargs,
-        )
-
-    # Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
-    # https://github.com/corteva/rioxarray/issues/844
-    except ValueError as ex:  # pragma : no cover
-        LOGGER.warning(ex)
-        reprojected_xda = __reproject_rpc_fallback_rio(
-            src_xda=src_xda,
-            rpcs=rpcs,
-            src_crs=src_crs,
-            dst_crs=dst_crs,
-            pixel_size=pixel_size,
-            shape=shape,
-            num_threads=num_threads,
-            resampling=resampling,
-            caching_folder=caching_folder,
-            nodata=nodata,
-            **kwargs,
-        )
 
     if tmp_caching_folder is not None:
         tmp_caching_folder.cleanup()
@@ -2909,7 +2297,8 @@ def __preprocess_dem(
         if not windowed_dem_path.is_file():
             LOGGER.debug("Subset the DEM to the extent of your data")
             write(
-                read(dem_path, window=src_extent),
+                # Don't chunk on reading if it's to write on disk directly
+                read(dem_path, window=src_extent, chunks=None),
                 windowed_dem_path,
                 dtype=np.float32,
                 driver="GTiff",
@@ -2958,7 +2347,8 @@ def __preprocess_dem(
             )
 
             write(
-                read(ellipsoid_dem_path, window=src_extent),
+                # Don't chunk on reading if it's to write on disk directly
+                read(ellipsoid_dem_path, window=src_extent, chunks=None),
                 cached_dem_path,
                 dtype=np.float32,
                 driver="GTiff",
@@ -2970,7 +2360,7 @@ def __preprocess_dem(
     return ellipsoid_dem_path
 
 
-def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
+def __rpc_gdal_options(dem_path: AnyPathStrType):
     """
     Add RPC-specific option to GDAL kwargs (topp be passed to rioxarray of rasterio)
 
@@ -2987,12 +2377,10 @@ def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
     # https://xdem.readthedocs.io/en/stable/vertical_ref.html
 
     # Set RPC options
-    kwargs.update(
-        {
-            "RPC_DEM": str(dem_path),
-            "BIGTIFF": "IF_NEEDED",
-        }
-    )
+    transformer_options = {
+        "RPC_DEM": str(dem_path),
+        "BIGTIFF": "IF_NEEDED",
+    }
     # https://gis.stackexchange.com/questions/328366/gdalwarp-orthorectification-worldview-3-not-using-rpc-projection-properly (says it needs 'error threshold = 0')
     # It seems fixed by default for RPC, i.e. from gdalwarp: https://gdal.org/en/stable/programs/gdalwarp.html#cmdoption-gdalwarp-et
     # Error threshold for transformation approximation, expressed as a number of source pixels.
@@ -3000,11 +2388,13 @@ def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
     # We are using RPC_DEM so it should be fine
 
     # DEM nodata
-    with rasterio.open(dem_path) as src:
+    import rasterio
+
+    with rasterio.open(str(dem_path)) as src:
         dem_nodata = src.nodata
 
     if dem_nodata is not None:
-        kwargs.update({"RPC_DEM_MISSING_VALUE": dem_nodata})
+        transformer_options.update({"RPC_DEM_MISSING_VALUE": dem_nodata})
 
     # OSR_USE_ETMERC:
     # Warning 1: OSR_USE_ETMERC is a legacy configuration option, which now has only effect when set to NO (YES is the default). Use OSR_USE_APPROX_TMERC=YES instead
@@ -3017,81 +2407,4 @@ def __rpc_gdal_options(dem_path: AnyPathStrType, kwargs):
     # Other threads found on RPC reprojection
     # https://gis.stackexchange.com/questions/456358/run-gdalwarp-to-rectify-a-raster-rpc-embedded-with-dem-but-got-error-too-many
 
-    return kwargs
-
-
-def __reproject_rpc_fallback_rio(  # pragma: no cover
-    src_xda,
-    rpcs,
-    src_crs,
-    dst_crs,
-    pixel_size: float = None,
-    shape: tuple = None,
-    nodata: float = None,
-    num_threads: int = None,
-    resampling: Resampling = Resampling.bilinear,
-    caching_folder: AnyPathStrType = None,
-    **kwargs,
-) -> xr.DataArray:
-    """
-    Legacy with rasterio directly: rioxarray is bugged with RPCs and Python 3.9
-    https://github.com/corteva/rioxarray/issues/844
-
-    Returns:
-        xr.DataArray: Reprojected array
-
-    """
-    dst_transform = None
-    if shape is not None:
-        from rasterio.warp import calculate_default_transform
-
-        dst_transform = calculate_default_transform(
-            src_crs,
-            dst_crs,
-            width=src_xda.rio.width,
-            height=src_xda.rio.height,
-            rpcs=rpcs,
-            dst_width=shape[0],
-            dst_height=shape[1],
-            # **kwargs
-        )
-        pixel_size = None
-
-    if nodata is None:
-        nodata = get_nodata_value_from_xr(src_xda)
-    arr = src_xda.fillna(nodata) if nodata is not None else src_xda
-
-    # WARNING: may not give exact output pixel size
-    out_arr, dst_transform = warp.reproject(
-        arr.data,
-        rpcs=rpcs,
-        src_crs=src_crs,
-        src_nodata=nodata,
-        dst_transform=dst_transform,
-        dst_crs=dst_crs,
-        dst_resolution=pixel_size,
-        dst_nodata=nodata,
-        num_threads=num_threads,
-        resampling=resampling,
-        **kwargs,
-    )
-    # Get dims
-    count, height, width = out_arr.shape
-
-    # Update metadata
-    meta = {
-        "driver": "GTiff",
-        "dtype": src_xda.dtype,
-        "nodata": nodata,
-        "width": width,
-        "height": height,
-        "count": count,
-        "crs": dst_crs,
-        "transform": dst_transform,
-        "compress": "lzw",
-    }
-    rio_path = caching_folder / "tmp_rio.tif"
-    rasters_rio.write(out_arr, meta, rio_path, nodata=nodata)  # Write rasterio
-    return read(
-        rio_path, chunks=None
-    )  # Load in memory because caching_folder will be removed
+    return transformer_options

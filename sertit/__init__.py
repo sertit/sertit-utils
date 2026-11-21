@@ -25,6 +25,8 @@ try:
 except ImportError:
     pass
 
+BACKEND = "GeoUtils"
+
 # flake8: noqa
 from .__meta__ import (
     __version__,

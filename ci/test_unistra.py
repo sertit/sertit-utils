@@ -99,9 +99,20 @@ def core_fct():
         assert raster_path.is_file()
         assert rasterio.open(str(raster_path)).count == 1
         assert rasters.read(raster_path).rio.count == 1
+
     # Test get_geodatastore without s3
-    with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):
-        assert str(get_geodatastore()).endswith("BASES_DE_DONNEES")
+    try:
+        with tempenv.TemporaryEnvironment({s3.USE_S3_STORAGE: "0"}):
+            assert str(get_geodatastore()).endswith("BASES_DE_DONNEES")
+    except NotADirectoryError:
+        import sys
+
+        if sys.platform == "win32":
+            import pytest
+
+            pytest.xfail(
+                reason="'geodatastore' is only accessible trough s3 on Windows."
+            )
 
 
 @s3_env

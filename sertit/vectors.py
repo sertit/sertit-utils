@@ -19,6 +19,8 @@ Vectors tools
 You can use this only if you have installed sertit[full] or sertit[vectors]
 """
 
+from __future__ import annotations
+
 import contextlib
 import logging
 import os
@@ -31,16 +33,29 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
 from cloudpathlib.exceptions import AnyPathTypeError
-from shapely import Polygon, wkt
-from shapely.geometry.base import BaseGeometry
+
+try:
+    import geopandas as gpd
+    from shapely import Polygon, wkt
+    from shapely.geometry.base import BaseGeometry
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'geopandas' to use the 'vectors' package."
+    ) from ex
 
 from sertit import AnyPath, files, geometry, logs, misc, path, strings
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyPathType, AnyVectorType
+
+try:
+    import geoutils as gu
+except ModuleNotFoundError as ex:  # pragma: no cover
+    raise ModuleNotFoundError(
+        "Please install 'geoutils' to use the 'vectors' package."
+    ) from ex
 
 LOGGER = logging.getLogger(SU_NAME)
 
@@ -83,9 +98,14 @@ if use_pyogrio():
     CPLE_AppDefinedError = Exception
 else:  # pragma: no cover
     gpd.options.io_engine = "fiona"
-    from fiona._err import CPLE_AppDefinedError
-    from fiona.errors import DriverError as DataSourceError
-    from fiona.errors import UnsupportedGeometryTypeError as GEOSException
+    try:
+        from fiona._err import CPLE_AppDefinedError
+        from fiona.errors import DriverError as DataSourceError
+        from fiona.errors import UnsupportedGeometryTypeError as GEOSException
+    except ModuleNotFoundError as ex:
+        raise ModuleNotFoundError(
+            "Please install 'pyogrio' or 'fiona' to use the 'vectors' package."
+        ) from ex
 
 # Handle errors changing from fiona to pyogrio
 DataSourceError = DataSourceError
@@ -93,7 +113,7 @@ GEOSException = GEOSException
 CPLE_AppDefinedError = CPLE_AppDefinedError
 
 
-def to_utm_crs(lon: float, lat: float) -> "CRS":  # noqa: F821
+def to_utm_crs(lon: float, lat: float) -> CRS:  # noqa: F821
     """
     Find the EPSG code of the UTM CRS from a lon/lat in WGS84.
 
@@ -175,11 +195,12 @@ def set_kml_driver() -> None:
     Only useful with :code:`geopandas<1.0.0` or with :code:`fiona`'s engine
 
     Example:
+        >>> import geoutils as gu
         >>> path = "path/to/kml.kml"
-        >>> gpd.read_file(path, engine="fiona")
+        >>> gu.open_vector(path, engine="fiona")
         fiona.errors.DriverError: unsupported driver: 'LIBKML'
         >>> set_kml_driver()
-        >>> gpd.read_file(path, engine="fiona")
+        >>> gu.open_vector(path, engine="fiona")
                        Name  ...                                           geometry
         0  CC679_new_AOI2_3  ...  POLYGON Z ((45.03532 32.49765 0.00000, 46.1947...
         [1 rows x 12 columns]
@@ -405,7 +426,7 @@ def read(
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
         window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
             In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
-        **kwargs: Additional arguments used in gpd.read_file.
+        **kwargs: Additional arguments used in gu.open_vector.
             You can also give :code:`file_list`, the list of files of the archive to get the vector from, as this operation is expensive when done with large archives stored on the cloud.
             You can also set :code:`compute_sindex=False` to avoid computing the spatial index of the vector.
 
@@ -528,6 +549,22 @@ def read(
     return vect
 
 
+def _open_vector(gpd_vect_path: str, **kwargs) -> gpd.GeoDataFrame:
+    """
+    Open a vector with geoutils, changing the default behaviour of
+    :code:`geoutils.open_vector` from :code:`load=False` to :code:`load=True`
+    (i.e. returning the data as a :code:`GeoDataFrame` instead of an open vector resource).
+
+    Args:
+        gpd_vect_path (str): Resolved vector path (readable by geopandas)
+        **kwargs: Other arguments passed to :code:`geoutils.open_vector`
+
+    Returns:
+        gpd.GeoDataFrame: The opened vector
+    """
+    return gu.open_vector(gpd_vect_path, load=True, **kwargs)
+
+
 def _read_vector_core(
     gpd_vect_path: str, raw_path: AnyPathStrType, arch_path: str, crs, **kwargs
 ):
@@ -558,7 +595,7 @@ def _read_vector_core(
         if gpd_vect_path.endswith(".kml") or gpd_vect_path.endswith(".kmz"):
             vect = _read_kml(gpd_vect_path, raw_path, arch_path, tmp_dir, **kwargs)
         else:
-            vect = gpd.read_file(gpd_vect_path, **kwargs)
+            vect = _open_vector(gpd_vect_path, **kwargs)
 
         # Manage naive geometries
         try:
@@ -590,7 +627,7 @@ def _read_vector_core(
             # Open as geojson
             tmp_dir = tempfile.TemporaryDirectory()
             vect_path_gj = ogr2gpkg(raw_path, tmp_dir.name, arch_path)
-            vect = gpd.read_file(vect_path_gj, **kwargs)
+            vect = _open_vector(vect_path_gj, **kwargs)
             vect.crs = None
         else:  # pragma: no cover
             # Do not print warning for null layer
@@ -620,7 +657,7 @@ def _read_kml(
         raw_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         arch_path: If archived vector, path to the vector file inside the archive (from the root of the archive)
         tmp_dir: Temporary directory
-        **kwargs: Additional arguments used in gpd.read_file
+        **kwargs: Additional arguments used in gu.open_vector
 
     Returns:
         gpd.GeoDataFrame: KML as a geopandas GeoDataFrame
@@ -646,7 +683,7 @@ def _read_kml(
 
             for layer in pyogrio.list_layers(gpd_vect_path):
                 try:
-                    vect_layer = gpd.read_file(
+                    vect_layer = _open_vector(
                         gpd_vect_path,
                         driver=driver,
                         layer=layer[0],
@@ -675,7 +712,7 @@ def _read_kml(
         # https://gis.stackexchange.com/questions/328525/geopandas-read-file-only-reading-first-part-of-kml/328554
         for layer in fiona.listlayers(gpd_vect_path):
             try:
-                vect_layer = gpd.read_file(
+                vect_layer = _open_vector(
                     gpd_vect_path, driver=driver, layer=layer, engine=engine, **kwargs
                 )
                 if not vect_layer.empty:  # pragma: no cover
@@ -699,7 +736,7 @@ def _read_kml(
                 tmp_dir = tempfile.TemporaryDirectory()
 
             vect_path_gj = ogr2gpkg(raw_path, tmp_dir.name, arch_path)
-            vect = gpd.read_file(vect_path_gj, **kwargs)
+            vect = _open_vector(vect_path_gj, **kwargs)
         else:  # pragma: no cover
             # Try reading it in a basic manner
             LOGGER.warning(
@@ -707,7 +744,7 @@ def _read_kml(
                 "(KML files can contain unsupported data structures, nested folders etc.)"
             )
             try:
-                vect = gpd.read_file(gpd_vect_path, **kwargs)
+                vect = _open_vector(gpd_vect_path, **kwargs)
             except Exception:
                 # Force set CRS to empty vector
                 vect.set_crs(EPSG_4326, inplace=True, allow_override=True)

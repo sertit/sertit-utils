@@ -17,6 +17,8 @@
 CI tools
 """
 
+from __future__ import annotations
+
 import contextlib
 import filecmp
 import logging
@@ -24,14 +26,20 @@ import pprint
 from doctest import Example
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
-from geopandas.testing import assert_geoseries_equal
 from lxml import etree, html
 from lxml.doctestcompare import LHTMLOutputChecker, LXMLOutputChecker
-from shapely.testing import assert_geometries_equal
 
-from sertit import AnyPath, dask, files, rasters, s3
+try:
+    import geopandas as gpd
+    from geopandas.testing import assert_geoseries_equal
+    from shapely.testing import assert_geometries_equal
+except ModuleNotFoundError:  # pragma: no cover
+    gpd = None
+    assert_geoseries_equal = None
+    assert_geometries_equal = None
+
+from sertit import AnyPath, dask, files, rasters, s3, utils
 from sertit.logs import SU_NAME
 from sertit.types import AnyPathStrType, AnyVectorType, AnyXrDataStructure
 
@@ -64,6 +72,11 @@ def assert_val(val_1: Any, val_2: Any, field: str) -> None:
         with contextlib.suppress(TypeError):
             if np.isnan(val_1).all() or np.isnan(val_2).all():
                 assert np.isnan(val_1).all() and np.isnan(val_2).all(), desc
+                test_done = True
+
+        if not test_done and isinstance(val_1, (str, type)):
+            with contextlib.suppress(Exception):
+                assert np.dtype(val_1) == np.dtype(val_2), desc
                 test_done = True
 
         if not test_done:
@@ -134,6 +147,7 @@ def assert_meta(meta_1: dict, meta_2: dict, tf_precision: float = 1e-9):
     ), f"transform incoherent:\n{meta_1['transform']}\n!=\n{meta_2['transform']}"
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     """
     Assert that two rasters are equal.
@@ -149,12 +163,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         >>> assert_raster_equal(path, path)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -164,6 +173,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
         np.testing.assert_array_equal(ds_1.read(), ds_2.read())
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_almost_equal(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=7
 ) -> None:
@@ -186,12 +196,7 @@ def assert_raster_almost_equal(
         >>> assert_raster_almost_equal(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_almost_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -212,8 +217,8 @@ def assert_raster_almost_equal(
                 marr_1 = np.where(marr_1.mask, np.nan, marr_1)
                 marr_2 = np.where(marr_2.mask, np.nan, marr_2)
                 np.testing.assert_array_almost_equal(marr_1, marr_2, decimal=decimal)
-            except AssertionError:
-                text = f"Band {i + 1}{desc} failed"
+            except AssertionError as ex:
+                text = f"Band {i + 1}{desc} failed; {ex}"
                 errors.append(text)
                 LOGGER.error(text, exc_info=True)
 
@@ -221,6 +226,7 @@ def assert_raster_almost_equal(
             raise AssertionError(errors)
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_almost_equal_magnitude(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=2
 ) -> None:
@@ -245,12 +251,7 @@ def assert_raster_almost_equal_magnitude(
         >>> assert_raster_almost_equal_magnitude(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_almost_equal."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -323,6 +324,7 @@ def assert_raster_almost_equal_magnitude(
             raise AssertionError(errors)
 
 
+@utils.requires(("rasterio", "rasters"))
 def assert_raster_max_mismatch(
     path_1: AnyPathStrType,
     path_2: AnyPathStrType,
@@ -348,12 +350,7 @@ def assert_raster_max_mismatch(
         >>> assert_raster_max_mismatch(path, path2)
         >>> # Raises AssertionError if sth goes wrong
     """
-    try:
-        import rasterio
-    except ModuleNotFoundError as ex:  # pragma: no cover
-        raise ModuleNotFoundError(
-            "Please install 'rasterio' to use assert_raster_max_mismatch."
-        ) from ex
+    import rasterio
 
     with rasterio.open(str(path_1)) as ds_1, rasterio.open(str(path_2)) as ds_2:
         # Metadata
@@ -466,6 +463,7 @@ def _prepare_geoms(
     return geom_1, geom_2
 
 
+@utils.requires(("geopandas", "vectors"))
 def assert_geom_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
@@ -501,6 +499,7 @@ def assert_geom_equal(
     assert_geoseries_equal(geom_1.geometry, geom_2.geometry, normalize=True)
 
 
+@utils.requires(("geopandas", "vectors"))
 def assert_geom_almost_equal(
     geom_1: AnyVectorType,
     geom_2: AnyVectorType,
@@ -669,10 +668,48 @@ def assert_xr_encoding_attrs(
         xda_2 (AnyXrDataStructure): Second xarray
         unchecked_attr (list | str): Don't check this list of attributes
     """
+
+    def __check_key(dict_base, dict_other, key, unchecked_attr, other_dict_name):
+        try:
+            if not key.startswith("_") and key not in unchecked_attr:
+                base_val = dict_base[key]
+                other_val = dict_other[key]
+
+                # Remove warpedVRT from source, i.e.:
+                # AssertionError: source is different!
+                # dict_base[key]='s3://sertit-ci/sertit_utils/DATA/rasters/raster.tif'
+                # != dict_other[key]='WarpedVRT(s3://sertit-ci/sertit_utils/DATA/rasters/raster.tif)'
+                if key == "source":
+                    if "WarpedVRT" in base_val:
+                        base_val = base_val.replace("WarpedVRT", "")[1:-1]
+                    if "WarpedVRT" in other_val:
+                        other_val = other_val.replace("WarpedVRT", "")[1:-1]
+
+                assert base_val == other_val, (
+                    f"{key} is different! {dict_base[key]=} != {dict_other[key]=}"
+                )
+        except KeyError as exc:
+            raise AssertionError(
+                f"Missing {exc} key in {other_dict_name}. Value should be: {dict_base[key]}."
+            ) from exc
+
     if unchecked_attr is None:
         unchecked_attr = []
     elif not isinstance(unchecked_attr, list):
         unchecked_attr = [unchecked_attr]
+
+    if dask.is_chunked(xda_1) or dask.is_computed(xda_2):
+        unchecked_attr.append("preferred_chunks")
+
+    try:
+        name_1 = xda_1.attrs.get("source", xda_1.name)
+    except AttributeError:
+        name_1 = "Dataset 1"
+
+    try:
+        name_2 = xda_2.attrs.get("source", xda_2.name)
+    except AttributeError:
+        name_1 = "Dataset 2"
 
     # Attributes
     try:
@@ -681,22 +718,23 @@ def assert_xr_encoding_attrs(
         )
         assert xda_1.attrs == xda_2.attrs
     except AssertionError:
-        try:
-            for key, _ in xda_1.attrs.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.attrs[key] == xda_2.attrs[key], (
-                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-                    )
+        for key, _ in xda_1.attrs.items():
+            __check_key(
+                dict_base=xda_1.attrs,
+                dict_other=xda_2.attrs,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_2}'s attributes",
+            )
 
-            for key, _ in xda_2.attrs.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.attrs[key] == xda_2.attrs[key], (
-                        f"{xda_1.attrs[key]=} != {xda_2.attrs[key]=}"
-                    )
-        except KeyError as exc:
-            raise AssertionError(
-                f"Missing '{exc}' in attributes of one DataArray/Dataset"
-            ) from exc
+        for key, _ in xda_2.attrs.items():
+            __check_key(
+                dict_base=xda_2.attrs,
+                dict_other=xda_1.attrs,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_1}'s attributes",
+            )
 
     # Encoding
     try:
@@ -705,22 +743,23 @@ def assert_xr_encoding_attrs(
         )
         assert xda_1.encoding == xda_2.encoding
     except AssertionError:
-        try:
-            for key, _ in xda_1.encoding.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.encoding[key] == xda_2.encoding[key], (
-                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-                    )
+        for key, _ in xda_1.encoding.items():
+            __check_key(
+                dict_base=xda_1.encoding,
+                dict_other=xda_2.encoding,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_2}'s encoding",
+            )
 
-            for key, _ in xda_2.encoding.items():
-                if not key.startswith("_") and key not in unchecked_attr:
-                    assert xda_1.encoding[key] == xda_2.encoding[key], (
-                        f"{xda_1.encoding[key]=} != {xda_2.encoding[key]=}"
-                    )
-        except KeyError as exc:
-            raise AssertionError(
-                f"Missing '{exc}' in encoding of one DataArray/Dataset"
-            ) from exc
+        for key, _ in xda_2.encoding.items():
+            __check_key(
+                dict_base=xda_2.encoding,
+                dict_other=xda_1.encoding,
+                key=key,
+                unchecked_attr=unchecked_attr,
+                other_dict_name=f"{name_1}'s encoding",
+            )
 
 
 def reduce_verbosity(other_loggers: list = None) -> None:
