@@ -538,10 +538,7 @@ def find_files(
         paths = paths[:max_nof_files]
 
     LOGGER.debug(
-        "Paths found in %s for filenames %s:\n%s",
-        root_paths,
-        names,
-        pprint.pformat(paths),
+        f"Paths found in {root_paths} for filenames {names}:\n{pprint.pformat(paths)}"
     )
 
     # Get str if needed
@@ -626,10 +623,8 @@ def get_file_in_dir(
     else:
         if len(file_list) > 1:
             LOGGER.warning(
-                "More than one file corresponding to the pattern %s has been found here %s. "
-                "Only the first item will be returned.",
-                glob_pattern,
-                directory,
+                f"More than one file corresponding to the pattern {glob_pattern} has been found here {directory}. "
+                f"Only the first item will be returned."
             )
         file = file_list[0]
         if filename_only:

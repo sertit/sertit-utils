@@ -281,7 +281,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Po
     if as_str:
         aoi = wkt.dumps(aoi)
 
-    LOGGER.debug("Specified AOI in WKT: %s", aoi)
+    LOGGER.debug(f"Specified AOI in WKT: {aoi}")
     return aoi
 
 

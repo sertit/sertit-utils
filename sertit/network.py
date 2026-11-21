@@ -119,20 +119,18 @@ def exponential_backoff(
     try:
         return network_request()
     except Exception as ex:
-        LOGGER.error("Action '%s' failed with exception: %s", desc, ex, exc_info=True)
+        LOGGER.error(f"Action '{desc}' failed with exception: {ex}", exc_info=True)
 
     for i in range(real_max_tries - 2):  # Avoids infinite loop
         random_scale = rng.randint(0, 2**i - 1)
         curr_wait_time = wait_time_slot * increase_factor**random_scale
 
-        LOGGER.info("Retrying action %s in %s seconds...", desc, curr_wait_time)
+        LOGGER.info(f"Retrying action {desc} in {curr_wait_time} seconds...")
 
         cumulated_wait_time += curr_wait_time
         if cumulated_wait_time > max_wait:
             LOGGER.error(
-                "Waited %s seconds : Maximum wait time (%s) reached\n !!! Aborting !!!",
-                cumulated_wait_time,
-                max_wait,
+                f"Waited {cumulated_wait_time} seconds : Maximum wait time ({max_wait}) reached\n !!! Aborting !!!"
             )
             raise TimeoutError(
                 f"About to exceed maximum wait time {max_wait} for action {desc}"
@@ -144,9 +142,7 @@ def exponential_backoff(
         try:
             return network_request()
         except Exception as ex:
-            LOGGER.error(
-                "Action '%s' failed with exception: %s", desc, ex, exc_info=True
-            )
+            LOGGER.error(f"Action '{desc}' failed with exception: {ex}", exc_info=True)
 
     # Final blind try and hope for the best
     return network_request()

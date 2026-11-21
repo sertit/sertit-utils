@@ -272,9 +272,7 @@ def strip_kwargs(function: Callable) -> Callable:
                 if key is None:
                     raise
                 LOGGER.warning(
-                    "'%s' does not accept '%s'. It will be ignored.",
-                    function.__name__,
-                    key,
+                    f"'{function.__name__}' does not accept '{key}'. It will be ignored."
                 )
                 del kwargs[key]
 
