@@ -1441,7 +1441,7 @@ def merge_vrt(
     merged_path = AnyPath(merged_path)
 
     # 'crs' is an internal option (used for the intermediate warping), not a CLI option
-    first_crs = kwargs.pop("crs")
+    first_crs = kwargs.pop("crs", None)
     for i, crs_path in enumerate(crs_paths_cp):
         crs_path = AnyPath(crs_path)
         # Download file if VRT is needed
