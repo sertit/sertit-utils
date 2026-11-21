@@ -18,10 +18,13 @@
 import logging
 import os
 import pprint
+import re
 import subprocess
 import sys
+from collections.abc import Callable
 from contextlib import contextmanager
 from enum import Enum, unique
+from functools import wraps
 from typing import Any
 
 from packaging.version import Version
@@ -220,6 +223,62 @@ def prune_dict(dict_to_prune: dict, keys_to_prune: list) -> dict:
         dict: Dictionary with pruned keys
     """
     return {k: v for k, v in dict_to_prune.items() if k not in keys_to_prune}
+
+
+# Error messages used by engines to reject a keyword argument by name:
+#   TypeError  - "f() got an unexpected keyword argument 'name'"
+#   ValueError - "unrecognized option 'NAME' for driver 'DRIVER'" (pyogrio)
+_REJECTED_KWARG_RE = re.compile(
+    r"got an unexpected keyword argument '(\w+)'"
+    r"|unrecognized option '(\w+)' for driver"
+)
+
+
+def strip_kwargs(function: Callable) -> Callable:
+    """
+    Decorator: keyword arguments the engine does not accept are warned and dropped.
+
+    When the engine rejects a keyword argument by name through its error message,
+    e.g.:
+    - :code:`TypeError: f() got an unexpected keyword argument 'name'`
+    - :code:`ValueError: unrecognized option 'NAME' for driver 'DRIVER'` (pyogrio)
+
+    the option is warned, dropped and the function is re-invoked without it.
+    Engines that do not raise on unknown options (e.g. GDAL) cannot be handled
+    this way: their unsupported options are reported by the engine itself.
+
+    Any other error is propagated as is.
+
+    Args:
+        function (Callable): Function to decorate
+
+    Returns:
+        Callable: Decorated function
+    """
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        for _ in range(len(kwargs) + 1):
+            try:
+                return function(*args, **kwargs)
+            except (TypeError, ValueError) as exc:
+                match = _REJECTED_KWARG_RE.search(str(exc))
+                rejected = (match.group(1) or match.group(2)).lower() if match else None
+                key = (
+                    next((k for k in kwargs if k.lower() == rejected), None)
+                    if rejected
+                    else None
+                )
+                if key is None:
+                    raise
+                LOGGER.warning(
+                    "'%s' does not accept '%s'. It will be ignored.",
+                    function.__name__,
+                    key,
+                )
+                del kwargs[key]
+
+    return wrapper
 
 
 def list_to_dict(dict_list: list) -> dict:

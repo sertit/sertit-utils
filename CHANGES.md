@@ -13,6 +13,9 @@
 - **ENH: Factorise all geospatial optional deps in `sertit[geo]` and make geopandas optional** ([#88](https://github.com/sertit/sertit-utils/issues/88))
 - **ENH: Factorise optional requirements through a decorator**
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
+- FIX: Don't propagate kwargs to functions that cannot handle them ([#71](https://github.com/sertit/sertit-utils/issues/71))
+    - New `misc.strip_kwargs` decorator: keyword arguments rejected by the engine are warned and dropped (instead of raising)
+    - Options of the GDAL and pyogrio engines are passed through as-is: unsupported options are warned by the engine itself, as in the rest of the ecosystem
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
 - DOC: Update `rioxarray`'s home repo
 - CI: Test correctly minimal and optional deps

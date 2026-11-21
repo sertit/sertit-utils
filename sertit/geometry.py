@@ -390,6 +390,7 @@ def fill_polygon_holes(
     return gpd_results
 
 
+@misc.strip_kwargs
 def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     """
     :code:`shapely.line_merge` algorithm applied to a GeoDataFrame.
@@ -398,6 +399,8 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
 
     Args:
         lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
+        **kwargs: Other :code:`shapely.line_merge` arguments
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
@@ -421,6 +424,7 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
         0  POLYGON ((491460.248 5616687.073, 491460.248 5...
         0  POLYGON ((491055.017 5616255.823, 491053.998 5...
     """
+    # Options shapely's ufunc doesn't accept are handled by 'strip_kwargs'
     merge_lines = shapely.line_merge(lines.dissolve().geometry.values, **kwargs)
     return gpd.GeoDataFrame(geometry=merge_lines, crs=lines.crs).explode(
         ignore_index=True
@@ -542,7 +546,6 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     Args:
         vector (gpd.GeoDataFrame): Input vector
         buffer_m (int): Buffer size in meters.
-        **kwargs: Other buffer arguments
 
     Returns:
         gpd.GeoDataFrame: Buffered vector
@@ -563,6 +566,7 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
     return vector.vct.buffer_metric(buffer_size=buffer_m)
 
 
+@misc.strip_kwargs
 def nearest_neighbors(
     src_gdf: gpd.GeoDataFrame,
     candidates_gdf: gpd.GeoDataFrame,
@@ -585,7 +589,9 @@ def nearest_neighbors(
         method (str): 'k_neighbors' or 'radius'
         k_neighbors (int): Number of neighbors to be looked for
         radius (float): Radius in which to find the neighbors
-        **kwargs: Other args for the query
+        **kwargs: Other arguments passed to :code:`sklearn.BallTree.query`
+            (if :code:`method='k_neighbors'`) or :code:`sklearn.BallTree.query_radius` (if :code:`method='radius'`).
+            Arguments the query doesn't accept are warned and dropped
 
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
@@ -635,7 +641,8 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
         src_points (list): Source points
         candidates (list): Candidate points
         k_neighbors (int): Number of neighbors to be looked for
-        **kwargs: Other args for the query
+        **kwargs: Other arguments passed to :code:`sklearn.BallTree.query`
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
@@ -646,6 +653,7 @@ def _get_k_nearest(src_points: list, candidates: list, k_neighbors: int, **kwarg
     tree = BallTree(candidates, leaf_size=15)
 
     # Find the closest points and distances
+    # (options the query doesn't accept are handled by 'strip_kwargs')
     closest_dist, closest = tree.query(
         src_points, k=min(k_neighbors, len(candidates)), **kwargs
     )
@@ -665,7 +673,8 @@ def _get_radius_nearest(
         src_points (list): Source points
         candidates (list): Candidate points
         radius (float): Radius for the search
-        **kwargs: Other args for the query
+        **kwargs: Other arguments passed to :code:`sklearn.BallTree.query_radius`
+            Arguments it doesn't accept are warned and dropped
 
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
@@ -680,7 +689,7 @@ def _get_radius_nearest(
         src_points,
         r=radius,
         return_distance=True,
-        **misc.select_dict(kwargs, ["count_only", "sort_results"]),
+        **kwargs,
     )
 
     # Return indices and distances

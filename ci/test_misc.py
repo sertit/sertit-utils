@@ -76,6 +76,66 @@ def test_select_prune_dict():
     ci.assert_val(misc.prune_dict(d, keys), {"d": 4}, "Prune dict")
 
 
+def test_strip_kwargs():
+    """Test the strip_kwargs decorator"""
+    calls = []
+
+    # Engine rejecting a keyword argument with a TypeError (e.g. Python ufunc)
+    @misc.strip_kwargs
+    def engine_type_error(a, **kwargs):
+        calls.append(kwargs.copy())
+        if "bad" in kwargs:
+            raise TypeError(
+                "engine_type_error() got an unexpected keyword argument 'bad'"
+            )
+        return "ok"
+
+    ci.assert_val(engine_type_error(1, bad=0, good=1), "ok", "Strip kwargs (TypeError)")
+    ci.assert_val(
+        calls, [{"bad": 0, "good": 1}, {"good": 1}], "Retry without bad kwarg"
+    )
+
+    # Engine rejecting an option with a ValueError (e.g. pyogrio)
+    calls.clear()
+
+    @misc.strip_kwargs
+    def engine_value_error(path, **kwargs):
+        calls.append(kwargs.copy())
+        if "badopt" in kwargs:
+            # The engine reports the option name in uppercase
+            raise ValueError("unrecognized option 'BADOPT' for driver 'ESRI Shapefile'")
+        return "ok"
+
+    ci.assert_val(
+        engine_value_error("path", badopt=0, good=1),
+        "ok",
+        "Strip kwargs (ValueError, case-insensitive)",
+    )
+    ci.assert_val(
+        calls, [{"badopt": 0, "good": 1}, {"good": 1}], "Retry without bad option"
+    )
+
+    # Any other error is propagated as is
+    @misc.strip_kwargs
+    def engine_div_zero(**kwargs):
+        return 1 / 0
+
+    with pytest.raises(ZeroDivisionError):
+        engine_div_zero(bad=0)
+
+    @misc.strip_kwargs
+    def engine_other_error(**kwargs):
+        raise ValueError("some other error")
+
+    with pytest.raises(ValueError, match="some other error"):
+        engine_other_error(bad=0)
+
+    # Function name is kept by the decorator
+    ci.assert_val(
+        engine_type_error.__name__, "engine_type_error", "Decorator keeps name"
+    )
+
+
 def test_list_dict():
     """Test dict functions"""
     test_list = ["A", "T", "R", "", 3, None, "0"]
