@@ -10,6 +10,7 @@
    - Use `altitude` instead of `zenith` in `rasters.hillshade` to conform to GDAL
    - Remove kwargs in `geometry.buffer`
 - **BREAKING CHANGES**: Drop `rasters.reproject`'s `ortho_path` to better comply with dask workflows (writing parts should be kept outside of functions) ([#27](https://github.com/sertit/sertit-utils/issues/27))
+- **BREAKING CHANGES**: Remove deprecated `UNISTRA_S3_ENPOINT` (with typo)
 - **ENH: Factorise all geospatial optional deps in `sertit[geo]` and make geopandas optional** ([#88](https://github.com/sertit/sertit-utils/issues/88))
 - **ENH: Factorise optional requirements through a decorator**
 - FIX: Better argument handling in `dask.get_or_create_dask_client`
@@ -17,7 +18,8 @@
     - New `misc.strip_kwargs` decorator: keyword arguments rejected by the engine are warned and dropped (instead of raising)
     - Options of the GDAL and pyogrio engines are passed through as-is: unsupported options are warned by the engine itself, as in the rest of the ecosystem
 - FIX: Switch SNAP default log level from `WARNING` to `ERROR`
-- DOC: Various updates and corrections
+- FIX: Fix incorrect behaviour of `convert_none` (did nothing) in `types.make_iterable`
+- DOC: Various updates and corrections ([#30(https://github.com/sertit/sertit-utils/issues/30))
 - CI: Test correctly minimal and optional deps
 - CI: Test dask laziness at function level rather than test level ([#27](https://github.com/sertit/sertit-utils/issues/27))
 - CI: De-duplicate CI files between `rasters` and `rasters_rio`

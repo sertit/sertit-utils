@@ -35,40 +35,37 @@ UNISTRA_S3_ENDPOINT = "s3.unistra.fr"
 Unistra S3 compatible storage endpoint: s3.unistra.fr
 """
 
-UNISTRA_S3_ENPOINT = UNISTRA_S3_ENDPOINT
-# Legacy, to be removed in v2.0
-
 
 def s3_env(*args, **kwargs):
     """
     Create Unistra's S3 compatible storage environment.
 
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
-    #. AWS profile
-    #. AWS environment variable
+    1. AWS profile
+    2. AWS environment variable
 
-    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
-    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
+    The "unistra" profile is first read from X:/SI/Secrets/AWS/config and X:/SI/Secrets/AWS/credentials.
+    If these files do not exist, it falls back to the local files $USER/.aws/config and $USER/.aws/credentials.
 
-    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+    You can use the ready-to-use environments provided by Sertit, or ask for S3 credentials.
 
     Args:
-        function (Callable): Function to decorate
+        *args: Unused
+        **kwargs: Arguments passed to :code:`sertit.s3.s3_env`
 
     Returns:
-        Callable: decorated function
+        Callable: Decorated function
 
     Example:
         >>> from sertit.unistra import s3_env
         >>> from sertit import AnyPath
         >>> @s3_env
-        >>> def file_exists(path: str):
-        >>>     pth = AnyPath(path)
-        >>>     print(pth.exists())
+        ... def file_exists(path: str):
+        ...     pth = AnyPath(path)
+        ...     print(pth.exists())
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
@@ -82,31 +79,30 @@ def s3_env(*args, **kwargs):
 @contextmanager
 def unistra_s3() -> None:
     """
-    Initialize a temporary S3 environment as a context manager, with Unistra endpoint
+    Initialize a temporary S3 environment, as a context manager, with the Unistra endpoint
 
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
-    #. AWS profile "unistra"
-    #. AWS environment variable
+    1. AWS profile "unistra"
+    2. AWS environment variable
 
-    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
-    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
+    The "unistra" profile is first read from X:/SI/Secrets/AWS/config and X:/SI/Secrets/AWS/credentials.
+    If these files do not exist, it falls back to the local files $USER/.aws/config and $USER/.aws/credentials.
 
-    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+    You can use the ready-to-use environments provided by Sertit, or ask for S3 credentials.
 
-    Args:
-        default_endpoint (str):Default Endpoint to look for
+    Yields:
+        None
 
     Example:
         >>> from sertit.unistra import unistra_s3
         >>> from sertit import AnyPath
         >>> def file_exists(path: str):
-        >>>     with unistra_s3():
-        >>>         pth = AnyPath(path)
-        >>>         print(pth.exists())
+        ...     with unistra_s3():
+        ...         pth = AnyPath(path)
+        ...         print(pth.exists())
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
@@ -124,18 +120,20 @@ def define_s3_client():
     """
     Define Unistra's S3 client
 
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
-    #. AWS profile
-    #. AWS environment variable
+    1. AWS profile
+    2. AWS environment variable
 
-    Profile unistra is first read from X:/SI/Secrets/config and X:/SI/Secrets/credentials.
-    If this file does not exist, it fallbacks to local file $USER/.aws/config and $USER/.aws/credentials.
+    The "unistra" profile is first read from X:/SI/Secrets/AWS/config and X:/SI/Secrets/AWS/credentials.
+    If these files do not exist, it falls back to the local files $USER/.aws/config and $USER/.aws/credentials.
 
-    You can use ready-to-use environements provided by the Sertit or asks for s3 credentials.
+    You can use the ready-to-use environments provided by Sertit, or ask for S3 credentials.
+
+    Returns:
+        cloudpathlib.S3Client: The Unistra S3 client, set as the default client
 
     """
     _set_aws_file_path()
@@ -145,32 +143,22 @@ def define_s3_client():
 
 def get_geodatastore() -> AnyPathType:
     """
-    Get database directory.
+    Get the database directory.
 
     If :any:`USE_S3_STORAGE` is set to ``1``, this function returns ``AnyPath("s3://sertit-geodatastore")``.
 
-    If :any:`USE_S3_STORAGE` is set to ``0`` it returns:
+    Otherwise, it returns:
 
-    * ``AnyPath("//ds2/database02/BASES_DE_DONNEES")`` if code is running on Windows
-    * ``AnyPath(/home/ds2_db2/BASE_DE_DONNESS`)`` if code is running in a Docker containers on Windows
+    * ``AnyPath("//ds2/database02/BASES_DE_DONNEES")`` if the code is running on Windows
+    * ``AnyPath("/home/ds2_db2/BASES_DE_DONNEES")`` if the code is running in a Docker container
 
     Returns:
-        AnyPath: Database directory
+        AnyPath: The database directory
 
     Example:
-        Don't set manually ``USE_S3_STORAGE`` with ``os.environ`` !
-
         >>> from sertit.unistra import get_geodatastore
-        >>> import os
-        >>> os.environ["USE_S3_STORAGE"] = "1"
         >>> print(get_geodatastore())
         s3://sertit-geodatastore
-
-        >>> from sertit.unistra import get_geodatastore
-        >>> import os
-        >>> os.environ["USE_S3_STORAGE"] = "0"
-        >>> print(get_geodatastore())
-        //ds2/database02/BASES_DE_DONNEES/GLOBAL
     """
     if int(os.getenv(s3.USE_S3_STORAGE, 0)):
         # Define S3 client for S3 paths
@@ -190,9 +178,10 @@ def get_geodatastore() -> AnyPathType:
 
 def does_unistra_profile_exist() -> bool:
     """
-    This function checks if "unistra" AWS profile exists.
+    This function checks if the "unistra" AWS profile exists.
 
-    Returns: True if "unistra" AWS profile is present on the machine, False otherwise
+    Returns:
+        bool: True if the "unistra" AWS profile is present on the machine, False otherwise
 
     """
     config = configparser.ConfigParser()
@@ -210,8 +199,11 @@ def does_unistra_profile_exist() -> bool:
 
 def _set_aws_file_path() -> None:
     """
-    This function sets AWS filepath config and credentials inside X network drive "X:/SI/Secrets/AWS"
+    This function sets the AWS config and credentials filepaths,
+    inside the X: network drive (X:/SI/Secrets/AWS), if they exist.
+
     Returns:
+        None
 
     """
     config_file = AnyPath("X:") / "SI" / "Secrets" / "AWS" / "config"
@@ -224,10 +216,10 @@ def _set_aws_file_path() -> None:
 
 def get_mnt_path() -> str:
     """
-    Return mounting directory :code:`/mnt`.
+    Return the mounting directory :code:`/mnt`.
 
-    Warnings:
-        This won't work on Windows !
+    Warning:
+        This won't work on Windows!
 
     Returns:
         str: Mounting directory
@@ -241,9 +233,12 @@ def get_mnt_path() -> str:
 
 def _get_db_path(db_nb=2) -> str:
     """
-    Returns DSx database0x path
+    Returns the DS2 database0x path.
 
-    - :code:`/mnt/ds2_dbx` when mounted (docker...)
+    - :code:`/mnt/ds2_db{db_nb}` when mounted (e.g. in Docker)
+
+    Args:
+        db_nb (int): Database number
     """
     db_path = f"{get_mnt_path()}/ds2_db{db_nb}"
 
@@ -254,7 +249,7 @@ def _get_db_path(db_nb=2) -> str:
 
 def get_db2_path() -> str:
     """
-    Returns DS2 database02 path
+    Returns the DS2 database02 path.
 
     - :code:`/mnt/ds2_db2` when mounted (docker...)
 
@@ -270,7 +265,7 @@ def get_db2_path() -> str:
 
 def get_db3_path() -> str:
     """
-    Returns DS2 database03 path
+    Returns the DS2 database03 path.
 
     - :code:`/mnt/ds2_db3` when mounted (docker...)
 

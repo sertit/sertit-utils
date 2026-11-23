@@ -39,6 +39,7 @@ from cloudpathlib.exceptions import AnyPathTypeError
 
 try:
     import geopandas as gpd
+    from pyproj import CRS
     from shapely import Polygon, wkt
     from shapely.geometry.base import BaseGeometry
 except ModuleNotFoundError as ex:  # pragma: no cover
@@ -75,12 +76,13 @@ EXT_TO_DRIVER = {
 SHP_CO_FILES = [".dbf", ".prj", ".sbn", ".sbx", ".shx", ".sld"]
 
 
-def is_geopandas_1_0():
-    """Is geopandas over 1.0.0. Default engine changes, from fiona to pyogrio"""
+def is_geopandas_1_0() -> bool:
+    """Is geopandas at least 1.0.0. The default engine changes from fiona to pyogrio."""
     return misc.compare_version("geopandas", "1.0.0", ">=")
 
 
-def use_pyogrio():
+def use_pyogrio() -> bool:
+    """Is the geopandas engine set to pyogrio (i.e. geopandas >= 1.0.0 and pyogrio installed)."""
     has_pyogrio = False
     with contextlib.suppress(Exception):
         import pyogrio  # noqa
@@ -122,7 +124,7 @@ def to_utm_crs(lon: float, lat: float) -> CRS:  # noqa: F821
         lat (float): Latitude (WGS84, epsg:4326)
 
     Returns:
-        CRS: UTM CRS
+        pyproj.CRS: UTM CRS
 
     Example:
         >>> to_utm_crs(lon=7.8, lat=48.6)  # Strasbourg
@@ -190,9 +192,9 @@ def get_geodf(geom: BaseGeometry | list | gpd.GeoSeries, crs: str) -> gpd.GeoDat
 
 def set_kml_driver() -> None:
     """
-    Set KML driver for Fiona data (use it at your own risks !)
+    Set the KML driver for Fiona data (use at your own risk!)
 
-    Only useful with :code:`geopandas<1.0.0` or with :code:`fiona`'s engine
+    Only useful with :code:`geopandas <1.0.0` or with the :code:`fiona` engine
 
     Example:
         >>> import geoutils as gu
@@ -222,11 +224,11 @@ def set_kml_driver() -> None:
 def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Polygon]:
     """
     Get AOI formatted as a WKT from files that can be read by Fiona (like shapefiles, ...)
-    or directly from a WKT file. The use of KML has been forced (use it at your own risks !).
+    or directly from a WKT file. KML is forced (use at your own risk!).
 
     See: https://fiona.readthedocs.io/en/latest/fiona.html#fiona.open
 
-    It is assessed that:
+    It is assumed that:
 
     - only **one** polygon composes the AOI (as only the first one is read)
     - it should be specified in lat/lon (WGS84) if a WKT file is provided
@@ -237,7 +239,7 @@ def get_aoi_wkt(aoi_path: AnyPathStrType, as_str: bool = True) -> tuple[str | Po
         as_str (bool): If True, return WKT as a str, otherwise as a shapely geometry
 
     Returns:
-         str | Polygon: AOI formatted as a WKT stored in lat/lon
+        str | Polygon: AOI formatted as a WKT stored in lat/lon
 
     Example:
         >>> path = "path/to/vec.geojson"  # OK with ESRI Shapefile, geojson, WKT, KML...
@@ -291,7 +293,7 @@ def shapes_to_gdf(shapes: Generator, crs: str) -> gpd.GeoDataFrame:
 
     Args:
         shapes (Generator): Shapes from rasterio
-        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        crs (str): Wanted CRS of the vector. If None, use the source CRS.
 
     Returns:
         gpd.GeoDataFrame: Shapes as a GeoDataFrame
@@ -345,7 +347,8 @@ def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
             Options the driver doesn't support are warned and dropped.
 
     Example:
-        >>> write(my_vector, path="my_vector.kml")
+        >>> geodf = get_geodf(Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]), crs=WGS84)
+        >>> write(geodf, path="my_vector.kml")
     """
     path = AnyPath(path)
 
@@ -363,7 +366,7 @@ def write(gdf: gpd.GeoDataFrame, path: AnyPathStrType, **kwargs) -> None:
 
 def copy(src_path: AnyPathStrType, dst_path: AnyPathStrType) -> AnyPathType:
     """
-     Copy vector (handles shapefiles additional files)
+    Copy a vector (handles the additional files that come with shapefiles)
 
     Args:
         src_path (AnyPathStrType): Source Path
@@ -411,7 +414,7 @@ def read(
     - if archive (only zip or tar), use a regex to look for the vector inside the archive. You can use this `site <https://regexr.com/>`_ to build your regex.
     - if GML: manages the empty errors
 
-    Handles a lot of exceptions and have fallback mechanisms with :code:`ogr2ogr` (if in :code:`PATH`)
+    Handles a lot of exceptions and has fallback mechanisms with :code:`ogr2ogr` (if in :code:`PATH`)
 
     Handles both on disk and cloud-stored vectors.
 
@@ -427,11 +430,12 @@ def read(
 
     Args:
         vector (AnyVectorType | gpd.GeoSeries): Path to vector to read or vector itself. In case of archive, path to the archive.
-        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        crs: Wanted CRS of the vector. If None, use the source CRS.
         archive_regex (str): [Archive only] Regex for the wanted vector inside the archive
-        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoPandas, Iterable, ...).
-            In case of an iterable, assumption is made it corresponds to geographic bounds. Mimics :code:`rasters.read(..., window=)`. If given, :code:`bbox` is ignored.
-        **kwargs: Additional arguments used in gu.open_vector.
+        window (Any): Anything that can be returned as a bbox (i.e. path, gpd.GeoDataFrame, Iterable, ...).
+            In case of an iterable, assumption is made it corresponds to geographic bounds.
+            Mimics the :code:`window` argument of :py:func:`sertit.rasters.read`. If given, :code:`bbox` is ignored.
+        **kwargs: Additional arguments passed to :code:`geoutils.open_vector`.
             Open options the driver doesn't support are warned by pyogrio.
             You can also give :code:`file_list`, the list of files of the archive to get the vector from, as this operation is expensive when done with large archives stored on the cloud.
             You can also set :code:`compute_sindex=False` to avoid computing the spatial index of the vector.
@@ -582,13 +586,13 @@ def _read_vector_core(
     """
     Read vector (core function) with correctly formatted paths.
 
-    Handles a lot of exceptions, reads KML, and have fallback mechanisms with ogr2ogr (if in PATH)
+    Handles a lot of exceptions, reads KML, and has fallback mechanisms with ogr2ogr (if in PATH)
 
     Args:
         gpd_vect_path (str): Resolved vector path (readable by geopandas)
         raw_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
         arch_path (str): If archived vector, path to the vector file inside the archive (from the root of the archive)
-        crs: Wanted CRS of the vector. If None, using naive or origin CRS.
+        crs: Wanted CRS of the vector. If None, use the source CRS.
         **kwargs: Other arguments passed to :code:`gu.open_vector`
 
     Returns:
@@ -778,14 +782,6 @@ def ogr2gpkg(
 
     Returns:
         str: Converted file
-
-    Args:
-        vector_path (AnyPathStrType): Path to vector to read. In case of archive, path to the archive.
-        out_dir (AnyPathStrType): Output directory
-        arch_vect_path: If archived vector, path to the vector file inside the archive (from the root of the archive)
-
-    Returns:
-        str: Converted file
     """
     assert shutil.which("ogr2ogr")  # Needs ogr2ogr here
 
@@ -829,21 +825,18 @@ def ogr2gpkg(
 @contextmanager
 def utm_crs(gdf: gpd.GeoDataFrame) -> None:
     """
-    Change temporary the CRS of a vector, ie when computing area based statistics / features (centroid....) which need a meter-based CRS.
+    Temporarily change the CRS of a vector, i.e. when computing area-based
+    statistics or features (e.g. the centroid) that need a meter-based CRS.
 
     WARNING:
-        The modifications (other than CRS) on the yielded GeoDataFrame will be kept!
+        The modifications (other than the CRS) on the yielded GeoDataFrame will be kept!
 
     Args:
-        gdf (str): GeoDataFrame to convert
+        gdf (gpd.GeoDataFrame): GeoDataFrame to convert
 
     Example:
-        >>> vect = vectors.read(vectors_path().joinpath("aoi.kml"))
-        >>> with vectors.utm_crs(vect) as utm_vect:
-        >>>     utm_centroid = utm_vect.centroid
-        >>>     utm_vect["centroid_utm"] = utm_centroid
-        >>> vect["centroid_utm"].equals(c2)
-        True
+        >>> with utm_crs(gdf) as utm_gdf:
+        ...     utm_gdf["centroid_utm"] = utm_gdf.centroid
     """
     src_crs = None
     if not gdf.crs.is_projected:

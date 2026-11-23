@@ -45,7 +45,7 @@ You can update it with the environment variable :code:`SERTIT_UTILS_SNAP_TILE_SI
 
 SU_SNAP_LOG_LEVEL = "SERTIT_UTILS_SNAP_LOG_LEVEL"
 """
-SNAP log level, WARNING by default.
+SNAP log level, ERROR by default.
 You can update it with the environment variable :code:`SERTIT_UTILS_SNAP_LOG_LEVEL`.
 """
 
@@ -54,17 +54,18 @@ LOGGER = logging.getLogger(SU_NAME)
 
 def bytes2snap(nof_bytes: int) -> str:
     """
-    Convert nof bytes into snap-compatible Java options.
+    Convert a number of bytes into a human-readable size,
+    to be used in SNAP-compatible Java options (e.g. :code:`-Xmx`).
+
+    Args:
+        nof_bytes (int): Number of bytes
+
+    Returns:
+        str: Human-readable size (e.g. :code:`'31K'`)
 
     Example:
         >>> bytes2snap(32000)
         '31K'
-
-    Args:
-        nof_bytes (int): Byte nb
-
-    Returns:
-        str: Human-readable in bits
 
     """
     symbols = ("K", "M", "G", "T", "P", "E", "Z", "Y")
@@ -82,13 +83,23 @@ def get_gpt_cli(
     graph_path: str, other_args: list = None, display_snap_opt: bool = False
 ) -> list:
     """
-    Get GPT command line with system OK optimizations.
-    To see options, type this command line with --diag (but it won't run the graph)
+    Get the GPT command line, with system-size optimizations.
+    To see the SNAP options, run the command line with :code:`--diag`
+    (e.g. by setting :code:`display_snap_opt=True`; the graph won't be run).
 
     See https://senbox.atlassian.net/wiki/spaces/SNAP/pages/15269950/SNAP+Configuration
 
+    Args:
+        graph_path (str): Graph path
+        other_args (list): Other args as a list such as
+            :code:`['-Pfile="in_file.zip"', '-Pout="out_file.dim"']`
+        display_snap_opt (bool): If True, display the SNAP options via :code:`--diag`
+
+    Returns:
+        list: GPT command line as a list
+
     Example:
-        >>> get_gpt_cli("graph_path", other_args=[], display_snap_opt=True)
+        >>> get_gpt_cli("graph_path", other_args=[])
         SNAP Release version 8.0
         SNAP home: C:/Program Files/snap/bin/..
         SNAP debug: null
@@ -105,17 +116,9 @@ def get_gpt_cli(
         To configure your gpt cache size and parallelism:
         Edit .snap/etc/snap.properties or gpt -c ${cachesize-in-GB}G -q ${parallelism}
 
-        ['gpt', '"graph_path"', '-q', 14, '-J-Xms2G -J-Xmx60G', '-J-Dsnap.log.level=WARNING',
-        '-J-Dsnap.jai.defaultTileSize=2048', '-J-Dsnap.dataio.reader.tileWidth=2048',
-        '-J-Dsnap.dataio.reader.tileHeigh=2048', '-J-Dsnap.jai.prefetchTiles=true', '-c 30G']
-
-    Args:
-        graph_path (str): Graph path
-        other_args (list): Other args as a list such as :code:`['-Pfile="in_file.zip", '-Pout="out_file.dim"']`
-        display_snap_opt (bool): Display SNAP options via --diag
-
-    Returns:
-        list: GPT command line as a list
+        ['gpt', '"graph_path"', '-q', 14, '-J-Xms2G -J-Xmx60G', '-J-Dsnap.log.level=ERROR',
+        '-J-Dsnap.jai.defaultTileSize=512', '-J-Dsnap.dataio.reader.tileWidth=512',
+        '-J-Dsnap.dataio.reader.tileHeight=512', '-J-Dsnap.jai.prefetchTiles=true', '-c 30G']
     """
     # Overload with env variables
     if other_args is None:
@@ -156,7 +159,12 @@ def get_gpt_cli(
 
 
 def get_snap_version() -> Version:
-    """Get SNAP version with a call to GPT --diag"""
+    """
+    Get the SNAP version with a call to :code:`gpt --diag`.
+
+    Returns:
+        packaging.version.Version | None: The SNAP version, or None if it cannot be determined
+    """
     snap_version = None
     try:
         output = subprocess.run(["gpt", "--diag"], capture_output=True)

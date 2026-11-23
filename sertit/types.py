@@ -1,3 +1,20 @@
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
+# This file is part of sertit-utils project
+#     https://github.com/sertit/sertit-utils
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Types used throughout the library."""
+
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -26,7 +43,7 @@ AnyPathType = CloudPath | Path
 """Any Path Type (derived from Pathlib and CloudpathLib)"""
 
 AnyPathStrType = str | CloudPath | Path
-"""Same as :code:`AnyPathType` but appened with :code:`str`"""
+"""Same as :code:`AnyPathType` but appended with :code:`str`"""
 
 AnyXrDataStructure = xr.DataArray | xr.Dataset
 """Xarray's DataArray or Dataset"""
@@ -68,13 +85,13 @@ def is_iterable(obj: Any, str_allowed: bool = False):
 
     Useful to replace this kind of code:
 
-        >>> if isinstance(my_items, (list, tuple)):
-        >>>     do...
+        if isinstance(my_items, (list, tuple)):
+            do...
 
     by:
 
-        >>> if is_iterable(my_items):
-        >>>     do...
+        if is_iterable(my_items):
+            do...
 
     It allows not to forget checking for some iterables you aren't aware of.
 
@@ -83,9 +100,9 @@ def is_iterable(obj: Any, str_allowed: bool = False):
         str_allowed (bool): If set, strings are considered as iterable. If not, they are not considered as iterable.
 
     Returns:
-        bool: True if the iobject is iterable
+        bool: True if the object is iterable
 
-    Examples:
+    Example:
 
         >>> is_iterable((1, 2, 3))
         True
@@ -101,7 +118,7 @@ def is_iterable(obj: Any, str_allowed: bool = False):
         True
         >>> is_iterable(1)
         False
-        >>> is_iterable(AnyPath("1, 2, 3"))
+        >>> is_iterable(Path("path/to/file.tif"))
         False
     """
     if isinstance(obj, str) and not str_allowed:
@@ -112,62 +129,65 @@ def is_iterable(obj: Any, str_allowed: bool = False):
 
 def make_iterable(
     obj: Any, str_allowed: bool = False, convert_none: bool = False
-) -> list:
+) -> list | None:
     """
     Convert the object to a list if this object is not iterable
 
     Useful to replace this kind of code:
 
-        >>> if to_convert is not None and not isinstance(to_convert, (list, tuple)):
-        >>>    to_convert = [to_convert]
+        if to_convert is not None and not isinstance(to_convert, (list, tuple)):
+            to_convert = [to_convert]
 
     by:
 
-        >>> to_convert = make_iterable(to_convert)
+        to_convert = make_iterable(to_convert)
 
     or:
 
-        >>> if isinstance(my_items, (list, tuple)):
-        >>>    first_item = my_items[0]
-        >>> else:
-        >>>    first_item = my_items
+        if isinstance(to_convert, (list, tuple)):
+            first_item = to_convert[0]
+        else:
+            first_item = to_convert
 
     by:
 
-        >>> first_item = make_iterable(to_convert)[0]
+        first_item = make_iterable(to_convert)[0]
 
     Args:
         obj (Any): Object to check
         str_allowed (bool): If set, strings are considered as iterable. If not, they are not considered as iterable.
-        convert_none (bool): If true, if obj is None, then it won't be converted into a list. By default, Nones are not converted to list.
+        convert_none (bool): If True and :code:`obj` is :code:`None`, keep :code:`None` instead of wrapping it in a list
 
     Returns:
-        list: Object as an iterable
+        list | None: Object as an iterable
 
-    Examples:
+    Example:
 
-        >>> make_interable((1, 2, 3))
+        >>> make_iterable((1, 2, 3))
         (1, 2, 3)
-        >>> make_interable([1, 2, 3])
+        >>> make_iterable([1, 2, 3])
         [1, 2, 3]
-        >>> make_interable({1, 2, 3})
+        >>> make_iterable({1, 2, 3})
         {1, 2, 3}
-        >>> make_interable(np.array([1, 2, 3]))
-        np.array([1, 2, 3])
-        >>> make_interable("1, 2, 3", str_allowed=True)
-        "1, 2, 3"
-        >>> make_interable("1, 2, 3", str_allowed=False)
-        ["1, 2, 3"]
-        >>> make_interable(1)
+        >>> make_iterable(np.array([1, 2, 3]))
+        array([1, 2, 3])
+        >>> make_iterable("1, 2, 3", str_allowed=True)
+        '1, 2, 3'
+        >>> make_iterable("1, 2, 3", str_allowed=False)
+        ['1, 2, 3']
+        >>> make_iterable(1)
         [1]
-        >>> make_interable(AnyPath("1, 2, 3"))
-        [AnyPath("1, 2, 3")]
-        >>> make_interable(None)
-        None
-        >>> make_interable(None, convert_none=True)
+        >>> make_iterable(Path("path/to/file.tif"))
+        [PosixPath('path/to/file.tif')]
+        >>> make_iterable(None)
+        [None]
+        >>> make_iterable(None, convert_none=True)
         [None]
 
     """
+    if obj is None and not convert_none:
+        return None
+
     if (convert_none and obj is None) or not is_iterable(obj, str_allowed):
         obj = [obj]
 

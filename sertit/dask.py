@@ -1,3 +1,20 @@
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
+# This file is part of sertit-utils project
+#     https://github.com/sertit/sertit-utils
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Dask-related utilities (chunking, guarding, computation)."""
+
 import contextlib
 import logging
 import os
@@ -26,7 +43,8 @@ Available keywords (case agnostic):
 """
 
 
-def is_dask_installed():
+def is_dask_installed() -> bool:
+    """Is dask (with dask.distributed) installed?"""
     try:
         from dask import optimize  # noqa: F401
         from dask.distributed import get_client  # noqa: F401
@@ -37,6 +55,13 @@ def is_dask_installed():
 
 
 def get_client():
+    """
+    Get the default Dask client, if any.
+
+    Returns:
+        dask.distributed.Client | None: The default client, or None if dask is not installed
+            or no client exists
+    """
     client = None
     if is_dask_installed():
         from dask.distributed import get_client
@@ -46,7 +71,7 @@ def get_client():
             client = get_client()
     else:  # pragma: no cover
         LOGGER.warning(
-            "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
+            "Can't import 'dask'. If you experience out-of-memory issues, consider installing 'dask'."
         )
 
     return client
@@ -64,7 +89,18 @@ def get_or_create_dask_client(
     **kwargs,
 ):
     """
-    Return default Dask client or create a local cluster and linked  client if not existing
+    Return the default Dask client, or create a local cluster and a linked client if none exists.
+
+    Args:
+        processes (bool): If True, create a multi-process cluster. Otherwise, create a threaded cluster.
+        env_vars (dict | None): Environment variables to set on the workers.
+        available_ram_pct (float): Percentage of the available RAM to use when sizing the cluster.
+        worker_mem (float): Memory limit per worker, in GB.
+        threads_per_worker (int): Number of threads per worker.
+        **kwargs: Other arguments passed to :code:`dask.distributed.Client`.
+
+    Returns:
+        dask.distributed.Client: The client (to be used in a :code:`with` block)
     """
     client = None
     try:
@@ -117,7 +153,7 @@ def get_or_create_dask_client(
 
         else:  # pragma: no cover
             LOGGER.warning(
-                "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
+                "Can't import 'dask'. If you experience out-of-memory issues, consider installing 'dask'."
             )
     finally:
         try:
@@ -129,17 +165,16 @@ def get_or_create_dask_client(
 
 def get_dask_lock(name):
     """
-    Get a dask lock with given name.
+    Get a Dask lock with the given name.
     This lock is used in rioxarray.to_raster (see https://vylor.github.io/rioxarray/stable/examples/dask_read_write.html)
 
-    If a Multiple worker client exists: returns a distributed.Lock()
-    Elif a Multithreaded client exists: returns a threading.Lock()
-    else: returns None
-
+    If a Dask client exists, returns a :code:`distributed.Lock()`, else :code:`None`.
 
     Args:
-        name: The name of the lock
+        name (str): The name of the lock
+
     Returns:
+        dask.distributed.Lock | None: The lock, or None if dask is not installed or no client exists
     """
     lock = None
     if is_dask_installed():
@@ -150,7 +185,7 @@ def get_dask_lock(name):
             lock = Lock(name)
     else:  # pragma: no cover
         LOGGER.warning(
-            "Can't import 'dask'. If you experiment out of memory issue, consider installing 'dask'."
+            "Can't import 'dask'. If you experience out-of-memory issues, consider installing 'dask'."
         )
     return lock
 
@@ -158,7 +193,7 @@ def get_dask_lock(name):
 def is_chunked(array: AnyXrDataStructure) -> bool:
     """
     Returns true if the array is still chunked.
-    (i.e. its data is not computed, bnot loaded into memory as a numpy array)
+    (i.e. its data has not been computed and is not loaded into memory as a numpy array)
 
     Args:
         array (AnyXrDataStructure): Array to check
@@ -177,13 +212,13 @@ def is_chunked(array: AnyXrDataStructure) -> bool:
 
 def is_computed(array: AnyXrDataStructure) -> bool:
     """
-    Returns true if the array is still chunked.
-    (i.e. its data is not computed, bnot loaded into memory as a numpy array)
+    Returns true if the array has been computed.
+    (i.e. its data is loaded into memory as a numpy array, and not chunked)
 
     Args:
         array (AnyXrDataStructure): Array to check
 
-    Returns: True if array is still chunked
+    Returns: True if the array is computed
     """
     return not is_chunked(array)
 
@@ -299,6 +334,23 @@ def raise_if_dask_computes(
     force_synchronous=False,
     name: str = "",
 ):
+    """
+    Context manager that counts the dask computes happening inside it
+    and raises (or warns) if there are too many.
+
+    If dask is not installed, yields a dummy context manager,
+    so that this can also be used for non-dask objects.
+
+    Args:
+        max_computes (int): Maximum number of computes allowed before an error is raised
+        nof_computes (int): Exact number of computes expected, checked once the context ends
+        dont_raise (bool): If True, warn instead of raising
+        force_synchronous (bool): If True, force the dask synchronous scheduler (useful for debugging)
+        name (str): Name of the context, used in the logs and errors
+
+    Returns:
+        dask.config.Context: The dask config context with the counting scheduler set
+    """
     # return a dummy context manager so that this can be used for non-dask objects
     if not is_dask_installed():  # pragma: no cover
         yield contextlib.nullcontext()

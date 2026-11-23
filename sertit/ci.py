@@ -114,7 +114,7 @@ def assert_field(dict_1: dict, dict_2: dict, field: str) -> None:
 
 def assert_files_equal(file_1: AnyPathStrType, file_2: AnyPathStrType):
     """
-    Assert to files are equal by hashing its content
+    Assert that two files are equal by hashing their content
 
     Args:
         file_1 (str): Path to file 1
@@ -161,7 +161,7 @@ def assert_raster_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     Example:
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> assert_raster_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     import rasterio
 
@@ -194,7 +194,7 @@ def assert_raster_almost_equal(
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
         >>> assert_raster_almost_equal(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     import rasterio
 
@@ -231,7 +231,7 @@ def assert_raster_almost_equal_magnitude(
     path_1: AnyPathStrType, path_2: AnyPathStrType, decimal=2
 ) -> None:
     """
-    Assert that two rasters are almost equal, with the decimal taken on the scientif representation of the array.
+    Assert that two rasters are almost equal, with the decimal taken on the scientific representation of the array.
     (everything is equal except the transform and the arrays that are almost equal)
 
     Accepts an offset of :code:`1E{decimal}` on the array divided by the order of magnitude of the array and a precision of 10^-{decimal} on the transform
@@ -249,7 +249,7 @@ def assert_raster_almost_equal_magnitude(
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
         >>> assert_raster_almost_equal_magnitude(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     import rasterio
 
@@ -342,13 +342,15 @@ def assert_raster_max_mismatch(
     Args:
         path_1 (AnyPathStrType): Raster 1
         path_2 (AnyPathStrType): Raster 2
-        max_mismatch_pct (float): Maximum of element mismatch in %
+        max_mismatch_pct (float): Maximum percentage of mismatching elements
+        decimal (int): Number of decimals to round the arrays to, to consider them equal.
+            Set it to -1 (default) to disable rounding.
 
     Example:
         >>> path = r"CI/DATA/rasters/raster.tif"
         >>> path2 = r"CI/DATA/rasters/raster_almost.tif"
         >>> assert_raster_max_mismatch(path, path2)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     import rasterio
 
@@ -393,7 +395,7 @@ def assert_dir_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> None:
     Example:
         >>> path = r"CI/DATA/rasters"
         >>> assert_dir_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     path_1 = AnyPath(path_1)
     path_2 = AnyPath(path_2)
@@ -436,7 +438,8 @@ def _prepare_geoms(
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
         ignore_z (bool): Ignore Z coordinate
-        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
+        ignore_order (bool): Ignore the order of the features. True by default,
+            meaning the geometries will be re-sorted and the index reset.
 
     Returns:
         Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Prepared geometries
@@ -480,7 +483,8 @@ def assert_geom_equal(
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
         ignore_z (bool): Ignore Z coordinate
-        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
+        ignore_order (bool): Ignore the order of the features. True by default,
+            meaning the geometries will be re-sorted and the index reset.
 
     Warning:
         Only checks:
@@ -491,7 +495,7 @@ def assert_geom_equal(
     Example:
         >>> path = r"CI/DATA/vectors/aoi.geojson"
         >>> assert_geom_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     geom_1, geom_2 = _prepare_geoms(
         geom_1, geom_2, ignore_z=ignore_z, ignore_order=ignore_order
@@ -516,9 +520,11 @@ def assert_geom_almost_equal(
     Args:
         geom_1 (AnyVectorType): Geometry 1
         geom_2 (AnyVectorType): Geometry 2
-        decimal (int): Number of decimals. Set it to :code:`auto` for managing automatically the decimals in projected or geographiic CRS. 9 decimals for degrees, 3 for meters.
+        decimal (int): Number of decimals. Set it to :code:`auto` to manage the decimals
+            automatically in projected or geographic CRS. 9 decimals for degrees, 3 for meters.
         ignore_z (bool): Ignore Z coordinate
-        ignore_order (bool): Ignore orderf of the features. True by default, meaning the geometries will be re-sorted and index resetted
+        ignore_order (bool): Ignore the order of the features. True by default,
+            meaning the geometries will be re-sorted and the index reset.
 
     Warning:
         Only checks:
@@ -529,7 +535,7 @@ def assert_geom_almost_equal(
     Example:
         >>> path = r"CI/DATA/vectors/aoi.geojson"
         >>> assert_geom_almost_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     geom_1, geom_2 = _prepare_geoms(
         geom_1, geom_2, ignore_z=ignore_z, ignore_order=ignore_order
@@ -590,7 +596,7 @@ def assert_dim_file_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> Non
     Example:
         >>> path = r"CI/DATA/rasters/raster.dim"
         >>> assert_dim_file_equal(path, path)
-        >>> # Raises AssertionError if sth goes wrong
+        >>> # Raises an AssertionError if something goes wrong
     """
     # TODO : Add Checking if .dim
     list_img_path_1 = rasters.get_dim_img_path(path_1, get_list=True)
@@ -621,7 +627,7 @@ def assert_dim_file_equal(path_1: AnyPathStrType, path_2: AnyPathStrType) -> Non
 
 def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
     """
-    Assert that 2 XML (as etree Elements) are equal.
+    Assert that two XML files (as etree Elements) are equal.
 
     -> Useful for pytests.
 
@@ -639,7 +645,7 @@ def assert_xml_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> 
 
 def assert_html_equal(xml_elem_1: etree._Element, xml_elem_2: etree._Element) -> None:
     """
-    Assert that 2 XML (as etree Elements) are equal.
+    Assert that two XML files (as etree Elements) are equal.
 
     -> Useful for pytests.
 
@@ -709,7 +715,7 @@ def assert_xr_encoding_attrs(
     try:
         name_2 = xda_2.attrs.get("source", xda_2.name)
     except AttributeError:
-        name_1 = "Dataset 2"
+        name_2 = "Dataset 2"
 
     # Attributes
     try:
@@ -767,7 +773,7 @@ def reduce_verbosity(other_loggers: list = None) -> None:
     Reduce verbosity for other loggers (setting them to WARNING)
 
         Args:
-            other_loggers (list): Other loggers to reduce verosity
+            other_loggers (list): Other loggers to reduce the verbosity of
 
     """
     loggers = [

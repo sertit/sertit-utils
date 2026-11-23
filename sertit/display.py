@@ -36,7 +36,7 @@ def scale(array: AnyNumpyArray, perc: int = 2) -> AnyNumpyArray:
         perc (int): Percentile to cut. 0 = min/max, 2 by default
 
     Returns:
-        numpy array: Scaled matrix
+        AnyNumpyArray: Scaled matrix
     """
     # Convert to float
     f_arr = array.astype(np.float32)
@@ -89,10 +89,11 @@ def scale_to_uint8(array: AnyNumpyArray, perc: int = 2) -> AnyNumpyArray:
     0 will be the nodata.
 
     Args:
-        arr (numpy array): Array to rescale
+        array (AnyNumpyArray): Array to rescale
+        perc (int): Percentile to cut. 0 = min/max, 2 by default
 
     Returns:
-        numpy array: Rescaled array from 0 to 255 saved in uint8
+        AnyNumpyArray: Rescaled array from 0 to 255 saved in uint8
     """
     # Convert it to uint8
     scaled_arr = (scale(array, perc=perc) * 254 + 1).astype(np.uint8)

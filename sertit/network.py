@@ -44,7 +44,7 @@ def exponential_backoff(
     network, where by unreliable we mean not always available.
 
     Every major service provided over the network can't guarantee 100% availability all the time. Therefore if a service
-    fails one should retry a certain number of time and a maximum amount of times. This algorithm is designed to try
+    fails one should retry a certain number of times, and a maximum number of times. This algorithm is designed to try
     using the services multiple times with exponentially increasing delays between the tries. The time delays are chosen
     at random to ensure better theoretical behaviour.
 
@@ -57,13 +57,13 @@ def exponential_backoff(
             Recommended range [0.1 - 10.0] seconds
         increase_factor (float): Exponent of the expected exponential increase in waiting time.
             In other words on average by how much should the delay in time increase. Recommended range [1.5 - 3.0]
-        max_wait (float): Maximum of time one will wait for the network request to perform successfully.
-            If the maximum amount of time is reached a timeout exception is thrown.
+        max_wait (float): Maximum time one will wait for the network request to perform successfully.
+            If the maximum amount of time is reached, a timeout exception is thrown.
         max_retries (int): Number of total tries to perform the network request.
             Must be at least 2 and maximum :code:`EXP_BACK_OFF_ABS_MAX_RETRIES`
-            (or 100 if the environment value is not defined). Recommended range [5 - 25].
-            If the value exceeds :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
-            The value will be set to :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment value is not defined).
+            (or 100 if the environment variable is not defined). Recommended range [5 - 25].
+            If the value exceeds :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100 if the environment variable
+            is not defined), it will be set to :code:`EXP_BACK_OFF_ABS_MAX_RETRIES` (or 100).
         desc (str): Description of the network request being attempted
         random_state (int): Seed to the random number generator (optional)
     """

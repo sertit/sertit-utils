@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from cloudpathlib import CloudPath
 
-from sertit import AnyPath
+from sertit import AnyPath, ci
 from sertit.types import AnyPathType, is_iterable, make_iterable
 
 
@@ -28,14 +28,14 @@ def test_make_iterable():
     """Test make_iterable"""
 
     def assert_mi(val, is_it=True, **kwargs):
-        if not is_it:
-            val = [val]
+        true_val = [val] if not is_it else val
+        out_val = make_iterable(val, **kwargs)
 
-        comp = True if val is None else val == make_iterable(val, **kwargs)
         try:
-            assert comp
-        except ValueError:
-            assert all(comp)
+            ci.assert_val(out_val, true_val, "")
+        except AssertionError:
+            if not kwargs.get("convert_none", False) and val is None:
+                ci.assert_val(out_val, None, "")
 
     assert_mi((1, 2, 3))
     assert_mi([1, 2, 3])

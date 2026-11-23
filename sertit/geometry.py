@@ -86,9 +86,9 @@ def ensure_gdf(function: Callable) -> Callable:
         any_gpd_type: gpd.GeoDataFrame | gpd.GeoSeries, *args, **kwargs
     ) -> gpd.GeoDataFrame:
         """
-        Path or dataset wrapper
+        GeoPandas object wrapper
         Args:
-            any_raster_type (AnyRasterType): Raster path or its dataset
+            any_gpd_type (gpd.GeoDataFrame | gpd.GeoSeries): A GeoPandas object (or a path to a vector)
             *args: args
             **kwargs: kwargs
 
@@ -112,10 +112,11 @@ def ensure_gdf(function: Callable) -> Callable:
 
 def from_polygon_to_bounds(polygon: AnyPolygonType) -> (float, float, float, float):
     """
-    Convert a :code:`shapely.polygon` to its bounds, sorted as :code:`left, bottom, right, top`.
+    Convert a :code:`shapely` polygon (or multipolygon) to its bounds,
+    sorted as :code:`left, bottom, right, top`.
 
     Args:
-        polygon (MultiPolygon): polygon to convert
+        polygon (AnyPolygonType): Polygon to convert
 
     Returns:
         (float, float, float, float): left, bottom, right, top
@@ -154,7 +155,7 @@ def from_bounds_to_polygon(
     Example:
         >>> poly = from_bounds_to_polygon(0.0, 0.0, 1.0, 1.0)
         >>> print(poly)
-        'POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))'
+        POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))
 
     """
     return box(min(left, right), min(top, bottom), max(left, right), max(top, bottom))
@@ -166,10 +167,10 @@ def get_wider_exterior(vector: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Get the wider exterior of a MultiPolygon as a Polygon
 
     Args:
-        vector (gpd.GeoDataFrame): Polygon to simplify
+        vector (gpd.GeoDataFrame): Input vector
 
     Returns:
-        vector: gpd.GeoDataFrame: Wider exterior
+        gpd.GeoDataFrame: The wider exterior
 
     Example:
         >>> # Open a raw footprint
@@ -215,7 +216,7 @@ def make_valid(gdf: gpd.GeoDataFrame, verbose=False) -> gpd.GeoDataFrame:
         gpd.GeoDataFrame: Repaired geometries
 
     Example:
-        >>> # Open a raw  vector with invalid geometries
+        >>> # Open a raw vector with invalid geometries
         >>> raw = vectors.read("raw.geojson")
                                                            geometry
         0         MULTIPOLYGON (((491053.524 5616778.498, 491262...
@@ -266,7 +267,8 @@ def simplify_footprint(
     Set a number of maximum vertices and this function will try to simplify the footprint to have less than this number of vertices.
     The tolerance will grow to try to respect this number of vertices.
 
-    This function will loop over a number of pixels of tolerence [1, 2, 4, 8, 16, 32, 64] (tolerance of gpd.simplify == resolution * tol_pix)
+    This function will loop over a number of pixels of tolerance [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    (tolerance of gpd.simplify == resolution * tol_pix)
     If in the end, the number of vertices is still too high, a warning will be emitted.
 
     Args:
@@ -277,7 +279,7 @@ def simplify_footprint(
     Returns:
         gpd.GeoDataFrame: Simplified footprint
 
-    Examples:
+    Example:
         >>> # Open a raw footprint
         >>> footprint_raw = vectors.read("footprint_raw.geojson")
         >>> len(footprint_raw.get_coordinates())
@@ -340,7 +342,7 @@ def fill_polygon_holes(
     Example:
         >>> # Open a polygon with holes
         >>> holes = vectors.read("holes.geojson")
-        >>> # This polygons has interiors features, it has holes
+        >>> # This polygon has interior features, i.e. holes
         >>> holes.interiors
         3    [LINEARRING (491328.9981955575 5616655.8234532...
         dtype: object
@@ -400,7 +402,7 @@ def line_merge(lines: gpd.GeoDataFrame, **kwargs) -> gpd.GeoDataFrame:
     Args:
         lines (gpd.GeoDataFrame): MultiLineString as a GeoDataFrame.
         **kwargs: Other :code:`shapely.line_merge` arguments
-            Arguments it doesn't accept are warned and dropped
+            Arguments the function doesn't accept are warned and dropped
 
     Returns:
         gpd.GeoDataFrame: GeoDataFrame composed of (Multi)LineStrings formed by combining the lines of the input GeoDataFrame
@@ -439,7 +441,7 @@ def split(polygons: gpd.GeoDataFrame, splitter: gpd.GeoDataFrame):
     :code:`shapely.ops.split` algorithm applied to GeoDataFrames.
 
     Be careful: lines have to cut the whole polygon to work!
-    Use :code:`geometry.line_merge: to merge your lines if needed.
+    Use :code:`geometry.line_merge` to merge your lines if needed.
 
     Args:
         polygons (gpd.GeoDataFrame): Polygons to split
@@ -491,19 +493,19 @@ def intersects(
     Select the polygons of the input GeoDataFrame that intersects the other one and return them.
 
     A buffer can be added on the input GeoDataFrame to be sure the intersection is ok.
-    For example, when dealing with polygons and points on their borders, sometimes the points fall a tiny bit outside the polygon boundary and is not considred as intersecting.
+    For example, when dealing with polygons and points on their borders, sometimes the points fall a tiny bit outside the polygon boundary and are not considered as intersecting.
 
     :code:`gpd.intersects` algorithm applied to whole GeoDataFrames.
 
     Args:
         input (gpd.GeoDataFrame): Input GeoDataFrame from which the polygons will be selected
-        other (gpd.GeoDataFrame): Other GeoDataFrame from that will intersect the first one
-        buffer_on_input (float): Buffer size on thhe input GeoDataFrame
+        other (gpd.GeoDataFrame): Other GeoDataFrame that will intersect the first one
+        buffer_on_input (float): Buffer size on the input GeoDataFrame
 
     Returns:
         gpd.GeoDataFrame: Polygons of the input that intersects the other GeoDataFrame
 
-    Examples:
+    Example:
         >>> water = vectors.read("water.geojson")
         >>> lakes = vectors.read("lakes.geojson")
         >>> intersects(water, lakes)
@@ -536,8 +538,9 @@ def intersects(
     ]
 
 
+@misc.strip_kwargs
 @ensure_gdf
-def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
+def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
     """
     Add a buffer on a vector.
 
@@ -545,7 +548,9 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
 
     Args:
         vector (gpd.GeoDataFrame): Input vector
-        buffer_m (int): Buffer size in meters.
+        buffer_m (float): Buffer size in meters.
+        **kwargs: Other arguments passed to :code:`geoutils.Vector.buffer_metric`
+            Arguments the function doesn't accept are warned and dropped
 
     Returns:
         gpd.GeoDataFrame: Buffered vector
@@ -563,7 +568,7 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
         dtype: float64
 
     """
-    return vector.vct.buffer_metric(buffer_size=buffer_m)
+    return vector.vct.buffer_metric(buffer_size=buffer_m, **kwargs)
 
 
 @misc.strip_kwargs
@@ -576,7 +581,8 @@ def nearest_neighbors(
     **kwargs,
 ) -> (np.ndarray, np.ndarray):
     """
-    For each point in src_gdf, find the closest point in candidates_gdf and return them with their distances (in the crs coordinates).
+    For each point in src_gdf, find the closest point in candidates_gdf and return them
+    with their distances (in the CRS coordinates).
 
     Closest points are:
 
@@ -596,7 +602,7 @@ def nearest_neighbors(
     Returns:
         (np.ndarray, np.ndarray): closest samples, distances
 
-    Examples:
+    Example:
         >>> from sertit import geometry, vectors
         >>> src = vectors.read("src.shp")
         >>> candidates = vectors.read("candidates.shp")
@@ -698,7 +704,7 @@ def _get_radius_nearest(
 
 @ensure_gdf
 def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Have the force_2d function even with geopandas < 1.0.0"""
+    """Have the :code:`force_2d` function even with :code:`geopandas < 1.0.0`"""
     try:
         vect.geometry = vect.geometry.force_2d()
     except AttributeError:  # pragma: no cover
@@ -709,7 +715,7 @@ def force_2d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 @ensure_gdf
 def force_3d(vect: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Have the force_3d function even with geopandas < 1.0.0"""
+    """Have the :code:`force_3d` function even with :code:`geopandas < 1.0.0`"""
     try:
         vect.geometry = vect.geometry.force_3d()
     except AttributeError:  # pragma: no cover

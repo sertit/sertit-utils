@@ -41,10 +41,13 @@ def get_root_path() -> AnyPathType:
     - On Linux this returns :code:`/`
     - On Windows this returns :code:`C:/` or whatever the current drive is
 
+    Returns:
+        AnyPathType: The root path
+
     Example:
         >>> get_root_path()
-        "/" on Linux
-        "C:/" on Windows (if you run this code from the C: drive)
+        '/'  # on Linux
+        # 'C:/' on Windows (if you run this code from the C: drive)
     """
     return AnyPath(os.path.abspath(os.sep))
 
@@ -59,7 +62,7 @@ def listdir_abspath(directory: AnyPathStrType) -> list:
         directory (AnyPathStrType): Relative or absolute path to the directory to be scanned
 
     Returns:
-        str: Absolute path of all files in the given directory
+        list: Absolute paths of all files in the given directory
 
     Example:
         >>> folder = "."
@@ -96,7 +99,9 @@ def to_abspath(
 
     Args:
         raw_path (AnyPathStrType): Path as a string (relative or absolute)
-        create (bool): Create directory if not existing
+        create (bool): Create the directory if it doesn't exist
+        raise_file_not_found (bool): Raise a :code:`FileNotFoundError` if the path
+            specifies a file (has an extension) that doesn't exist
 
     Returns:
         AnyPathType: Absolute path
@@ -134,7 +139,7 @@ def real_rel_path(raw_path: AnyPathStrType, start: AnyPathStrType) -> AnyPathTyp
         start (AnyPathStrType): Start, the path being relative from this folder.
 
     Returns:
-        Relative path
+        AnyPathType: Relative path
 
     Example:
         >>> path = r'D:/_SERTIT_UTILS/sertit-utils/sertit'
@@ -165,7 +170,7 @@ def get_archived_file_list(archive_path: AnyPathStrType) -> list:
 
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
-        >>> get_archived_file_list(arch_path, file_regex)
+        >>> get_archived_file_list(arch_path)
         ['file_1.txt', 'file_2.tif', 'file_3.xml', 'file_4.geojson']
     """
     archive_path = AnyPath(archive_path)
@@ -263,7 +268,7 @@ def get_archived_rio_path(
     for more information.
 
     .. WARNING::
-        It wont be readable by pandas, geopandas or xmltree !
+        It won't be readable by pandas, geopandas or xmltree!
 
     .. WARNING::
         If :code:`as_list` is :code:`False`, it will only return the first file matched !
@@ -282,7 +287,7 @@ def get_archived_rio_path(
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
         >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> path = get_archived_tif_path(arch_path, file_regex)
+        >>> path = get_archived_rio_path(arch_path, file_regex)
         'zip+file://D:/path/to/output.zip!dir/filename.tif'
         >>> rasterio.open(path)
         <open DatasetReader name='zip+file://D:/path/to/output.zip!dir/filename.tif' mode='r'>
@@ -341,27 +346,27 @@ def get_filename(file_path: AnyPathStrType, other_exts: list | str = None) -> st
 
     Example:
         >>> file_path = 'D:/path/to/filename.zip'
-        >>> get_file_name(file_path)
+        >>> get_filename(file_path)
         'filename'
 
         >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0.B01.tif'
-        >>> get_file_name(file_path)
+        >>> get_filename(file_path)
         'HLS.L30.T42RVR.2022240T055634.v2.0.B01'
 
         >>> file_path = 'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE.zip'
-        >>> get_file_name(file_path)
+        >>> get_filename(file_path)
         'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE'
 
         >>> folder_path = 'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE'
-        >>> get_file_name(folder_path)
+        >>> get_filename(folder_path)
         'S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE'
 
         >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0'  # Must exist
-        >>> get_file_name(file_path)
+        >>> get_filename(file_path)
         'HLS.L30.T42RVR.2022240T055634.v2.0'
 
         >>> file_path = 'D:/HLS.L30.T42RVR.2022240T055634.v2.0'  # If not existing...
-        >>> get_file_name(file_path)
+        >>> get_filename(file_path)
         'HLS.L30.T42RVR.2022240T055634.v2'
     """
     file_path = AnyPath(file_path)
@@ -418,20 +423,20 @@ def get_ext(
     Returns:
         str: File or directory extension
 
-    Examples:
-        >>> path = = 'D:/path/to/filename.zip'
+    Example:
+        >>> path = 'D:/path/to/filename.zip'
         >>> get_ext(path)
         '.zip'
 
-        >>> path = = 'D:/path/to/filename.zip'
+        >>> path = 'D:/path/to/filename.zip'
         >>> get_ext(path, start_with_point=False)
         'zip'
 
-        >>> path = = 'D:/path/to/filename.tar.gz'
+        >>> path = 'D:/path/to/filename.tar.gz'
         >>> get_ext(path)
         '.tar.gz'
 
-        >>> path = = 'D:/S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE.zip'
+        >>> path = 'D:/S1A_IW_GRDH_1SDV_20260523T071052_20260523T071117_064641_082495_04CE.SAFE.zip'
         >>> get_ext(path)
         '.zip'
 
@@ -491,7 +496,7 @@ def find_files(
         get_as_str (bool): if only one file is found, it can be retrieved as a string instead of a list
 
     Returns:
-        list | AnyPathType: File name
+        list | AnyPathType: Matching file(s)
 
     Example:
         >>> root_path = 'D:/root'
@@ -510,7 +515,7 @@ def find_files(
         ['D:/root/dir1/huhu.txt']
         >>>
         >>> find_files("huhu.txt", root_path, max_nof_files=1, get_as_str=True)
-        found = 'D:/root/dir1/huhu.txt'
+        'D:/root/dir1/huhu.txt'
     """
     paths = []
 
@@ -633,9 +638,9 @@ def get_file_in_dir(
     return file
 
 
-def is_writable(dir_path: AnyPathStrType):
+def is_writable(dir_path: AnyPathStrType) -> bool:
     """
-    Determine whether the directory is writeable or not.
+    Determine whether the directory is writable or not.
 
     Args:
         dir_path (AnyPathStrType): Directory path
@@ -662,7 +667,7 @@ def is_writable(dir_path: AnyPathStrType):
     return True
 
 
-def is_cloud_path(path: AnyPathStrType):
+def is_cloud_path(path: AnyPathStrType) -> bool:
     """
     Determine whether the path corresponds to a file stored on the cloud or not.
 
@@ -670,7 +675,7 @@ def is_cloud_path(path: AnyPathStrType):
         path (AnyPathStrType): File path
 
     Returns:
-        bool: True if the file is store on the cloud.
+        bool: True if the file is stored on the cloud.
     """
     try:
         from cloudpathlib import CloudPath
@@ -682,13 +687,13 @@ def is_cloud_path(path: AnyPathStrType):
 
 def is_path(path: Any) -> bool:
     """
-    Determine whether the path corresponds to a file stored on the cloud or not.
+    Determine whether the given object is a valid path (a string, a :code:`pathlib.Path` or a :code:`CloudPath`).
 
     Args:
-        path (AnyPathStrType): File path
+        path (Any): Object to check
 
     Returns:
-        bool: True if the file is store on the cloud.
+        bool: True if the object is a path.
     """
     from pathlib import Path
 

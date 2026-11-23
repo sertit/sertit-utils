@@ -51,22 +51,22 @@ def extract_file(
     overwrite: bool = False,
 ) -> AnyPathType:
     """
-    Extract an archived file (zip or others). Overwrites if specified.
-    If the archive don't contain a root directory with the name of the archive without the extension, create it
+    Extract an archived file (zip, tar, tar.gz or 7z). Overwrites if specified.
+    If the archive does not contain a root directory with the name of the archive (without the extension), it is created.
 
     Args:
-        file_path (str): Archive file path
-        output (str): Output where to put the extracted directory
+        file_path (AnyPathStrType): Archive file path
+        output (AnyPathStrType): Output where to put the extracted directory
         overwrite (bool): Overwrite found extracted directory
 
     Returns:
-        AnyPathType: Extracted directory paths
+        AnyPathType: Extracted directory path
 
     Example:
         >>> file_path = 'D:/path/to/zip.zip'
         >>> output = 'D:/path/to/output'
         >>> extract_file(file_path, output, overwrite=True)
-        D:/path/to/output/zip'
+        'D:/path/to/output/zip'
     """
     # Convert to path
     file_path = AnyPath(file_path)
@@ -127,19 +127,19 @@ def extract_files(
     """
     Extract all archived files. Overwrites if specified.
 
-    Example:
-        >>> file_path = ['D:/path/to/zip1.zip', 'D:/path/to/zip2.zip']
-        >>> output = 'D:/path/to/output'
-        >>> extract_files(file_path, output, overwrite=True)
-        ['D:/path/to/output.zip1', 'D:/path/to/output.zip2']
-
     Args:
-        archives (list of str): List of archives to be extracted
-        output (str): Output folder where extracted files will be written
-        overwrite (bool): Overwrite found extracted files
+        archives (list[str]): List of archives to be extracted
+        output (AnyPathStrType): Output folder where extracted files will be written
+        overwrite (bool): Overwrite found extracted directories
 
     Returns:
-        list: Extracted files (even pre-existing ones)
+        list: Extracted directories (even pre-existing ones)
+
+    Example:
+        >>> archives = ['D:/path/to/zip1.zip', 'D:/path/to/zip2.zip']
+        >>> output = 'D:/path/to/output'
+        >>> extract_files(archives, output, overwrite=True)
+        ['D:/path/to/output/zip1', 'D:/path/to/output/zip2']
     """
     LOGGER.info(f"Extracting products in {output}")
     progress_bar = tqdm(archives)
@@ -200,7 +200,7 @@ def read_archived_file(
             )
         else:
             raise TypeError(
-                "Only .zip and .tar files can be read from inside its archive."
+                "Only .zip and .tar files can be read from inside their archive."
             )
     except IndexError as exc:
         raise FileNotFoundError(
@@ -228,8 +228,8 @@ def read_archived_xml(
 
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> read_archived_xml(arch_path, file_regex)
+        >>> xml_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> read_archived_xml(arch_path, xml_regex)
         <Element LANDSAT_METADATA_FILE at 0x1c90007f8c8>
     """
     xml_bytes = read_archived_file(archive_path, regex=regex, file_list=file_list)
@@ -251,12 +251,12 @@ def read_archived_html(
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
-         html._Element: HTML file
+         html.HtmlElement: HTML file
 
     Example:
         >>> arch_path = 'D:/path/to/zip.zip'
-        >>> file_regex = '.*dir.*file_name'  # Use .* for any character
-        >>> read_archived_html(arch_path, file_regex)
+        >>> html_regex = '.*dir.*file_name'  # Use .* for any character
+        >>> read_archived_html(arch_path, html_regex)
         <Element html at 0x1c90007f8c8>
     """
     html_bytes = read_archived_file(archive_path, regex, file_list=file_list)
@@ -275,15 +275,16 @@ def archive(
     Args:
         folder_path (AnyPathStrType): Folder to archive
         archive_path (AnyPathStrType): Archive path, with or without extension
-        fmt (str): Format of the archive, used by :code:`shutil.make_archive`. Choose between [zip, tar, gztar, bztar, xztar]
+        fmt (str): Format of the archive, used by :code:`shutil.make_archive`.
+            Choose among: :code:`zip`, :code:`tar`, :code:`gztar`, :code:`bztar`, :code:`xztar`.
 
     Returns:
-        str: Archive filename
+        AnyPathType: Archive file path
 
     Example:
         >>> folder_path = 'D:/path/to/folder_to_archive'
-        >>> archive_path = 'D:/path/to/output'
-        >>> archive = archive(folder_path, archive_path, fmt="gztar")
+        >>> archive_path = 'D:/path/to/output/folder_to_archive'
+        >>> archive(folder_path, archive_path, fmt="gztar")
         'D:/path/to/output/folder_to_archive.tar.gz'
     """
     archive_path = AnyPath(archive_path)
@@ -329,7 +330,7 @@ def add_to_zip(
         >>> zip_path = 'D:/path/to/zip.zip'
         >>> dirs_to_add = ['D:/path/to/dir1', 'D:/path/to/dir2']
         >>> add_to_zip(zip_path, dirs_to_add)
-        zip.zip contains 2 more folders, dir1 and dir2
+        'D:/path/to/zip.zip'  # the zip now contains dir1 and dir2
     """
     zip_path = AnyPath(zip_path)
 
@@ -396,7 +397,6 @@ def remove(path: AnyPathStrType) -> None:
     Example:
         >>> path_to_remove = 'D:/path/to/remove'  # Could also be a file
         >>> remove(path_to_remove)
-        path_to_remove deleted
     """
     path = AnyPath(path)
     if not path.exists():
@@ -433,11 +433,11 @@ def remove_by_pattern(
         >>> os.listdir(directory)
         ["huhu.exe", "blabla.geojson", "haha.txt", "blabla"]
         >>>
-        >>> remove(directory, "blabla*")
+        >>> remove_by_pattern(directory, "blabla*")
         >>> os.listdir(directory)
-        ["huhu.exe", "haha.txt"] # Removes also directories
+        ["huhu.exe", "haha.txt"]  # Removes also directories
         >>>
-        >>> remove(directory, "*", extension="txt")
+        >>> remove_by_pattern(directory, "*", extension="txt")
         >>> os.listdir(directory)
         ["huhu.exe"]
     """
@@ -461,16 +461,18 @@ def copy(src: AnyPathStrType, dst: AnyPathStrType) -> AnyPathType:
     Returns:
         AnyPathType: New path
 
-    Examples:
+    Example:
+        >>> # Copy a directory
         >>> src = 'D:/path/to/copy'
         >>> dst = 'D:/path/to/output'
         >>> copy(src, dst)
-        copydir 'D:/path/to/output/copy'
+        'D:/path/to/output/copy'
 
+        >>> # Copy a file
         >>> src = 'D:/path/to/copy.txt'
         >>> dst = 'D:/path/to/output/huhu.txt'
-        >>> copyfile = copy(src, dst)
-        'D:/path/to/output/huhu.txt' but with the content of copy.txt
+        >>> copy(src, dst)
+        'D:/path/to/output/huhu.txt'  # with the content of copy.txt
     """
     src = AnyPath(src)
 
@@ -598,7 +600,7 @@ def save_json(json_dict: dict, output_json: AnyPathStrType, **kwargs) -> None:
     Example:
         >>> output_json = 'D:/path/to/json.json'
         >>> json_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
-        >>> save_json(output_json, json_dict)
+        >>> save_json(json_dict, output_json)
     """
     kwargs["indent"] = kwargs.get("indent", 3)
     kwargs["cls"] = kwargs.get("cls", CustomJsonEncoder)
@@ -647,8 +649,8 @@ def read_yaml(yaml_file: AnyPathStrType, print_file: bool = True) -> dict:
         dict: YAML data
 
     Example:
-        >>> json_path = 'D:/path/to/json.json'
-        >>> read_json(json_path, print_file=False)
+        >>> yaml_path = 'D:/path/to/yaml.yaml'
+        >>> read_yaml(yaml_path, print_file=False)
         {"A": 1, "B": 2}
     """
     with open(yaml_file) as f:
@@ -674,7 +676,7 @@ def save_yaml(yaml_dict: dict, output_yaml: AnyPathStrType, **kwargs) -> None:
     Example:
         >>> output_yaml = 'D:/path/to/yaml.yaml'
         >>> yaml_dict = {"A": np.int64(1), "B": datetime.today(), "C": SomeEnum.some_name}
-        >>> save_yaml(output_yaml, json_dict)
+        >>> save_yaml(yaml_dict, output_yaml)
     """
     kwargs["indent"] = kwargs.get("indent", 2)
     kwargs["Dumper"] = kwargs.get("Dumper", CustomYamlDumper)
@@ -700,7 +702,7 @@ def save_obj(obj: Any, path: AnyPathStrType, **kwargs) -> None:
         >>> pkl_dict = {"A": np.ones([3, 3]),
                         "B": datetime.today(),
                         "C": SomeEnum.some_name}
-        >>> save_json(output_pkl, pkl_dict)
+        >>> save_obj(pkl_dict, output_pkl)
     """
     with open(path, "wb+") as file:
         # Options dill.dump doesn't accept are handled by 'strip_kwargs'
@@ -740,11 +742,8 @@ def hash_file_content(file_content: str, len_param: int = 5) -> str:
         str: Hashed file content
 
     Example:
-        >>> read_json("path/to/json.json")
-        {"A": 1, "B": 2}
-        >>>
-        >>> hash_file_content(str(file_content))
-        "d3fad5bdf9"
+        >>> hash_file_content("abc")
+        '4833666013'
     """
     hasher = hashlib.shake_256()
     hasher.update(str.encode(file_content))

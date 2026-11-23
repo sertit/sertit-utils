@@ -26,12 +26,13 @@ SU_NAME = "sertit"
 
 def init_logger(*args, **kwargs) -> None:
     """
-    Init the right logger according the SERTIT_LOGGER_TYPE environment:
-    - if SERTIT_LOGGER_TYPE == "STDOUT_BASIC", it creates a logger which outputs to STDOUT. Convenient for CLI tools
-    - if SERTIT_LOGGER_TYPE == "STDOUT_JSON", logs are printed as JSON object to STDOUT. Convenient if you want to stream logs
-      to another process via STDOUT. For example, a process running in the arcgispro-eo backend environment.
-    - if SERTIT_LOGGER_TYPE == "STDOUT_FILE_ADVANCED", same as "STDOUT_BASIC" but logs are also recorded in a file.
-    Returns:
+    Init the right logger according to the SERTIT_LOGGER_TYPE environment variable:
+    - if SERTIT_LOGGER_TYPE is not set or "TERMINAL_BASIC", it creates a logger which outputs to STDOUT. Convenient for CLI tools
+    - if SERTIT_LOGGER_TYPE == "BACKEND_SUBPROCESS", logs are printed as JSON objects to STDOUT.
+      Convenient if you want to stream logs to another process via STDOUT.
+      For example, a process running in the arcgispro-eo backend environment.
+    - if SERTIT_LOGGER_TYPE == "TERMINAL_ADVANCED", same as "TERMINAL_BASIC" but logs are also recorded in a file.
+    - if SERTIT_LOGGER_TYPE == "ARCGIS", logs are output to the ArcGis console (and a temporary file).
 
     """
     logger_type = os.environ.get("SERTIT_LOGGER_TYPE")
@@ -60,7 +61,7 @@ def init_basic_logger(
     To be done before everything (like parsing log_file etc...)
 
     Args:
-        curr_logger (logging.Logger): Logger to be initialize
+        curr_logger (logging.Logger): Logger to be initialized
         log_lvl (int): Logging level to be set
         log_format (str): Logger format to be set
 
@@ -113,9 +114,9 @@ def create_logger(
     Create file and stream logger at the wanted level for the given logger.
 
     - If you have :code:`colorlog` installed, it will produce colored logs.
-    - If you do not give any output and name, it won't create any file logger
+    - If you do not give an output folder, it won't create any file logger
 
-    It will also manage the log level of other specified logger that you give.
+    It will also manage the log level of the other loggers you specify.
 
     Args:
         logger (logging.Logger): Logger to create
@@ -266,7 +267,7 @@ def shutdown_logger(logger: logging.Logger) -> None:
     Example:
         >>> logger = logging.getLogger("logger_test")
         >>> shutdown_logger(logger)
-        >>> # "logger_test" won't log anything after another init
+        >>> # "logger_test" won't log anything until it is re-initialized
     """
     for handler in list(logger.handlers):
         logger.removeHandler(handler)
@@ -276,14 +277,13 @@ def shutdown_logger(logger: logging.Logger) -> None:
 
 def reset_logging() -> None:
     """
-    Reset root logger
+    Reset the root logger (and every other known logger)
 
     Warning:
         MAYBE OVERKILL
 
     Example:
         >>> reset_logging()
-        Reset root logger
 
     """
     manager = logging.root.manager
@@ -310,15 +310,15 @@ def reset_logging() -> None:
 
 def deprecation_warning(msg: str) -> None:
     """
-    Create a depreciation warning.
+    Create a deprecation warning.
 
     Args:
         msg (str): Deprecation warning
 
     Example:
         >>> def deprecated_fct():
-        >>>     deprecation_warning("This function is deprecated. Use this other function instead.")
-        >>>
+        ...     deprecation_warning("This function is deprecated. Use this other function instead.")
+        ...
         >>> deprecated_fct()
         DeprecationWarning: This function is deprecated. Use this other function instead.
 

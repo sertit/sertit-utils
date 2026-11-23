@@ -116,9 +116,9 @@ def get_nodata_value_from_dtype(dtype) -> float:
         dtype: Dtype for the wanted nodata. Best if numpy's dtype.
 
     Returns:
-        int: Nodata value
+        float: Nodata value
 
-    Examples:
+    Example:
         >>> rasters.get_nodata_value_from_dtype("uint8")
         255
 
@@ -149,16 +149,16 @@ def any_raster_to_xr_ds(function: Callable) -> Callable:
     Returns:
         Callable: decorated function
 
-    Examples:
+    Example:
         >>> # Create mock function
-        >>> @path_or_dst
-        >>> def fct(ds):
-        >>>     read(ds)
+        >>> @any_raster_to_xr_ds
+        ... def fct(ds):
+        ...     read(ds)
         >>>
         >>> # Test the two ways
         >>> read1 = fct("path/to/raster.tif")
         >>> with rasterio.open("path/to/raster.tif") as ds:
-        >>>     read2 = fct(ds)
+        ...     read2 = fct(ds)
         >>>
         >>> # Test
         >>> read1 == read2
@@ -234,7 +234,7 @@ def rasterize(
     Args:
         xda (xr.DataArray): Path to the raster or a rasterio dataset or a xarray.DataArray, used as base for the vector's rasterization data (shape, etc.)
         vector (AnyVectorType): Vector to be rasterized
-        value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If let to None, the raster will be binary.
+        value_field (str): Field of the vector with the values to be burnt on the raster (should be scalars). If left to None, the raster will be binary.
         default_nodata (int): Default nodata of the raster (outside the vector in the raster extent)
         default_value (int): Used as value for all geometries, if `value_field` not provided
         name (str): Name to give to the raster
@@ -392,14 +392,14 @@ def get_valid_vector(xda: AnyRasterType, default_nodata: int = 0) -> gpd.GeoData
     Get the valid data of a raster, returned as a vector.
 
     Pay attention that multiple polygons can be returned.
-    If you want only the footprint of the raster, please use :py:func:`rasters.get_footprint`.
+    If you want only the footprint of the raster, please use :py:func:`get_footprint`.
 
     .. WARNING::
         With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
 
     Args:
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        default_nodata (int): Default values for nodata in case of non-existing in file
+        default_nodata (int): Default nodata value used when the raster has no nodata
 
     Returns:
         gpd.GeoDataFrame: Vector of the valid data
@@ -443,7 +443,7 @@ def mask(
         **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
-         AnyXrDataStructure: Masked array as a xarray
+        AnyXrDataStructure: Masked array as a xarray
 
     Example:
         >>> raster_path = "path/to/raster.tif"
@@ -479,7 +479,7 @@ def paint(
     Pay attention that this behavior is the opposite of the :code:`rasterio.mask` function.
 
     The original nodata is kept.
-    This means if your shapes intersects the original nodata,
+    This means if your shapes intersect the original nodata,
     the value of the pixel will be set to nodata rather than to the wanted value.
 
     Wraps geoutils' clipping feature (through :func:`mask`) so that any :code:`AnyRasterType`
@@ -494,7 +494,7 @@ def paint(
         **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
-         AnyXrDataStructure: Painted array as a xarray
+        AnyXrDataStructure: Painted array as a xarray
 
     Example:
         >>> raster_path = "path/to/raster.tif"
@@ -557,9 +557,9 @@ def crop(
         **kwargs: Other :code:`geoutils.clip` options (only :code:`all_touched` is used)
 
     Returns:
-         AnyXrDataStructure: Cropped array as a xarray
+        AnyXrDataStructure: Cropped array as a xarray
 
-    Examples:
+    Example:
         >>> raster_path = "path/to/raster.tif"
         >>> shape_path = "path/to/shapes.geojson"  # Any vector that geopandas can read
         >>> shapes = gpd.read_file(shape_path)
@@ -599,14 +599,14 @@ def __read__any_raster_to_rio_ds(function: Callable) -> Callable:
 
     Example:
         >>> # Create mock function
-        >>> @any_raster_to_rio_ds
-        >>> def fct(ds):
-        >>>     read(ds)
+        >>> @__read__any_raster_to_rio_ds
+        ... def fct(ds):
+        ...     read(ds)
         >>>
         >>> # Test the two ways
         >>> read1 = fct("path/to/raster.tif")
         >>> with rasterio.open("path/to/raster.tif") as ds:
-        >>>     read2 = fct(ds)
+        ...     read2 = fct(ds)
         >>>
         >>> # Test
         >>> read1 == read2
@@ -674,7 +674,7 @@ def get_new_shape(
     src_res,
     resolution: tuple | list | float = None,
     size: tuple | list = None,
-) -> (int, int, bool):
+) -> (int, int, float):
     """
     Get the new shape (height, width) of a resampled raster, along with the downsampling
     factor to select which overview to use (always >= 1).
@@ -689,7 +689,7 @@ def get_new_shape(
         size (tuple | list): Size of the array (width, height). Overrides :code:`resolution`.
 
     Returns:
-        (int, int, int): Height, width and downsampling factor.
+        (int, int, float): Height, width and downsampling factor.
     """
     # By default, set downsampling_factor to 1
     downsampling_factor = 1
@@ -708,7 +708,7 @@ def get_new_shape(
             res_new (float): New resolution
 
         Returns:
-            (int, bool): New dimension, downsampling_factor factor (new / old)
+            (int, float): New dimension, downsampling factor (new / old)
         """
         new_dim = int(np.round(dim * res_old / res_new))
         return new_dim, res_new / res_old
@@ -872,7 +872,7 @@ def read(
     **kwargs,
 ) -> AnyXrDataStructure:
     """
-    Read a raster dataset from a :
+    Read a raster dataset from:
 
     - :code:`xarray` (compatibility issues)
     - :code:`rasterio.Dataset`
@@ -891,7 +891,7 @@ def read(
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
         size (tuple | list): Size of the array (width, height). Overrides resolution.
-        window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
+        window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoDataFrame, Iterable, rasterio.Window...).
             In case of an iterable, assumption is made it corresponds to geographic bounds.
             For pixel, please provide a rasterio.Window directly.
         resampling (Resampling): Resampling method
@@ -910,7 +910,7 @@ def read(
         >>>
         >>> # or
         >>> with rasterio.open(raster_path) as ds:
-        >>>    xds2 = read(ds)
+        ...     xds2 = read(ds)
         >>>
         >>> # Assert those two approaches give the same result
         >>> xds1 == xds2
@@ -1030,12 +1030,12 @@ def write(
     - :code:`uint8`: 255
     - :code:`int8`: -128
     - :code:`uint16`, :code:`uint32`, :code:`int32`, :code:`int64`, :code:`uint64`, :code:`int`: 65535
-    - :code:int16, :code:`float32`, :code:`float64`, :code:`float128`, :code:`float`: -9999
+    - :code:`int16`, :code:`float32`, :code:`float64`, :code:`float128`, :code:`float`: -9999
 
     Default parameters
 
-    - Compress with :code:`LZW` option by default. To disable it, add the :code:`compress=None` parameter.
-    - :code:`predictor` set to `2` for float data, to `3` for interger data by default. To disable it, add the :code:`predictor=None` parameter.
+    - Compress with the :code:`LZW` option by default. To disable it, add the :code:`compress=None` parameter.
+    - :code:`predictor` set to `3` for float data, to `2` for integer data by default. To disable it, add the :code:`predictor=None` parameter.
     - :code:`tiled` set to `True` by default.
     - :code:`driver` is :code:`GTiff` by default. BigTiff option is set according to the estimated output weight
 
@@ -1051,12 +1051,12 @@ def write(
         compute (bool): If True (default) and data is a dask array, then compute and save the data immediately.
             If False, return a dask Delayed object. Call ".compute()" on the Delayed object to compute the result later.
             Call ``dask.compute(delayed1, delayed2)`` to save multiple delayed files at once. Only useful with chunked data.
-        **kwargs: Overloading metadata, ie :code:`nodata=255` or :code:`dtype=np.uint8`.
+        **kwargs: Overloading metadata, i.e. :code:`nodata=255` or :code:`dtype=np.uint8`.
             Other arguments are passed to :code:`to_file` (i.e. :code:`compress` or :code:`tiled`)
             and then as creation options to the GDAL driver
             (which will warn about the ones it doesn't support).
 
-    Examples:
+    Example:
         >>> raster_path = "path/to/raster.tif"
         >>> raster_out = "path/to/out.tif"
         >>>
@@ -1286,8 +1286,8 @@ def collocate(
     forces the *other* raster to be exactly georeferenced onto the *reference* raster by reprojection.
 
     Args:
-        reference (:any:`AnyXrDataStructure`): Reference xarray
-        other (:any:`AnyXrDataStructure`): Other xarray
+        reference (AnyXrDataStructure): Reference xarray
+        other (AnyXrDataStructure): Other xarray
         resampling (:class:`rasterio:rasterio.enums.Resampling`): Resampling method
         **kwargs: Other arguments passed to :code:`reproject`
             Arguments it doesn't accept are warned and dropped
@@ -1295,7 +1295,7 @@ def collocate(
     Returns:
         AnyXrDataStructure: Collocated xarray
 
-    Examples:
+    Example:
         >>> reference_path = "path/to/reference.tif"
         >>> other_path = "path/to/other.tif"
         >>> col_path = "path/to/collocated.tif"
@@ -1394,7 +1394,7 @@ def sieve(
         connectivity (int): Connectivity, either 4 or 8
 
     Returns:
-        (AnyXrDataStructure): Sieved xarray
+        AnyXrDataStructure: Sieved xarray
 
     Example:
         >>> raster_path = "path/to/raster.tif"  # classified raster
@@ -1427,18 +1427,17 @@ def get_dim_img_path(
     Args:
         dim_path (AnyPathStrType): DIM path (.dim or .data)
         img_name (str): .img file name (or regex), in case there are multiple .img files (i.e. for S3 data)
-        get_list
+        get_list (bool): If True, return the list of all matching .img files
 
     Returns:
-        AnyPathType: .img file
+        list | AnyPathType: .img file (or list of .img files if :code:`get_list` is True)
 
     Example:
         >>> dim_path = "path/to/dimap.dim"  # BEAM-DIMAP image
         >>> img_path = get_dim_img_path(dim_path)
-        img_path = "path/to/dimap.dim/dimap.img"
         >>>
         >>> # Read raster
-        >>> raster, meta = read(img_path)
+        >>> xds = read(img_path)
     """
     return rasters_rio.get_dim_img_path(dim_path, img_name, get_list)
 
@@ -1448,13 +1447,13 @@ def get_dim_img_path(
 @any_raster_to_xr_ds
 def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
-    Get the extent of a raster as a :code:`geopandas.Geodataframe`.
+    Get the extent of a raster as a :code:`geopandas.GeoDataFrame`.
 
     Args:
         xds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
 
     Returns:
-        gpd.GeoDataFrame: Extent as a :code:`geopandas.Geodataframe`
+        gpd.GeoDataFrame: Extent as a :code:`geopandas.GeoDataFrame`
 
     Example:
         >>> raster_path = "path/to/raster.tif"
@@ -1475,7 +1474,8 @@ def get_extent(xds: AnyRasterType) -> gpd.GeoDataFrame:
 @any_raster_to_xr_ds
 def get_footprint(xds: AnyRasterType) -> gpd.GeoDataFrame:
     """
-    Get real footprint of the product (without nodata, *in french == emprise utile*)
+    Get the real footprint of the product, excluding the nodata pixels
+    (i.e. the valid extent, *emprise utile* in French)
 
     .. WARNING::
         With dask usage, this function is not lazy (yet) (it depends on :func:`vectorize`).
@@ -1513,19 +1513,16 @@ def merge_vrt(
     """
     Merge rasters as a VRT. Uses :code:`gdalbuildvrt`.
 
-    See here: https://gdal.org/programs/gdalbuildvrt.html
+    See: https://gdal.org/programs/gdalbuildvrt.html
 
-    Creates VRT with relative paths!
-
-    This function handles files of different projection by creating intermediate VRT used for warping (longer to open).
-
-    All VRTs will be written with relative paths.
+    This function handles rasters with different projections by creating
+    intermediate VRTs used for warping (longer to open).
 
     Args:
-        crs_paths (list): Path of the rasters to be merged with the same CRS
+        crs_paths (list): Paths of the rasters to be merged, with the same CRS
         crs_merged_path (AnyPathStrType): Path to the merged raster
-        abs_path (bool): VRT with absolute paths. If not, VRT with relative paths (default)
-        kwargs: Other gdlabuildvrt arguments
+        abs_path (bool): If True, the VRT uses absolute paths; otherwise, relative paths (default)
+        **kwargs: Other :code:`gdalbuildvrt` arguments (dashed CLI options, i.e. :code:`{"-srcnodata": "255"}`)
 
     Example:
         >>> paths_utm32630 = ["path/to/raster1.tif", "path/to/raster2.tif", "path/to/raster3.tif"]
@@ -1534,9 +1531,9 @@ def merge_vrt(
         >>> mosaic_32630 = "path/to/mosaic_32630.vrt"
         >>> mosaic_32631 = "path/to/mosaic_32631.vrt"
         >>>
-        >>> # Create mosaic, one per CRS or not (longer to open)
+        >>> # Create mosaic, one per CRS (longer to open)
         >>> merge_vrt(paths_utm32630, mosaic_32630)
-        >>> merge_vrt(paths_utm32631, mosaic_32631, {"-srcnodata":255, "-vrtnodata":0})
+        >>> merge_vrt(paths_utm32631, mosaic_32631, **{"-srcnodata": "255", "-vrtnodata": "0"})
     """
     return rasters_rio.merge_vrt(crs_paths, crs_merged_path, abs_path, **kwargs)
 
@@ -1595,7 +1592,7 @@ def merge_gtiff(rasters_paths: list, merged_path: AnyPathStrType, **kwargs) -> N
 
 def unpackbits(array: np.ndarray, nof_bits: int) -> np.ndarray:
     """
-    Function found
+    Unpack an array into its bits, using a function found
     `here <https://stackoverflow.com/questions/18296035/how-to-extract-the-bits-of-larger-numeric-numpy-data-types>`_
 
     Args:
@@ -1632,11 +1629,12 @@ def read_bit_array(
     bit_mask: xr.DataArray | np.ndarray, bit_id: int | list
 ) -> np.ndarray | list:
     """
-    Read bit arrays as a succession of binary masks (sort of read a slice of the bit mask, slice number :code:`bit_id`)
+    Read bit arrays as a succession of binary masks
+    (i.e. read a slice of the bit mask, slice number :code:`bit_id`)
 
     Args:
-        bit_mask (np.ndarray): Bit array to read
-        bit_id (int): Bit ID of the slice to be read
+        bit_mask (xr.DataArray | np.ndarray): Bit array to read
+        bit_id (int | list): Bit ID of the slice to be read
           Example: read the bit 0 of the mask as a cloud mask (Theia)
 
     Returns:
@@ -1681,11 +1679,11 @@ def read_uint8_array(
 
     Forces array to :code:`np.uint8`.
 
-    See :py:func:`rasters.read_bit_array`.
+    See :py:func:`read_bit_array`.
 
     Args:
-        bit_mask (np.ndarray): Bit array to read
-        bit_id (int): Bit ID of the slice to be read
+        bit_mask (xr.DataArray | np.ndarray): Bit array to read
+        bit_id (int | list): Bit ID of the slice to be read
           Example: read the bit 0 of the mask as a cloud mask (Theia)
 
     Returns:
@@ -1790,7 +1788,7 @@ def set_metadata(
 @dask.guard_compute(max_computes=0)
 def set_nodata(xda: xr.DataArray, nodata_val: float) -> xr.DataArray:
     """
-    Set nodata to a xarray that have no default nodata value.
+    Set the nodata value of an xarray that has no default nodata value.
 
     In the data array, the no-data pixels are set to :code:`np.nan`.
     The encoded value is kept in the geoutils metadata.
@@ -1844,13 +1842,13 @@ def where(
     - preserving the nodata pixels of the :code:`master_xda`
 
     If :code:`master_xda` is None, use it like :code:`xr.where`.
-    Else, it outputs a :code:`xarray.DataArray` with the same dtype than :code:`master_xda`.
+    Else, it outputs a :code:`xarray.DataArray` with the same dtype as :code:`master_xda`.
 
     .. WARNING::
         If you don't give a :code:`master_xda`,
         it is better to pass numpy arrays to :code:`if_false` and :code:`if_true` keywords
-        as passing xarrays interfers with the output metadata (you may lose the CRS and so on).
-        Just pass :code:`if_true=true_xda.data` inplace of :code:`if_true=true_xda` and the same for :code:`if_false`
+        as passing xarrays interferes with the output metadata (you may lose the CRS and so on).
+        Just pass :code:`if_true=true_xda.data` in place of :code:`if_true=true_xda` and the same for :code:`if_false`
 
     Args:
         cond (scalar, array, Variable, DataArray or Dataset): Conditional array
@@ -1902,7 +1900,7 @@ def hillshade(
     """
     Compute the hillshade of a DEM from an azimuth and an altitude angle (in degrees).
 
-    Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
+    Aims to replace the `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -1946,7 +1944,7 @@ def slope(
     """
     Compute the slope of a DEM (in degrees).
 
-    Goal: replace `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
+    Aims to replace the `gdaldem CLI <https://gdal.org/programs/gdaldem.html>`_
 
     Args:
         xds (AnyRasterType): Path to the DEM, its dataset, its :code:`xarray` or a tuple containing its array and metadata
@@ -2018,9 +2016,8 @@ def from_deg_to_meters(
     Approximately convert a distance in degrees to a distance in meters.
 
     Only true at the Equator if lat is not given.
-    Very false for longitude distance elsewhere.
-
-    If lat is given
+    Very inaccurate for longitude distances elsewhere.
+    If lat is given, the longitude distance is corrected for the latitude.
 
     See https://wiki.openstreetmap.org/wiki/Precision_of_coordinates
 
@@ -2046,8 +2043,9 @@ def from_meters_to_deg(
     meters: float, lat: float = None, decimals: float = 7, average_lat_lon: bool = False
 ) -> float:
     """
-    Approximately convert a distance in meters to a distance in degrees. Only true at the Equator.
-    Very false for longitude distance elsewhere.
+    Approximately convert a distance in meters to a distance in degrees.
+    Only true at the Equator if lat is not given.
+    Very inaccurate for longitude distances elsewhere.
 
     See https://wiki.openstreetmap.org/wiki/Precision_of_coordinates
 
@@ -2086,7 +2084,7 @@ def classify(
     Args:
         raster (xr.DataArray): Raster to classify
         bins (list): Bin edges. Should be monotonic.
-        values (list): Values to set for each bin. There should be one value more than the number of bins.
+        values (list): Values to set for each bin. There should be one more value than the number of bins.
         right (bool): Indicating whether the intervals include the right or the left bin edge. Default behavior is (right==False) indicating that the interval does not include the right edge. The left bin end is open in this case, i.e., bins[i-1] <= x < bins[i] is the default behavior for monotonically increasing bins.
         new_name (str): New name to be set
 
@@ -2180,12 +2178,12 @@ def reproject(
 
     Args:
         src_xda (AnyRasterType): Raster to be reprojected
-        pixel_size (float): Destination pixel size (in the destination CRS units). If not provided, the pixel size will be deducted from other parameters.
-        shape (tuple): Destination shape (height, width). If not provided, the shape will be deducted from other parameters. Supersedes :code:`pixel_size`.
+        pixel_size (float): Destination pixel size (in the destination CRS units). If not provided, the pixel size will be deduced from other parameters.
+        shape (tuple): Destination shape (height, width). If not provided, the shape will be deduced from other parameters. Supersedes :code:`pixel_size`.
         resampling (Resampling): Resampling method. Defaults to :code:`Resampling.bilinear`.
         dst_crs (CRS): Destination CRS. If not provided, the source CRS will be used.
         nodata (float): Nodata value for the destination raster. If not provided, the nodata value will be retrieved from the source raster.
-        num_threads (int): Number of threads to use for parallel processing. If not provided, set to your number of CPU minus 2.
+        num_threads (int): Number of threads to use for parallel processing. If not provided, set to the number of CPU cores minus 2.
         name (str): Name of the output DataArray.
         dem_path (AnyPathStrType): Path to the DEM, only used if the raster carries RPCs.
         extent (gpd.GeoDataFrame): Extent used to subset the DEM, only used if the raster carries RPCs.
@@ -2215,7 +2213,7 @@ def reproject(
         >>> rpc_reproj.rst.crs.to_epsg()
         4326
         >>>
-        >>> # See if the corrdinates are correctly set (lon = 106,x, lat = -6,x)
+        >>> # See if the coordinates are correctly set (lon = 106,x, lat = -6,x)
         >>> # These coordinates correspond to the tile of the DEM in input (S07_00_E106_00)
         >>> rpc_reproj.coords
         Coordinates:
@@ -2393,11 +2391,10 @@ def __preprocess_dem(
 
 def __rpc_gdal_options(dem_path: AnyPathStrType):
     """
-    Add RPC-specific option to GDAL kwargs (topp be passed to rioxarray of rasterio)
+    Add RPC-specific options to the GDAL kwargs (to be passed to rioxarray or rasterio)
 
     Args:
-        dem_path  (AnyPathStrType): DEM path
-        kwargs (dict): Reprojection kwargs
+        dem_path (AnyPathStrType): DEM path
 
     Returns:
         dict: Updated options

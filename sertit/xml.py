@@ -43,10 +43,10 @@ LOGGER = logging.getLogger(SU_NAME)
 
 def read(xml_path: AnyPathStrType) -> _Element:
     """
-    Read an XML file, even stored on the cloud
+    Read an XML file, even stored on the cloud.
 
     Args:
-        path (AnyPathStrType): Path to the XML file
+        xml_path (AnyPathStrType): Path to the XML file
 
     Returns:
         _Element: XML Root
@@ -79,17 +79,17 @@ def read_archive(
     path: AnyPathStrType, regex: str = None, file_list: list = None
 ) -> _Element:
     """
-    Read an XML file from inside an archive (zip or tar)
-    Convenient duplicate of :code:`files.read_archived_xml`
+    Read an XML file from inside an archive (zip or tar).
+    Convenient duplicate of :code:`files.read_archived_xml`.
 
     Manages two cases:
 
-    - complete path to an XML file stored inside an archive. In this case the filetree from inside the archive should be separated with a :code:`!`. Don't need to start with zip or tar
-    - path to the archive plus a regex looking inside the archive. Duplicate behaviour to :py:func:`files.read_archived_xml`
+    - complete path to an XML file stored inside an archive. In this case the file tree from inside the archive should be separated with a :code:`!`. No need to start with zip or tar.
+    - path to the archive plus a regex looking inside the archive. Same behaviour as :code:`files.read_archived_xml`.
 
     Args:
         path (AnyPathStrType): Path to the XML file, stored inside an archive or path to the archive itself
-        regex (str): Optional. If specified, the path should be the archive path and the regex should be the key to find the XML file inside the archive.
+        regex (str): Optional. If specified, :code:`path` should be the archive path and :code:`regex` should be used to find the XML file inside the archive.
         file_list (list): List of files contained in the archive. Optional, if not given it will be re-computed.
 
     Returns:
@@ -158,7 +158,7 @@ def update_attrib(xml: _Element, field: str, attribute: str, value: Any) -> None
 
 def update_txt(xml: _Element, field: str, value: Any) -> None:
     """
-    Update in place a text of a field
+    Update in place the text of a field
 
     Args:
         xml (_Element): Root XML
@@ -174,7 +174,7 @@ def update_txt(xml: _Element, field: str, value: Any) -> None:
 
 def update_txt_fct(xml: _Element, field: str, fct: Callable) -> None:
     """
-    Update in place a text of a field by applying a function to the value of the given field
+    Update in place the text of a field by applying a function to the value of the given field
 
     Args:
         xml (_Element): Root XML
@@ -192,12 +192,12 @@ def update_txt_fct(xml: _Element, field: str, fct: Callable) -> None:
 
 def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
     """
-    Convert any dataset containing the given attributes to :code:`lxml _Element`
-    (i.e. netcdf dataset)
+    Convert a dataset containing the given attributes (e.g. a netCDF dataset)
+    to a :code:`lxml _Element`.
 
     Args:
         src_ds (Any): Any dataset containing the given attribute list
-        attributes(list): List of attributes to set in the wanted XML
+        attributes (list): List of attributes to set in the wanted XML
 
     Returns:
         _Element: Wanted XML
@@ -230,7 +230,7 @@ def convert_to_xml(src_ds: Any, attributes: list) -> _Element:
 
 def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
     """
-    Convert any dict containing the given attributes to a :code:`lxml _Element`.
+    Convert a dict containing the given attributes to a :code:`lxml _Element`.
 
     Replacements in keys:
 
@@ -239,8 +239,8 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
     - :code:`")"` to :code:`""`
 
     Args:
-        dict_to_cv (Any): Dict to convert into a XML
-        attributes(list): List of attributes to set in the wanted XML
+        dict_to_cv (dict): Dict to convert into an XML
+        attributes (list): List of attributes to set in the wanted XML
 
     Returns:
         _Element: Wanted XML
@@ -279,13 +279,14 @@ def dict_to_xml(dict_to_cv: dict, attributes: list = None) -> _Element:
 
 def df_to_xml(src_ds: Any) -> _Element:
     """
-    Convert a :code:`pandas.DataFrame` or similar (which has a :code:`.to_xml()` function) to a :code:`lxml _Element`
+    Convert a :code:`pandas.DataFrame` or similar (which has a :code:`.to_xml()` method)
+    to a :code:`lxml _Element`.
 
     Args:
-        src_ds:
+        src_ds (Any): DataFrame-like object to convert
 
     Returns:
-        _Element: Wanted XML
+        _Element: Converted XML
     """
     return fromstring(bytes(src_ds.to_xml(index=False), UTF_8))
 

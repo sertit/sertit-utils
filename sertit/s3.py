@@ -55,12 +55,14 @@ def in_house_s3_configs():
     """
     This function declares in-house S3 configurations for rasterio, pyogrio and cloudpathlib.
 
-    You can control how rasterio, pyogrio and cloudpathlib connects to S3 server by changing the input configurations bellow.
-    Then, configuration files are translated for each library into their own configuration system.
+    You can control how rasterio, pyogrio and cloudpathlib connect to the S3 server
+    by changing the input configurations below.
+    Then, the configurations are translated for each library into their own configuration system.
 
-    To get more information read the docstring of the function args_dict.
+    To get more information, read the docstring of the function :code:`args_dict`.
 
     Returns:
+        dict: S3 configurations for rasterio, pyogrio and cloudpathlib
 
     """
     import rasterio
@@ -123,29 +125,31 @@ def in_house_s3_configs():
 @utils.requires(("rasterio", "geo"), ("pyogrio", "geo"))
 def s3_env(*args, **kwargs):
     """
-    Create S3 compatible storage environment
-    You need to set endpoint url if you use s3 compatible storage
-    since GDAL/Rasterio does not read endpoint url from config file.
+    Decorator creating an S3-compatible storage environment for the decorated function.
+    You need to set the endpoint URL if you use S3-compatible storage,
+    since GDAL/Rasterio does not read the endpoint URL from the configuration file.
 
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
     1. AWS profile
     2. Given arguments
     3. AWS environment variable
 
+    Args:
+        **kwargs: Arguments passed to :code:`s3_args`
+
     Returns:
-        Callable: decorated function
+        Callable: Decorated function
 
     Example:
         >>> from sertit.s3 import s3_env
         >>> from sertit import AnyPath
         >>> @s3_env(endpoint="s3.unistra.fr")
-        >>> def file_exists(path: str):
-        >>>     pth = AnyPath(path)
-        >>>     print(pth.exists())
+        ... def file_exists(path: str):
+        ...     pth = AnyPath(path)
+        ...     print(pth.exists())
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
@@ -191,32 +195,35 @@ def temp_s3(
     **kwargs,
 ) -> None:
     """
-    Initialize a temporary S3 environment as a context manager
-    You need to set endpoint url if you use s3 compatible storage
-    since GDAL/Rasterio does not read endpoint url from config file.
+    Initialize a temporary S3 environment, as a context manager.
+    You need to set the endpoint URL if you use S3-compatible storage,
+    since GDAL/Rasterio does not read the endpoint URL from the configuration file.
 
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
     1. AWS profile
     2. Given arguments
     3. AWS environment variable
 
     Args:
-        endpoint: Endpoint to s3 path in the form s3.yourdomain.com
-        profile_name: The name of your AWS profile
-        requester_pays (bool): True if the endpoint says 'requester pays'
-        no_sign_request (bool): True if the endpoint is open access
+        endpoint (str): The S3 endpoint, in the form s3.yourdomain.com
+        profile_name (str): The name of your AWS profile
+        requester_pays (bool): True if the endpoint uses "requester pays"
+        no_sign_request (bool): True if the endpoint is in open access
+        **kwargs: Other arguments passed to :code:`define_s3_client`
+
+    Yields:
+        cloudpathlib.S3Client: The S3 client, set as the default client
 
     Example:
         >>> from sertit.s3 import temp_s3
         >>> from sertit import AnyPath
         >>> def file_exists(path: str):
-        >>>     with temp_s3(endpoint="s3.unistra.fr"):
-        >>>         pth = AnyPath(path)
-        >>>         print(pth.exists())
+        ...     with temp_s3(endpoint="s3.unistra.fr"):
+        ...         pth = AnyPath(path)
+        ...         print(pth.exists())
         >>> file_exists("s3://sertit-geodatastore/GLOBAL/COPDEM_30m/COPDEM_30m.vrt")
         True
     """
@@ -256,21 +263,22 @@ def define_s3_client(
     **kwargs,
 ):
     """
-    Define S3 client
-    This function searches for S3 configuration in many places.
-    It does apply configuration variables precedence, and you might have a use for it.
-    Here is the order of precedence from least to greatest
-    (the last listed configuration variables override all other variables):
+    Define the S3 client and set it as the default client.
+    This function searches for the S3 configuration in many places.
+    It applies a precedence between the configuration variables, which might be useful:
+    from least to greatest (the last listed variables override all the others):
 
     1. AWS profile
     2. Given arguments
     3. AWS environment variable
 
     Args:
-        endpoint: The s3 endpoint (s3.yourdomain.com)
-        profile_name: The name of the aws profile. Default to default profile in AWS configuration file.
-        requester_pays (bool): True if the endpoint says 'requester pays'
-        no_sign_request (bool): True if the endpoint is open access
+        endpoint (str): The S3 endpoint (s3.yourdomain.com)
+        profile_name (str): The name of the AWS profile.
+            Defaults to the default profile in the AWS configuration file.
+        requester_pays (bool): True if the endpoint uses "requester pays"
+        no_sign_request (bool): True if the endpoint is in open access
+        **kwargs: Other arguments passed to the S3 client
     """
     kwargs_cp = kwargs.copy()
     kwargs_cp["endpoint"] = endpoint
@@ -288,14 +296,15 @@ def define_s3_client(
 @utils.requires(("rasterio", "geo"))
 def s3_args(*args, **kwargs) -> dict:
     """
-    This function returns ready to use configurations for rasterio, pyogrio and cloudpathlib.
-    For each in-house input configurations, it applies the function args_dict.
+    This function returns ready-to-use configurations for rasterio, pyogrio and cloudpathlib.
+    For each in-house input configuration, it applies the function :code:`args_dict`.
 
     Args:
-        *args:
-        **kwargs:
+        *args: Unused
+        **kwargs: Arguments used to build the configurations
 
     Returns:
+        dict: Configurations for rasterio, pyogrio and cloudpathlib
 
     """
     import rasterio
@@ -325,10 +334,10 @@ def args_dict(args_l: list[dict], kwargs) -> dict:
     This function converts a single in-house S3 configuration to a dictionary containing ready to use key/value parameters.
 
     The input is a list of dict to process. Each dictionary can contain the following key:
-    - name: The name of the key in the output dict. If not given, the name of the key is the value of kwargs.
-    - kwargs: The name of the kwargs argument whose value is taken to set the value in output dict.
-    - env: The name of the envrionment variable whose value is taken to set the value in output dict.
-    - prefix: A prefix prefixed to the value in the ouput dict.
+    - name: The name of the key in the output dict. If not given, the name of the key is the value of the kwargs key.
+    - kwargs: The name of the kwargs argument whose value is taken to set the value in the output dict.
+    - env: The name of the environment variable whose value is taken to set the value in the output dict.
+    - prefix: A prefix added to the value in the output dict.
 
     For example, if the environment variable "AWS_PROFILE" is unset, the following input:
     args_l = [{"name": "AWS_PROFILE", "kwargs": "profile_name", "env": "AWS_PROFILE"}], kwargs={"profile_name": "unistra"}
@@ -338,17 +347,18 @@ def args_dict(args_l: list[dict], kwargs) -> dict:
     Here is the order of precedence from least to greatest
     (the last listed configuration variables override all other variables):
 
-    1. Value from kwargs.
-    2. Default value from key "default".
+    1. Default value from key "default".
+    2. Value from kwargs.
     3. Value from environment variable.
 
     If no value is found, the output dict will not contain the wanted parameter.
 
     Args:
-        args_l: A list of parameters to extract. Each element will give a single key/value parameter.
-        kwargs: Considered kwargs input to set parameters.
+        args_l (list[dict]): A list of parameters to extract. Each element will give a single key/value parameter.
+        kwargs (dict): Considered kwargs input to set the parameters.
 
     Returns:
+        dict: Ready-to-use key/value parameters
 
     """
     ret = {}

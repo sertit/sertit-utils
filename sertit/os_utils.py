@@ -1,3 +1,20 @@
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
+# This file is part of sertit-utils project
+#     https://github.com/sertit/sertit-utils
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Operating system related utilities."""
+
 import logging
 import re
 from functools import cmp_to_key
@@ -9,19 +26,20 @@ from sertit.logs import SU_NAME
 LOGGER = logging.getLogger(SU_NAME)
 
 
-def _compare_str_containing_version(str1: str, str2: str):
+def _compare_str_containing_version(str1: str, str2: str) -> int:
     """
     Compare two strings containing a software version, for example "qgis 3.34.5" and "qgis 3.35.6".
 
     Args:
-        str1:
-        str2:
+        str1 (str): First version string
+        str2 (str): Second version string
 
     Returns:
-        Let's say str1 and str2 contains respectively the versions v1 and v2. So, this function returns:
-        -1 if v1 <= v2
-        0 if v1 == v2
-        1 if v1 >= v2
+        int: Let's say str1 and str2 contain respectively the versions v1 and v2.
+            This function returns:
+            -1 if v1 < v2
+            0 if v1 == v2
+            1 if v1 > v2
 
     """
     from semver import Version
@@ -41,11 +59,13 @@ def _compare_str_containing_version(str1: str, str2: str):
         return 1
 
 
-def qgis_bin() -> Path:
+def qgis_bin() -> Path | None:
     """
-    Looking for qgis bin directory in Windows filesystem and return it.
+    Look for the QGIS bin directory in the Windows filesystem and return it.
 
-    Returns: None if qgis bin directory is not found or a path to the qgis bin directory otherwise.
+    Returns:
+        Path | None: None if the QGIS bin directory is not found,
+            or the path to the QGIS bin directory otherwise.
     """
     # Find QGis in ProgramFiles
     qgis_dirs = []
@@ -78,10 +98,10 @@ def qgis_bin() -> Path:
 
 def gdalbuildvrt_exe() -> str:
     """
-    Looking for gdalbuildvrt exe from the path or inside qgis bin directory.
+    Look for the gdalbuildvrt executable from the PATH or inside the QGIS bin directory.
 
     Returns:
-        str: gdalbuildvrt exe
+        str: The gdalbuildvrt executable
 
     """
     qgis = qgis_bin()

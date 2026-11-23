@@ -1,3 +1,20 @@
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
+# This file is part of sertit-utils project
+#     https://github.com/sertit/sertit-utils
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""ArcGIS related utilities."""
+
 import logging
 import logging.handlers
 import logging.config
@@ -46,9 +63,9 @@ AGP_ENVS = [AGP_EO_ENV, AGP_EO_ENV_TEST]
 # flake8: noqa
 def init_conda_arcpy_env():
     """
-    Initialize conda environment with Arcgis Pro.
+    Initialize the conda environment with ArcGis Pro.
 
-    Resolves several issues.
+    Resolves several known issues (e.g. GDAL version parsing, MEM dataset access).
     """
     try:  # pragma: no cover
         from packaging.version import InvalidVersion, Version
@@ -78,8 +95,9 @@ def init_conda_arcpy_env():
 class ArcPyLogger:  # pragma: no cover
     def __init__(self, name=None, prefix_log_file="atools_"):
         """
-        This class inits a ready to use python logger for ArcGis pro tool. Be sure that arcpy has been imported
-        before using this class. It uses logging under the hood.
+        This class initializes a ready-to-use Python logger for ArcGis Pro tools.
+        Make sure that arcpy has been imported before using this class.
+        It uses logging under the hood.
         It writes outputs to a temporary file and to the ArcGis console.
         The temporary file is removed when the user closes ArcGis.
 
@@ -87,9 +105,9 @@ class ArcPyLogger:  # pragma: no cover
         to get your logger.
 
         Args:
-            name (str) : The name of the logger
-            prefix_log_file (str) : The log filename is random, but you can prefix a name.
-                The default value is "{{ name }}_".
+            name (str): The name of the logger
+            prefix_log_file (str): The log filename is random, but you can prefix a name.
+                The default value is :code:`atools_`.
 
         Example:
             >>> import logging
@@ -183,17 +201,17 @@ def init_arcgis_logger(
     curr_logger: logging.Logger, log_lvl: int = logging.INFO
 ) -> None:
     """
-    Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
-    This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
-    print it properly to the user in ArcGis.
+    Initialize a logger for tools running in the backend environment with the :code:`run_in_conda_env` function.
+    This logger outputs information in JSON format to stdout; the :code:`run_in_conda_env` function
+    catches the JSON and prints it properly to the user in ArcGis.
 
     Args:
-        curr_logger (logging.Logger): Logger to be initialize
+        curr_logger (logging.Logger): Logger to be initialized
         log_lvl (int): Logging level to be set
 
     Example:
         >>> logger = logging.getLogger("logger_test")
-        >>> init_logger(logger, logging.INFO)
+        >>> init_arcgis_logger(logger, logging.INFO)
         >>> logger.info("MESSAGE")
     """
     f = tempfile.NamedTemporaryFile(prefix="atools_", delete=False)
@@ -235,17 +253,17 @@ def init_arcgis_logger(
 @utils.requires(("pythonjsonlogger", "arcpy"))
 def init_json_logger(curr_logger: logging.Logger, log_lvl: int = logging.INFO) -> None:
     """
-    Initialize a logger for tools running in the backend environment with `run_in_conda_env` function.
-    This logger outputs information in JSON format to stdout, the `run_in_conda_env` function catches the JSON and
-    print it properly to the user in ArcGis.
+    Initialize a logger for tools running in the backend environment with the :code:`run_in_conda_env` function.
+    This logger outputs information in JSON format to stdout; the :code:`run_in_conda_env` function
+    catches the JSON and prints it properly to the user in ArcGis.
 
     Args:
-        curr_logger (logging.Logger): Logger to be initialize
+        curr_logger (logging.Logger): Logger to be initialized
         log_lvl (int): Logging level to be set
 
     Example:
         >>> logger = logging.getLogger("logger_test")
-        >>> init_logger(logger, logging.INFO)
+        >>> init_json_logger(logger, logging.INFO)
         >>> logger.info("MESSAGE")
     """
     logging.config.dictConfig(
@@ -280,55 +298,53 @@ def gp_layer_to_path(layer) -> str:  # pragma: no cover
     """
     Convert a GP layer to its source path.
 
-    A GP layer in ArcGis is a layer in the content panel. Thus, the user can simply choose the layer in a dropdown menu.
-    This function adds the possibility to get the source path of this layer if the user chose in the dropdown menu or
-    drag and drop from the Windows explorer.
+    A GP layer in ArcGis is a layer in the content panel. The user can choose it in a dropdown menu
+    or drag and drop it from the Windows explorer.
+    This function retrieves the source path of the layer in both cases.
 
     Args:
-        layer: Feature layer or Raster layer
+        layer (arcpy layer): Feature layer or raster layer
 
     Returns:
         str: Path to the feature or raster layer source
 
-    Examples:
-        For python toolbox, in the getParameterInfo() method use GPLayer, GPFeatureLayer or GPRasterLayer datatype.
+    Example:
+        For a python toolbox, in the getParameterInfo() method use the GPLayer, GPFeatureLayer or GPRasterLayer datatype.
 
-        For vector layer use GPFeatureLayer:
+        For a vector layer use GPFeatureLayer:
 
         >>> import arcpy
         >>> aoi = arcpy.Parameter(
-        >>>    displayName="Aoi",
-        >>>    name="aoi",
-        >>>    datatype="GPFeatureLayer",
-        >>>    parameterType="Required",
-        >>>    direction="Input",
-        >>> )
+        ...    displayName="Aoi",
+        ...    name="aoi",
+        ...    datatype="GPFeatureLayer",
+        ...    parameterType="Required",
+        ...    direction="Input",
+        ... )
 
-        For raster layer, use GPRasterLayer:
+        For a raster layer, use GPRasterLayer:
 
-        >>> import arcpy
         >>> nir_path = arcpy.Parameter(
-        >>>    displayName="Nir infrared band",
-        >>>    name="nir_path",
-        >>>    datatype="GPRasterLayer",
-        >>>    parameterType="Optional",
-        >>>    direction="Input",
-        >>> )
+        ...    displayName="Nir infrared band",
+        ...    name="nir_path",
+        ...    datatype="GPRasterLayer",
+        ...    parameterType="Optional",
+        ...    direction="Input",
+        ... )
 
-        If your layer may be a feature or raster layer, use GPLayer:
+        If your layer may be a feature or a raster layer, use GPLayer:
 
-        >>> import arcpy
         >>> dem_path = arcpy.Parameter(
-        >>>    displayName="DEM path as isoline or raster",
-        >>>    name="dem_path",
-        >>>    datatype="GPLayer",
-        >>>    parameterType="Optional",
-        >>>    direction="Input",
-        >>> )
+        ...    displayName="DEM path as isoline or raster",
+        ...    name="dem_path",
+        ...    datatype="GPLayer",
+        ...    parameterType="Optional",
+        ...    direction="Input",
+        ... )
 
         Then in the execute() method, you can use this function to retrieve the real path to the layer.
 
-        >>> aoi_path = feature_layer_to_path(parameters[0].value)
+        >>> aoi_path = gp_layer_to_path(parameters[0].value)
         >>> print(aoi_path)
         D:/data/project/aoi/aoi.shp
 
@@ -366,17 +382,16 @@ def run_in_conda_env(
     shell=True,
 ):
     """
-    This function runs an executable thanks to conda run in a python subprocess.
-    It uses the subcommand `conda run` to run the executable in a conda environment.
-    If conda_env_name is None, it chooses an environment in the following order (it stops at the first one found):
+    This function runs an executable through :code:`conda run` in a Python subprocess.
+    If :code:`conda_env_name` is None, it chooses an environment among:
     - arcgispro-eo-backend
     - arcgispro-eo-backend-testing
     - self
 
-    Where self is the current environment. If self is given, a subprocess is launched anyway with the same python interpreter.
+    Where :code:`self` is the current environment. If :code:`self` is given, a subprocess is launched anyway with the same Python interpreter.
 
-    This function is designed to solve ArcGis limits by running an executable files in another conda environment
-    and thus solves a lot of issues.
+    This function is designed to solve ArcGis limits by running executables in another conda environment,
+    which solves a lot of issues.
 
     The `extend_env` argument allows one to add environment variable in the child subprocess.
     For example, if parent_env = { "PYTHON_PATH": "/path/to/python_lib,/another_path/to/python_lib", "VAR": "True" }
@@ -386,16 +401,17 @@ def run_in_conda_env(
     The child_env took the whole `PYTHON_PATH` variable from `extend_env` and the variable `VAR` from the parent_env.
 
     Args:
-        executable: Executable name, with additional arguments to be passed to the executable on invocation.
-        logger_name: The logger name to use.
-        conda_env_name: Name of the conda environment where to run the executable.
-                        Set it to "self" to force the subprocess to run in the current environment.
-        python_path: Set the PYTHON_PATH variable in the child subprocess.
-        extend_env: Dict to extend environment in the sub-process. extend_env is merged with
-                    the parent process environment by overriding it if necessary.
-        shell: Run subprocess in a shell if True.
+        executable (list[str]): Executable name, with additional arguments to be passed to the executable on invocation.
+        logger_name (str): The logger name to use.
+        conda_env_name (str | None): Name of the conda environment where to run the executable.
+            Set it to "self" to force the subprocess to run in the current environment.
+        python_path (str): Value to set for the PYTHONPATH variable in the child subprocess.
+        extend_env (dict): Dict to extend the environment in the sub-process. extend_env is merged with
+            the parent process environment by overriding it if necessary.
+        shell (bool): Run subprocess in a shell if True.
 
     Returns:
+        int: Return value (exit code) of the executable
 
     """
     import json
@@ -593,11 +609,11 @@ def run_in_conda_env(
 )
 def create_conda_env_cli(input_file: str, output_file: str):
     """
-    Create the CLI to run the decorated function in a new conda environment.
+    Create a CLI that runs the decorated function in a new conda environment.
 
     To be used in the backend CLI main.
 
-    Examples:
+    Example:
         >>> from sertit.arcpy import create_conda_env_cli
         >>> from my_tool.my_tool_core import my_tool_core
         >>> create_conda_env_cli(standalone_mode=False)(my_tool_core)
@@ -630,7 +646,7 @@ def run_in_conda_env_cli(
     """
     Run the given command line with the given inputs in a new conda environment.
 
-    Scope: run a complicated tool with heavy deps from inside a conda environment ccontaining arcpy
+    Scope: run a complicated tool with heavy dependencies from inside a conda environment containing arcpy.
 
     To be used in the .pyt file.
 
@@ -647,28 +663,28 @@ def run_in_conda_env_cli(
     Returns:
         tuple[int, Any]: Return value and outputs of the function
 
-    Examples:
+    Example:
         >>> def main_arcgis(parameters, messages, tools_path):
-        >>>     from sertit.arcpy import run_in_conda_env_cli
-        >>>     from my_tool import LOGGER_NAME, my_backend_cli
-        >>>
-        >>>     inputs = {
-        >>>         "aoi_path": "aoi.shp",
-        >>>         "input": "input.tif",
-        >>>         "resolution": 10,
-        >>>     }
-        >>>
-        >>>     retval, output_path = run_in_conda_env_cli(
-        >>>         cli_path=my_backend_cli.__file__,
-        >>>         inputs=inputs,
-        >>>         logger_name=LOGGER_NAME,
-        >>>         tools_path=tools_path,
-        >>>     )
-        >>>
-        >>>     if retval == 0:
-        >>>         logger.info("RasterFillHoles was a success.")
-        >>>     else:
-        >>>         logger.error("Subprocess RasterFillHoles failed.")
+        ...     from sertit.arcpy import run_in_conda_env_cli
+        ...     from my_tool import LOGGER_NAME, my_backend_cli
+        ...
+        ...     inputs = {
+        ...         "aoi_path": "aoi.shp",
+        ...         "input": "input.tif",
+        ...         "resolution": 10,
+        ...     }
+        ...
+        ...     retval, output_path = run_in_conda_env_cli(
+        ...         cli_path=my_backend_cli.__file__,
+        ...         inputs=inputs,
+        ...         logger_name=LOGGER_NAME,
+        ...         tools_path=tools_path,
+        ...     )
+        ...
+        ...     if retval == 0:
+        ...         logger.info("RasterFillHoles was a success.")
+        ...     else:
+        ...         logger.error("Subprocess RasterFillHoles failed.")
     """
     with tempfile.NamedTemporaryFile(delete=False) as fp_in:
         fp_in_name = fp_in.name

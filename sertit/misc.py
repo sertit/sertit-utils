@@ -43,11 +43,11 @@ class ListEnum(Enum):
 
     Example:
         >>> @unique
-        >>> class TsxPolarization(ListEnum):
-        >>>     SINGLE = "S"  # Single
-        >>>     DUAL = "D"  # Dual
-        >>>     QUAD = "Q"  # Quad
-        >>>     TWIN = "T"  # Twin
+        ... class TsxPolarization(ListEnum):
+        ...     SINGLE = "S"  # Single
+        ...     DUAL = "D"  # Dual
+        ...     QUAD = "Q"  # Quad
+        ...     TWIN = "T"  # Twin
     """
 
     @classmethod
@@ -65,10 +65,10 @@ class ListEnum(Enum):
     @classmethod
     def list_names(cls) -> list:
         """
-        Get the name list of this enum:
+        Get the name list of this enum.
 
         Example:
-            >>> TsxPolarization.list_values()
+            >>> TsxPolarization.list_names()
             ["SINGLE", "DUAL", "QUAD", "TWIN"]
         """
         return list(map(lambda c: c.name, cls))
@@ -134,29 +134,28 @@ class ListEnum(Enum):
 
 def unique(sequence: list):
     """
-    Keep only unique values from a list (any Iterable should work).
+    Keep only the unique values of a sequence (any Iterable should work).
 
-    Preserves the order of the sequence (except for sets of course).
+    Preserves the order of the sequence (except for sets, which are sorted).
 
     Args:
-        sequence (list): List from which to keep only the unique values
+        sequence (Iterable): Sequence from which to keep only the unique values
 
     Returns:
-        list: List containing only unique values
+        list: List containing only the unique values
 
-    Examples:
+    Example:
         >>> # With a list
         >>> unique([5, 4, 1, 2, 3, 1, 2])
         [5, 4, 1, 2, 3]
 
-        >>> # With an array
-        >>> unique(np.array([5, 4, 1, 2, 3, 1, 2]))
+        >>> # With a tuple
+        >>> unique((5, 4, 1, 2, 3, 1, 2))
         [5, 4, 1, 2, 3]
 
-        >>> # With a set (sorts the values, as a set would do!)
-        >>> unique({5, 4, 1, 2, 3, 1, 2})
+        >>> # With a set (the values are sorted, as a set would do)
+        >>> unique({5, 4, 1, 2, 3})
         [1, 2, 3, 4, 5]
-
 
     """
     return list(dict.fromkeys(sequence))
@@ -166,17 +165,18 @@ def remove_empty_values(
     object_with_empty_values: list | dict, other_empty_values: list = None
 ) -> list | dict:
     """
-    Remove empty values from list.
+    Remove the empty values from a list or a dictionary.
 
     Args:
-        object_with_empty_values (list): List with empty values
+        object_with_empty_values (list | dict): List or dictionary with empty values
+        other_empty_values (list): Other values to consider as empty (in addition to :code:`None`)
 
     Returns:
-        list: Curated list
+        list | dict: List or dictionary without the empty values
 
     Example:
         >>> lst = ["A", "T", "R", "", 3, None]
-        >>> list_to_dict(lst)
+        >>> remove_empty_values(lst)
         ["A", "T", "R", 3]
 
     """
@@ -300,25 +300,18 @@ def list_to_dict(dict_list: list) -> dict:
 
 def nested_set(dic: dict, keys: list, value: Any) -> None:
     """
-    Set value in nested directory:
+    Set a value in a nested dictionary.
 
     Args:
         dic (dict): Dictionary
         keys (list[str]): Keys as a list
-        value: Value to be set
+        value (Any): Value to be set
 
     Example:
         >>> dct = {"A": "T", "R": 3}
         >>> nested_set(dct, keys=["B", "C", "D"], value="value")
-        {
-        "A": "T",
-        "R": 3,
-        "B": {
-             "C": {
-                  "D": "value"
-                  }
-             }
-        }
+        >>> dct
+        {'A': 'T', 'R': 3, 'B': {'C': {'D': 'value'}}}
     """
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
@@ -327,11 +320,10 @@ def nested_set(dic: dict, keys: list, value: Any) -> None:
 
 def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
     """
-    Check all mandatory argument in a dictionary.
+    Check all the mandatory arguments in a dictionary.
     Raise an exception if a mandatory argument is missing.
 
-    **Note**: nested keys do not work here !
-
+    **Note**: nested keys do not work here!
 
     Args:
         data_dict (dict): Data dictionary to be checked
@@ -342,8 +334,7 @@ def check_mandatory_keys(data_dict: dict, mandatory_keys: list) -> None:
         >>> check_mandatory_keys(dct, ["A", "R"])  # Returns nothing, is OK
         >>> check_mandatory_keys(dct, ["C"])
         Traceback (most recent call last):
-          File "<input>", line 1, in <module>
-          File "<input>", line 167, in check_mandatory_keys
+            ...
         ValueError: Missing mandatory key 'C' among {'A': 'T', 'R': 3}
     """
 
@@ -367,14 +358,14 @@ def find_by_key(data: dict, target: str) -> Any:
 
     Example:
         >>> dct = {
-        >>>         "A": "T",
-        >>>         "R": 3,
-        >>>         "B": {
-        >>>             "C": {
-        >>>                 "D": "value"
-        >>>                  }
-        >>>              }
-        >>>        }
+        ...         "A": "T",
+        ...         "R": 3,
+        ...         "B": {
+        ...             "C": {
+        ...                 "D": "value"
+        ...                  }
+        ...              }
+        ...        }
         >>> find_by_key(dct, "D")
         "value"
 
@@ -401,27 +392,20 @@ def run_cli(
     Run a command line.
 
     Args:
-        cmd (str or list[str]): Command as a list
+        cmd (str | list[str]): Command as a string or a list of strings
         timeout (float): Timeout
-        check_return_value (bool): Check output value of the exe
-        in_background (bool): Run the subprocess in background
+        check_return_value (bool): Check the return value of the executable
+        in_background (bool): Run the subprocess in the background
         cwd (str): Working directory
 
     Returns:
-        int, str: return value and output log
+        int, str: Return value and output
 
     Example:
-        >>> cmd_hillshade = ["gdaldem", "--config",
-        >>>                  "NUM_THREADS", "1",
-        >>>                  "hillshade", strings.to_cmd_string(dem_path),
-        >>>                  "-compute_edges",
-        >>>                  "-z", self.nof_threads,
-        >>>                  "-az", azimuth,
-        >>>                  "-alt", zenith,
-        >>>                  "-of", "GTiff",
-        >>>                  strings.to_cmd_string(hillshade_dem)]
-        >>> # Run command
-        >>> run_cli(cmd_hillshade)
+        >>> # Run a command and get the output
+        >>> retval, output = run_cli(["gdalinfo", "--version"], in_background=False)
+        >>> retval
+        0
     """
     if isinstance(cmd, list):
         cmd = [str(cmd_i) for cmd_i in cmd]
@@ -487,7 +471,8 @@ def get_function_name() -> str:
 
     Example:
         >>> def huhuhu():
-        >>>     return get_function_name()
+        ...     return get_function_name()
+        ...
         >>> huhuhu()
         "huhuhu"
     """
@@ -497,16 +482,16 @@ def get_function_name() -> str:
 
 def in_docker() -> bool:
     """
-    Check if the session is running inside a docker
+    Check if the session is running inside Docker.
 
     Returns:
-        bool: True if inside a docker
+        bool: True if inside a Docker container
 
     Example:
         >>> if in_docker():
-        >>>    print("OMG we are stock in a Docker ! Get me out of here !")
-        >>> else:
-        >>>    print("We are safe")
+        ...     print("OMG we are stuck in a Docker! Get me out of here!")
+        ... else:
+        ...     print("We are safe")
     """
     try:
         with open("/proc/1/cgroup") as ifh:
@@ -520,7 +505,7 @@ def in_docker() -> bool:
 @contextmanager
 def chdir(newdir: AnyPathStrType) -> None:
     """
-    Change current directory, used as a context manager, i.e.:
+    Change the current directory, used as a context manager, i.e.:
 
     Args:
         newdir (str): New directory
@@ -528,7 +513,7 @@ def chdir(newdir: AnyPathStrType) -> None:
     Example:
         >>> folder = r"C:/"
         >>> with chdir(folder):
-        >>>     print(os.getcwd())
+        ...     print(os.getcwd())
         'C:/'
     """
     newdir = AnyPath(newdir)
@@ -546,9 +531,9 @@ def compare(a, b, operation: str) -> bool:
     Using this function allows to ask the user the operation he wants (see compare_version for example)
 
     Args:
-        a: First object
-        b: Second object
-        operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
+        a (Any): First object
+        b (Any): Second object
+        operation (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
 
     Returns:
         bool: True if the comparison between the two objects is respected
@@ -572,10 +557,10 @@ def compare(a, b, operation: str) -> bool:
 
 def compare_version(lib: str | Version, version_to_check: str, operator: str) -> bool:
     """
-    Compare the version of a librarie to a reference, giving the operator.
+    Compare the version of a library to a reference version, given the operator.
 
     Args:
-        lib (str | Version): Name of the library, it's version as a string or as a Version object
+        lib (str | Version): Name of the library, its version as a string, or as a Version object
         version_to_check (str): Version of the library to be compared
         operator (str): Operator to use (:code:`>`, :code:`<`, :code:`>=`, :code:`<=`, :code:`==`)
 

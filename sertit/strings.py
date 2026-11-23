@@ -38,12 +38,12 @@ def str_to_bool(bool_str: str) -> bool:
     - :code:`False` <=> :code:`no`, :code:`false`, :code:`f`, :code:`0`
 
     Args:
-        bool_str: Bool as a string
+        bool_str (str): Bool as a string
 
     Returns:
         bool: Boolean value
 
-    Examples:
+    Example:
         >>> str_to_bool("yes") == True  # Works with "yes", "true", "t", "y", "1" (accepted with any letter case)
         True
 
@@ -71,30 +71,30 @@ def str_to_bool(bool_str: str) -> bool:
 
 def str_to_verbosity(verbosity_str: str) -> int:
     """
-    Return a logging level from a string (compared in lower case).
+    Return the logging level matching a string (compared in lower case), or an integer (10, 20, 30, 40).
 
     - :code:`DEBUG`   <=> {:code:`debug`, :code:`d`, :code:`10`}
     - :code:`INFO`    <=> {:code:`info`, :code:`i`, :code:`20`}
-    - :code:`WARNING` <=> {:code:`warning`, :code:`w`, :code:`warn`}
-    - :code:`ERROR`   <=> {:code:`error`, :code:`e`, :code:`err`}
+    - :code:`WARNING` <=> {:code:`warning`, :code:`w`, :code:`warn`, :code:`30`}
+    - :code:`ERROR`   <=> {:code:`error`, :code:`e`, :code:`err`, :code:`40`}
 
     Args:
         verbosity_str (str): String to be converted
 
     Returns:
-        logging level: Logging level (INFO, DEBUG, WARNING, ERROR)
+        int: Logging level (INFO, DEBUG, WARNING, ERROR)
 
-    Examples:
-        >>> str_to_bool("d") == logging.DEBUG  # Works with 'debug', 'd', 10 (accepted with any letter case)
+    Example:
+        >>> str_to_verbosity("d") == logging.DEBUG  # Works with 'debug', 'd', 10 (accepted with any letter case)
         True
 
-        >>> str_to_bool("i") == logging.INFO  # Works with 'info', 'i', 20 (accepted with any letter case)
+        >>> str_to_verbosity("i") == logging.INFO  # Works with 'info', 'i', 20 (accepted with any letter case)
         True
 
-        >>> str_to_bool("w") == logging.WARNING  # Works with 'warning', 'w', 'warn', 30 (accepted with any letter case)
+        >>> str_to_verbosity("w") == logging.WARNING  # Works with 'warning', 'w', 'warn', 30 (accepted with any letter case)
         True
 
-        >>> str_to_bool("e") == logging.ERROR  # Works with 'error', 'e', 'err', 40 (accepted with any letter case)
+        >>> str_to_verbosity("e") == logging.ERROR  # Works with 'error', 'e', 'err', 40 (accepted with any letter case)
         True
     """
     debug_str = ("debug", "d", 10)
@@ -126,12 +126,12 @@ def str_to_list(
     list_str: list | str, additional_separator: str = "", case: str = None
 ) -> list:
     """
-    Convert str to list with :code:`,`, :code:`;`, :code:`\x20` separators.
+    Convert a string to a list, splitting it on comma, semicolon and space separators.
 
     Args:
         list_str (list | str): List as a string
-        additional_separator (str): Additional separators. Base ones are :code:`,`, :code:`;`, :code:`\\\x20` (space).
-        case (str): {none, 'lower', 'upper'}
+        additional_separator (str): Additional separators. The base ones are comma, semicolon and space.
+        case (str): Case of the items: :code:`'lower'` or :code:`'upper'`.
 
     Returns:
         list: A list from split string
@@ -173,11 +173,12 @@ def str_to_list(
 
 def str_to_date(date_str: str | datetime, date_format: str = DATE_FORMAT) -> datetime:
     """
-    Convert string to a :code:`datetime.datetime`.
+    Convert a string to a :code:`datetime.datetime`.
 
-    Also accepted date formats:
+    Also accepted values:
 
-    - :code:`now`: datetime.today()
+    - :code:`now`: the current datetime
+    - :code:`today`: the current date
     - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
@@ -186,9 +187,9 @@ def str_to_date(date_str: str | datetime, date_format: str = DATE_FORMAT) -> dat
         date_format (str): Format of the date (as ingested by strptime)
 
     Returns:
-        datetime.datetime: A date as a python datetime object
+        datetime.datetime: A date as a Python datetime object
 
-    Examples:
+    Example:
         # Default date format (isoformat)
         >>> str_to_date("2020-05-05T08:05:15")
         datetime(2020, 5, 5, 8, 5, 15)
@@ -240,25 +241,26 @@ def str_to_list_of_dates(
     """
     Convert a string containing a list of dates to a list of :code:`datetime.datetime`.
 
-    Also accepted date formats:
+    Also accepted values:
 
-    - :code:`now`: datetime.today()
+    - :code:`now`: the current datetime
+    - :code:`today`: the current date
     - Usual JSON date format: :code:`%Y-%m-%d`
     - Already formatted datetimes and dates
 
     Args:
-        date_str (list | str): Date as a string
+        date_str (list | str): Dates as a string (or a list of strings)
         date_format (str): Format of the date (as ingested by strptime)
         additional_separator (str): Additional separator
 
     Returns:
-        list: A list containing datetimes objects
+        list: A list containing datetime objects
 
     Example:
         >>> # Default date format (isoformat)
         >>> str_to_list_of_dates("20200909105055, 2019-08-06;19560702121212\t2020-08-09",
-        >>>                      date_format="%Y%m%d%H%M%S",
-        >>>                      additional_separator="\t")
+        ...                     date_format="%Y%m%d%H%M%S",
+        ...                     additional_separator="\t")
         [datetime(2020, 9, 9, 10, 50, 55), datetime(2019, 8, 6), datetime(1956, 7, 2, 12, 12, 12), datetime(2020, 8, 9)]
     """
     # Split string to get a list of strings
@@ -272,8 +274,8 @@ def str_to_list_of_dates(
 
 def to_cmd_string(unquoted_str: Any) -> str:
     """
-    Add quotes around the string in order to make the command understand it's a string
-    (useful with tricky symbols like :code:`&` or white spaces):
+    Add quotes around the string so that the command treats it as a single string
+    (useful with tricky symbols like :code:`&` or white spaces)
 
     Args:
         unquoted_str (str): String to update
@@ -282,10 +284,10 @@ def to_cmd_string(unquoted_str: Any) -> str:
         str: Quoted string
 
     Example:
-        >>> # This str wont work in the terminal without quotes (because of the &)
+        >>> # This string won't work in the terminal without quotes (because of the &)
         >>> pb_str = r"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp"
         >>> to_cmd_string(pb_str)
-        "\"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp\""
+        '\"D:/Minab_4-DA&VHR/Minab_4-DA&VHR.shp\"'
     """
     if not isinstance(unquoted_str, str):
         unquoted_str = str(unquoted_str)
@@ -334,13 +336,13 @@ def camel_to_snake_case(snake_str: str) -> str:
     )
 
 
-def is_uuid(uuid_string, version=4):
+def is_uuid(uuid_string, version=4) -> bool:
     """
-    Check if uuid_string is a valid UUID
+    Check if uuid_string is a valid UUID.
 
     Args:
         uuid_string (str): UUID to be tested
-        version (int): 4 (default), UUID version
+        version (int): UUID version (4 by default)
 
     Returns:
         bool: Valid UUID or not
