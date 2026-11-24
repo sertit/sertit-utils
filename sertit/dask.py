@@ -341,7 +341,9 @@ def guard_compute(
         @wraps(function)
         def guard_compute_wrapper(*_args, **_kwargs):
             """Guard compute wrapper"""
-            raise_on_compute = os.getenv("CI_SERTIT_USE_DASK", "1") == "1"
+            raise_on_compute = (
+                os.getenv("CI_SERTIT_USE_DASK", "1") == "1" and get_client() is not None
+            )
 
             if raise_on_compute:
                 LOGGER.info(
