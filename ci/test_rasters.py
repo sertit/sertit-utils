@@ -81,9 +81,8 @@ def test_indexes(caplog):
         assert_chunked_computed(xda_raw2, "Concatenation")
         import dask
 
-        xda_raw2, xda_idx2 = dask.compute(
-            xda_raw2, xda_idx2
-        )  # Compute only one time for the two arrays
+        # Compute only one time for the two arrays
+        xda_raw2, xda_idx2 = dask.compute(xda_raw2, xda_idx2)
         np.testing.assert_equal(xda_raw2, xda_idx2)
 
     test_core()
@@ -173,7 +172,7 @@ def test_rasters_extent(tmp_path, raster_path, ds_name, ds_dtype):
 def test_rasters_footprint(tmp_path, raster_path, ds_name, ds_dtype):
     # Get Footprint
     footprint_path = rasters_path().joinpath("footprint.geojson")
-    footprint = rasters.get_footprint(raster_path)  # Compute #1
+    footprint = rasters.get_footprint(raster_path)
     truth_footprint = vectors.read(footprint_path)
     ci.assert_geom_almost_equal(footprint, truth_footprint)
 
@@ -199,7 +198,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert_chunked_computed(xda_2, "Read with native resolution (x,y)")
 
         # Native size
-        xda_3 = rasters.read(raster_path, size=(xda_1.rst.width, xda_1.rst.height))
+        xda_3 = rasters.read(raster_path, size=xda_1.rst.shape)
         assert_chunked_computed(xda_3, "Read with native size")
 
         # Upsampling (reproject)
@@ -498,7 +497,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
 
     # -------------------------------------------------------------------------------------------------
     # Test GeoTiffs
-    rasters.write(xda, test_path, dtype=dtype, **KAPUT_KWARGS)  # Compute #1
+    rasters.write(xda, test_path, dtype=dtype, **KAPUT_KWARGS)
     _test_raster_after_write(test_path, dtype, nodata_val)
 
     # -------------------------------------------------------------------------------------------------
@@ -510,7 +509,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
             dtype=dtype,
             driver="COG",
             **KAPUT_KWARGS,
-        )  # Compute #2
+        )
         _test_raster_after_write(test_cog_path, dtype, nodata_val)
 
     # -------------------------------------------------------------------------------------------------
@@ -523,7 +522,7 @@ def test_write(dtype, nodata_val, tmp_path, raster_path):
             driver="COG",
             write_cogs_with_dask=False,
             **KAPUT_KWARGS,
-        )  # Compute #3
+        )
         _test_raster_after_write(test_cog_no_dask_path, dtype, nodata_val)
 
 
@@ -616,9 +615,9 @@ def test_write_dask(tmp_path, raster_path, ds_dtype):
     xds_out = get_output(tmp_path, "test_xds.tif", DEBUG)
     delayed_2 = rasters.write(xds, xds_out, dtype=ds_dtype, compute=False)
 
-    # Compute
     import dask
 
+    # Compute only one time for the two arrays
     dask.compute(delayed_1, delayed_2)
     assert os.path.isfile(xda_out)
     assert os.path.isfile(xds_out)
@@ -727,14 +726,14 @@ def test_crop(tmp_path, raster_path, mask):
     xda_cropped = get_output(tmp_path, "test_crop_xda.tif", DEBUG)
     crop_xda = rasters.crop(xda, mask, **KAPUT_KWARGS)
     assert_chunked_computed(crop_xda, "Crop DataArray")
-    rasters.write(crop_xda, xda_cropped, dtype=np.uint8)  # Compute #1
+    rasters.write(crop_xda, xda_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xda, crop_xda)
 
     # Dataset
     xds_cropped = get_output(tmp_path, "test_crop_xds.tif", DEBUG)
     crop_xds = rasters.crop(xds, mask)
     assert_chunked_computed(crop_xds, "Crop Dataset")
-    rasters.write(crop_xds, xds_cropped, dtype=np.uint8)  # Compute #2
+    rasters.write(crop_xds, xds_cropped, dtype=np.uint8)
     ci.assert_xr_encoding_attrs(xds, crop_xds)
 
     raster_cropped_xarray_path = rasters_path().joinpath("raster_cropped_xarray.tif")

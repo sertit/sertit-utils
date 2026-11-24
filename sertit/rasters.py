@@ -298,7 +298,7 @@ def _works_on_xds(function):
 
 
 # Is not lazy yet in GeoUtils
-@dask.guard_compute(nof_computes=1)
+@dask.guard_compute(max_computes=1)
 @any_raster_to_xr_ds
 @_works_on_xds
 def vectorize(
@@ -890,7 +890,7 @@ def read(
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (tuple | list): Size of the array (width, height). Overrides resolution.
+        size (tuple | list): Size of the array (height, width). Overrides resolution.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
             In case of an iterable, assumption is made it corresponds to geographic bounds.
             For pixel, please provide a rasterio.Window directly.
@@ -1066,8 +1066,6 @@ def write(
         >>> # Rewrite it
         >>> write(xds, raster_out)
     """
-    orig_dtype = xds.dtype
-
     delayed = None
     use_dask = dask.is_chunked(xds)
     compute = compute and use_dask
@@ -1082,9 +1080,8 @@ def write(
 
     # Write nodata
     nodata = kwargs.pop("nodata", get_nodata_value_from_dtype(dtype))
-    assert xds.dtype == orig_dtype, "2"
+    # TODO: https://github.com/GlacioHack/geoutils/issues/1021
     xds.rst.set_nodata(nodata)
-    assert xds.dtype == orig_dtype, "3"
     kwargs["nodata"] = nodata
 
     # Bigtiff if needed
@@ -1373,7 +1370,7 @@ def collocate(
 
 
 # Is not lazy yet in GeoUtils
-@dask.guard_compute(nof_computes=1)
+@dask.guard_compute(max_computes=1)
 @any_raster_to_xr_ds
 def sieve(
     xds: AnyRasterType, sieve_thresh: int, connectivity: int = 4

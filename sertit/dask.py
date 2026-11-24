@@ -322,7 +322,7 @@ def raise_if_dask_computes(
 
 def guard_compute(
     max_computes=0,
-    nof_computes=0,
+    nof_computes=None,
 ):
     """
     Decorator that guards a function against unexpected (and usually unintended) dask computes.
