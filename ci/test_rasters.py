@@ -24,6 +24,7 @@ import pytest
 import rasterio
 import shapely
 import xarray as xr
+from cloudpathlib import AnyPath
 from rasterio._err import CPLE_AppDefinedError
 from rasterio.enums import Resampling
 
@@ -823,6 +824,7 @@ def test_collocate_self(tmp_path, raster_path):
     xds = get_xds(raster_path)
 
     # DataArray
+    # Check if bad kwargs are ignored
     coll_xda = rasters.collocate(xda, xda, **KAPUT_KWARGS)
     assert_chunked_computed(coll_xda, "Collocate DataArray (self)")
     xr.testing.assert_equal(coll_xda, xda)
@@ -894,7 +896,10 @@ def test_collocate(tmp_path, ref_type, other_type):
     )
 
     # Collocate
-    coll = rasters.collocate(reference=ref, other=other)
+    # Check if window and bad kwargs are ignored (window can be passed in rst.reproject, which means sth else that rasterio's window)
+    coll = rasters.collocate(
+        reference=ref, other=other, window=AnyPath("test.geojson"), **KAPUT_KWARGS
+    )
     __test_collocate_output(
         ref, other, coll, f"ref: {ref_tp_str} / other: {other_tp_str}"
     )

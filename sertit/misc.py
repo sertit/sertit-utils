@@ -228,9 +228,11 @@ def prune_dict(dict_to_prune: dict, keys_to_prune: list) -> dict:
 # Error messages used by engines to reject a keyword argument by name:
 #   TypeError  - "f() got an unexpected keyword argument 'name'"
 #   ValueError - "unrecognized option 'NAME' for driver 'DRIVER'" (pyogrio)
+#   ValueError - "Source 'OPT' options require a Reducer." (geoutils)
 _REJECTED_KWARG_RE = re.compile(
     r"got an unexpected keyword argument '(\w+)'"
     r"|unrecognized option '(\w+)' for driver"
+    r"|Source (\w+) options require a Reducer"  # window in rst.reproject
 )
 
 
@@ -263,7 +265,11 @@ def strip_kwargs(function: Callable) -> Callable:
                 return function(*args, **kwargs)
             except (TypeError, ValueError) as exc:
                 match = _REJECTED_KWARG_RE.search(str(exc))
-                rejected = (match.group(1) or match.group(2)).lower() if match else None
+                rejected = (
+                    [g for g in match.groups() if g is not None][0].lower()
+                    if match
+                    else None
+                )
                 key = (
                     next((k for k in kwargs if k.lower() == rejected), None)
                     if rejected
@@ -271,7 +277,7 @@ def strip_kwargs(function: Callable) -> Callable:
                 )
                 if key is None:
                     raise
-                LOGGER.warning(
+                LOGGER.debug(
                     f"'{function.__name__}' does not accept '{key}'. It will be ignored."
                 )
                 del kwargs[key]
