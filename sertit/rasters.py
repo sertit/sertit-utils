@@ -691,8 +691,6 @@ def get_new_shape(
     Returns:
         (int, int, int): Height, width and downsampling factor.
     """
-    # By default, set downsampling_factor to 1
-    downsampling_factor = 1
 
     def _get_new_dim(dim: int, res_old: float, res_new: float) -> (int, float):
         """
@@ -711,7 +709,7 @@ def get_new_shape(
             (int, bool): New dimension, downsampling_factor factor (new / old)
         """
         new_dim = int(np.round(dim * res_old / res_new))
-        return new_dim, res_new / res_old
+        return new_dim
 
     # By default keep original shape
     new_height = src_height
@@ -721,21 +719,18 @@ def get_new_shape(
     if size is not None:
         try:
             if new_height == size[1] and new_width == size[0]:
-                downsampling_factor = 1
+                pass
             else:
                 new_height = size[1]
                 new_width = size[0]
-                downsampling_factor = min(size[1] / new_height, size[0] / new_width)
         except (TypeError, KeyError) as exc:
             raise ValueError(
                 f"Size should be None or a 2 digits iterable: {size}"
             ) from exc
     elif resolution is not None:
         if isinstance(resolution, (int, float)):
-            new_height, downsampling_h = _get_new_dim(
-                new_height, src_res[1], resolution
-            )
-            new_width, downsampling_w = _get_new_dim(new_width, src_res[0], resolution)
+            new_height = _get_new_dim(new_height, src_res[1], resolution)
+            new_width = _get_new_dim(new_width, src_res[0], resolution)
         else:
             try:
                 if len(resolution) != 2:
@@ -744,31 +739,16 @@ def get_new_shape(
                     )
 
                 if resolution[0] is not None:
-                    new_width, downsampling_h = _get_new_dim(
-                        new_width, src_res[0], resolution[0]
-                    )
-                else:
-                    downsampling_h = 1
+                    new_width = _get_new_dim(new_width, src_res[0], resolution[0])
 
                 if resolution[1] is not None:
-                    new_height, downsampling_w = _get_new_dim(
-                        new_height, src_res[1], resolution[1]
-                    )
-                else:
-                    downsampling_w = 1
+                    new_height = _get_new_dim(new_height, src_res[1], resolution[1])
             except (TypeError, KeyError) as exc:
                 raise ValueError(
                     f"Resolution should be None or a 2 digits iterable: {resolution}"
                 ) from exc
 
-        downsampling_factor = min(downsampling_h, downsampling_w)
-    else:
-        downsampling_factor = 1
-
-    # downsampling_factor cannot be inferior to 1
-    downsampling_factor = max(1, downsampling_factor)
-
-    return new_height, new_width, downsampling_factor
+    return new_height, new_width
 
 
 def __handle_window(xda: xr.DataArray, window) -> xr.DataArray:
@@ -863,7 +843,7 @@ def __handle_dtype(xda: xr.DataArray, as_type) -> xr.DataArray:
 def read(
     ds: AnyRasterType,
     resolution: tuple | list | float = None,
-    size: tuple | list = None,
+    shape: tuple | list = None,
     window: Any = None,
     resampling: Resampling = Resampling.nearest,
     masked: bool = True,
@@ -890,7 +870,7 @@ def read(
     Args:
         ds (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
         resolution (tuple | list | float): Resolution of the wanted band, in dataset resolution unit (X, Y)
-        size (tuple | list): Size of the array (height, width). Overrides resolution.
+        shape (tuple | list): Size of the array (height, width). Overrides resolution.
         window (Any): Anything that can be returned as a window (i.e. path, gpd.GeoPandas, Iterable, rasterio.Window...).
             In case of an iterable, assumption is made it corresponds to geographic bounds.
             For pixel, please provide a rasterio.Window directly.
@@ -916,6 +896,11 @@ def read(
         >>> xds1 == xds2
         True
     """
+    if "size" in kwargs:
+        logs.deprecation_warning(
+            "'size' (width, height) is deprecated. Use 'shape' instead ((rst/rio.height, rst/rio.width), or rst/rio.shape)."
+        )
+        shape = kwargs.pop("size")
 
     # Manage chunks
     chunks = kwargs.pop("chunks", dask.get_default_chunks())
@@ -923,10 +908,15 @@ def read(
     # By default, give the downsampling
     need_reproj = False
     downsample = 1
+    if resampling is not None and shape is not None:
+        LOGGER.warning(
+            f"'resolution' ({resolution}) is ignored in favour of 'shape' ({shape})"
+        )
+
     if resampling == Resampling.nearest:
-        if size is not None:
+        if shape is not None:
             # height, width = shape
-            downsample = {"shape": size}
+            downsample = {"shape": shape}
         elif resolution is not None:
             # GeoUtils handles X/Y resolution
             # xres, yres = _check_resolution(options["res"])
@@ -970,7 +960,7 @@ def read(
 
         # Reproject raster if needed
         if need_reproj:
-            xda = __handle_reproj(xda, resolution, size, resampling, chunks)
+            xda = __handle_reproj(xda, resolution, shape, resampling, chunks)
 
         # Convert to dst dtype if needed
         xda = __handle_dtype(xda, as_type)

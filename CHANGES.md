@@ -7,6 +7,7 @@
    - Drop nodata argument in `rasters.mask`, `rasters.crop`
    - Drop `dst_transform`, `gcps`, `rpcs`, `use_dask` in `rasters.reproject`, as these arguments are derived from the DataArray itself with GeoUtils
    - Rename `crs_paths`, `crs_merged_path` into `rasters_paths`, `merged_path` in `rasters.merge_gtiff`
+   - Use `shape` instead of `size` in `rasters.read` to conform to GeoUtils
    - Use `altitude` instead of `zenith` in `rasters.hillshade` to conform to GDAL
    - Remove kwargs in `geometry.buffer`
 - **BREAKING CHANGES**: Drop `rasters.reproject`'s `ortho_path` to better comply with dask workflows (writing parts should be kept outside of functions) ([#27](https://github.com/sertit/sertit-utils/issues/27))

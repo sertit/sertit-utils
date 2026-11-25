@@ -198,7 +198,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
         assert_chunked_computed(xda_2, "Read with native resolution (x,y)")
 
         # Native size
-        xda_3 = rasters.read(raster_path, size=xda_1.rst.shape)
+        xda_3 = rasters.read(raster_path, shape=xda_1.rst.shape)
         assert_chunked_computed(xda_3, "Read with native size")
 
         # Upsampling (reproject)
@@ -223,7 +223,7 @@ def test_read(tmp_path, raster_path, ds_name, ds_dtype):
 
         # Errors
         with pytest.raises(ValueError):
-            rasters.read(raster_path, size={100: 100})
+            rasters.read(raster_path, shape={100: 100})
 
         with pytest.raises(ValueError):
             rasters.read(raster_path, resolution=[100, 100, 100])
@@ -394,6 +394,16 @@ def test_read_with_window_outside_upsampled(tmp_path, raster_path, mask):
         dtype=np.uint8,
     )
     ci.assert_raster_equal(xda_window_outside_downsampled_out, raster_outside_path)
+
+
+@s3_env
+@dask_env()
+def test_read_with_size_and_res(raster_path):
+    xda_size_and_res = rasters.read(raster_path, shape=(20, 20), resolution=20)
+    ci.assert_val(xda_size_and_res.rst.shape, (20, 20), "shape")
+    assert_chunked_computed(
+        xda_size_and_res, "Read with a window with updated resolution"
+    )
 
 
 @s3_env
