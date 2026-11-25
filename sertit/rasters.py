@@ -322,7 +322,8 @@ def vectorize(
 
     Args:
         xda (AnyRasterType): Path to the raster or a rasterio dataset or a xarray
-        values (None | int | tuple): Only vectorize the polygon(s) corresponding to this/these value(s)
+        values (None | int | tuple): A number, a list or one-dimensional array of discrete values, a two-number tuple
+            for an inclusive (minimum, maximum) range, or "None" (the default) for every valid value.
         keep_values (bool): If True, keep the given values; if False, discard them and keep the others.
         dissolve (bool): Dissolve all the polygons into one. Only used when :code:`values` is given.
         default_nodata (int): Default nodata value to use when the raster has none.
@@ -334,46 +335,29 @@ def vectorize(
         LOGGER.warning("'vectorize' function is not lazy yet. Computing the raster.")
         xda = xda.compute()
 
-    # Manage values
-    wanted_values = None
-
     # Handle all types of values
     # For now, geoutils doesn't handle a list of values
     if values is not None:
         # We want to keep the values given as input
         if keep_values:
-            if is_iterable(values):
-                target_values = "all"
-                wanted_values = values
-            else:
-                target_values = values
+            target_values = values
 
-            if not is_iterable(values):
-                target_values = values
-            else:
-                target_values = "all"
-                wanted_values = tuple(
-                    i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
-                )
         # We want to discard the values given as input
         else:
             if not is_iterable(values):
                 values = (values,)
 
-            target_values = "all"
-            wanted_values = tuple(
-                i for i in np.unique(xda) if (i not in values) and (not np.isnan(i))
-            )
+            target_values = [
+                i
+                for i in np.unique(xda.data)
+                if (i not in values) and (not np.isnan(i))
+            ]
     else:
         target_values = "all"
 
     LOGGER.debug(f"Vectorizing with {target_values=}")
 
     gdf = xda.rst.polygonize(target_values=target_values)
-
-    # Keep only selected values
-    if wanted_values is not None:
-        gdf = gdf.loc[np.isin(gdf["raster_value"], wanted_values)]
 
     # Return valid geometries
     gdf = geometry.make_valid(gdf)
