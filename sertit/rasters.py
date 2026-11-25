@@ -2239,17 +2239,34 @@ def reproject(
         # Update GDAL parameters
         transformer_options = __rpc_gdal_options(dem_path)
 
-    reprojected_xda = src_xda.rst.reproject(
-        crs=dst_crs,
-        res=pixel_size,
-        grid_size=shape,
-        nodata=nodata,
-        resampling=resampling,
-        transformer_options=transformer_options,
-        silent=False,
-        n_threads=num_threads,
-        memory_limit=64,
-    )
+    try:
+        reprojected_xda = src_xda.rst.reproject(
+            crs=dst_crs,
+            res=pixel_size,
+            grid_size=shape,
+            nodata=nodata,
+            resampling=resampling,
+            transformer_options=transformer_options,
+            silent=False,
+            n_threads=num_threads,
+            memory_limit=64,
+        )
+    except ValueError as ex:
+        if "use in-memory" in ex:
+            LOGGER.warning(ex)
+            reprojected_xda = src_xda.compute().rst.reproject(
+                crs=dst_crs,
+                res=pixel_size,
+                grid_size=shape,
+                nodata=nodata,
+                resampling=resampling,
+                transformer_options=transformer_options,
+                silent=False,
+                n_threads=num_threads,
+                memory_limit=64,
+            )
+        else:
+            raise ex
 
     # Rename DataArray
     if name:
