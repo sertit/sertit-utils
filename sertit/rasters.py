@@ -1282,34 +1282,28 @@ def collocate(
             reference=reference, other=other, resampling=resampling, **kwargs
         )
     else:
-        try:
-            # Code inspired by the 'reproject_match' code from RasterDataset
-            collocated_xds = xr.Dataset(attrs=other.attrs)
-            for var in other.rio.vars:
-                # Get spatial dimensions from current array
-                x_dim, y_dim = other[var].rio.x_dim, other[var].rio.y_dim
+        # Code inspired by the 'reproject_match' code from RasterDataset
+        collocated_xds = xr.Dataset(attrs=other.attrs)
+        for var in other.rio.vars:
+            # Get spatial dimensions from current array
+            x_dim, y_dim = other[var].rio.x_dim, other[var].rio.y_dim
 
-                if isinstance(reference, xr.DataArray):
-                    ref = reference
-                else:
-                    # assert we have the same spatial dimensions in ref and other
-                    ref = reference[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
+            if isinstance(reference, xr.DataArray):
+                ref = reference
+            else:
+                # assert we have the same spatial dimensions in ref and other
+                ref = reference[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
 
-                # Colocate dataarray by dataarray
-                collocated_xds[var] = _collocate_dataarray(
-                    other=other[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim),
-                    reference=ref,
-                    resampling=resampling,
-                    **kwargs,
-                )
-            collocated_xds = collocated_xds.rio.set_spatial_dims(
-                x_dim=other.rio.x_dim, y_dim=other.rio.y_dim
+            # Colocate dataarray by dataarray
+            collocated_xds[var] = _collocate_dataarray(
+                other=other[var].rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim),
+                reference=ref,
+                resampling=resampling,
+                **kwargs,
             )
-        except Exception:  # pragma: no cover
-            # For datasets, maybe the code here over is a bit much, so use the reproject match function as a backup (just in case)
-            collocated_xds = _collocate_dataarray(
-                reference=reference, other=other, resampling=resampling, **kwargs
-            )
+        collocated_xds = collocated_xds.rio.set_spatial_dims(
+            x_dim=other.rio.x_dim, y_dim=other.rio.y_dim
+        )
 
     # Assign directly the coordinates to correct tiny differences in coordinates due to float precision
 
