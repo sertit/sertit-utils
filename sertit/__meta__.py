@@ -17,4 +17,4 @@
 Sertit Utils library
 """
 
-__version__ = "2.0.0.dev2"
+__version__ = "2.0.0.dev3"
