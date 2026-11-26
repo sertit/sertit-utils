@@ -791,7 +791,7 @@ def __handle_reproj(
 ) -> xr.DataArray:
     # Manage dst fixed size
     LOGGER.debug("Forcing the correct shape or resolution by reprojecting the data.")
-    new_height, new_width, downsampling_factor = get_new_shape(
+    new_height, new_width = get_new_shape(
         src_width=xda.rst.width,
         src_height=xda.rst.height,
         src_res=xda.rst.res,
