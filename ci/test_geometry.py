@@ -160,6 +160,7 @@ def test_buffer():
     buffer_true.geometry = water.buffer(10)
 
     ci.assert_geom_equal(buffer(water, 10), buffer_true)
+    ci.assert_geom_equal(buffer(water, 10, quad_segs=16), buffer_true)
 
 
 @s3_env

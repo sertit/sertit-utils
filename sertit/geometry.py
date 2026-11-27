@@ -537,7 +537,7 @@ def intersects(
 
 
 @ensure_gdf
-def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
+def buffer(vector: gpd.GeoDataFrame, buffer_m: float, **kwargs) -> gpd.GeoDataFrame:
     """
     Add a buffer on a vector.
 
@@ -563,7 +563,13 @@ def buffer(vector: gpd.GeoDataFrame, buffer_m: float) -> gpd.GeoDataFrame:
         dtype: float64
 
     """
-    return vector.vct.buffer_metric(buffer_size=buffer_m)
+    if kwargs:
+        # TODO: https://github.com/GlacioHack/geoutils/issues/1027
+        vector_bfd = vector.copy()
+        vector_bfd.geometry = vector_bfd.buffer(buffer_m, **kwargs)
+        return vector_bfd
+    else:
+        return vector.vct.buffer_metric(buffer_size=buffer_m)
 
 
 @misc.strip_kwargs
